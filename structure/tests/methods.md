@@ -1,0 +1,86 @@
+# tests の方法
+
+methods は、検証に用いる技法を定める。
+技法は、検証する対象の性質で選ぶ。
+methods は [layout](./layout.md) の配置に従う。
+
+## ロジックと状態
+
+純粋なロジックは、stateless の property-based testing で検証する。
+状態の遷移は、状態を持つ property-based testing で検証する。
+use-case は、port を fake に置き換えて検証する。
+冪等性は、同じ command の識別子の再実行が同じ結果を生むことで確かめる。
+これらはプロセスの外への依存を持たない Small である。配置は [layout](./layout.md) に従う。
+形式手法で、コードの全面は検証しない。
+symbolic と concolic の実行を、標準の検証に組み込まない。
+
+## 決定性と隔離
+
+テストは、実行順序に依存せず、単体でも他のテストと並べても同じ結果を返す。
+テストどうしが共有する状態は、実行の前に用意し、後始末を次の実行へ持ち越さない。
+並列実行への耐性は、テストごとに独立した資源(接続・スキーマ・一時領域)を割り当てて確かめる。
+繰り返し実行して結果が変わる不安定なテストは、隔離の区分へ移し、通常のゲートから外す。
+隔離の区分に残せる期間は期限で区切り、期限の値は project が定める。
+不安定さを断つ原因の分類と対処は [principles/verification](../../principles/verification.md) に従う。
+
+## 権限
+
+権限は、主体・操作・資源・条件と、期待する許可と拒否の組み合わせの matrix で検証する。
+matrix は、公開された interface を越して検証する。
+権限の matrix は、業務の振る舞いの検証として対象に含める。
+
+## 実依存
+
+adapter は、実の依存をコンテナで起動して検証する。
+採用された store([concerns/persistence](../../concerns/persistence.md) に従う)を実コンテナで起動する。
+生存と準備の面は、プロセスをコンテナで起動し、面の観測で確かめる。
+故障は、effect を型付きで注入して再現する。
+副作用の境界の規律は [concerns/effect](../../concerns/effect.md) に従う。
+
+## 性質別の技法
+
+oracle が得にくい対象は、metamorphic な関係で検証する。
+移行と置換は、旧と新の経路の差分で検証する。
+replay は、イベントから projection を再構築して検証する。
+信頼できない入力は、契約を駆動にした fuzz で検証する。
+契約駆動の fuzz は、生成した OpenAPI を駆動元にした Schemathesis で行う。
+公開 API の契約への適合も、同じ機構で検証する。
+protocol 経路の適合は、生成物と実装の drift の検査と conformance で検証する。
+
+## 構造の検証
+
+構造の規則は、依存方向・公開面と可視性・配置と粒度・命名・純粋性のクラスに分けて検証する。
+依存方向と参照の禁止は、構造の検査で機械検証する。
+公開面は、言語の可視性の機構と構造の検査で守る。
+結合・循環・規模などのアーキテクチャ特性は、客観の尺度の適応度関数として測り、閾値を超えたら不合格とする。
+特性を客観の尺度で測る規律は [principles/verification](../../principles/verification.md) に従い、合否を release のゲートに束ねる運用は [pipeline](../pipeline.md) が定める。
+全単位(module・submodule・surface・runtime)が検査対象として列挙されていることを、実フォルダとの照合で機械確認する。
+単位を追加したときに検査の対象へ自動で追従しない構成を、置かない。
+構造で検証できない規則は、型と lint・実行テスト・人手レビューのいずれかに割り当てる。
+structure と languages の各規律は、検証手段を名指しで持つ。
+どの手段にも割り当てない規則を、残さない。
+言語ごとの検査の機構は [languages](../../languages/) に従う。
+
+## テストの有効性
+
+テストの有効性は、mutation で検査する。
+mutation を絞る場合は、変異演算子と低リスク要素(参照データ表・等価変異)に限る。
+層や module を丸ごと対象から外すことを、しない。
+業務 domain と純粋ロジック全体は、composition の写像を含めて検査の対象に含める。
+検査を失敗させるしきい値は、0 でない正の値に定める。
+mutation は CI に配線し、しきい値を割ったら失敗で止める。
+snapshot を、主たる検証にしない。
+AI が生成したテストを、有効性の検査なしに受け入れない。
+検証の合否は、CI の実行結果で判定し、実装者や AI の自己申告で通さない。
+テストの緩和は、人間が承認する。
+型と lint は、予防として用いる。
+
+## 範囲
+
+この標準は、振る舞いと構造の正しさの検証を対象とする。
+性能と負荷の SLO の検証は対象外とし、信頼性の目標は [concerns/resilience](../../concerns/resilience.md)、本番の観測は [concerns/observability](../../concerns/observability.md) に従う。
+chaos と並行の race は対象外とし、過負荷と障害への耐性は [concerns/resilience](../../concerns/resilience.md)、全停止の回避は [concerns/lifecycle](../../concerns/lifecycle.md) に従う。
+security の専用の検証は対象外とし、設計上の安全姿勢は [concerns/security](../../concerns/security.md) に従う。依存部品の既知の脆弱性は、pipeline が供給網のゲートで検査する。
+AI エージェントの統制と prompt の検証は、対象外とする。
+検証の合否を release のゲートに束ねる運用は、[pipeline](../pipeline.md) が定める。
+言語ごとの具体のツールは [languages](../../languages/) に従う。
