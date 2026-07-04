@@ -1,0 +1,27 @@
+# structure
+
+structure は、ターゲットプロジェクトの各部の、言語非依存の構造を定める。
+横断的な規律は [concerns](../concerns/) を参照し、再定義しない。
+言語別の実現は [languages](../languages/) に置く。
+
+## 構成
+
+| 対象 | 内容 |
+|---|---|
+| [skeleton](./skeleton.md) | root の境界・命名・依存方向・workspace |
+| [pipeline](./pipeline.md) | リポジトリ全体の検証のゲートと release |
+| [core](./core/layout.md) | 業務の核。layout と domain・application・infrastructure の層、composition の単位 |
+| [contracts](./contracts/layout.md) | 契約。layout と canonical・http・protocol・generated の層 |
+| [surfaces](./surfaces/) | 対話様式ごとの入口。server・console・worker・viewer・extension・embedded |
+| [runtimes](./runtimes/) | 被ホスト surface の具体 host。web・desktop・mobile・ide |
+| [deploy](./deploy/layout.md) | 配備。infrastructure・delivery・provenance・secrets |
+| [tests](./tests/layout.md) | root の規模の検証。layout と methods |
+
+skeleton が root の構成の正本である。
+root をまたぐ依存の規則は skeleton が持ち、各部は自身の内部だけを定める。
+
+## 読み方
+
+各部の地図は、core・contracts・deploy・tests では layout.md、surfaces・runtimes では一覧の README.md である。
+surfaces・runtimes のフォルダ構成・依存方向・固有の規律は、各 surface・runtime の layout.md で確かめる。
+層や単位の中身は単位ごとのファイルで確かめる。
