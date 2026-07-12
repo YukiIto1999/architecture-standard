@@ -42,30 +42,34 @@ function Greeting(raw: { name: string; greeting?: string }) {
 
 ### 要求
 design token は entry の CSS の `@theme` に集約し、entry の CSS は `@theme` と `@import` だけにする。
-build は Tailwind CSS の Vite plugin で行い、CSS をビルド時に静的に出す。
+styling の機構は Tailwind CSS の Vite plugin に一つ固定し、CSS をビルド時に静的に出す。
+runtime に style を生成する CSS-in-JS は使わない。
 スタイルはマークアップのタグ内で完結させ、component 単位の独立した CSS は標準外とする。
 layout primitive は container query で組み、headless は Kobalte を使い見た目は design token で与える。
 W3C Design Tokens Community Group の draft の交換形式は採用しない。
 
 ### 根拠
 design token を `@theme` に集約すれば、変わりそうな見た目の決定が一箇所に隠れる。
+CSS をビルド時に静的に出し runtime CSS-in-JS を使わなければ、styling の機構が一つに定まり、実行時に style を生成する別の目的の機構が増えない。
 component 単位の独立した CSS を作らずタグ内で完結させれば、技術の層でなく変更理由で分かれる。
 headless を Kobalte で受け見た目を design token で与えれば、振る舞いと見た目が分かれる。
 layout を container query で組めば、要素の幅で配置が決まり、画面幅に縛られない。
 
 ### 完了条件
 design token が `@theme` に集約され、entry の CSS が `@theme` と `@import` だけである。
-build が Tailwind の Vite plugin で行われ、CSS が静的に出ている。
+styling の機構が Tailwind の Vite plugin に一つ固定され、CSS が静的に出ている。
+runtime CSS-in-JS が、使われていない。
 スタイルがタグ内で完結し、component 単位の独立した CSS がない。
 layout primitive が container query で組まれ、headless が Kobalte で見た目が design token である。
 
 ### 禁止事項
 design token を、`@theme` の外へ散らすこと。
+runtime CSS-in-JS で、style を生成すること。
 component 単位の独立した CSS を作ること。
 W3C Design Tokens Community Group の draft の交換形式を採用すること。
 
 ### 行動
-design token を `@theme` に集約し、build を Tailwind の Vite plugin で行う。
+design token を `@theme` に集約し、styling の機構を Tailwind の Vite plugin に一本化して runtime CSS-in-JS を導入しない。
 スタイルをタグ内で完結させ、headless を Kobalte、layout を container query で組む。
 
 ### 例
@@ -182,7 +186,7 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
 ## core への接続
 
 ### 要求
-extension が接続する core のプロセスへは vscode-jsonrpc で接続する。
+extension が接続する core のプロセスへは、外へ出すのを小さい契約だけにして接続する。これを vscode-jsonrpc で満たす。
 
 ### 根拠
 メソッドを型で宣言し protocol をライブラリに委ねれば、外へ出すのは小さい契約だけになり、framing を手書きしない。

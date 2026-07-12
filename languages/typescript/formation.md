@@ -154,70 +154,7 @@ type OrderId = v.InferOutput<typeof OrderIdSchema>;
 function findUser(id: UserId): User { /* ... */ }
 ```
 
-## 命名と整形を道具に委ねる
-
-### 要求
-命名は標準的な TypeScript の規約に従い、型は PascalCase、値と関数は camelCase にする。
-整形は oxfmt の既定に従い、手で揃えない。
-ファイル名は kebab-case で統一し、oxlint の `unicorn/filename-case` で揃える。
-
-### 根拠
-整形を手で揃えると、差分に無意味な変更が混じり、規約の揺れがレビューの対象になる。
-道具に委ねれば表記が一意に決まり、議論を設計に集中できる。
-TypeScript はファイル名の標準の規約を持たないため、一つの表記に固定しないと表記が揺れる。
-kebab-case に固定して `unicorn/filename-case` で揃えれば、ファイル名が一意に決まる。
-型と値の命名規約(PascalCase・camelCase)自体を検査する規則は oxlint に無く、この部分はレビューで確認する。
-
-### 完了条件
-命名が、型は PascalCase、値と関数は camelCase になっている。
-ファイル名が、kebab-case で統一され `unicorn/filename-case` で検査されている。
-整形が、oxfmt の既定で一意に決まっている。
-
-### 禁止事項
-整形を、手で揃えること。
-ファイル名の表記を、混在させること。
-
-### 行動
-型を PascalCase、値と関数を camelCase で名付ける。
-ファイル名を kebab-case にし、oxfmt と oxlint を既定で適用する。
-
-## 契約をドキュメントコメントに書く
-
-### 要求
-宣言した要素に TSDoc のドキュメントコメントを付ける。
-対象が持つ @typeParam・@param・@returns・@throws を省かない。
-想定された失敗は戻り値の Result の型に現し、@throws は欠陥に限る。
-summary の最初の一行と文体の規律は [comment](../../principles/comment.md) に従う。
-
-### 根拠
-TSDoc は、ツールが一貫して解釈できる統一文法で、利用者が実装を読まずに用途と契約を読めるようにする。
-@param・@returns は、引数と戻り値を契約として宣言し、想定された失敗は戻り値の Result の型に現す。
-summary の最初の一行と文体の理由は [comment](../../principles/comment.md) に従う。
-
-### 完了条件
-宣言した要素に、用途と契約を述べる TSDoc のドキュメントコメントがある。
-@typeParam・@param・@returns・@throws が、対象の持つものを網羅している。
-summary の最初の一行と文体が、[comment](../../principles/comment.md) の完了条件を満たしている。
-
-### 禁止事項
-宣言した要素の契約を、未記述で放置すること。
-対象が持つ @typeParam・@param・@returns・@throws を、省くこと。
-
-### 行動
-要素ごとに目的の summary を一行で書き、型引数・引数・戻り値・送出する欠陥を @typeParam・@param・@returns・@throws のうち該当するものに記す。
-summary の最初の一行と文体は [comment](../../principles/comment.md) に従って書く。
-
-### 例
-```typescript
-/**
- * 検証済みカートの確定と在庫引当
- * @param cart - 確定対象の検証済みカート
- * @returns 確定済みの注文または在庫不足の失敗
- * @throws InvariantViolation 保存済みの注文が不変条件に違反している
- */
-function place(cart: ValidCart): Result<Order, OrderError> { /* ... */ }
-```
-
 ## 参照
-業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md)、ドキュメントコメントは [comment](../../principles/comment.md) に従う。
+業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md) に従う。
+命名と整形、ドキュメントコメントの体裁は [conventions](./conventions.md) に従う。
 境界での外部表現の変換は [translation](./translation.md)、Result の機構(neverthrow)は [connection](./connection.md) に従う。

@@ -22,7 +22,7 @@ ValueTask で同期と非同期を一つの型で扱い、割り当てを抑え�
 
 ### 完了条件
 副作用を伴う計算が、`Effect<TRequirements, TFailure, TValue>` で表されている。
-Effect が、生成では実行されない遅延した値である。
+`Effect` が、生成では実行されない遅延した値である。
 純粋な計算が、Effect で包まれていない。
 `default(Effect<...>)` の構築が、companion の analyzer で検出されている。
 
@@ -95,7 +95,7 @@ public static class Effect
         Func<TResource, Effect<TRequirements, TFailure, TResult>> use);
 }
 
-// Effect<TRequirements, TFailure, TValue> のインスタンス combinator。シグネチャの一覧であり、実装は companion/基盤側が持つ
+// Effect<TRequirements, TFailure, TValue> のインスタンス combinator。シグネチャの一覧であり、実装は libs の Effect 機構が持ち、companion は検査と生成のみを行う
 Effect<TRequirements, TFailure, TResult>  Map<TResult>(Func<TValue, TResult> selector);
 Effect<TRequirements, TFailure, TResult>  Bind<TResult>(Func<TValue, Effect<TRequirements, TFailure, TResult>> bind);
 Effect<TRequirements, TFailure2, TValue>  MapFailure<TFailure2>(Func<TFailure, TFailure2> selector);
@@ -153,21 +153,25 @@ public abstract record EffectExit<TFailure, TValue>
 ### 要求
 Effect が要求する依存は、`IEffectRequirements` を継承した能力の interface で宣言し、計算ごとに必要な分だけを generic constraints で要求する。
 依存の実装は composition root が runtime に与え、本番とテストで差し替える。
+`Provide` で `TRequirements` を `NoRequirements` へ畳んだ後、原始効果(時刻・乱数・ID・I/O)を宣言済みの能力の実装と adapter の外で直接使わない。
 
 ### 根拠
 能力の interface を generic constraints で要求すると、計算が何を要求するかが型に出て、不足が型検査に出る。
 計算ごとに必要な能力だけを要求すると、全部入りの単一の環境にならない。
 依存を名前で取り出す `GetService<T>` は型付きの service locator なので、要求が型に出ない。
 本番とテストで requirements の実装を差し替えると、時刻と乱数と外部依存を制御できる。
+`Provide` は要求を消したという型の主張を作るので、畳んだ後に原始効果を直接呼ぶと、要求が型に出ているという保証が実体を伴わない嘘になる。
 
 ### 完了条件
 Effect が要求する依存が、能力の interface の generic constraints で型に出ている。
 各計算が、必要な能力だけを要求している。
 依存の実装が、composition root で与えられている。
+`NoRequirements` へ畳んだ後の原始効果の直接呼び出しが、能力の実装と adapter の外に無い。
 
 ### 禁止事項
 全部入りの単一の環境を作り、全ての計算に要求させること。
 依存を `GetService<T>` で名前で取り出すこと。
+`NoRequirements` へ畳み込んだ後、原始効果を直接呼び要求が無いという型の主張を裏切ること。
 
 ### 行動
 能力を `IEffectRequirements` を継承した interface で宣言し、計算の `where` で必要な分だけ要求する。
@@ -194,31 +198,40 @@ public sealed class ProductionRequirements(IClock clock, IOrderRepository orders
 // テストは同じ能力を別実装で差し替える。TestRequirements は固定時刻とインメモリの Orders を持つ
 ```
 
-## 効果を境界で実行し analyzer で縛る
+## 効果を境界で実行し companion で縛る
 
 ### 要求
 Effect の実行は `EffectRuntime<TRequirements>` の境界に限り、内側の層では実行しない。
 EffectRuntime は requirements を保持し、Effect を解釈して `EffectExit` を返す。
 実行中に送出された OperationCanceledException を Canceled に、その他の例外を Defected に写し、想定内失敗は throw せず Fail で返す。
-型で縛れない規則は、analyzer と source generator で強制する。
+型で縛れない規則は、companion(analyzer と source generator)が次の4責務で強制する: R の合成環境の生成、Bind 連鎖での要求包含の検査、原始効果の閉じ込め、`NoRequirements` への迂回の禁止。
 
 ### 根拠
 実行を境界に集めると、どこで副作用が起きるかが一箇所で読める。
 host の async と取り消しで Effect を駆動し、送出された取り消しと欠陥を終了状態に写すので、内側は throw でなく Fail で想定内失敗を返せる。
-C# は型推論が弱く、実行境界の限定と要求の充足と時刻の直呼びの禁止を、型だけでは縛れない。
-analyzer がこれらを検査し、source generator が requirements の generic constraints の記述を補う。
+C# は型推論が弱く、実行境界の限定と要求の充足と原始効果の直呼びの禁止を、型だけでは縛れない。
+要求する能力の組み合わせごとに環境型を手で書くと、組み合わせの数だけ nominal な型か神環境型のどちらかに倒れるので、companion が組み合わせから環境型を生成する(R の合成)。
+Bind の連鎖は C# の型推論だけでは呼び元の R が呼び先の R を包含することを保証しないので、companion が連鎖を検査する(伝播の検査)。
+時刻・乱数・ID・I/O のような原始効果を宣言済みの能力の外で直接呼べると、要求が型に出ているという保証が崩れるので、companion が能力の実装と adapter の外での直呼びを検出する(原始効果の閉じ込め)。
+`NoRequirements` への畳み込みの後に原始効果を直接使う経路は、要求を消したという型の主張を裏切る迂回なので、companion がこれを検出する(迂回の禁止)。
 
 ### 完了条件
 Effect の実行が、composition root の境界に限られている。
 OperationCanceledException が Canceled に、その他の例外が Defected に写されている。
-実行境界の限定と要求の充足と時刻の直呼びの禁止が、analyzer で検査されている。
+実行境界の限定と要求の充足が、companion の analyzer で検査されている。
+R の合成環境が、companion の生成で作られている。
+Bind の連鎖の要求包含が、companion の検査を通っている。
+原始効果の直接呼び出しが、宣言済みの能力の実装と adapter の外に無いことが、companion で検査されている。
+`NoRequirements` への迂回が、companion で検出されている。
 
 ### 禁止事項
 内側の層で、Effect を実行すること。
-`DateTimeOffset.UtcNow` のような効果を、純粋核や application で直に呼ぶこと。
+`DateTimeOffset.UtcNow` のような原始効果を、純粋核や application で直に呼ぶこと。
+companion の4責務のいずれかを、実装せず素通りさせること。
 
 ### 行動
-Effect の実行を composition root の `EffectRuntime.Run` に集め、analyzer と source generator で型の穴を埋める。
+Effect の実行を composition root の `EffectRuntime.Run` に集める。
+companion に、R の合成・Bind 連鎖の検査・原始効果の閉じ込め・`NoRequirements` への迂回の検出の4つを実装する。
 
 ### 例
 ```csharp

@@ -36,15 +36,13 @@ console は、派生読みモデルの臨時・手動の再構築 operation を 
 ## 配布
 
 console は、単一の配布 channel で配布する。
-更新は channel に任せる。
-self-update は、標準外とする。
+配布と更新は [deploy](../../deploy/layout.md) に従う。
 
 ## 組み立てと起動
 
 composition は、build_core で core を埋め込み、自身でプロセスを起動する。
 composition は、実行の文脈を request context として組み立て、core へ渡す。
 actor への写像は [structure/core/composition](../../core/composition.md) が担う。
-停止の合図を受けたら、進行中の処理を協調して止めて終わる。
 終了の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。

@@ -202,90 +202,30 @@ public sealed record Weight { /* Create で検証 */ }
 public sealed record Money { /* Create で検証 */ }
 ```
 
-## 命名と整形を道具に委ねる
+## companion を libs の機構として netstandard2.0 プロジェクトに分ける
 
 ### 要求
-命名と整形は .NET の命名規約と CSharpier の既定に従い、手で揃えない。
-ファイル名は、そのファイルの変更単位の型の名前に PascalCase で一致させる。
-
-### 根拠
-整形を手で揃えると、差分に無意味な変更が混じり、規約の揺れがレビューの対象になる。
-道具に委ねれば表記が一意に決まり、議論を設計に集中できる。
-CSharpier は設定項目が少ない opinionated な formatter で、.editorconfig の書き方に出力が左右されない。
-ファイル名を変更単位の型に PascalCase で一致させると、型を名前で探すときにファイルが一意に定まる。
-
-### 完了条件
-命名が、.NET の命名規約に従っている。
-ファイル名が、変更単位の型の名前に PascalCase で一致している。
-整形が、CSharpier の既定で一意に決まっている。
-
-### 禁止事項
-整形を、手で揃えること。
-ファイル名を、変更単位の型と違う名前や、kebab-case などの別の表記にすること。
-
-### 行動
-.NET の命名規約に従い、CSharpier を既定の設定で適用する。
-ファイル名を、変更単位の型の PascalCase の名前に一致させる。
-
-## 契約をドキュメントコメントに書く
-
-### 要求
-宣言した型とメンバに XML ドキュメントコメントを付ける。
-対象が持つ param・typeparam・returns・value・exception を省かない。
-想定された失敗は returns の Result の型に現し、exception は欠陥に限る。
-summary の最初の一行と文体の規律は [comment](../../principles/comment.md) に従う。
-
-### 根拠
-XML ドキュメントコメントは、利用者が実装を読まずに、IntelliSense と生成文書から用途と契約を読めるようにする。
-param は、コンパイラが引数との対応を検証し、記述漏れを警告する。
-exception は、戻り値に現れない欠陥としての送出を宣言し、想定された失敗は returns の Result の型に現す。
-summary の最初の一行と文体の理由は [comment](../../principles/comment.md) に従う。
-
-### 完了条件
-宣言した型とメンバに、用途と契約を述べる XML ドキュメントコメントがある。
-対象が持つ param・typeparam・returns・value・exception が、網羅されている。
-summary の最初の一行と文体が、[comment](../../principles/comment.md) の完了条件を満たしている。
-
-### 禁止事項
-宣言した型やメンバの契約を、未記述で放置すること。
-対象が持つ param・typeparam・returns・value・exception を、省くこと。
-
-### 行動
-宣言ごとに目的の summary を一行で書き、引数・型引数・戻り値・プロパティ値・送出する例外のうち該当するものをすべて記す。
-summary の最初の一行と文体は [comment](../../principles/comment.md) に従って書く。
-
-### 例
-```csharp
-/// <summary>検証済みカートの確定と在庫引当</summary>
-/// <param name="cart">確定対象の検証済みカート</param>
-/// <returns>確定済みの注文または在庫不足の失敗</returns>
-/// <exception cref="InvalidOperationException">保存済みの注文が不変条件に違反している</exception>
-public Result<Order, OrderError> Place(ValidCart cart) { /* ... */ }
-```
-
-## companion をビルド時のツールとして分ける
-
-### 要求
-値オブジェクトの生成、閉じた階層の網羅の suppressor、効果の規律の analyzer は、core と別の netstandard2.0 のプロジェクトに置く。
+値オブジェクトの生成、閉じた階層の網羅の suppressor、効果の規律の analyzer は、libs の機構として core と別の netstandard2.0 のプロジェクトに置く。
 このプロジェクトは `OutputItemType="Analyzer"` と `ReferenceOutputAssembly="false"` で参照し、実行時の依存にしない。
 
 ### 根拠
-analyzer と source generator はコンパイラが読み込むビルド時のツールで、実行時には存在せず出荷物に含まれない。
-Roslyn はこれらに netstandard2.0 を課し、生成器は自身を含むアセンブリのビルドに使えないので、core と同じプロジェクトには置けない。
+compile 時のツールが実行時の層に属さず出荷物にも含まれない理由は [structure/libs/layout](../../structure/libs/layout.md) に従う。
+Roslyn は analyzer と source generator に netstandard2.0 を課し、生成器は自身を含むアセンブリのビルドに使えないので、core と同じプロジェクトには置けない。
 `ReferenceOutputAssembly="false"` は、ツールの dll を実行時の参照に混ぜないために要る。
 
 ### 完了条件
-生成器と suppressor と analyzer が、core と別の netstandard2.0 プロジェクトにある。
+生成器と suppressor と analyzer が、libs の機構として core と別の netstandard2.0 プロジェクトにある。
 これらが `OutputItemType="Analyzer"` で参照され、実行時の依存に現れない。
 
 ### 禁止事項
-生成器や analyzer を、実行時のプロジェクトや core の層・submodule に置くこと。
+生成器や analyzer を、実行時のプロジェクトや core の層に置くこと。
 ツールの dll を、実行時の参照に含めること。
 
 ### 行動
-companion を別の netstandard2.0 プロジェクトにし、各プロジェクトから `OutputItemType="Analyzer"`・`ReferenceOutputAssembly="false"` で参照する。
+companion を libs 配下の別の netstandard2.0 プロジェクトにし、各プロジェクトから `OutputItemType="Analyzer"`・`ReferenceOutputAssembly="false"` で参照する。
 配布するときは `analyzers/dotnet/cs` に詰め、`IncludeBuildOutput=false` で実行時の出力に含めない。
 
 ## 参照
-業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md)、合成と継承の境界は [separation](../../principles/separation.md)、ドキュメントコメントは [comment](../../principles/comment.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、companion の境界は [structure/skeleton](../../structure/skeleton.md) に従う。
+業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md)、合成と継承の境界は [separation](../../principles/separation.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、companion の置き場は [structure/libs/layout](../../structure/libs/layout.md) に従う。
+命名と整形、ドキュメントコメントの体裁は [conventions](./conventions.md) に従う。
 エラーモデルと結果の型は [connection](./connection.md)、境界での外部表現の変換は [translation](./translation.md) に従う。

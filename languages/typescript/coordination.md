@@ -10,7 +10,7 @@ principles の [separation](../../principles/separation.md) が定める副作�
 ## 非同期
 
 ### 要求
-非同期は async/await で書く。
+非同期は、コールバックの入れ子より追いやすい逐次の形で書く。これを async/await で満たす。
 
 ### 根拠
 async/await は非同期の流れを逐次の形で書け、コールバックの入れ子や Promise の連鎖より追いやすい。

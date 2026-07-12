@@ -7,7 +7,7 @@ principles の [verification](../../principles/verification.md) が定める検�
 ## 実行
 
 ### 要求
-単体・性質・結合のテストの実行は cargo-nextest で行う。
+単体・性質・結合のテストの実行は、状態を汚したテストが兄弟を汚さないよう速く決定的に行う。これを cargo-nextest で満たす。
 doctest は cargo-nextest が対応しないため、`cargo test --doc` で別に実行する。
 
 ### 根拠
@@ -33,8 +33,7 @@ doctest は `cargo test --doc` を CI に別途組む。
 property-based testing は proptest で書き、状態の遷移は proptest の stateful な形で書く。
 
 ### 根拠
-例ベースのテストは、作者が選んだ少数の入力しか踏まない。
-入出力の不変量を性質にし多くの入力を自動で生成すれば、見落とした領域の欠陥が出る。
+[verification](../../principles/verification.md) が定める、例だけを並べるより性質を書いて入力を多数生成すると見落とした場合が見つかるという要求に、proptest の入力生成で応える。
 失敗した入力は最小化され、小さな反例で原因を追える。
 状態の遷移は、操作の列を生成して不変量を確かめる stateful な形で突ける。
 
@@ -66,10 +65,10 @@ proptest! {
 ## 仕様
 
 ### 要求
-業務語彙の executable spec は cucumber の Rust 実装で書く。
+業務語彙の executable spec は、実行可能にして仕様と実装の継ぎ目を消す。これを cucumber の Rust 実装で満たす。
 
 ### 根拠
-業務の語彙で書いた例を実行可能にすれば、仕様とコードが一緒に走り、ずれが検出される。
+[documentation](../../principles/documentation.md) が定める、仕様の記述にプログラミング言語を使えば仕様と実装の継ぎ目が消えるという要求に、cucumber の Rust 実装で応える。
 一つの文書が仕様であり検査でもあるので、片方だけ古くならない。
 
 ### 完了条件
@@ -84,7 +83,7 @@ proptest! {
 ## 実依存
 
 ### 要求
-実依存のコンテナは testcontainers で起動する。
+実依存のコンテナは、本物に近い依存で検証しテストの終わりに片づける。これを testcontainers で満たす。
 
 ### 根拠
 実依存を mock で置き換えると、実際のドライバや SQL の振る舞いを踏まない。
@@ -106,8 +105,7 @@ mutation は cargo-mutants で検査し、検出されなかった mutant が一
 対象と絞り方の床は、structure/tests の methods に従う。
 
 ### 根拠
-カバレッジは行が実行されたかしか測らず、振る舞いが固定されたかを測らない。
-mutation はコードに人工の欠陥を注入し、テストがそれを落とせるかで、テストが本当に振る舞いを固定しているかを測る。
+テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
 アサーションが弱いと、カバレッジが高くても欠陥が生き残る。
 cargo-mutants は生存した mutant の有無を exit code で報告するので、しきい値は「検出されない mutant が無い」という二値の床になる。
 
@@ -150,6 +148,7 @@ skeleton の境界を workspace の crate で分け、依存方向を Cargo の�
 ## 予防
 
 ### 要求
+rustc と clippy の警告は、`[workspace.lints.rust]` の `warnings = "deny"` で CI をエラーとして扱う。
 lint は clippy を `[workspace.lints.clippy]` で強制し、unwrap_used・expect_used を deny にする。
 テストの unwrap・expect は、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可する。
 大きさとネストのしきい値は too_many_lines・excessive_nesting の lint の規則として定め、既定値から緩める変更は project の ADR に明記する。
@@ -159,6 +158,7 @@ SonarQube の profile は cognitive complexity(S3776)に絞り、ローカル li
 unsafe の使用は `[workspace.lints.rust]` の `unsafe_code = "forbid"` で既定禁止にし、unsafe を要する project は理由と局所化した `#[allow(unsafe_code)]` を ADR に記録する。
 
 ### 根拠
+`warnings = "deny"` を workspace の lints に設定すれば、個別に deny を書き漏らした警告も含めて CI が黙って通過しない。
 lint を workspace の lints で強制すれば、規則が全体に一律に効く。
 unwrap_used・expect_used を deny にすれば、想定された失敗を握り潰すコードがビルドで止まる。
 `unsafe_code = "forbid"` を workspace の lints に設定すれば、unsafe の使用が既定でビルドを止め、無秩序な混入を防ぐ。
@@ -170,6 +170,7 @@ SonarQube の cognitive complexity は switch・match の構造化を一度だ�
 既定から緩める判断を ADR に残せば、緩和の理由が追える。
 
 ### 完了条件
+`[workspace.lints.rust]` に `warnings = "deny"` が設定され、rustc と clippy の警告が CI でエラーとして扱われている。
 workspace の lints に、unwrap_used・expect_used の deny の設定がある。
 テストの unwrap・expect が、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可されている。
 大きさとネストのしきい値が、too_many_lines・excessive_nesting の lint の規則として定められている。
@@ -179,12 +180,14 @@ excessive_nesting のしきい値が、project の clippy.toml に定められ A
 unsafe を要する箇所が、`#[allow(unsafe_code)]` で局所化され、project の ADR に記録されている。
 
 ### 禁止事項
+警告を、CI でエラーとして扱わず黙って通過させること。
 大きさと複雑さのしきい値を、既定から黙って緩めること。
 閉じた直和の網羅的な分岐を、複雑度の加点対象にする指標を採ること。
 cognitive complexity を、clippy の cognitive_complexity lint で測ること。
 unsafe を、workspace 全体で `#[allow(unsafe_code)]` して許可すること。
 
 ### 行動
+`[workspace.lints.rust]` に `warnings = "deny"` を設定する。
 `[workspace.lints.clippy]` に unwrap_used・expect_used を deny で設定し、clippy.toml に allow-unwrap-in-tests・allow-expect-in-tests を設定する。
 too_many_lines・excessive_nesting を有効にし、excessive_nesting のしきい値と緩和は project の ADR に明記する。
 `[workspace.lints.rust]` に `unsafe_code = "forbid"` を設定し、unsafe を要する箇所だけ `#[allow(unsafe_code)]` を局所的に付けて ADR に記録する。
@@ -199,6 +202,7 @@ too_many_lines = "warn"
 excessive_nesting = "warn"
 
 [workspace.lints.rust]
+warnings = "deny"
 unsafe_code = "forbid"
 ```
 ```toml
@@ -213,31 +217,35 @@ allow-expect-in-tests = true
 crate ルートに `#![deny(missing_docs)]` を置き、`pub` な要素のドキュメントコメントの欠落をビルドの失敗にする。
 非公開の要素は `clippy::missing_docs_in_private_items` を deny にし、ドキュメントコメントの欠落を検出する。
 `# Errors`・`# Panics`・`# Safety` の節の欠落は、`clippy::missing_errors_doc`・`clippy::missing_panics_doc`・`clippy::missing_safety_doc` を deny にして検出する。
+最初の一行が [conventions](./conventions.md) の体裁(名前の直訳でない体言止め・句読点なし)を満たしているかは、機械検査を未整備のため、当面はレビューで確かめる。
 最初の一行がユビキタス言語と一致しているかは、レビューで確かめる。
 
 ### 根拠
 missing_docs は rustc 組み込みの allow-by-default の lint で、deny にしなければ欠落が検出されない。
 missing_docs は `pub` な要素だけを対象にし、非公開の要素のドキュメントコメントの欠落は検出しないので、`clippy::missing_docs_in_private_items` を別に deny にして非公開の要素を埋める。
-clippy の missing_errors_doc・missing_panics_doc は Result を返す・panic しうる `pub fn` に節の記述を求め、missing_safety_doc は `pub unsafe fn` に `# Safety` を求めるので、formation が要求する節の網羅を公開要素の範囲で機械検査に載せられる。
+clippy の missing_errors_doc・missing_panics_doc は Result を返す・panic しうる `pub fn` に節の記述を求め、missing_safety_doc は `pub unsafe fn` に `# Safety` を求めるので、conventions が要求する節の網羅を公開要素の範囲で機械検査に載せられる。
+最初の一行の体裁は機械検査を持たないため、整備するまでレビューで代替する。
 内容がユビキタス言語と一致しているかの判断は意味を読む必要があり、機械化できない。
 
 ### 完了条件
 crate ルートに `#![deny(missing_docs)]` があり、`pub` な要素のドキュメントコメントの欠落がビルドの失敗になっている。
 非公開の要素のドキュメントコメントの欠落が、`clippy::missing_docs_in_private_items` で検出されている。
 公開要素の `# Errors`・`# Panics`・`# Safety` の欠落が、clippy の missing_errors_doc・missing_panics_doc・missing_safety_doc で検出されている。
+最初の一行の体裁が、機械検査が整うまでレビューで確かめられている。
 最初の一行とユビキタス言語の一致が、レビューで確かめられている。
 
 ### 禁止事項
 `#![deny(missing_docs)]` を、crate 全体の `#![allow(missing_docs)]` で無効化すること。
+最初の一行の体裁のレビューを、機械検査が既にあると偽って省くこと。
 
 ### 行動
 crate ルートに `#![deny(missing_docs)]` を置く。
 `[workspace.lints.clippy]` に `missing_docs_in_private_items`・`missing_errors_doc`・`missing_panics_doc`・`missing_safety_doc` を deny で設定する。
-最初の一行とユビキタス言語の一致は、レビューで確かめる。
+最初の一行の体裁とユビキタス言語の一致は、レビューで確かめる。
 
 ## 規則と検証機構の対応
 
-formation・translation・connection・retention・coordination・publication の各規律を、検証手段へ写像する。
+formation・translation・connection・retention・coordination・publication・conventions の各規律を、検証手段へ写像する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 
 | 実現軸 | 規律 | 検証手段 |
@@ -246,13 +254,14 @@ formation・translation・connection・retention・coordination・publication �
 | formation | 不正な状態を構築できなくする | 型(enum・網羅 match・コンパイラの網羅性検査) |
 | formation | 不変を既定にする | 型(所有権・不変束縛) |
 | formation | 意味と単位を型で区別する | 型(newtype) |
-| formation | 命名と整形を道具に委ねる | analyzer/lint(rustfmt --check、rustc の non_snake_case 系 lint) |
-| formation | 契約をドキュメントコメントに書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・missing_panics_doc・missing_safety_doc で公開要素の節の網羅)+レビュー(ユビキタス言語の一致・最初の一行の体裁) |
-| formation | companion を proc-macro crate に分ける | 構造検査(companion 境界)+型(proc-macro crate type の compiler 制約) |
-| translation | 境界で一度だけ parse してドメイン型へ移す | 型(TryFrom・deny_unknown_fields)+実行テスト(境界の parse の単体テスト) |
-| translation | 公開するエラーを境界で problem+json へ写す | 実行テスト(IntoResponse の単体テスト) |
+| formation | companion を libs の proc-macro crate に分ける | 構造検査(companion 境界)+型(proc-macro crate type の compiler 制約) |
+| conventions | 命名と整形を道具に委ねる | analyzer/lint(rustfmt --check、rustc の non_snake_case 系 lint) |
+| conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・missing_panics_doc・missing_safety_doc で公開要素の節の網羅)+未充足(自作: 最初の一行の体裁の検査)+レビュー(ユビキタス言語の一致) |
+| conventions | 型名の接尾辞を役割で揃える | レビュー |
+| translation | 境界で一度だけ parse してドメイン型へ移す | 型(TryFrom)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
+| translation | 公開するエラーを境界で problem+json へ写す | 実行テスト(IntoResponse の単体テスト・CatchPanicLayer の単体テスト) |
 | translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の CI gate) |
-| connection | 効果を言語の効果型で表す | 型(Future・Result) |
+| connection | 効果を言語の効果型で表す | 型(Future・Result)+レビュー(domain の同期性の判断) |
 | connection | 失敗を Result に、欠陥を panic にする | analyzer/lint(clippy unwrap_used・expect_used deny)+型(Result) |
 | connection | 要求する依存を能力の trait bound で型に出す | 型(trait bound) |
 | connection | port を trait で宣言する | 型(trait)+構造検査(依存方向) |
@@ -270,11 +279,11 @@ formation・translation・connection・retention・coordination・publication �
 | publication | server | 構造検査(自作。認証 layer の位置の検出)+レビュー |
 | publication | BFF | レビュー+実行テスト(cookie 属性の統合テスト) |
 | publication | console | 型(clap の derive) |
-| publication | worker | 構造検査(Cargo 依存の queue backend の単一性検査) |
+| publication | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+レビュー(Data extractor による依存注入の判断) |
 | publication | desktop と mobile の host | レビュー |
 | publication | extension の接続 | 型(tower-lsp の trait 実装)+レビュー |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
 
 ## 参照
-検証の機械化は [verification](../../principles/verification.md)、構造を守る進化は [evolution](../../principles/evolution.md) に従う。
+検証の機械化は [verification](../../principles/verification.md)、構造を守る進化は [evolution](../../principles/evolution.md)、仕様と実装の継ぎ目の解消は [documentation](../../principles/documentation.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

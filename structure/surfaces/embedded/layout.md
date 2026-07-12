@@ -40,7 +40,7 @@ principal を actor へ写像するのは [structure/core/composition](../../cor
 composition は、build_core で core を埋め込み、protocol の listener を公開する。
 自身では起動せず、同梱する host の runtime が起動する。
 生存と準備の面は、protocol の予約した operation で公開する。
-host は準備を確認してから要求を振り分け、停止の合図を受けたら新しい要求の受付をやめる。
+host は準備を確認してから要求を振り分ける。
 lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
 actor への写像は [structure/core/composition](../../core/composition.md) が担う。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。

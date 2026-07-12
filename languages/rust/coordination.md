@@ -9,7 +9,7 @@ principles の [separation](../../principles/separation.md) が定める副作�
 ## runtime
 
 ### 要求
-非同期の runtime は Tokio とする。
+非同期の runtime は、タスクの生成・取り消し・channel の扱いが一貫するよう単一に固定する。これを Tokio で満たす。
 
 ### 根拠
 非同期の runtime を一つに固定すれば、タスクの生成・取り消し・channel の扱いが一貫する。
@@ -144,7 +144,7 @@ await をまたいで lock を保持すると、待っている間に他のタ�
 ### 完了条件
 可変の共有状態が、bounded な mpsc channel を受け取る単一のタスクへ閉じ込められている。
 std の lock が、await をまたいで保持されていない。
-await をまたぐ lock が、tokio::sync の Mutex である。
+await をまたぐ lock が、tokio::sync の Mutex を使っている。
 
 ### 禁止事項
 可変の共有状態を、複数のタスクから直接触ること。

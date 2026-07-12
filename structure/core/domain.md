@@ -35,8 +35,7 @@ domain は、加えてログ、外部 SDK、非同期実行も参照しない。
 業務上の意味をもつ値は、value object で表す。
 識別子、金額、数量、状態、期間はその例である。
 裸の string、number、boolean を業務上の意味に用いない。
-domain が用いてよいのは、domain の型、shared、submodule の純粋な型である。
-submodule の domain は、shared を参照せず、下位の submodule の純粋な型を用いる。
+domain が用いてよいのは、domain の型と shared である。
 domain は、persistence の record、wire 型、DTO、contracts の型を参照しない。
 許可される依存は [layout](./layout.md) の依存方向に、型の設計は [concerns/types](../../concerns/types.md) に、命名は [principles/naming](../../principles/naming.md) に従う。
 
