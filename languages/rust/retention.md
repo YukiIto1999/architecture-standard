@@ -16,7 +16,6 @@ schema の変更は sqlx-cli の `sqlx migrate` で、forward-only の migration
 sqlx はコンパイル時に開発の DB へ接続し、SQL を DB 自身に検証させる。
 SQL を隠す抽象を入れないので、事実の形がそのまま型に写る。
 offline の検証データを CI で照合すれば、スキーマと SQL のずれがビルドで止まる。
-フル ORM は SQL を隠し、生成される SQL が不透明で、取得の仕方の問題を見えなくする。
 sqlx-cli の `sqlx migrate add` は既定で forward-only の migration ファイルを生成し、`sqlx migrate run` が適用済みの履歴を DB 側で追跡する。
 forward-only の規律そのものは [structure/core/infrastructure](../../structure/core/infrastructure.md) に従う。
 

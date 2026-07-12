@@ -3,7 +3,7 @@
 ## 概要
 connection は、TypeScript で副作用と依存の渡し方を扱う実現軸である。
 concerns の [effect](../../concerns/effect.md) が定める効果システムを、viewer・extension・host の軽い役割に合わせて満たす。
-副作用は、環境と AbortSignal を受け ResultAsync を返す遅延した関数で表し、effect-ts のような重い FW は採らない。
+副作用は、環境と AbortSignal を受け ResultAsync を返す遅延した関数で表す。
 [separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の単方向性に従う。
 
 ## 効果を遅延した関数で表す

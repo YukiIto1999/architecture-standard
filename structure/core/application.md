@@ -17,8 +17,7 @@ effect の規律は [concerns/effect](../../concerns/effect.md) に従う。
 ## use-case
 
 use-case は、単一の業務動作である。
-use-case は、port と domain、および shared と submodule の公開面のみに依存する。
-submodule の use-case は、shared を参照せず、下位の submodule の公開面を用いる。
+use-case は、port と domain、および shared のみに依存する。
 use-case は、別の use-case を参照しない。
 use-case の強整合な書き込みは、一つの集約に閉じる。
 複数の集約、または複数の use-case にまたがる流れは [composition](./composition.md) が担う。
@@ -30,7 +29,7 @@ use-case の名前は、単一の動作を表す動詞と名詞の組とする�
 use-case は、入口で入力を parse し、型付きの command として受け取る。
 parse の規律は [concerns/types](../../concerns/types.md) に従う。
 認可は、use-case の入口で評価する。
-認可の判定の port は、AuthZEN の要求と判定の形に従う。
+認可の判定の port は目的で宣言し、engine への写像は adapter が担う。
 認可の規律は [concerns/authorization](../../concerns/authorization.md) に従う。
 
 ## 結果と副作用

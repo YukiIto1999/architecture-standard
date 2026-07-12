@@ -16,12 +16,13 @@ architecture-standard は、ソフトウェアアーキテクチャの標準そ�
 | 領域 | 答える問い | 内容 |
 |---|---|---|
 | [principles](./principles/) | なぜ | 設計判断の土台となる言語非依存の原則。構成・規律・表現の3群 |
-| [concerns](./concerns/) | 全体を貫く規律は何か | システム全体を通す概念ごとの規律。15概念 |
+| [concerns](./concerns/) | 全体を貫く規律は何か | システム全体を通す概念ごとの規律。17概念 |
 | [structure](./structure/) | 各部をどう組むか | ターゲットプロジェクトの骨格と各部の構造 |
 | [languages](./languages/) | 言語でどう実現するか | 言語ごとの採用機構とイディオム |
+| [tools](./tools/) | 何を使うか、どう選ぶか | 用途ごとの採用と判断基準。language・stack・inspection・services・platforms の5分割 |
 
 参照は、具象から抽象への一方向に保つ。
-languages は structure・concerns・principles に、structure は concerns・principles に、concerns は principles に従う。
+tools は languages・structure・concerns・principles に、languages は structure・concerns・principles に、structure は concerns・principles に、concerns は principles に従う。
 具象の側から、より抽象の側への参照は、常に適法である。
 抽象の側は、機構の置き場として具象の側を指すだけで、具象の内容に依存しない。
 具象の側は、抽象が定めた規律を再定義しない。
@@ -32,7 +33,7 @@ docs/ は、決定・調査・議事録・レビューの材料であり、標�
 ## 矛盾の解決
 
 記述が層をまたいで矛盾したときは、抽象側の記述を正とする。
-優先は principles、concerns、structure、languages の順である。
+優先は principles、concerns、structure、languages、tools の順である。
 同じ層の中の矛盾は、その層の README が正本と指すファイルを正とする。
 root の構成は skeleton が、各部の内部は各 layout が、概念の規律は当該概念のファイルが、言語の機構は該当する実現軸のファイルが正本である。
 適用の場では、この順で選んだ記述に従って作業を続ける。
@@ -59,9 +60,10 @@ root の構成は skeleton が、各部の内部は各 layout が、概念の規
 2. 各関心は、変更理由が及ぶ最も広いスコープに1度だけ置く。狭い層は参照するだけで、再定義しない。
 3. 置き場は次の順で判定し、最初に該当した所へ置く。
    1. 値・なぜ → principles/
-   2. 特定言語の実現 → languages/
-   3. ちょうど1つの部の境界・中身 → structure/
-   4. 複数の部にまたがる、または全層に効く → concerns/
+   2. 採用と判断基準 → tools/
+   3. 特定言語の実現 → languages/
+   4. ちょうど1つの部の境界・中身 → structure/
+   5. 複数の部にまたがる、または全層に効く → concerns/
 
 ## 適用の3則
 
@@ -71,6 +73,8 @@ root の構成は skeleton が、各部の内部は各 layout が、概念の規
 2. 監査と適用の範囲は、対象リポジトリの全域を既定とする。範囲を狭めるには、明示の指示を要する。
 3. 標準の本文と依頼者の意図が割れたら、本文で意図を上書きせず、依頼者に確認する。
 
+検証の合否は CI の実測で判定し、自己申告で通さない。
+
 ## 利用
 
 ### 標準の参照
@@ -79,6 +83,7 @@ root の構成は skeleton が、各部の内部は各 layout が、概念の規
 AI エージェントには、この標準リポジトリの場所を渡し、規律は本文を読ませて適用する。
 project は、準拠の基準にした標準の commit を、project の ADR に記録する。
 監査は、記録された commit の標準を基準に照合する。
+project は、標準への改訂提案を project の docs/revision に置く。
 project の入口の文書は、次の3点だけを書き、標準の内容を転写しない。
 
 ```text
@@ -94,7 +99,8 @@ project の入口の文書は、次の3点だけを書き、標準の内容を�
 3. 置いた境界ごとに、対応する layout に従って内部を組む。
 4. 設計判断の都度、principles の要求・禁止事項と、関係する concerns の完了条件・禁止事項に照合する。
 5. languages の7つの実現軸で、言語の機構を固定する。
-6. [structure/tests](./structure/tests/layout.md) の機械検証と [structure/pipeline](./structure/pipeline.md) のゲートを設置する。
+6. [structure/tests](./structure/tests/layout.md) の機械検証を設置する。
+7. 決定は docs/adr に ADR として記録しながら進める。
 
 ### 監査
 
@@ -125,3 +131,4 @@ project の入口の文書は、次の3点だけを書き、標準の内容を�
 principles と concerns は、要求で意図を捉え、完了条件と禁止事項で照合する。
 structure は、構成・依存方向・各 layout の固有規律で判定する。
 languages は、採用機構と各規律の完了条件で判定する。
+tools は、採用と判断基準で判定する。

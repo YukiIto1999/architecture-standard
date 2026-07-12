@@ -28,7 +28,9 @@ deploy は、特定の配備先に縛られない。
 配備先ごとの違いは、infrastructure と delivery の定義に閉じ込める。
 具体の platform と tool は標準に固定せず、project が単一の採用を ADR に明記する。
 利用者の端末で動く成果物(desktop・extension・console など)を store や marketplace で配布する経路は、deploy の配備先に含めない。
-配布は、[pipeline](../pipeline.md) の release が作った成果物を、配布 channel の提出手順へ渡す形で行う。
+配布は、release の成果物を、配布 channel の提出手順へ渡す形で行う。
+配布と更新は、配布 channel や store などの配布機構に任せ、自前の更新機構を作らない。
+release する成果物の供給網の保証は [concerns/security](../../concerns/security.md) に従う。
 
 ## infrastructure
 
@@ -43,8 +45,7 @@ infrastructure の内部は、配備先の単位ごとに分ける。
 
 delivery は、immutable な成果物を配備先へ反映する。
 成果物の標準の形は、container artifact とする。
-成果物は、版で識別し、配備後に書き換えない。
-成果物の semantic versioning による版づけと generated の drift 検査は、[pipeline](../pipeline.md) が担う。
+成果物の semantic versioning による版づけと不変性は [concerns/security](../../concerns/security.md) に、generated の drift 検査は [contracts/generated](../contracts/generated.md) に従う。
 配備先の desired state を、宣言として版で管理する。
 running な配備先を、手続きで直接書き換えない。
 配備の回帰は、新しい版を切るのでなく、前の不変な版の desired state へ宣言を戻して反映する。
@@ -52,9 +53,9 @@ running な配備先を、手続きで直接書き換えない。
 反映時の生存と準備の規律は [concerns/lifecycle](../../concerns/lifecycle.md) に従う。
 delivery の内部は、反映する配備先の単位に対応させて分ける。
 一つの配備先への反映定義を一つの単位にまとめる。
-datastore の schema migration は、新しい版のアプリケーションへ切り替える前に適用し、切り替え後も migration 前後どちらの版のアプリケーションが動いていても壊れないことを、反映の前提とする。
+datastore の schema migration は、新しい版のアプリケーションへ切り替える前に適用する。
 migration の実施は delivery の反映手順の一部とし、アプリケーションの起動処理へ埋め込まない。
-migration が満たす段階の区切りは [concerns/persistence](../../concerns/persistence.md) に従う。
+migration が満たす拡張・移行・収縮の段の区切りは [concerns/persistence](../../concerns/persistence.md) に従う。
 
 ## provenance
 
@@ -65,6 +66,6 @@ attestation は、署名と内容を検証するまで、安全の証明にな�
 
 ## secrets
 
-secrets は、secret を SOPS(鍵は age)で at-rest 暗号化して保つ。
-secret を、平文で置かない。
+secrets は、secret を at-rest 暗号化して保つ。
+暗号化の機構の採用は、[tools/platforms](../../tools/platforms.md) に従う。
 secret の型・読み込み・回転・失効・監査は、[concerns/configuration](../../concerns/configuration.md) に従う。

@@ -3,10 +3,10 @@
 concerns は、言語非依存の概念ごとの規律を置く。
 principles の原則を、全系を通す概念の高度で具象化する。モジュール設計の詳細(認証認可・DB/テーブル・型など)はここに来る。
 
-## 既存の15概念
+## 既存の17概念
 
-effect・concurrency・dependency・types・persistence・transaction・messaging・authentication・authorization・observability・security・configuration・resilience・lifecycle・experience。
-新概念を足す前に、この15に当たる所がないかを必ず確かめる。当たれば足す、当たらなければ抜けなので新設する。
+effect・concurrency・dependency・types・persistence・transaction・messaging・authentication・authorization・observability・privacy・security・configuration・resilience・performance・lifecycle・experience。
+新概念を足す前に、この17に当たる所がないかを必ず確かめる。当たれば足す、当たらなければ抜けなので新設する。
 
 ## 拠り所(概念ごとに一次資料へ)
 
@@ -28,7 +28,8 @@ languages の機構の話もしない。
 
 ## この層の MECE 点検
 
-- 言語機構・製品名・方言(sqlx・EF・tokio・zod・ON CONFLICT など)が本文や例に漏れていないか(漏れていれば languages へ)。
+- 言語機構・方言(sqlx・EF・tokio・zod・ON CONFLICT など)が本文や例に漏れていないか(漏れていれば languages へ)。
+- 市場から選ぶ製品の採用や選定理由が漏れていないか(漏れていれば tools へ。規格・プロトコル名は対象外)。
 - principles の原則文を再述していないか(根拠の高度がぶれていれば概念の具象化へ寄せる)。
 - 他の概念と同じ規律を重複させていないか(一つが所有し他は参照。例: outbox は transaction が所有、messaging は配送に絞り参照)。
 - 規律名が単一意味軸か(二主題が混ざっていれば分割)。

@@ -34,8 +34,7 @@ CS4014 が、WarningsAsErrors でエラー扱いになっている。
 property-based testing は CsCheck で書き、状態の遷移は CsCheck の stateful な形で書く。
 
 ### 根拠
-例ベースのテストは、作者が選んだ少数の入力しか踏まない。
-入出力の不変量を性質にし多くの入力を自動で生成すれば、見落とした領域の欠陥が出る。
+[verification](../../principles/verification.md) が定める、例だけを並べるより性質を書いて入力を多数生成すると見落とした場合が見つかるという要求に、CsCheck の入力生成で応える。
 失敗した入力は最小化され、seed で再現できる。
 状態の遷移は、操作の列を生成して実体とモデルの等価を確かめる stateful な形で突ける。
 
@@ -62,11 +61,11 @@ Gen.Int.Array.Sample(values => values.Reverse().Reverse().SequenceEqual(values))
 ## 仕様
 
 ### 要求
-業務語彙の executable spec は Reqnroll で書く。
+業務語彙の executable spec は、実行可能にして仕様と実装の継ぎ目を消す。これを Reqnroll で満たす。
 Reqnroll の実行基盤は Reqnroll.TUnit を使い、単体・性質と同じ TUnit に一本化する。
 
 ### 根拠
-業務の語彙で書いた例を実行可能にすれば、仕様とコードが一緒に走り、ずれが検出される。
+[documentation](../../principles/documentation.md) が定める、仕様の記述にプログラミング言語を使えば仕様と実装の継ぎ目が消えるという要求に、Reqnroll で応える。
 一つの文書が仕様であり検査でもあるので、片方だけ古くならない。
 Reqnroll は自前のテスト実行系を持たず、xUnit・NUnit・MSTest・TUnit のいずれかの実行基盤を要する。
 Reqnroll.TUnit を使えば、仕様の実行基盤が単体・性質と同じ TUnit に揃い、実行基盤を二つに割らずに済む。
@@ -85,7 +84,7 @@ Reqnroll.TUnit を参照し、実行基盤を TUnit に揃える。
 ## 実依存
 
 ### 要求
-実依存のコンテナは Testcontainers for .NET で起動する。
+実依存のコンテナは、本物に近い依存で検証しテストの終わりに片づける。これを Testcontainers for .NET で満たす。
 
 ### 根拠
 実依存を mock で置き換えると、実際のドライバや SQL の振る舞いを踏まない。
@@ -103,13 +102,12 @@ Testcontainers で実依存のコンテナを起動すれば、本物に近い�
 ## 有効性
 
 ### 要求
-mutation は Stryker.NET で検査する。
+mutation は、テストが振る舞いを本当に固定しているかを人工の欠陥注入で測る。これを Stryker.NET で満たす。
 Stryker.NET の test-runner は mtp に設定し、TUnit のテストを発見させる。
 対象と絞り方の床は、structure/tests の methods に従う。
 
 ### 根拠
-カバレッジは行が実行されたかしか測らず、振る舞いが固定されたかを測らない。
-mutation はコードに人工の欠陥を注入し、テストがそれを落とせるかで、テストが本当に振る舞いを固定しているかを測る。
+テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
 Stryker.NET の既定の test-runner は vstest で、TUnit は Microsoft.Testing.Platform 専用のため既定では接続せず、テストの発見が 0 件のまま mutation が空転する。
 test-runner を mtp に設定すれば、TUnit のテストを発見して mutation を実行できる。
 
@@ -134,7 +132,7 @@ Stryker.NET の test-runner を mtp に設定し、TUnit のテストを発見�
 依存方向と境界の禁止は ArchUnitNET で検証し、namespace を層と単位に対応させて、層の参照禁止・公開面・副作用の参照禁止を規則として書く。
 
 ### 根拠
-依存方向と境界の禁止を実行できる検査として書けば、構造の劣化が検査で止まる。
+[verification](../../principles/verification.md) が定める、依存の向きやレイヤー越境は実行できるテストとして強制するという要求に、ArchUnitNET で応える。
 namespace を層と単位に対応させれば、層の参照禁止や副作用の参照禁止を規則として表せる。
 規則をテストとして回せば、違反でビルドが止まる。
 ArchUnitNET の namespace の走査は型を介さない静的な呼び出しを見ないので、その禁止は Microsoft.CodeAnalysis.BannedApiAnalyzers などの banned API の lint に割り当てる。
@@ -163,13 +161,14 @@ Types().That().ResideInNamespace("App.Domain")
 linter は SonarAnalyzer.CSharp を使い、nullable reference types と analyzer の警告を CI でエラーとして扱う。
 ファイル・関数の大きさとネストの深さのしきい値は SonarAnalyzer.CSharp の S104(ファイル)・S138(関数)・S134(ネスト)の規則として定め、既定値から緩める変更は project の ADR に明記する。
 認知的複雑さは SonarQube の cognitive complexity(S3776)で測り、SonarAnalyzer.CSharp のビルド時 lint 側では複雑度の規則を重ねて有効にしない。
+SonarQube の profile は cognitive complexity(S3776)に絞り、ローカル lint と同目的の規則を重ねない。
 
 ### 根拠
 nullable reference types と analyzer の警告をエラーにすれば、不在の取り違えや規則の違反がビルドで止まる。
-SonarAnalyzer.CSharp は cognitive complexity(S3776)を実装する数少ない候補で保守も活発なため、linter として単一に採用する。
 S104・S138・S134 は、ファイル・関数の大きさとネストの深さを早く気づかせる。
 S3776 を SonarQube の quality gate と SonarAnalyzer.CSharp のビルド時 lint の双方で有効にすると同じ規則を二重に測ることになるため、複雑度は SonarQube 側だけで測る。
 SonarQube の cognitive complexity は switch の構造化を一度だけ加点し case の数に比例しないので、閉じた階層の網羅的な switch を罰しない。
+SonarQube の profile を cognitive complexity だけに絞れば、SonarAnalyzer.CSharp が既に検査する命名や未使用変数などの規則を SonarQube 側で重ねて測ることがない。
 既定から緩める判断を ADR に残せば、緩和の理由が追える。
 
 ### 完了条件
@@ -178,16 +177,19 @@ SonarAnalyzer.CSharp が、linter として使われている。
 ファイル・関数の大きさとネストの深さのしきい値が、S104・S138・S134 の規則として定められている。
 緩和が、project の ADR に明記されている。
 SonarAnalyzer.CSharp のビルド時 lint 側で、複雑度の規則が有効になっていない。
+SonarQube の profile が、cognitive complexity に絞られている。
 
 ### 禁止事項
 大きさと複雑さのしきい値を、既定から黙って緩めること。
 閉じた階層の網羅的な switch を、複雑度の加点対象にする指標を採ること。
 cognitive complexity を、SonarAnalyzer.CSharp のビルド時 lint と SonarQube の quality gate の両方で有効にすること。
+SonarQube の profile に、ローカル lint と同目的の規則を重ねて有効にすること。
 
 ### 行動
 nullable reference types を有効にし、警告を CI でエラーにする。
 SonarAnalyzer.CSharp を linter として導入し、S104・S138・S134 のしきい値を定める。
 複雑度は SonarQube の quality gate に一本化し、緩和は ADR に明記する。
+SonarQube の profile は cognitive complexity だけに絞る。
 
 ## ドキュメントコメントの検査
 
@@ -200,7 +202,7 @@ summary の体言止め・句読点禁止・一行の体裁と、param・typepar
 ### 根拠
 CS1591 は `GenerateDocumentationFile` を有効にしたときだけ発火する既定 level 4 の警告で、エラー扱いにしなければビルドを止めない。
 NoWarn は CS1591 を丸ごと無効化し、欠落の検出そのものを消す。
-体裁と網羅を検査する既製の analyzer(StyleCop.Analyzers・Meziantou.Analyzer・SonarAnalyzer.CSharp)はいずれも保守停止か、この標準の体裁要求を実装しておらず、companion の自作 analyzer だけが実現できる。
+体裁と網羅の検査は companion の自作 analyzer で実現する。
 内容がユビキタス言語と一致しているかの判断は意味を読む必要があり、機械化できない。
 
 ### 完了条件
@@ -219,7 +221,7 @@ companion に体裁と網羅の analyzer を実装し、CI で検査する。
 
 ## 規則と検証機構の対応
 
-formation・translation・connection・retention・coordination・publication の各規律を、検証手段へ写像する。
+formation・translation・connection・retention・coordination・publication・conventions の各規律を、検証手段へ写像する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 
 | 実現軸 | 規律 | 検証手段 |
@@ -229,17 +231,18 @@ formation・translation・connection・retention・coordination・publication �
 | formation | 継承を判別共用体に限る | レビュー(継承の目的の判断) |
 | formation | 不変を既定にする | 型(init 専用プロパティ) |
 | formation | 意味と単位を型で区別する | 型(record) |
-| formation | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、SonarAnalyzer.CSharp の命名規則) |
-| formation | 契約をドキュメントコメントに書く | analyzer/lint(CS1591 エラー化・companion)+レビュー(意味の妥当性) |
-| formation | companion をビルド時のツールとして分ける | 構造検査(companion 境界)+型(netstandard2.0 の Analyzer 参照制約) |
-| translation | 境界で一度だけ parse してドメイン型へ移す | 型(JsonSerializerContext・required・JsonUnmappedMemberHandling)+実行テスト(境界の parse の単体テスト) |
+| formation | companion を libs の機構として netstandard2.0 プロジェクトに分ける | 構造検査(companion 境界)+型(netstandard2.0 の Analyzer 参照制約) |
+| conventions | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、SonarAnalyzer.CSharp の命名規則) |
+| conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化・companion)+レビュー(意味の妥当性) |
+| conventions | 型名の接尾辞を役割で揃える | レビュー |
+| translation | 境界で一度だけ parse してドメイン型へ移す | 型(JsonSerializerContext・required・JsonExtensionData)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | translation | 公開するエラーを境界で problem+json へ写す | 実行テスト(ProblemDetails の単体テスト) |
 | translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の CI gate) |
 | connection | 効果を Effect 型で組む | 型(readonly struct・delegate の内包)+analyzer(companion。default(Effect) 構築の検出) |
 | connection | 効果の生成と combinator と資源を備える | 型(static factory・combinator のシグネチャ)+実行テスト(AcquireRelease の単体テスト) |
 | connection | 終了を成功と失敗と欠陥と取り消しに分ける | 型(sealed record 階層の EffectExit)+構造検査(formation の階層外派生の検出に従う) |
-| connection | 要求する依存を型に出す | 型(IEffectRequirements・generic constraints) |
-| connection | 効果を境界で実行し analyzer で縛る | analyzer(companion。実行境界の限定・時刻の直呼びの禁止) |
+| connection | 要求する依存を型に出す | 型(IEffectRequirements・generic constraints)+analyzer(companion。NoRequirements への迂回の検出) |
+| connection | 効果を境界で実行し companion で縛る | analyzer(companion。実行境界の限定・R の合成環境の生成・Bind 連鎖の要求包含の検査・原始効果の閉じ込め・NoRequirements への迂回の禁止) |
 | connection | port を interface で宣言する | 型(interface) |
 | connection | 配線を composition root に限る | 構造検査(自作。IServiceProvider の直接解決の検出)+レビュー |
 | retention | 型付き SQL | analyzer(DapperAOT の DAP214・DAP236)+実行テスト(型・nullable の照合テスト) |
@@ -263,5 +266,5 @@ formation・translation・connection・retention・coordination・publication �
 | publication | 可視性 | 型(internal・file 修飾子) |
 
 ## 参照
-検証の機械化は [verification](../../principles/verification.md)、構造を守る進化は [evolution](../../principles/evolution.md) に従う。
+検証の機械化は [verification](../../principles/verification.md)、構造を守る進化は [evolution](../../principles/evolution.md)、仕様と実装の継ぎ目の解消は [documentation](../../principles/documentation.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

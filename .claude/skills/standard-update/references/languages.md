@@ -7,9 +7,10 @@ languages は、principles・concerns・structure の上位規律に従属する
 
 ## 構成と役割
 
-3つの言語に、7つの実現軸を置く。
+3つの言語に、7つの実現軸と1つの全域規律を置く。
 rust(edition 2024)・csharp(.NET 10・C# 14)・typescript(TypeScript 6.0)。
 実現軸は formation・translation・connection・retention・coordination・publication・inspection。
+全域規律の conventions(命名・整形・ドキュメントコメント・型名接尾辞)は、コード上の置き場を持たず、全ての実現軸に一様に適用する。
 役割の非対称を保つ。rust と csharp はサーバ側(永続化を持ち、problem+json を出す)、typescript はクライアント・viewer 側(永続化を持たず状態を管理し、problem+json を受けて 4xx と 5xx を分ける)。
 
 ## 拠り所
@@ -37,16 +38,17 @@ rust(edition 2024)・csharp(.NET 10・C# 14)・typescript(TypeScript 6.0)。
 repo で決まっている採用を勝手に別物へ変えない。
 新しいツールを採るのは決定であり、project の ADR に採用理由・撤回条件・単一採用を明記する形にする。
 既存の採用の一覧を、この文書へ写さない。
-写すと languages/ 本文との二重管理になり、片方だけが更新されてずれる。
-正本は languages/ 本文(各言語の各実現軸のファイル)である。
-既存の採用を確かめるときは、対象の実現軸のファイルを直接読む。
-採用を変える・足すときは、正本のファイルを編集し、この文書は変えない。
-未充足を見つけたら、[gaps](../../../../languages/gaps.md) の台帳を更新する。
+写すと tools/languages の本文との二重管理になり、片方だけが更新されてずれる。
+機構の採用・選定理由・撤回条件の正本は [tools](../../../../tools/README.md) であり、languages/ 本文は採用された機構をその言語の実現軸でどう使うかだけを持つ。
+既存の採用を確かめるときは、対象の tools のファイルと、対象の実現軸のファイルを直接読む。
+採用を変える・足すときは、tools の該当ファイルを編集し、languages 側は使い方の記述だけを追随させる。
+未充足を見つけたら、[gaps](../../../../docs/reflect/languages-gaps.md) の台帳を更新する。
 
 ## 重複と漏れの点検
 
 - 上位規律の原則や概念を再定義していないか(再定義していれば principles/concerns へ戻し、languages は機構の実現に絞る)。
 - 概念の決定を languages で下していないか(決定は concerns、languages は実現)。
+- 選定理由・比較・却下理由を languages に書いていないか(書いていれば tools へ移し、languages は採用された機構の使い方に絞る)。
 - 役割の非対称が崩れていないか(サーバ側とクライアント側の責務が混ざっていないか)。
 - 版に依存する事実が正しいか(古い・将来の機能を現行版の機能として書いていないか)。
 - 実コードがその言語・版でそのまま通るか。

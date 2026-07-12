@@ -32,7 +32,7 @@ worker の外との依存は [skeleton](../../skeleton.md) に従う。
 
 ## job と use-case
 
-job は、core の use-case か、composition が submodule の port へ駆動する operation を呼び出す。
+job は、core の use-case か、composition が libs の機構の port へ駆動する operation を呼び出す。
 job は、業務判断を持たず、配線された処理を呼ぶだけである。
 job は、queue や schedule の機構の型を core へ持ち込まず、use-case の入力へ写像する。
 job は、command の識別子を冪等キーとして持ち、冪等に実行する。
@@ -53,7 +53,6 @@ queue と schedule の engine は、project の選択の対象でなく、langua
 
 上限・分類・記録の規律は [concerns/resilience](../../../concerns/resilience.md) に従う。
 上限まで失敗した job と、恒久的な失敗と分類した job は、queue から除き、archive の表へ移す。
-archive の保持は、queue の保持より長くする。
 
 ## 組み立てと起動
 
@@ -61,10 +60,8 @@ composition は、build_core で core を埋め込み、自身でプロセスを
 composition は、job の文脈を request context として組み立て、core へ渡す。
 actor への写像は [structure/core/composition](../../core/composition.md) が担う。
 worker は、生存と準備の面を公開する。
-停止の合図を受けたら、新しい job の取り出しをやめる。
 期限の中で終わらない job は、queue へ返す。
 lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
-観測の仕込みは、境界の殻で行う。
 観測の規律は [concerns/observability](../../../concerns/observability.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。

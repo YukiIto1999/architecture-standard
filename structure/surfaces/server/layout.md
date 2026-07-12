@@ -37,7 +37,6 @@ server の外との依存は [skeleton](../../skeleton.md) に従う。
 handler は、http の要求を use-case へ写像する。
 handler は、業務判断を持たず、入力の変換と use-case の呼び出しだけを行う。
 API の様式と表現の形式は [contracts/http](../../contracts/http.md) に、操作の意味は [contracts/canonical](../../contracts/canonical.md) に従う。
-認可は、要求ごとに use-case の入口で評価する。
 認可の規律は [concerns/authorization](../../../concerns/authorization.md) に従う。
 port は [structure/core/application](../../core/application.md) に、engine は [structure/core/infrastructure](../../core/infrastructure.md) に従う。
 
@@ -54,8 +53,7 @@ security header の仕込みは、境界の層に置き、業務の処理へ持�
 CSP・HSTS などの security header を、境界で一括して付ける。
 cookie に __Host- 接頭辞を使う。
 外部との境界は、TLS を前提にする。
-公開する面には、境界で流入の上限を設ける。
-規律は [concerns/resilience](../../../concerns/resilience.md) に従う。
+境界の流入の上限は [concerns/resilience](../../../concerns/resilience.md) に従う。
 流入制限のカウンタは、一時データの store に bff の adapter として持つ。
 ストアの採用は [concerns/persistence](../../../concerns/persistence.md) に従う。
 応答は、定めた形式の encoder で組み立て、文字列の連結で作らない。
@@ -63,14 +61,12 @@ cookie に __Host- 接頭辞を使う。
 
 ## 観測
 
-観測の仕込みは、境界に置く。
 観測と request context の規律は [concerns/observability](../../../concerns/observability.md) に従う。
 
 ## 生存と準備
 
 server は、生存と準備の面を公開する。
 面の handler は routes に置かず、composition が組み立てる。
-準備の判定は、core と依存の疎通の確認を含めてよい。
 判定と応答の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
 
 ## 組み立てと起動
@@ -79,7 +75,6 @@ composition は、build_core で core を埋め込む。
 http の serve を組み立て、自身でプロセスを起動する。
 composition は、認証の結果から request context を組み立て、core へ渡す。
 principal の actor への写像は [structure/core/composition](../../core/composition.md) が担う。
-停止の合図を受けたら、http の受付をやめる。
 終了の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。

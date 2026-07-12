@@ -53,8 +53,8 @@ protocol 経路の適合は、生成物と実装の drift の検査と conforman
 依存方向と参照の禁止は、構造の検査で機械検証する。
 公開面は、言語の可視性の機構と構造の検査で守る。
 結合・循環・規模などのアーキテクチャ特性は、客観の尺度の適応度関数として測り、閾値を超えたら不合格とする。
-特性を客観の尺度で測る規律は [principles/verification](../../principles/verification.md) に従い、合否を release のゲートに束ねる運用は [pipeline](../pipeline.md) が定める。
-全単位(module・submodule・surface・runtime)が検査対象として列挙されていることを、実フォルダとの照合で機械確認する。
+特性を客観の尺度で測る規律は [principles/verification](../../principles/verification.md) に従う。
+全単位(コンテキスト・機構・surface・runtime)が検査対象として列挙されていることを、実フォルダとの照合で機械確認する。
 単位を追加したときに検査の対象へ自動で追従しない構成を、置かない。
 構造で検証できない規則は、型と lint・実行テスト・人手レビューのいずれかに割り当てる。
 structure と languages の各規律は、検証手段を名指しで持つ。
@@ -65,13 +65,13 @@ structure と languages の各規律は、検証手段を名指しで持つ。
 
 テストの有効性は、mutation で検査する。
 mutation を絞る場合は、変異演算子と低リスク要素(参照データ表・等価変異)に限る。
-層や module を丸ごと対象から外すことを、しない。
+層やコンテキストを丸ごと対象から外すことを、しない。
 業務 domain と純粋ロジック全体は、composition の写像を含めて検査の対象に含める。
 検査を失敗させるしきい値は、0 でない正の値に定める。
 mutation は CI に配線し、しきい値を割ったら失敗で止める。
 snapshot を、主たる検証にしない。
 AI が生成したテストを、有効性の検査なしに受け入れない。
-検証の合否は、CI の実行結果で判定し、実装者や AI の自己申告で通さない。
+検証の合否の判定は [README](../../README.md) に従う。
 テストの緩和は、人間が承認する。
 型と lint は、予防として用いる。
 
@@ -80,7 +80,6 @@ AI が生成したテストを、有効性の検査なしに受け入れない�
 この標準は、振る舞いと構造の正しさの検証を対象とする。
 性能と負荷の SLO の検証は対象外とし、信頼性の目標は [concerns/resilience](../../concerns/resilience.md)、本番の観測は [concerns/observability](../../concerns/observability.md) に従う。
 chaos と並行の race は対象外とし、過負荷と障害への耐性は [concerns/resilience](../../concerns/resilience.md)、全停止の回避は [concerns/lifecycle](../../concerns/lifecycle.md) に従う。
-security の専用の検証は対象外とし、設計上の安全姿勢は [concerns/security](../../concerns/security.md) に従う。依存部品の既知の脆弱性は、pipeline が供給網のゲートで検査する。
+security の専用の検証は対象外とし、設計上の安全姿勢と供給網の保証は [concerns/security](../../concerns/security.md) に従う。
 AI エージェントの統制と prompt の検証は、対象外とする。
-検証の合否を release のゲートに束ねる運用は、[pipeline](../pipeline.md) が定める。
 言語ごとの具体のツールは [languages](../../languages/) に従う。

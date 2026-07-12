@@ -7,18 +7,18 @@ principles の [separation](../../principles/separation.md) が定める境界�
 ## server
 
 ### 要求
-server は ASP.NET Core の Minimal API で組み、endpoint の登録は module ごとの登録に分ける。
+server は ASP.NET Core の Minimal API で組み、endpoint の登録はコンテキストごとの登録に分ける。
 境界の仕込みは middleware で一括して積み、認証を認可の前に、認可を業務の前に置く。
 
 ### 根拠
-endpoint の登録を module ごとに分ければ、面が変更理由ごとに分かれ、module が自分の endpoint を所有する。
+endpoint の登録をコンテキストごとに分ければ、面が変更理由ごとに分かれ、コンテキストが自分の endpoint を所有する。
 境界の仕込みを middleware で一括して積めば、横断の関心が入口に集まる。
 認証を認可の前に置けば、principal が確立してから認可が評価できる。
 認可を業務の前に置けば、拒否が業務に届く前に止まる。
 
 ### 完了条件
 server が、Minimal API で組まれている。
-endpoint の登録が、module ごとの登録に分かれている。
+endpoint の登録が、コンテキストごとの登録に分かれている。
 境界の仕込みが middleware で一括して積まれ、認証・認可・業務の順序になっている。
 
 ### 禁止事項
@@ -26,7 +26,7 @@ endpoint の登録が、module ごとの登録に分かれている。
 endpoint を、一箇所にまとめてベタ書きすること。
 
 ### 行動
-endpoint の登録を module ごとの拡張メソッドに分け、Program.cs は合成だけにする。
+endpoint の登録をコンテキストごとの拡張メソッドに分け、Program.cs は合成だけにする。
 middleware を認証・認可・業務の順に積む。
 
 ### 例
@@ -34,7 +34,7 @@ middleware を認証・認可・業務の順に積む。
 // 認可を認証より前に置く。principal が未確立で評価される
 app.UseAuthorization(); app.UseAuthentication();
 
-// 認証・認可の順に積み、endpoint は module ごとに登録する
+// 認証・認可の順に積み、endpoint はコンテキストごとに登録する
 app.UseAuthentication(); app.UseAuthorization(); app.UseAntiforgery();
 app.MapTodoEndpoints(); app.MapUserEndpoints();
 public static RouteGroupBuilder MapTodoEndpoints(this IEndpointRouteBuilder app) =>
@@ -45,8 +45,8 @@ public static RouteGroupBuilder MapTodoEndpoints(this IEndpointRouteBuilder app)
 
 ### 要求
 中継は YARP を使い、session は ASP.NET Core の cookie 認証、OIDC は標準の handler を使う。
-token の管理は Duende.AccessTokenManagement を使い、Duende の商用製品(BFF・IdentityServer)には踏み込まない。
-CSRF は double-submit の検査で行う。
+token の管理は Duende.AccessTokenManagement を使う。
+CSRF の検査は [concerns/authentication](../../concerns/authentication.md) に従う。
 access token と refresh token は server 側に保持し、ブラウザへは session を指す識別子だけを持つ認証の cookie を渡す。
 認証チケットは `ITicketStore` で `CookieAuthenticationOptions.SessionStore` に差し、retention の Valkey に保持する。
 
@@ -54,14 +54,13 @@ access token と refresh token は server 側に保持し、ブラウザへは s
 `SaveTokens=true` は既定で token を `AuthenticationProperties` に載せ、`SessionStore` を差さない cookie 認証はその `AuthenticationProperties` を含む認証チケットをそのまま cookie に暗号化して詰める。
 `SessionStore` に `ITicketStore` を差せば、cookie は session を指す識別子だけになり、token を含む認証チケットは server 側の store に残る。
 YARP が同一オリジンの中継で token を付与すれば、ブラウザは token を持たずに resource へ届く。
-Duende.AccessTokenManagement は Apache License 2.0 の OSS で、token の保持と更新を server 側で担う。
-double-submit の検査は、cookie の値と要求に別途載せた値の一致を確かめ、cookie を借りただけの第三者の要求を拒む。
+Duende.AccessTokenManagement は、token の保持と更新を server 側で担う。
 
 ### 完了条件
 中継が YARP で、session が cookie 認証、OIDC が標準の handler で行われている。
-token の管理が Duende.AccessTokenManagement で行われ、Duende の商用製品に踏み込んでいない。
+token の管理が Duende.AccessTokenManagement で行われている。
 access token・refresh token が server 側の `ITicketStore` に保持され、ブラウザへ渡る cookie が session を指す識別子だけである。
-CSRF が、double-submit の検査で防がれている。
+CSRF の検査が、[concerns/authentication](../../concerns/authentication.md) の方式で行われている。
 
 ### 禁止事項
 access token・refresh token を、ブラウザへ渡すこと。
@@ -73,7 +72,7 @@ cookie の HttpOnly・Secure・SameSite を、緩めること。
 OIDC を code と PKCE で server で終端し、token を server 側に保持する。
 `CookieAuthenticationOptions.SessionStore` に `ITicketStore` の実装を差し、認証チケットを retention の Valkey に保持する。
 YARP で同一オリジンの中継を行い、cookie を HttpOnly・Secure・SameSite=Strict にする。
-CSRF を double-submit で防ぐ。
+CSRF の検査は [concerns/authentication](../../concerns/authentication.md) に従って実装する。
 
 ### 例
 ```csharp
@@ -226,7 +225,7 @@ viewer を HybridWebView の中で動かし、C# の core を back-end にする
 ## extension の接続
 
 ### 要求
-extension が接続する core のプロセスは StreamJsonRpc で公開する。
+extension が接続する core のプロセスは、外へ出すのを小さい契約だけにして公開する。これを StreamJsonRpc で満たす。
 LSP を自作しない。
 
 ### 根拠
