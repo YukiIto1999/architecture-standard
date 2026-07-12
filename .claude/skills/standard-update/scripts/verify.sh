@@ -58,7 +58,7 @@ echo
 echo "=== 5. 概念数の整合(concerns 実ファイル数 = 17 = concerns/README.md の表) ==="
 # 概念数の正は 17(goal-21 で privacy・performance を新設)。
 # root README.md の概念数表記の更新は goal-19 以降が所有するため、ここでは固定値と照合し、root の表記は情報として出す。
-expected_concepts=15
+expected_concepts=16
 concerns_actual=$(find concerns -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
 root_claim=$(rg -oP '(?<=概念ごとの規律。)\d+(?=概念)' README.md | head -1)
 concerns_readme_rows=$(rg -c '^\| \[' concerns/README.md 2>/dev/null || echo 0)

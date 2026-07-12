@@ -34,6 +34,7 @@ concerns は、システム全体を通す、概念ごとの規律をまとめ�
 | [authentication](./authentication.md) | 本人性の確立と資格情報の非流出 |
 | [authorization](./authorization.md) | アクセス制御の流れ |
 | [observability](./observability.md) | 外部出力から内部状態を推し量る。文脈の伝播と探索可能性 |
+| [privacy](./privacy.md) | 個人情報の最小化と期限の消去 |
 | [security](./security.md) | 安全の姿勢 |
 | [configuration](./configuration.md) | 設定の方針 |
 | [resilience](./resilience.md) | 障害への耐性 |

@@ -126,7 +126,7 @@ collector は、別プロセスに置く。
 ### 行動
 観測の仕込みを境界の殻へ移し、核は決定を値として返すだけにする。
 利用者の環境で動く surface では、境界の殻の実装として収集を行う。
-収集に個人情報が載る場合は、前項の個人情報の規律に従う。
+収集に個人情報が載る場合は、[privacy](./privacy.md) に従う。
 
 ### 例
 ```
@@ -172,6 +172,6 @@ record(metric); if (decision.rejected) reject()
 業務の事実の種別は [messaging](./messaging.md) に従う。
 観測のための技術イベントは、この概念の扱いであり messaging の種別の外である。
 取り消しの伝播は [concurrency](./concurrency.md)、principal は [authorization](./authorization.md) に従う。
-個人データの消去そのものは [structure/core/infrastructure](../structure/core/infrastructure.md) に従う。
+観測に載せる個人情報の最小化と期限の消去は [privacy](./privacy.md) に従う。
 利用者の環境で動く surface の観測の配線は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md) に従う。
 観測の機構の置き場は [structure](../structure/)、言語別の実現は [languages](../languages/) に従う。
