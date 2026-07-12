@@ -43,7 +43,8 @@ store は、型付きの SQL を発行する薄い adapter として書く。
 イベントの追記・projection の更新・outbox への記録を束ねる書き込みパスの境界の所有は、[composition](./composition.md) が持つ。
 outbox は単一の表であり、事実を識別子で参照して本体を複製しない。
 読み取りは projection から行う。
-計測の後に、性能は、index の整備・N+1 の除去・connection pool の調整の順で改善する。
+性能の改善は、計測の後にだけ行う。改善の要否の判断は [concerns/performance](../../concerns/performance.md) に従う。
+改善は、index の整備・N+1 の除去・connection pool の調整の順で行う。
 検索・全文・分析のように、正本のイベントから再構築できる二次の読みモデルは、派生読みモデルとして別の engine に置いてよい。
 技術の索引も、この派生読みモデルである。
 派生読みモデルの engine の単一採用は、project が ADR に明記する。

@@ -4,7 +4,7 @@
 concurrency は、非同期と並行の実行を全系で統べる規律である。
 principles の [construction](../principles/construction.md) が定める不変な値の扱いと、[separation](../principles/separation.md) が定める副作用の境界隔離を、全系の並行の扱いとして具象化する。
 ここで扱うのは、複数を束ねて捌く構造の並行であり、同時に動かして速くする実行の並列ではない。
-性能目的で処理を並列化する判断は標準外とし、採る project はその ADR に記録する。
+性能目的の並列化は、[performance](./performance.md) が計測の後の最適化の一手段として定める。
 業務の核は同期の純粋関数に保ち、並行と非同期は境界で扱う。
 
 ## 構造化並行で寿命をスコープに束ねる
@@ -216,4 +216,5 @@ function decide(x, fetched) { return fetched.ok ? a : b; }   // 純粋。テス�
 ## 参照
 不変は [construction](../principles/construction.md)、副作用の隔離は [separation](../principles/separation.md) に従う。
 効果の合成は [effect](./effect.md)、文脈の伝播は [observability](./observability.md) に従う。
+待ち行列と流入の上限は [resilience](./resilience.md)、性能目的の並列化は [performance](./performance.md) に従う。
 言語別の実現は [languages](../languages/) に従う。
