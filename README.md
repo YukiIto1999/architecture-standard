@@ -16,7 +16,7 @@ architecture-standard は、ソフトウェアアーキテクチャの標準そ�
 | 領域 | 答える問い | 内容 |
 |---|---|---|
 | [principles](./principles/) | なぜ | 設計判断の土台となる言語非依存の原則。構成・規律・表現の3群 |
-| [concerns](./concerns/) | 全体を貫く規律は何か | システム全体を通す概念ごとの規律。16概念 |
+| [concerns](./concerns/) | 全体を貫く規律は何か | システム全体を通す概念ごとの規律。17概念 |
 | [structure](./structure/) | 各部をどう組むか | ターゲットプロジェクトの骨格と各部の構造 |
 | [languages](./languages/) | 言語でどう実現するか | 言語ごとの採用機構とイディオム |
 | [tools](./tools/) | 何を使うか、どう選ぶか | 用途ごとの採用と判断基準。language・stack・inspection・services・platforms の5分割 |

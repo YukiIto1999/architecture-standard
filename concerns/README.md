@@ -38,6 +38,7 @@ concerns は、システム全体を通す、概念ごとの規律をまとめ�
 | [security](./security.md) | 安全の姿勢 |
 | [configuration](./configuration.md) | 設定の方針 |
 | [resilience](./resilience.md) | 障害への耐性 |
+| [performance](./performance.md) | 計測の後の最適化 |
 | [lifecycle](./lifecycle.md) | プロセスの起動・健全性・終了 |
 | [experience](./experience.md) | 利用者に向けた画面の体験 |
 
