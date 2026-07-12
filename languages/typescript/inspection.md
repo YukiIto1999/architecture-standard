@@ -7,7 +7,7 @@ principles の [verification](../../principles/verification.md) が定める検�
 ## 実行
 
 ### 要求
-単体・性質のテストの実行は Vitest で行う。
+単体・性質のテストの実行は、build の設定を共有し変換の前提がずれないようにして速く行う。これを Vitest で満たす。
 仕様は cucumber-js、UI の E2E smoke と visual は Playwright で別に実行する。
 
 ### 根拠
@@ -31,8 +31,7 @@ build とテストで、変換の設定を食い違わせること。
 property-based testing は fast-check で書き、状態の遷移は fast-check の model-based な形で書く。
 
 ### 根拠
-例ベースのテストは、作者が選んだ少数の入力しか踏まない。
-入出力の不変量を性質にし多くの入力を自動で生成すれば、見落とした領域の欠陥が出る。
+[verification](../../principles/verification.md) が定める、例だけを並べるより性質を書いて入力を多数生成すると見落とした場合が見つかるという要求に、fast-check の入力生成で応える。
 失敗した入力は最小化され、seed と path で再現できる。
 状態の遷移は、操作の列を生成して実体とモデルの等価を確かめる model-based な形で突ける。
 
@@ -61,11 +60,11 @@ fc.assert(fc.property(fc.array(fc.integer()), (values) => {
 ## 仕様
 
 ### 要求
-業務語彙の executable spec は cucumber-js で書く。
+業務語彙の executable spec は、実行可能にして仕様と実装の継ぎ目を消す。これを cucumber-js で満たす。
 UI の E2E smoke と visual は playwright-bdd と Playwright で書き、両者は目的が別なので代替として並べない。
 
 ### 根拠
-業務の語彙で書いた例を実行可能にすれば、仕様とコードが一緒に走り、ずれが検出される。
+[documentation](../../principles/documentation.md) が定める、仕様の記述にプログラミング言語を使えば仕様と実装の継ぎ目が消えるという要求に、cucumber-js で応える。
 executable spec は、業務の振る舞いを公開の interface 越しに確かめる。
 UI の E2E smoke と visual は、ブラウザ越しの見た目と疎通を確かめる。
 cucumber-js は Cucumber 自身を test runner にして、業務語彙のシナリオを公開の interface 越しに検証する。
@@ -90,10 +89,10 @@ UI の E2E smoke と visual は playwright-bdd と Playwright で別に書く。
 ## 実依存
 
 ### 要求
-実依存のコンテナは testcontainers の node 実装で起動する。
+実依存のコンテナは、本物に近い依存で検証しテストの終わりに片づける。これを testcontainers の node 実装で満たす。
 
 ### 根拠
-実依存を mock で置き換えると、実際のドライバや SQL の振る舞いを踏まない。
+実依存を mock で置き換えると、実際の API の振る舞いを踏まない。
 testcontainers で実依存のコンテナを起動すれば、本物に近い依存で検証でき、コンテナはテストの終わりに片づく。
 
 ### 完了条件
@@ -112,8 +111,7 @@ mutation は Stryker で検査し、`thresholds.break` を割ったらビルド�
 対象と絞り方の床は、structure/tests の methods に従う。
 
 ### 根拠
-カバレッジは行が実行されたかしか測らず、振る舞いが固定されたかを測らない。
-mutation はコードに人工の欠陥を注入し、テストがそれを落とせるかで、テストが本当に振る舞いを固定しているかを測る。
+テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
 Stryker は `thresholds.break` を割ったら exit code を非 0 にして CI を止める。
 
 ### 完了条件
@@ -137,7 +135,7 @@ Stryker を回し、生き残った欠陥にテストを足す。
 依存方向と境界の禁止は dependency-cruiser で検証し、規則は層の参照禁止と exports の外への到達の禁止を持つ。
 
 ### 根拠
-依存方向と境界の禁止を実行できる検査として書けば、構造の劣化が検査で止まる。
+[verification](../../principles/verification.md) が定める、依存の向きやレイヤー越境は実行できるテストとして強制するという要求に、dependency-cruiser で応える。
 層の参照禁止と exports の外への到達の禁止を規則にすれば、層の越境と公開面の迂回が違反として出る。
 規則を CI で回せば、違反でビルドが止まる。
 import を介さない呼び出し(グローバル API 等)は、import の走査に現れない。
@@ -208,31 +206,31 @@ SonarQube の profile は cognitive complexity だけに絞る。
 
 ### 要求
 @param・@returns の網羅は oxlint の jsdoc/require-param・jsdoc/require-returns などの規則群で検査する。
-@typeParam・@throws の網羅と、TSDoc の構文が仕様に準拠しているかと、宣言した要素にドキュメントコメントが存在するかは、oxlint に検査する規則が無いため、レビューで確かめる。
+@typeParam・@throws の網羅と、TSDoc の構文が仕様に準拠しているかと、宣言した要素にドキュメントコメントが存在するかと、最初の一行が [conventions](./conventions.md) の体裁(名前の直訳でない体言止め・句読点なし)を満たしているかは、oxlint に検査する規則が無いため、レビューで確かめる。
 内容がユビキタス言語と一致しているかは、レビューで確かめる。
 
 ### 根拠
 oxlint の jsdoc 系の規則は、ドキュメントコメントが既に在るときの @param・@returns の網羅を検査できるが、ドキュメントコメントの存在そのものを要求する規則を持たない。
-oxlint の jsdoc 系の規則は @typeParam・@throws の網羅を検査する規則を持たないため、その部分はレビューで埋める。
+oxlint の jsdoc 系の規則は @typeParam・@throws の網羅と最初の一行の体裁を検査する規則を持たないため、その部分はレビューで埋める。
 TSDoc の構文検査は oxlint に無く、単一の採用を守るために eslint-plugin-tsdoc のような別の linter を並走させない。
 内容がユビキタス言語と一致しているかの判断は意味を読む必要があり、機械化できない。
 
 ### 完了条件
 @param・@returns の網羅が、oxlint の jsdoc の規則群で検査されている。
-@typeParam・@throws の網羅が、レビューで確かめられている。
+@typeParam・@throws の網羅と最初の一行の体裁が、レビューで確かめられている。
 TSDoc の構文の準拠とドキュメントコメントの存在が、レビューで確かめられている。
 内容とユビキタス言語の一致が、レビューで確かめられている。
 
 ### 禁止事項
-TSDoc の構文検査・ドキュメントコメントの存在検査・@typeParam と @throws の網羅検査を、oxlint が行っていると称すること。
+TSDoc の構文検査・ドキュメントコメントの存在検査・@typeParam と @throws の網羅検査・最初の一行の体裁検査を、oxlint が行っていると称すること。
 
 ### 行動
 oxlint に jsdoc の規則群を有効にし、CI で検査する。
-@typeParam・@throws の網羅・TSDoc の構文の準拠・ドキュメントコメントの存在・内容の妥当性は、レビューで確かめる。
+@typeParam・@throws の網羅・TSDoc の構文の準拠・ドキュメントコメントの存在・最初の一行の体裁・内容の妥当性は、レビューで確かめる。
 
 ## 規則と検証機構の対応
 
-formation・translation・connection・retention・coordination・publication の各規律を、検証手段へ写像する。
+formation・translation・connection・retention・coordination・publication・conventions の各規律を、検証手段へ写像する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 
 | 実現軸 | 規律 | 検証手段 |
@@ -241,8 +239,9 @@ formation・translation・connection・retention・coordination・publication �
 | formation | 不正な状態を構築できなくする | 型(判別子つき union・never 網羅) |
 | formation | 不変を既定にする | 型(readonly・as const) |
 | formation | 意味と単位を型で区別する | 型(branded type) |
-| formation | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+レビュー(型・値の PascalCase・camelCase の命名規約) |
-| formation | 契約をドキュメントコメントに書く | analyzer/lint(oxlint の jsdoc 規則群。@param・@returns の網羅)+レビュー(@typeParam・@throws の網羅・存在・構文・意味の妥当性) |
+| conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+レビュー(型・値の PascalCase・camelCase の命名規約) |
+| conventions | ドキュメントコメントを書く | analyzer/lint(oxlint の jsdoc 規則群。@param・@returns の網羅)+レビュー(@typeParam・@throws の網羅・存在・構文・最初の一行の体裁・意味の妥当性) |
+| conventions | 型名の接尾辞を役割で揃える | レビュー |
 | translation | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・境界の parse の単体テスト) |
 | translation | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(4xx・5xx の分岐の単体テスト) |
 | translation | 契約の型を生成する | 実行テスト(drift 検査の CI gate) |
@@ -268,5 +267,5 @@ formation・translation・connection・retention・coordination・publication �
 | publication | 可視性 | 構造検査(package.json の exports フィールドの検査) |
 
 ## 参照
-検証の機械化は [verification](../../principles/verification.md)、構造を守る進化は [evolution](../../principles/evolution.md) に従う。
+検証の機械化は [verification](../../principles/verification.md)、構造を守る進化は [evolution](../../principles/evolution.md)、仕様と実装の継ぎ目の解消は [documentation](../../principles/documentation.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

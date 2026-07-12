@@ -54,4 +54,4 @@ shell と bundler の機構は [languages](../../../languages/) に従う。
 ## 配布
 
 mobile は、OS の store を経て配布する。
-更新は store に任せ、自前の更新機構を作らない。
+配布と更新は [deploy](../../deploy/layout.md) に従う。

@@ -7,8 +7,7 @@ infrastructure は [layout](./layout.md) の単位と依存に従う。
 ## adapter
 
 adapter は、application の port を実装する。
-adapter は、core の側では application の port と domain、および shared と submodule の公開面のみに依存する。
-submodule の adapter は、shared を参照せず、下位の submodule の公開面を用いる。
+adapter は、core の側では application の port と domain、および shared のみに依存する。
 adapter は、use-case を参照しない。
 adapter の実装型は、配線する composition のみが参照する。
 adapter の名前は、実装の方式を表す語で付ける。
@@ -37,17 +36,17 @@ datastore の採用と、次の設計は [concerns/persistence](../../concerns/p
 - JSON 列の判断
 
 事実の正本はイベントの表の集まりであり、projection は読み取りのための畳み込みである。
-projection は1エンティティに1表とし、名前は `<エンティティ>_current` とする。
-イベントの表の名前は出来事の名詞とし、情報・データ・履歴・管理・マスタ・記録という語を使わない。
+イベントの表と projection の命名は [concerns/persistence](../../concerns/persistence.md) に従う。
 並行更新は projection の version 列への compare-and-set で検出し、確定点と版の衝突の規律は [concerns/transaction](../../concerns/transaction.md) に従う。
 store は record 型を定義し、domain と record の写像を持つ。
 store は、型付きの SQL を発行する薄い adapter として書く。
 イベントの追記・projection の更新・outbox への記録を束ねる書き込みパスの境界の所有は、[composition](./composition.md) が持つ。
 outbox は単一の表であり、事実を識別子で参照して本体を複製しない。
 読み取りは projection から行う。
-計測の後に、性能は、index の整備・N+1 の除去・connection pool の調整の順で改善する。
+性能の改善は、計測の後にだけ行う。改善の要否の判断は [concerns/performance](../../concerns/performance.md) に従う。
+改善は、index の整備・N+1 の除去・connection pool の調整の順で行う。
 検索・全文・分析のように、正本のイベントから再構築できる二次の読みモデルは、派生読みモデルとして別の engine に置いてよい。
-技術の submodule の索引も、この派生読みモデルである。
+技術の索引も、この派生読みモデルである。
 派生読みモデルの engine の単一採用は、project が ADR に明記する。
 派生読みモデルは projection の表の規律の対象外とし、事実の正本にせず、失っても正本から作り直せる形に保つ。
 派生読みモデルの再構築は、正本のイベントを順に port へ流す operation として composition に置く。
@@ -75,9 +74,5 @@ record 型は、`persistence/` の中だけに置く。
 domain と record の写像は store ファイル内に、domain と wire 型の写像は外部システムのファイル内に置く。
 domain、application、composition は、record 型と外部システムの wire 型を参照しない。
 論理の型と名前で区別する。
-
-- record の型名には Record を付ける
-- wire の型名には Request・Response を付ける
-- 写像には Mapper を付ける
-
+型名の接尾辞の規約は [languages](../../languages/) に従う。
 型の分離は [concerns/types](../../concerns/types.md) に従う。

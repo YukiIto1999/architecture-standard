@@ -55,4 +55,4 @@ extension は、core の操作を呼び、業務判断を持たない。
 ## 配布
 
 extension は、marketplace を経て配布する。
-更新は marketplace に任せ、自前の updater を作らない。
+配布と更新は [deploy](../../deploy/layout.md) に従う。

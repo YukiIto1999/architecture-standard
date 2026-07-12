@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 標準の更新後に走らせる機械検査。repo の root で実行する。読み取り専用。repo 内に一時ファイルを作らない。
-# リンク切れ・6節の均衡・概念層への言語漏れ・概念数の整合・principles/concerns の逐語一致を、すべて pass/fail で確かめる。
+# リンク切れ・6節の均衡・概念層への言語漏れ・概念数の整合・principles/concerns の逐語一致・concerns/structure/languages の製品名指しの tools 登録を、すべて pass/fail で確かめる。
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
 
@@ -10,7 +10,7 @@ FAILED=0
 pass() { echo "PASS: $1"; }
 fail() { echo "FAIL: $1"; FAILED=1; }
 
-echo "=== 1. broken .md links(principles/concerns/languages/structure + README) ==="
+echo "=== 1. broken .md links(principles/concerns/languages/structure/tools + README) ==="
 broken=0
 while IFS= read -r f; do
   d=$(dirname "$f")
@@ -18,7 +18,7 @@ while IFS= read -r f; do
     [ -z "$l" ] && continue
     [ -f "$d/$l" ] || { echo "  broken: $f -> $l"; broken=1; }
   done < <(rg -oN '\]\(([^)]+\.md)\)' "$f" -r '$1' 2>/dev/null)
-done < <(fd . principles concerns languages structure -e md 2>/dev/null; echo README.md)
+done < <(fd . principles concerns languages structure tools -e md 2>/dev/null; echo README.md)
 if [ "$broken" = 0 ]; then pass "リンク切れなし"; else fail "リンク切れあり(上記 broken 行)"; fi
 
 echo
@@ -55,17 +55,20 @@ else
 fi
 
 echo
-echo "=== 5. 概念数の整合(concerns 実ファイル数 = README.md(root) = concerns/README.md の表) ==="
+echo "=== 5. 概念数の整合(concerns 実ファイル数 = 17 = concerns/README.md の表) ==="
+# 概念数の正は 17(goal-21 で privacy・performance を新設)。
+# root README.md の概念数表記の更新は goal-19 以降が所有するため、ここでは固定値と照合し、root の表記は情報として出す。
+expected_concepts=17
 concerns_actual=$(find concerns -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
 root_claim=$(rg -oP '(?<=概念ごとの規律。)\d+(?=概念)' README.md | head -1)
 concerns_readme_rows=$(rg -c '^\| \[' concerns/README.md 2>/dev/null || echo 0)
 echo "concerns 実ファイル数: $concerns_actual"
-echo "README.md(root) の記載: ${root_claim:-<抽出できず>}"
+echo "README.md(root) の記載(参考): ${root_claim:-<抽出できず>}"
 echo "concerns/README.md の表の行数: $concerns_readme_rows"
-if [ -n "$root_claim" ] && [ "$concerns_actual" = "$root_claim" ] && [ "$concerns_actual" = "$concerns_readme_rows" ]; then
+if [ "$concerns_actual" = "$expected_concepts" ] && [ "$concerns_readme_rows" = "$expected_concepts" ]; then
   pass "概念数が一致($concerns_actual)"
 else
-  fail "概念数が不一致(実ファイル=$concerns_actual, README.md=${root_claim:-なし}, concerns/README.md=$concerns_readme_rows)"
+  fail "概念数が不一致(実ファイル=$concerns_actual, 期待=$expected_concepts, concerns/README.md=$concerns_readme_rows)"
 fi
 
 echo
@@ -97,6 +100,21 @@ else
     pass "逐語一致の候補なし"
   else
     fail "逐語一致の候補あり(上記出力を確認)"
+  fi
+fi
+
+echo
+echo "=== 8. concerns・structure・languages の製品名指しが tools のエントリに登録済みか(goal-25・goal-26) ==="
+if ! command -v node >/dev/null 2>&1; then
+  echo "(node が見つからないため skip)"
+else
+  naming_out=$(node "$SCRIPT_DIR/naming-registry-check.mjs" 2>&1)
+  echo "$naming_out"
+  name_violations=$(echo "$naming_out" | rg -oP '(?<=violations: )\d+' | head -1)
+  if [ "${name_violations:-}" = "0" ]; then
+    pass "製品名指しは全て tools に登録済み"
+  else
+    fail "tools に未登録の製品名指しあり(上記出力を確認)"
   fi
 fi
 

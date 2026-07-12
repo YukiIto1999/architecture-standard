@@ -34,11 +34,17 @@ concerns は、システム全体を通す、概念ごとの規律をまとめ�
 | [authentication](./authentication.md) | 本人性の確立と資格情報の非流出 |
 | [authorization](./authorization.md) | アクセス制御の流れ |
 | [observability](./observability.md) | 外部出力から内部状態を推し量る。文脈の伝播と探索可能性 |
+| [privacy](./privacy.md) | 個人情報の最小化と期限の消去 |
 | [security](./security.md) | 安全の姿勢 |
 | [configuration](./configuration.md) | 設定の方針 |
 | [resilience](./resilience.md) | 障害への耐性 |
+| [performance](./performance.md) | 計測の後の最適化 |
 | [lifecycle](./lifecycle.md) | プロセスの起動・健全性・終了 |
 | [experience](./experience.md) | 利用者に向けた画面の体験 |
 
 effect は、純粋核と効果の殻・エラーモデル・合成を束ねる親であり、非同期は concurrency、依存は dependency へ委譲する。
 冪等・再試行・行き止まりの正本は resilience にあり、transaction は書き込みパスへの適用を、messaging はイベント消費への適用を書く。
+自前のスケジューラを作らない規律の正本は concurrency にあり、effect は効果の記述からの委譲を書く。
+待ち行列の有界の正本は resilience にあり、concurrency は背圧による需要の制御を書く。
+起動時の検証に失敗した停止の正本は lifecycle にあり、configuration は設定の検証の内容を書く。
+外部応答に内部の詳細を出さない規律の正本は effect にあり、authorization は拒否の応答への適用を書く。
