@@ -90,25 +90,19 @@ throw new Defect(result.output);                                                
 
 ### 要求
 contracts/generated の TypeScript の型は、TypeSpec から `@typespec/openapi3` で出力した OpenAPI を、openapi-typescript で型だけに生成する。
-生成物と、生成元の canonical・binding との drift 検査を、CI の gate にする。
 
 ### 根拠
 openapi-typescript は型定義だけを出力し runtime のコードを持たないので、生成型を型としてのみ使い runtime の依存を持ち込まない規律とかみ合う。
 契約から型を生成すれば、UI が参照する型が契約に従う。
-drift を CI の gate にすれば、ずれが取り込まれる前に止まる。
 
 ### 完了条件
-生成物が、contracts/generated に置かれている。
 型が、TypeSpec から `@typespec/openapi3` を経て openapi-typescript で生成されている。
-drift 検査が、CI の gate になっている。
 
 ### 禁止事項
 契約の型を、runtime のコードを含む生成器で作ること。
-生成物を、手で編集すること。
 
 ### 行動
 TypeSpec から `@typespec/openapi3` で OpenAPI を出力し、openapi-typescript で型を生成する。
-drift 検査を CI の gate に置く。
 
 ## 生成型を型としてのみ使い、通信を port に通す
 
@@ -134,4 +128,4 @@ contracts/generated の型は型としてだけ import し、契約の package �
 生成型を `import type` で取り込み、通信は ui port を通す。
 
 ## 参照
-境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect.md)、契約の置き場は [structure/contracts/generated](../../structure/contracts/generated.md) に従う。
+境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect.md)、契約の生成物の置き場と drift 検査は [structure/contracts/generated](../../structure/contracts/generated.md) に従う。

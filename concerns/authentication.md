@@ -113,21 +113,26 @@ setCookie("session", randomOpaqueId(), { httpOnly: true, secure: true, sameSite:
 
 ### 要求
 session cookie を伴って状態を変える要求は、CSRF の検査を通らなければ業務の処理へ到達させない。
+CSRF の検査は、cookie の値と要求に別途載せた値の一致を確かめる double-submit の方式で行う。
 
 ### 根拠
 cookie はブラウザが自動で送るため、利用者が意図しない他サイトからの送信でも付いてしまう。
 CSRF の検査を通さないと、利用者の cookie を借りた偽の要求が状態を変えてしまう。
 検査を要求の入口に置けば、偽の要求は業務の処理に届く前に止まる。
+cookie を借りただけの第三者は要求に載せる値を知らないので、double-submit の一致の検査で拒める。
+方式を単一に固定すれば、言語や surface ごとに検査の強度が割れない。
 
 ### 完了条件
 session cookie を伴う状態を変える要求が、CSRF の検査を通っている。
+CSRF の検査が、double-submit の方式で行われている。
 検査を通らない要求が、業務の処理に到達していない。
 
 ### 禁止事項
 session cookie を伴う状態を変える要求を、CSRF の検査なしに業務の処理へ通すこと。
+CSRF の検査を、double-submit 以外の方式で行うこと。
 
 ### 行動
-状態を変える要求の経路を洗い出し、入口に CSRF の検査を置く。
+状態を変える要求の経路を洗い出し、入口に double-submit の CSRF の検査を置く。
 検査を通らない要求は、業務の処理へ進める前に拒否する。
 
 ### 例

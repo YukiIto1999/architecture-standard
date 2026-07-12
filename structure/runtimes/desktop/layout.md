@@ -47,6 +47,6 @@ offline で動かす project は、host がプロセス内に core を抱ける�
 host がプロセス内に core を抱けるなら、composition が core を埋め込み、その操作を remote の ui port の実装として渡す。
 別プロセスや別言語で抱けないなら、embedded surface を同梱起動し、protocol で繋ぐ。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
-desktop は、署名を検証する自動更新を持つ。
-検証を無効化しない。
+desktop は、署名を検証する自動更新で配布し、検証を無効化しない。
+配布と更新は [deploy](../../deploy/layout.md) に従う。
 shell・bundler・更新の機構は [languages](../../../languages/) に従う。

@@ -4,7 +4,7 @@
 persistence は、永続データの設計を全系で統べる規律である。
 principles の [data](../principles/data.md) が定める事実の追記と整合性の所在を、関係と制約による永続データの設計として具象化する。
 persistence は静止した関係と制約を扱い、書き込みパスの動的な確定は [transaction](./transaction.md) が扱う。
-永続化と一時データの実現に用いる store の採用も、persistence が単一に定める。
+永続化と一時データの実現に用いる store は単一とし、採用は [tools/platforms](../tools/platforms.md) が定める。
 
 ## 事実・状態・時間を別の関係に落とす
 
@@ -238,26 +238,27 @@ ALTER TABLE payments DROP COLUMN amount;
 ## store を単一に採用する
 
 ### 要求
-永続化する事実の正本の datastore は PostgreSQL とする。
-キャッシュと一時データの store は Valkey とし、一時データの store を Valkey 以外に増やさない。
+永続化する事実の正本の datastore は、単一とする。
+キャッシュと一時データの store は、単一とし、一時データの store を採用の外に増やさない。
+datastore と一時データの store の採用は、[tools/platforms](../tools/platforms.md) が定める。
 
 ### 根拠
 datastore と一時データの store を project ごとに選び直すと、選定と運用の知識が分散し、置き換えの決定が単一の場所で完結しなくなる。
-単一の datastore と単一の一時 store をこの標準の採用として固定すれば、採用を変える決定は一箇所の編集で済む。
+単一の datastore と単一の一時 store の採用を tools に固定すれば、採用を変える決定は一箇所の編集で済む。
 一時データの store を増やすと、失効・整合・運用の手順がストアの数だけ増える。
 
 ### 完了条件
-事実の正本の datastore が、PostgreSQL である。
-キャッシュと一時データの store が、Valkey である。
-一時データの store が、Valkey 以外に増えていない。
+事実の正本の datastore が、単一であり、tools の採用と一致している。
+キャッシュと一時データの store が、単一であり、tools の採用と一致している。
+一時データの store が、採用の外に増えていない。
 
 ### 禁止事項
 事実の正本の datastore を、project ごとに異なる製品へ置き換えること。
-一時データの store を、Valkey 以外に増やすこと。
+一時データの store を、採用の外に増やすこと。
 
 ### 行動
-永続化と一時データの置き場を洗い出し、事実の正本は PostgreSQL、キャッシュと一時データは Valkey に統一する。
-新たな一時 store の追加を提案されたら、既存の Valkey で満たせないかを先に確かめる。
+永続化と一時データの置き場を洗い出し、事実の正本と一時データを tools の採用へ統一する。
+新たな一時 store の追加を提案されたら、既存の採用で満たせないかを先に確かめる。
 
 ## 参照
 データの原則は [data](../principles/data.md)、論理設計と物理設計の分離は [modeling](../principles/modeling.md)、書き込みパスの一貫性は [transaction](./transaction.md) に従う。

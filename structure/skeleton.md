@@ -11,6 +11,7 @@ surfaces は、対話様式というアクターの軸で束ねており、技�
 ```
 <project>/
 ├─ core/
+├─ libs/
 ├─ contracts/
 │  ├─ canonical/
 │  ├─ http/
@@ -25,26 +26,20 @@ surfaces は、対話様式というアクターの軸で束ねており、技�
 │  └─ <embedded>/
 ├─ runtimes/
 ├─ deploy/
-├─ tests/
-├─ decisions/
-├─ pipeline/
-└─ <companion>/
+└─ tests/
 ```
 
-上は、実行時とビルドのコード境界の最大構成に、標準が要求する非コード成果物の置き場を加えたものである。
-core・contracts・tests・decisions・pipeline は、常に置く。
+上は、実行時とビルドのコード境界の最大構成である。
+core・contracts・tests は、常に置く。
 contracts は canonical を常に持ち、http・protocol・generated は通信の関心があるときに置く。
 server・console・worker・viewer・extension の surface は、surfaces の直下に、対応する関心があるときに置く。
 runtimes・deploy は、対応する関心があるときに置く。
-言語拡張の compile 時の検査と生成を行う companion は、その言語拡張があるときに置く。実行時の境界ではない。
-companion は、対象の言語拡張を表す名で命名する。
-decisions と pipeline は、コード境界でないため、依存方向表の対象に含まれない。
-companion への参照は build 時に限られ、実行時の依存に現れないため、表の対象に含めない。
-実行時依存の禁止は [languages](../languages/) の inspection が検証する。
+libs は、対応する機構があるときに置く。
 
 | 境界 | 役割 |
 |---|---|
 | core | 業務と外部依存の adapter を内包する。媒体を知らない。 |
+| libs | 言語拡張と技術基盤の機構を収める。機構は業務を参照しない。 |
 | contracts | 契約を canonical・http・protocol・generated に分ける。 |
 | surfaces | 対話様式ごとの入口を束ねる。直下に server・console・worker・viewer・extension・埋め込み surface を置く。 |
 | server | API の surface。core を埋め込み、http を公開し、token を仲介する。 |
@@ -56,14 +51,10 @@ companion への参照は build 時に限られ、実行時の依存に現れな
 | runtimes | 被ホストの surface の具体 host。 |
 | deploy | 配備。IaC・GitOps・provenance。 |
 | tests | root の規模のテスト。境界・依存方向・契約の drift・conformance。 |
-| decisions | project の ADR を置く。 |
-| pipeline | CI・release の定義を置く。 |
-| companion | 言語拡張の compile 時の検査と生成のツール。実行時の境界でなく build が使い、実行時の依存に含めない。 |
 
-core の内部は [core](./core/layout.md)、contracts の内部は [contracts](./contracts/layout.md)、tests の内部は [tests](./tests/layout.md) に従う。
+core の内部は [core](./core/layout.md)、libs の内部は [libs](./libs/layout.md)、contracts の内部は [contracts](./contracts/layout.md)、tests の内部は [tests](./tests/layout.md) に従う。
 surfaces の内部は [server](./surfaces/server/layout.md)・[console](./surfaces/console/layout.md)・[worker](./surfaces/worker/layout.md)・[viewer](./surfaces/viewer/layout.md)・[extension](./surfaces/extension/layout.md)・[embedded](./surfaces/embedded/layout.md) に従う。
 runtimes の内部は [runtimes](./runtimes/README.md) に、deploy の内部は [deploy](./deploy/layout.md) に従う。
-decisions の書式は [documentation](../principles/documentation.md) の ADR 節に、pipeline の内容は [pipeline](./pipeline.md) に従う。
 
 ## 入口の命名
 
@@ -90,11 +81,11 @@ surfaces に surface として置き、protocol の対話様式を表す名で�
 
 ## 依存方向
 
-依存は一方向に保つ。
 依存方向の規律は [concerns/dependency](../concerns/dependency.md) に従う。
 
 | 境界 | 依存してよい先 |
 |---|---|
+| core | libs |
 | core/composition | contracts/canonical |
 | server | core・contracts/canonical・contracts/http |
 | console・worker | core・contracts/canonical |
@@ -117,7 +108,8 @@ extension は、core を直接埋め込まない。
 extension の local の関心は、core を埋め込んだ別プロセスへ、言語非依存の protocol で接続する。
 そのプロセスは、対応する runtime が同梱して起動する。
 extension が UI を持つ場合は viewer を再利用し、ide の host が viewer もホストして ui port を注入する。
-core の modules・submodules・shared は、contracts を参照しない。
+core の各コンテキストと shared は、contracts を参照しない。
+libs は、core・contracts を参照しない。
 core は、contracts/http と contracts/generated を参照しない。
 viewer と extension は、server や core の内部の型を参照しない。
 runtimes は、互いに参照しない。
@@ -130,17 +122,11 @@ root は、言語ごとの package を集めた polyglot の monorepo である�
 各コード境界は、その言語の package として workspace に属する。
 package の境界は、依存方向の規律で守る。
 build は、言語ごとの package を横断する orchestrator で実行する。
-orchestrator は、package の依存境界を強制し、依存グラフから変更の影響範囲を出して差分で build とテストを行える。
-依存境界を強制できない orchestrator を選ばない。
-tests の段階実行を build グラフへ写すのは [pipeline](./pipeline.md) が担う。
-build と release の流れは [pipeline](./pipeline.md) に従う。
-具体の orchestrator は標準に固定せず、project が単一の採用を ADR に明記する。
+orchestrator は、package の依存境界を強制する。
+orchestrator の採用と選定の判断基準は、[tools/inspection](../tools/inspection.md) に従う。
 
 ## 加算
 
-空の境界を、先に作らない。
-各境界の内部は、畳んだ形を既定にする。
-単位の中で別のアクターが別の理由で同じ単位を変える事実が現れたときに、段階的に展開する。
-予見だけで先に展開しない。
+境界の展開は [principles/construction](../principles/construction.md) の単純な形の既定と投機の排除に、分割の契機は [principles/separation](../principles/separation.md) の変更理由に従う。
 媒体の追加は加算で行い、既存の core と server を変えない。
 surface の追加は、surfaces の直下に閉じ、root を変えない。

@@ -42,3 +42,7 @@ concerns は、システム全体を通す、概念ごとの規律をまとめ�
 
 effect は、純粋核と効果の殻・エラーモデル・合成を束ねる親であり、非同期は concurrency、依存は dependency へ委譲する。
 冪等・再試行・行き止まりの正本は resilience にあり、transaction は書き込みパスへの適用を、messaging はイベント消費への適用を書く。
+自前のスケジューラを作らない規律の正本は concurrency にあり、effect は効果の記述からの委譲を書く。
+待ち行列の有界の正本は resilience にあり、concurrency は背圧による需要の制御を書く。
+起動時の検証に失敗した停止の正本は lifecycle にあり、configuration は設定の検証の内容を書く。
+外部応答に内部の詳細を出さない規律の正本は effect にあり、authorization は拒否の応答への適用を書く。
