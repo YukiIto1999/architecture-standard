@@ -67,4 +67,4 @@ concerns・structure・languages は、この原則の上に立つ。
 | 表現 | [legibility](./legibility.md) | コードによる意図表現。可読性と視認性 |
 | 表現 | [naming](./naming.md) | 命名と語彙。テスト名を含む |
 | 表現 | [comment](./comment.md) | コメント |
-| 表現 | [documentation](./documentation.md) | README・設計文書・ADR |
+| 表現 | [documentation](./documentation.md) | README・設計文書・決定の記録 |
