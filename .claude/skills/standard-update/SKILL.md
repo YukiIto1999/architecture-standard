@@ -1,6 +1,6 @@
 ---
 name: standard-update
-description: architecture-standard(principles/concerns/languages/structure/tools)へ外部の素材を取り込んで更新する。技術記事・スライド・X の発言・知見・著名エンジニアの主張を渡されたら、どの層のどのファイルに当たるかを判定し、既存に足すか・新しい単位を作るか・矛盾を解消するかを決めて、標準の書式で更新する。原則・概念・言語規則・構造・採用(tools)の追加や改訂にも使う。project から標準への改訂提案(docs/revision)の回収にも使う。記事や知見を共有して「標準に反映して」「取り込んで」と言われたとき、また原則・概念・言語・構造・採用の規則を足す/直すときは、skill 名を明示されなくても必ずこれを使う。
+description: architecture-standard(principles/concerns/languages/structure/tools/process)へ外部の素材を取り込んで更新する。技術記事・スライド・X の発言・知見・著名エンジニアの主張を渡されたら、どの層のどのファイルに当たるかを判定し、既存に足すか・新しい単位を作るか・矛盾を解消するかを決めて、標準の書式で更新する。原則・概念・言語規則・構造・採用(tools)・手順(process)の追加や改訂にも使う。project から標準への改訂提案(docs/revision)の回収にも使う。記事や知見を共有して「標準に反映して」「取り込んで」と言われたとき、また原則・概念・言語・構造・採用・手順の規則を足す/直すときは、skill 名を明示されなくても必ずこれを使う。
 ---
 
 # standard-update
@@ -15,9 +15,10 @@ description: architecture-standard(principles/concerns/languages/structure/tools
 - `languages/` — 言語ごとの実現。rust・csharp・typescript × 7 locus(formation・translation・connection・retention・coordination・publication・inspection)+ 1 全域規律(conventions。命名・整形・ドキュメントコメント・型名接尾辞)。
 - `structure/` — ターゲットプロジェクトの root の境界・依存方向・各部の内部構成を、言語非依存に定める。skeleton が root 構成の正本、各部の layout が内部の正本。
 - `tools/` — 何を使うか・どう選ぶかの採用の正本。language・stack・inspection・services・platforms の5分割。principles・concerns・structure・languages の上位規律に従属し、性質の要求は再定義しない。
+- `process/` — どの順で作り、どこで確かめるか。作業の種別ごとの順序と確認点。7単位(bootstrap・design・implementation・refactoring・review・audit・migration)。順序と確認点だけを所有し、性質の規範を再定義しない。
 - `docs/` — 作業の材料であり、標準には含めない。
 
-5層は MECE である。設計原則は principles のみ、モジュール設計の詳細(認証認可・DB/テーブル・型など)は concerns のみ(言語非依存)、ちょうど一つの部の境界・中身は structure のみ、言語の扱いは languages のみ、採用と判断基準は tools のみ。
+6領域は MECE である。設計原則は principles のみ、モジュール設計の詳細(認証認可・DB/テーブル・型など)は concerns のみ(言語非依存)、ちょうど一つの部の境界・中身は structure のみ、言語の扱いは languages のみ、採用と判断基準は tools のみ、作業の順序と確認点は process のみ。
 
 ## project からの改訂提案の回収
 
@@ -33,7 +34,7 @@ project の docs/revision を回収し、提案ごとに採否を裁定し、採
 
 ### 2. 配置(MECE)
 どの層のどのファイルが所有するかを、root README の配置規則で判定する。
-判定の順は、値・なぜ → principles、採用と判断基準 → tools、特定言語の実現 → languages、ちょうど一つの部の境界・中身 → structure、複数の部にまたがるか全層に効く → concerns。
+判定の順は、値・なぜ → principles、採用と判断基準 → tools、作業の順序と確認点 → process、特定言語の実現 → languages、ちょうど一つの部の境界・中身 → structure、複数の部にまたがるか全層に効く → concerns。
 そのうえで、対象の規律の6節を全て読んでから、次のどれかを決める。主張が既に在ることは多いので、書く前に確かめる。
 
 - **足す**: 主張が既存の規律を精密にする・強める → その規律の6節を編集する。足す前に、その主張が既に在らないか、在るなら根拠が完了条件と行動を支え例が規律に反していないかを点検する。
@@ -58,6 +59,7 @@ project の docs/revision を回収し、提案ごとに採否を裁定し、採
 - languages を触る → `references/languages.md`
 - structure を触る → `references/structure.md`
 - tools を触る → `references/tools.md`
+- process を触る → `references/process.md`
 
 ### 4. 書く
 6節で書く。要求・根拠・完了条件・禁止事項・行動・例。
@@ -100,7 +102,7 @@ project の docs/revision を回収し、提案ごとに採否を裁定し、採
 
 ## 関連
 
-- `references/{principles,concerns,languages,structure,tools}.md` — 層ごとの拠り所・根拠の高度・配置の型。該当層だけ読む。
+- `references/{principles,concerns,languages,structure,tools,process}.md` — 層ごとの拠り所・根拠の高度・配置の型。該当層だけ読む。
 - `scripts/verify.sh` — リンク・6節均衡・言語漏れ・概念数・逐語一致・製品名指しの tools 登録の機械検査。
 - `standard-audit` — MECE と忠実度の総監査。更新の末尾検証にも、単体の見直しにも使う。
 - 高重要度の更新は、白紙の subagent に先入観を与えない brief で走らせ、書いた者の評価と合わせて二面で固める。

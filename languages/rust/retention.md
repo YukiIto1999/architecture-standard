@@ -142,4 +142,4 @@ Valkey への接続が、fred で行われている。
 一時データを Valkey に置き、接続を fred で行う。
 
 ## 参照
-事実の追記は [data](../../principles/data.md)、永続データの設計は [persistence](../../concerns/persistence.md)、確定点は [transaction](../../concerns/transaction.md)、永続化の置き場は [structure/core/infrastructure](../../structure/core/infrastructure.md) に従う。
+事実の追記は [data](../../principles/data.md)、永続データの設計は [persistence](../../concerns/persistence.md)、確定点は [transaction](../../concerns/transaction.md)、UnitOfWork の所有は [structure/core/composition](../../structure/core/composition.md)、永続化の置き場は [structure/core/infrastructure](../../structure/core/infrastructure.md) に従う。

@@ -197,20 +197,20 @@ fn place_order(state: State<AppState>, request: OrderRequest) -> Result<OrderId,
 ### 要求
 extension が接続する core のプロセスは、外へ出すのを小さい契約だけにして公開する。これを JSON-RPC で満たし、直列化は serde を使う。
 JSON-RPC の framing の機構は、project が単一の採用を ADR に明記する。
-言語機能を提供する場合に限り tower-lsp で LSP を公開する。
+言語機能を提供する場合に限り tower-lsp-server で LSP を公開する。
 フル LSP を自作しない。
 
 ### 根拠
 serde は値の直列化と逆直列化を担うだけで、JSON-RPC のメッセージの区切りや相関を扱う framing までは担わない。
 framing の機構を project の ADR に固定すれば、実装ごとに框組みが割れない。
 core を JSON-RPC の小さい契約で公開すれば、外へ出すのは契約だけになる。
-tower-lsp は protocol と transport を担うので、自前で書くのは振る舞いだけになる。
+tower-lsp-server は protocol と transport を担うので、自前で書くのは振る舞いだけになる。
 フル LSP を自作すると、framing の手書きが関心を境界の外へ漏らす。
 
 ### 完了条件
 core のプロセスが JSON-RPC で公開され、直列化に serde が使われている。
 JSON-RPC の framing の機構が、project の ADR に明記されている。
-言語機能の提供が、tower-lsp で行われている。
+言語機能の提供が、tower-lsp-server で行われている。
 フル LSP を、自作していない。
 
 ### 禁止事項
@@ -220,12 +220,11 @@ JSON-RPC の framing の機構を、project の ADR に明記せず場当たり�
 ### 行動
 core を JSON-RPC で公開し、直列化を serde で行う。
 framing の機構は project の ADR に選定と単一採用を明記する。
-言語機能は tower-lsp で LanguageServer を実装する。
+言語機能は tower-lsp-server で LanguageServer を実装する。
 
 ### 例
 ```rust
 // 振る舞いだけを実装し、transport と protocol は委譲する
-#[tower_lsp::async_trait]
 impl LanguageServer for Backend {
     async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> { Ok(Default::default()) }
     async fn shutdown(&self) -> Result<()> { Ok(()) }
@@ -267,4 +266,5 @@ pub fn open() -> Connection { open_internal() }
 ## 参照
 境界と依存の向きは [separation](../../principles/separation.md)、入口での評価は [authorization](../../concerns/authorization.md)、攻撃面の最小化は [security](../../concerns/security.md)、本人性の確立と資格情報の非流出は [authentication](../../concerns/authentication.md) に従う。
 配置は [structure/surfaces](../../structure/surfaces/)・[structure/runtimes](../../structure/runtimes/)・[structure/skeleton](../../structure/skeleton.md) に従う。
+コンテキストの境界は [structure/core](../../structure/core/layout.md) に従う。
 認証チケットの永続化は [retention](./retention.md) に従う。

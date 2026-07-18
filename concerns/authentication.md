@@ -12,6 +12,7 @@ system どうしの本人性の確立は標準が定めを持たず、project �
 ### 要求
 本人性の確立は、信頼境界にある単一の仲介点で行い、確立した結果を principal として一度だけ生成する。
 外部の identity provider を用いる場合は、認可コードの flow を伴う OIDC で確立し、implicit と password の flow を使わない。
+認可コードの flow には、PKCE を用いる。
 
 ### 根拠
 本人性の確立をあちこちに散らすと、確立の方式や検証の抜けが場所ごとに食い違う。
@@ -19,11 +20,13 @@ system どうしの本人性の確立は標準が定めを持たず、project �
 implicit の flow は、token がブラウザを経由するため、資格情報の非流出を守れない。
 password の flow は、利用者の資格情報を identity provider 以外に入力させ、MFA とも両立しないため、資格情報の非流出を守れない(RFC 9700 の機序)。
 認可コードの flow を伴う OIDC は、token の交換を仲介点とプロバイダの間に閉じ、ブラウザを経由させない。
+PKCE は、横取りされた認可コードを、コードだけでは token に交換できなくする。
 
 ### 完了条件
 本人性の確立が、信頼境界にある単一の仲介点で行われている。
 確立の結果が、principal として一度だけ生成されている。
 外部の identity provider を用いる認証が、認可コードの flow を伴う OIDC で行われている。
+認可コードの flow が、PKCE を伴っている。
 
 ### 禁止事項
 本人性の確立を、複数の場所に分散させること。
@@ -113,26 +116,34 @@ setCookie("session", randomOpaqueId(), { httpOnly: true, secure: true, sameSite:
 
 ### 要求
 session cookie を伴って状態を変える要求は、CSRF の検査を通らなければ業務の処理へ到達させない。
-CSRF の検査は、cookie の値と要求に別途載せた値の一致を確かめる double-submit の方式で行う。
+CSRF の検査は、session に保持した予測不能な token と、要求の専用 header で返された値の一致を確かめる synchronizer token の方式で行う。
+token は session の確立と再生成の時に発行し、session の失効とともに破棄する。
+token を cookie・URL・ログへ載せない。
 
 ### 根拠
 cookie はブラウザが自動で送るため、利用者が意図しない他サイトからの送信でも付いてしまう。
 CSRF の検査を通さないと、利用者の cookie を借りた偽の要求が状態を変えてしまう。
 検査を要求の入口に置けば、偽の要求は業務の処理に届く前に止まる。
-cookie を借りただけの第三者は要求に載せる値を知らないので、double-submit の一致の検査で拒める。
+仲介点は共有ストアに session を持つので、token を session に束ねる保持に新しい状態の基盤は要らない。
+cookie を借りただけの第三者は session に保持された token を知らないので、専用 header の値との一致の検査で拒める。
+cookie に別の値を載せて一致を確かめる方式は、cookie を書き込める攻撃者が両方の値を差し替えて迂回できる。
 方式を単一に固定すれば、言語や surface ごとに検査の強度が割れない。
 
 ### 完了条件
 session cookie を伴う状態を変える要求が、CSRF の検査を通っている。
-CSRF の検査が、double-submit の方式で行われている。
+CSRF の検査が、session に保持した token と専用 header の値の一致で行われている。
+token が、session の確立と再生成の時に発行され、session の失効とともに破棄されている。
+token が、cookie・URL・ログに載っていない。
 検査を通らない要求が、業務の処理に到達していない。
 
 ### 禁止事項
 session cookie を伴う状態を変える要求を、CSRF の検査なしに業務の処理へ通すこと。
-CSRF の検査を、double-submit 以外の方式で行うこと。
+CSRF の検査を、synchronizer token 以外の方式で行うこと。
+token を cookie・URL・ログへ載せること。
 
 ### 行動
-状態を変える要求の経路を洗い出し、入口に double-submit の CSRF の検査を置く。
+状態を変える要求の経路を洗い出し、入口に synchronizer token の CSRF の検査を置く。
+session の確立と再生成で token を発行し、応答で利用者側へ渡し、状態を変える要求の専用 header で返させる。
 検査を通らない要求は、業務の処理へ進める前に拒否する。
 
 ### 例
@@ -140,8 +151,8 @@ CSRF の検査を、double-submit 以外の方式で行うこと。
 // cookie があれば通す。他サイトからの偽の要求も通る
 if (hasSessionCookie(request)) handle(request)
 
-// CSRF の検査を通った要求だけを業務へ進める
-if (hasSessionCookie(request) && verifyCsrf(request)) handle(request)
+// session の token と専用 header の値の一致を確かめてから業務へ進める
+if (hasSessionCookie(request) && request.header("x-csrf-token") == session.csrfToken) handle(request)
 else reject()
 ```
 

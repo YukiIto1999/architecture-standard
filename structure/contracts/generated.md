@@ -8,6 +8,7 @@ generated は [layout](./layout.md) の依存に従う。
 
 generated は、openapi・json schema・protocol の stub と、各言語の client・型である。
 generated は、canonical と、ある場合は http・protocol の binding から生成する。
+参照のドキュメントも、canonical と binding からの生成物であり、手で保守しない。
 
 ## 生成のみ
 

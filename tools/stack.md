@@ -14,6 +14,15 @@ core の言語に依存する採用は、言語ごとに単一の名指しを持
 判断基準は、依存を組立点から handler へ注入でき、境界の仕込みを middleware で一括して積めることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止とリリースポリシーの変化を再評価のトリガーとする。
 
+## server の middleware
+
+用途は、HTTP の経路の横断処理を、層として合成する機構である。
+採用は、Rust は tower と tower-http である。
+C# は ASP.NET Core の組み込みの middleware で満たし、別の採用を持たない。
+TypeScript は、server の役割を持たないため採用を持たない。
+判断基準は、採用済みの server の骨格と同じ抽象で層を積め、横断処理を経路の定義から分離できることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
+
 ## console
 
 用途は、CLI の surface の骨格である。
@@ -26,6 +35,14 @@ core の言語に依存する採用は、言語ごとに単一の名指しを持
 用途は、非同期の実行を担う runtime である。
 採用は、Rust は Tokio である。C# と TypeScript は言語・実行環境に組み込みの非同期基盤を使い、外部の runtime を別に選ばない。
 判断基準は、runtime を一つに固定でき、タスクの生成・取り消し・channel の扱いを一貫させられることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
+
+## 取り消しの伝達
+
+用途は、協調的な取り消しを、処理の木へ伝える token の機構である。
+採用は、Rust は tokio-util である。
+C# と TypeScript は、組み込みの機構(CancellationToken・AbortController)で表し、外部ライブラリを採らない。
+判断基準は、採用済みの非同期基盤と同じ系統で、token の分配と連鎖を担えることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## worker
@@ -102,7 +119,8 @@ core が C# のときの desktop は、core の言語と host の言語を合わ
 ## 効果の表現(viewer・extension・host)
 
 用途は、viewer・extension・host の軽い役割に見合う、副作用と想定内失敗を型で表す機構である。
-採用は、TypeScript は neverthrow である。Rust と C# は言語機構(Future・Result / Effect 型)で表し、外部ライブラリを採らない。
+採用は、TypeScript は neverthrow である。
+Rust は言語機構(Future・Result)で表し、C# は libs の自作機構(Effect 型と Result 型)で表し、どちらも外部ライブラリを採らない。
 判断基準は、軽量な Result 型を提供することである。effect-ts のような要求チャネル・依存注入・fiber runtime を含む重い FW は、server 側の効果と永続化を持たない役割に対して過大である。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
@@ -141,6 +159,14 @@ core が C# のときの desktop は、core の言語と host の言語を合わ
 判断基準は、SQL を隠さず、事実の形がそのまま型に写ることである。フル ORM は SQL を不透明にしたり、変更追跡で確定の時点を暗黙にしたりするため採らない。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
+## schema migration
+
+用途は、schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である。
+採用は、Rust は sqlx-cli、C# は grate の up の one-time script である。
+TypeScript は、server 側の永続化の役割を持たないため採用を持たない。
+判断基準は、migration を言語の class に包まず素の SQL script のまま扱い、適用済みの履歴と script の改変を検出し、独立した CLI から非対話で実行できることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止・PostgreSQL 対応の終了・改変検出の既定の変化を再評価のトリガーとする。
+
 ## 一時 store への接続
 
 用途は、Valkey へ接続する client である。
@@ -158,7 +184,7 @@ core が C# のときの desktop は、core の言語と host の言語を合わ
 ## 言語サービスの公開
 
 用途は、extension が接続する core のプロセスが言語機能を公開する骨格である。
-採用は、tower-lsp である。
+採用は、tower-lsp-server である。
 判断基準は、protocol と transport を枠組みが担い、自前で書くのが振る舞いだけになることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 言語サービスは Rust の役割であり、他言語の採用を持たない。
