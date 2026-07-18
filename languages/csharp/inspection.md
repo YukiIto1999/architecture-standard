@@ -104,7 +104,8 @@ Testcontainers で実依存のコンテナを起動すれば、本物に近い�
 ### 要求
 mutation は、テストが振る舞いを本当に固定しているかを人工の欠陥注入で測る。これを Stryker.NET で満たす。
 Stryker.NET の test-runner は mtp に設定し、TUnit のテストを発見させる。
-対象と絞り方の床は、structure/tests の methods に従う。
+テストの発見件数を CI で検査し、0 件なら失敗として扱う。
+対象と絞り方の床は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ### 根拠
 テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
@@ -115,7 +116,7 @@ test-runner を mtp に設定すれば、TUnit のテストを発見して mutat
 mutation が Stryker.NET で検査され、生き残った欠陥が潰されている。
 mutation の実行が、テストを発見して走っている。
 テストの発見が 0 件のとき、失敗として扱われている。
-対象と絞り方の床が、structure/tests の methods の完了条件を満たしている。
+対象と絞り方の床が、[structure/tests の methods](../../structure/tests/methods.md) の完了条件を満たしている。
 
 ### 禁止事項
 test-runner を既定の vstest のまま TUnit と組み合わせ、テストの発見が 0 件のまま mutation を空転させること。
@@ -124,7 +125,7 @@ test-runner を既定の vstest のまま TUnit と組み合わせ、テスト�
 ### 行動
 Stryker.NET の test-runner を mtp に設定し、TUnit のテストを発見させる。
 テストの発見件数を検査し、0 件なら CI を失敗させる。
-対象と絞り方は、structure/tests の methods に従う。
+対象と絞り方は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ## 構造
 
