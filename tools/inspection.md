@@ -21,6 +21,14 @@ SonarAnalyzer.CSharp は、cognitive complexity(S3776)を実装する数少な�
 oxlint は、既に採用した Vite・Vitest と同じ基盤の単一の linter で、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止と、Vite Plus の統合 CLI(vp)の 1.0 到達を再評価のトリガーとする。
 
+## API の禁止
+
+用途は、禁止した API の呼び出しを、ビルドで検出する検査である。
+採用は、C# は Microsoft.CodeAnalysis.BannedApiAnalyzers である。
+Rust は clippy の disallowed_methods で満たし、TypeScript は oxlint の no-restricted-imports・no-restricted-properties で満たし、専用の道具を置かない。
+判断基準は、禁止の一覧を設定として宣言でき、違反を CI でエラーとして扱えることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
+
 ## テストの実行
 
 用途は、単体・性質・結合のテストの実行系である。
