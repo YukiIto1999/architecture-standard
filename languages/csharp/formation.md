@@ -41,8 +41,10 @@ public sealed record Address
     public string Street { get; init; }
     public string ZipCode { get; init; }
     private Address(string street, string zipCode) => (Street, ZipCode) = (street, zipCode);
-    public static Result<Address> Create(string street, string zipCode) =>
-        IsValidZip(zipCode) ? Result.Success(new Address(street, zipCode)) : Result.Failure<Address>("zip");
+    public static Result<Address, AddressFailure> Create(string street, string zipCode) =>
+        IsValidZip(zipCode)
+            ? Result<Address, AddressFailure>.Succeeded(new Address(street, zipCode))
+            : Result<Address, AddressFailure>.Failed(new AddressFailure.InvalidZip(zipCode));
 }
 ```
 
@@ -170,7 +172,7 @@ with 式は元を複製して指定したプロパティだけ変えた新しい
 var moved = address with { ZipCode = "00000" };
 
 // 値オブジェクトの変更は検証付き factory を通す
-Result<Address> moved = address.WithZipCode("00000"); // 内部で Create を呼び検証する
+Result<Address, AddressFailure> moved = address.WithZipCode("00000"); // 内部で Create を呼び検証する
 ```
 
 ## 意味と単位を型で区別する
