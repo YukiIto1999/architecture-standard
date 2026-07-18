@@ -77,6 +77,16 @@ cargo-mutants は、生存した mutant の有無を exit code で報告する�
 Stryker.NET は、preview の mtp test-runner を設定すれば、Microsoft.Testing.Platform 専用の TUnit のテストを発見して mutation を実行できる。
 撤回条件は、判断基準を満たさなくなることであり、test runner の対応状況の変化と Stryker.NET の mtp test-runner の正式化を再評価のトリガーとする。
 
+## 未実行箇所の発見
+
+用途は、テストが実行していない箇所を見つけるカバレッジ計測である。
+採用は、Rust は cargo-llvm-cov、C# は Microsoft.Testing.Extensions.CodeCoverage、TypeScript は Vitest の coverage(v8 provider)である。
+判断基準は、採用済みのテスト実行系と統合して動き、分岐の網羅を報告できることである。
+cargo-llvm-cov は nextest の実行を公式に統合し、分岐の計測は nightly の coverage-options を要する。
+Microsoft.Testing.Extensions.CodeCoverage は TUnit に同梱され、cobertura 形式で分岐の網羅を報告する。
+Vitest の coverage は v8 provider が既定で、しきい値を CI の失敗に接続できる。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止と Rust の分岐計測の stable 化を再評価のトリガーとする。
+
 ## 構造検査
 
 用途は、依存方向と境界の禁止を実行できる検査として検証する道具である。
