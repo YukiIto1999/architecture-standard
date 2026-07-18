@@ -86,7 +86,7 @@ function head<T>(xs: T[]): T { if (xs.length === 0) throw Error("empty"); return
 function head<T>(xs: NonEmpty<T>): T { return xs[0]; }   // どの NonEmpty でも必ず返る
 ```
 
-Rust では先頭要素を型で保証する構造体、C# では要素数をコンストラクタで検証する型で、同じ絞り込みができる。
+空でないことを型か構築時の検証で保証できる機構であれば、同じ絞り込みができる。
 
 ## 業務判断を型と多態で構造化する
 
@@ -145,7 +145,7 @@ function fee(account: Account): Money {
 }
 ```
 
-Rust では enum と網羅 match、C# では閉じた sealed 階層と switch 式で、同じ網羅ができる。
+閉じた直和と網羅的な分岐を持つ言語機構であれば、同じ網羅ができる。
 組立点で差し替える方針は、多態で表す。
 
 ```ts
