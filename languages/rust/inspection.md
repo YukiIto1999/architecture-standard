@@ -281,7 +281,7 @@ formation・translation・connection・retention・coordination・publication・
 | publication | console | 型(clap の derive) |
 | publication | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+レビュー(Data extractor による依存注入の判断) |
 | publication | desktop と mobile の host | レビュー |
-| publication | extension の接続 | 型(tower-lsp の trait 実装)+レビュー |
+| publication | extension の接続 | 型(tower-lsp-server の trait 実装)+レビュー |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
 
 ## 参照
