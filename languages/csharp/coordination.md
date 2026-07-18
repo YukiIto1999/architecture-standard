@@ -120,6 +120,7 @@ catch
 
 ### 要求
 async の経路で .Result・.Wait()・GetAwaiter().GetResult() を呼ばない。
+禁止した呼び出しは、banned API の lint で検出する。
 
 ### 根拠
 async のメソッドを同期に待つと、呼び出し元のスレッドが完了まで塞がり、context を捕まえたまま待つ経路では同じスレッドを取り合ってデッドロックを招く。

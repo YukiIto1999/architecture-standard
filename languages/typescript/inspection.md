@@ -104,30 +104,49 @@ testcontainers で実依存のコンテナを起動すれば、本物に近い�
 ### 行動
 実依存を testcontainers の node 実装で起動し、割り当てられた host と port を取得して使う。
 
+## 未使用
+
+### 要求
+未使用のファイル・エクスポート・依存は、エントリーポイントからの到達可能性で検出し、CI で失敗にする。これを knip で満たす。
+
+### 根拠
+参照の消えた残骸は、読み手の探索と依存の把握に費用を課し続ける。
+局所の参照数では、相互に参照し合う孤立した島を見つけられない。
+knip はエントリーポイントからの到達可能性で判定するので、島ごと検出できる。
+
+### 完了条件
+未使用のファイル・エクスポート・依存の検出が、CI に配線され、検出が失敗として扱われている。
+
+### 禁止事項
+未使用の検出を、レビューの目視だけで行うこと。
+
+### 行動
+エントリーポイントを knip の設定に宣言し、CI で knip を実行して検出を失敗で止める。
+
 ## 有効性
 
 ### 要求
-mutation は Stryker で検査し、`thresholds.break` を割ったらビルドを止める。
-対象と絞り方の床は、structure/tests の methods に従う。
+mutation は StrykerJS で検査し、`thresholds.break` を割ったらビルドを止める。
+対象と絞り方の床は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ### 根拠
 テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
-Stryker は `thresholds.break` を割ったら exit code を非 0 にして CI を止める。
+StrykerJS は `thresholds.break` を割ったら exit code を非 0 にして CI を止める。
 
 ### 完了条件
-mutation が Stryker で検査され、生き残った欠陥が潰されている。
+mutation が StrykerJS で検査され、生き残った欠陥が潰されている。
 `thresholds.break` を割ったら、ビルドが止まる。
 `thresholds.break` が、0 より大きい。
-対象と絞り方の床が、structure/tests の methods の完了条件を満たしている。
+対象と絞り方の床が、[structure/tests の methods](../../structure/tests/methods.md) の完了条件を満たしている。
 
 ### 禁止事項
 `thresholds.break` を定めず、有効性が下がってもビルドを通すこと。
 `thresholds.break` を、0 のままにすること。
 
 ### 行動
-Stryker を回し、生き残った欠陥にテストを足す。
+StrykerJS を回し、生き残った欠陥にテストを足す。
 `thresholds.break` を 0 でない値に定め、絞り込みは変異演算子と低リスク要素に限って CI に組む。
-対象と絞り方は、structure/tests の methods に従う。
+対象と絞り方は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ## 構造
 
@@ -162,6 +181,7 @@ dependency-cruiser に層の参照禁止と exports の外への到達の禁止�
 
 ### 要求
 tsconfig は strict を有効にし、型検査と lint の警告を CI でエラーとして扱う。
+tsc は型検査の専用に使い、JS への変換は build 基盤に委ねる。
 tsconfig は strict に加え、noUncheckedIndexedAccess と exactOptionalPropertyTypes も有効にする。
 linter は oxlint を使い、型認識の検査は tsgolint による oxlint の type-aware 実行で行う。
 ファイル・関数の大きさとネストの深さのしきい値は oxlint の max-lines(ファイル)・max-lines-per-function(関数)・max-depth(ネスト)の規則として定め、既定値から緩める変更は project の ADR に明記する。
@@ -176,8 +196,9 @@ oxlint は既に採用した Vite・Vitest と同じ基盤の単一の linter �
 max-lines・max-lines-per-function・max-depth は、ファイル・関数の大きさとネストの深さを早く気づかせる。
 oxlint の complexity 規則は cyclomatic complexity であり cognitive complexity と同一でないため、複雑度は SonarQube の S3776 に一本化し二重に測らない。
 SonarQube の cognitive complexity は switch の構造化を一度だけ加点し case の数に比例しないので、判別子つき union の網羅的な switch を罰しない。
-SonarQube の profile を cognitive complexity だけに絞れば、oxlint が既に検査する命名や未使用変数などの規則を SonarQube 側で重ねて測ることがない。
+SonarQube の profile を cognitive complexity だけに絞れば、oxlint が既に検査する未使用変数などの規則を SonarQube 側で重ねて測ることがない。
 既定から緩める判断を ADR に残せば、緩和の理由が追える。
+tsc の emit は build 基盤の変換と重複し、二重の変換経路を生む。
 
 ### 完了条件
 tsconfig の strict が、有効になっている。
@@ -188,12 +209,14 @@ oxlint が linter として使われ、型認識の検査が tsgolint で行わ�
 緩和が、project の ADR に明記されている。
 oxlint の complexity 規則が、有効になっていない。
 SonarQube の profile が、cognitive complexity に絞られている。
+tsc が型検査の専用に設定され、JS への変換が build 基盤に委ねられている。
 
 ### 禁止事項
 大きさと複雑さのしきい値を、既定から黙って緩めること。
 判別子つき union の網羅的な switch を、複雑度の加点対象にする指標を採ること。
 cognitive complexity を、oxlint の complexity 規則で測ること。
 SonarQube の profile に、ローカル lint と同目的の規則を重ねて有効にすること。
+tsc を、JS への変換に使うこと。
 
 ### 行動
 strict を有効にし、型検査と lint の警告を CI でエラーにする。

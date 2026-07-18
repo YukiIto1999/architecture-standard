@@ -102,7 +102,7 @@ testcontainers で実依存のコンテナを起動すれば、本物に近い�
 
 ### 要求
 mutation は cargo-mutants で検査し、検出されなかった mutant が一件でもあれば CI を失敗させる。
-対象と絞り方の床は、structure/tests の methods に従う。
+対象と絞り方の床は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ### 根拠
 テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
@@ -112,7 +112,7 @@ cargo-mutants は生存した mutant の有無を exit code で報告するの�
 ### 完了条件
 mutation が cargo-mutants で検査され、生き残った欠陥が潰されている。
 検出されなかった mutant が一件でもあれば、CI が失敗で止まっている。
-対象と絞り方の床が、structure/tests の methods の完了条件を満たしている。
+対象と絞り方の床が、[structure/tests の methods](../../structure/tests/methods.md) の完了条件を満たしている。
 
 ### 禁止事項
 結果が揺れるテストの上で、mutation を測ること。
@@ -121,7 +121,7 @@ mutation が cargo-mutants で検査され、生き残った欠陥が潰され�
 ### 行動
 安定したテストの土台の上で cargo-mutants を回し、生き残った欠陥にテストを足す。
 絞り込みは変異演算子と低リスク要素(参照データ表・等価変異)に限り、cargo-mutants を CI に組んで失敗で止める。
-対象と絞り方は、structure/tests の methods に従う。
+対象と絞り方は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ## 構造
 
@@ -281,7 +281,7 @@ formation・translation・connection・retention・coordination・publication・
 | publication | console | 型(clap の derive) |
 | publication | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+レビュー(Data extractor による依存注入の判断) |
 | publication | desktop と mobile の host | レビュー |
-| publication | extension の接続 | 型(tower-lsp の trait 実装)+レビュー |
+| publication | extension の接続 | 型(tower-lsp-server の trait 実装)+レビュー |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
 
 ## 参照

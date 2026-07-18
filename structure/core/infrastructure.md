@@ -37,7 +37,8 @@ datastore の採用と、次の設計は [concerns/persistence](../../concerns/p
 
 事実の正本はイベントの表の集まりであり、projection は読み取りのための畳み込みである。
 イベントの表と projection の命名は [concerns/persistence](../../concerns/persistence.md) に従う。
-並行更新は projection の version 列への compare-and-set で検出し、確定点と版の衝突の規律は [concerns/transaction](../../concerns/transaction.md) に従う。
+並行更新の検出は、正本のイベントの表への追記と版の一意制約で行い、確定点と版の衝突の規律は [concerns/transaction](../../concerns/transaction.md) に従う。
+projection の version は、畳み込みの済んだ位置を示す導出値であり、書き込みの可否の判定に使わない。
 store は record 型を定義し、domain と record の写像を持つ。
 store は、型付きの SQL を発行する薄い adapter として書く。
 イベントの追記・projection の更新・outbox への記録を束ねる書き込みパスの境界の所有は、[composition](./composition.md) が持つ。
@@ -62,8 +63,7 @@ outbox は単一の表であり、事実を識別子で参照して本体を複�
 外部システムへの接続は、client と adapter を持つ。
 外部システムの wire 型と、domain との写像は、外部システムのファイル内に置く。
 認可の判定の adapter は、認可の engine を呼ぶ。
-権限のモデルは、役割・関係・属性の宣言的な組み合わせで表す。
-認可の engine は OpenFGA である。
+認可の engine の採用は [tools/platforms](../../tools/platforms.md) に従う。
 判定の cache と engine の datastore の採用は [concerns/persistence](../../concerns/persistence.md) に従う。
 認可のモデルと判定の規律は [concerns/authorization](../../concerns/authorization.md) に従う。
 

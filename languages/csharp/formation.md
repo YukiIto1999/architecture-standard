@@ -41,8 +41,10 @@ public sealed record Address
     public string Street { get; init; }
     public string ZipCode { get; init; }
     private Address(string street, string zipCode) => (Street, ZipCode) = (street, zipCode);
-    public static Result<Address> Create(string street, string zipCode) =>
-        IsValidZip(zipCode) ? Result.Success(new Address(street, zipCode)) : Result.Failure<Address>("zip");
+    public static Result<Address, AddressFailure> Create(string street, string zipCode) =>
+        IsValidZip(zipCode)
+            ? Result<Address, AddressFailure>.Succeeded(new Address(street, zipCode))
+            : Result<Address, AddressFailure>.Failed(new AddressFailure.InvalidZip(zipCode));
 }
 ```
 
@@ -66,8 +68,8 @@ discard のアームを置くと、バリアントを追加しても未処理が
 default や discard のアームで例外を投げる形は、漏れを実行時まで遅らせる。
 nullable reference types は、不在を型に現し、null の取り違えを型検査で防ぐ。
 record は、通常の constructor を private にしても外部 assembly からの派生を型だけでは防げない。
-非 sealed な record が explicit な copy constructor を宣言する場合、その accessibility は protected でなければならず、private や private protected は CS8875 で拒否される。
-このためコンパイラが合成する copy constructor は常に protected になり、他の assembly の派生型がそれを `base(original)` で呼べば、閉じたはずの階層の外に新しいバリアントを作れてしまう。
+非 sealed な record が explicit な copy constructor を宣言する場合、その accessibility は public または protected でなければならず、private や private protected は CS8878 で拒否される。
+コンパイラが合成する copy constructor も常に protected になり、他の assembly の派生型がそれを `base(original)` で呼べば、閉じたはずの階層の外に新しいバリアントを作れてしまう。
 この経路は型では塞げないので、階層の外にある派生型の有無を ArchUnitNET の構造検査で検出し、CI で気づけるようにする。
 
 ### 完了条件
@@ -170,7 +172,7 @@ with 式は元を複製して指定したプロパティだけ変えた新しい
 var moved = address with { ZipCode = "00000" };
 
 // 値オブジェクトの変更は検証付き factory を通す
-Result<Address> moved = address.WithZipCode("00000"); // 内部で Create を呼び検証する
+Result<Address, AddressFailure> moved = address.WithZipCode("00000"); // 内部で Create を呼び検証する
 ```
 
 ## 意味と単位を型で区別する

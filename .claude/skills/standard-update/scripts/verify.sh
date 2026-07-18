@@ -1,14 +1,36 @@
 #!/usr/bin/env bash
 # 標準の更新後に走らせる機械検査。repo の root で実行する。読み取り専用。repo 内に一時ファイルを作らない。
-# リンク切れ・6節の均衡・概念層への言語漏れ・概念数の整合・principles/concerns の逐語一致・concerns/structure/languages の製品名指しの tools 登録を、すべて pass/fail で確かめる。
+# リンク切れ・単位ごとの6節・層への製品名漏れ・台帳と実ファイル数の整合・principles/concerns の逐語一致・concerns/structure/languages の製品名指しの tools 登録を、すべて pass/fail で確かめる。
 set -uo pipefail
-cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
+cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)" || exit 1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=0
 
 pass() { echo "PASS: $1"; }
 fail() { echo "FAIL: $1"; FAILED=1; }
+
+markdown_section_file_table_rows() {
+  awk -v target="$2" '
+    $0 == "## " target { in_section = 1; next }
+    in_section && /^##[[:space:]]+/ { in_section = 0 }
+    in_section && /^\| \[[^]]+\]\(\.\/[^)]+\.md\) \|/ { count++ }
+    END { print count + 0 }
+  ' "$1"
+}
+
+is_non_product_token() {
+  # 採用行に併記される言語名・規格名・機構の一般語だけを除き、製品名の候補は行から毎回導出する。
+  case "$1" in
+    "ADR"|"API"|"Build"|"C#"|"CI"|"CSS"|"Community"|"Core"|"JSON"|"JSON-RPC"|"Minimal"|"NET"|"OpenAPI"|"Rust"|"S3776"|"SPDX"|"TypeScript"|\
+    "analyzer"|"backend"|"client"|"cognitive"|"collector"|"companion"|"complexity"|"cookie"|"core"|"coverage"|"desktop"|"for"|"framing"|"gate"|"generation"|"generator"|"handler"|"library"|"mobile"|"node"|"one-time"|"plugin"|"project"|"provider"|"quality"|"queue"|"record"|"root"|"runtime"|"rust"|"schema"|"script"|"sealed"|"source"|"tests/"|"tools"|"type-aware"|"union"|"up"|"v8")
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
 
 echo "=== 1. broken .md links(principles/concerns/languages/structure/tools + README) ==="
 broken=0
@@ -18,25 +40,23 @@ while IFS= read -r f; do
     [ -z "$l" ] && continue
     [ -f "$d/$l" ] || { echo "  broken: $f -> $l"; broken=1; }
   done < <(rg -oN '\]\(([^)]+\.md)\)' "$f" -r '$1' 2>/dev/null)
-done < <(fd . principles concerns languages structure tools -e md 2>/dev/null; echo README.md)
+done < <(fd . principles concerns languages structure tools process -e md 2>/dev/null; echo README.md)
 if [ "$broken" = 0 ]; then pass "リンク切れなし"; else fail "リンク切れあり(上記 broken 行)"; fi
 
 echo
-echo "=== 2. 6節の均衡(concerns/principles/languages。各 ### の数が層内で一致するはず) ==="
-balance_ok=1
-for dir in concerns principles languages; do
-  [ -d "$dir" ] || continue
-  first=""
-  line="$dir: "
-  for s in 要求 根拠 完了条件 禁止事項 行動; do
-    c=$(rg -c -g '*.md' "^### $s" "$dir" 2>/dev/null | awk -F: '{s+=$2} END{print s+0}')
-    line+="$s=$c "
-    [ -z "$first" ] && first="$c"
-    [ "$c" = "$first" ] || balance_ok=0
-  done
-  echo "$line"
-done
-if [ "$balance_ok" = 1 ]; then pass "5節が各層内で均衡"; else fail "5節の数が層内で不一致"; fi
+echo "=== 2. 単位ごとの6節(principles/concerns/languages。例は任意) ==="
+mapfile -d '' discipline_files < <(
+  find principles concerns -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0
+  find languages -mindepth 2 -type f -name '*.md' ! -name 'README.md' -print0
+)
+sections_out=$(awk -f "$SCRIPT_DIR/discipline-sections.awk" "${discipline_files[@]}" 2>&1)
+echo "$sections_out"
+section_violations=$(echo "$sections_out" | rg -oP '(?<=violations: )\d+' | tail -1)
+if [ "${section_violations:-}" = "0" ]; then
+  pass "各規律単位の必須5節が各1回、要求から行動の順で存在"
+else
+  fail "規律単位の必須節が不正(上記の file:line を確認)"
+fi
 
 echo
 echo "=== 3. concerns への言語機構/方言の漏れ(あってはならない) ==="
@@ -48,31 +68,91 @@ fi
 
 echo
 echo "=== 4. principles への言語/製品/方言の漏れ(あってはならない) ==="
+principles_leak=0
 if rg -nP '\b(sqlx|tokio|axum|Dapper|Npgsql|EF Core|zod|valibot|SolidJS|ON CONFLICT|ON DUPLICATE)\b' principles/*.md; then
-  fail "principles に言語/製品/方言が漏れている(principles は完全に言語非依存)"
-else
+  principles_leak=1
+fi
+
+product_count=0
+while IFS= read -r product; do
+  [ -z "$product" ] && continue
+  is_non_product_token "$product" && continue
+  product_count=$((product_count + 1))
+  product_matches=$(rg --with-filename -nP "(?<![A-Za-z0-9_.#+@/-])\\Q${product}\\E(?![A-Za-z0-9_.#+@/-])" principles/*.md 2>/dev/null || true)
+  if [ -n "$product_matches" ]; then
+    echo "  台帳由来の製品名: $product"
+    while IFS= read -r product_match; do echo "    $product_match"; done <<< "$product_matches"
+    principles_leak=1
+  fi
+done < <(
+  rg --no-filename '^採用は、' tools/*.md 2>/dev/null \
+    | rg -o '[@A-Za-z][A-Za-z0-9_.#+@/-]*' \
+    | sort -u
+)
+echo "tools の採用行から抽出した製品名: $product_count"
+if [ "$principles_leak" = 0 ]; then
   pass "principles に言語/製品/方言の漏れなし"
+else
+  fail "principles に言語/製品/方言が漏れている(principles は完全に言語非依存)"
 fi
 
 echo
-echo "=== 5. 概念数の整合(concerns 実ファイル数 = 17 = concerns/README.md の表) ==="
-# 概念数の正は 17(goal-21 で privacy・performance を新設)。
-# root README.md の概念数表記の更新は goal-19 以降が所有するため、ここでは固定値と照合し、root の表記は情報として出す。
-expected_concepts=17
+echo "=== 5. 概念数の整合(concerns/README.md の台帳 = concerns 実ファイル = root README.md) ==="
 concerns_actual=$(find concerns -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
 root_claim=$(rg -oP '(?<=概念ごとの規律。)\d+(?=概念)' README.md | head -1)
-concerns_readme_rows=$(rg -c '^\| \[' concerns/README.md 2>/dev/null || echo 0)
+concerns_readme_rows=$(markdown_section_file_table_rows concerns/README.md 概念)
 echo "concerns 実ファイル数: $concerns_actual"
-echo "README.md(root) の記載(参考): ${root_claim:-<抽出できず>}"
+echo "README.md(root) の記載: ${root_claim:-<抽出できず>}"
 echo "concerns/README.md の表の行数: $concerns_readme_rows"
-if [ "$concerns_actual" = "$expected_concepts" ] && [ "$concerns_readme_rows" = "$expected_concepts" ]; then
+if [ -n "$root_claim" ] && [ "$concerns_actual" = "$concerns_readme_rows" ] && [ "$root_claim" = "$concerns_readme_rows" ]; then
   pass "概念数が一致($concerns_actual)"
 else
-  fail "概念数が不一致(実ファイル=$concerns_actual, 期待=$expected_concepts, concerns/README.md=$concerns_readme_rows)"
+  fail "概念数が不一致(台帳=$concerns_readme_rows, 実ファイル=$concerns_actual, root=${root_claim:-<抽出できず>})"
 fi
 
 echo
-echo "=== 6. skill の概念列挙と concerns/ 実ファイルの突合 ==="
+echo "=== 6. process/tools/languages の単位数 ==="
+numeric_ok=1
+process_expected=7
+process_readme_rows=$(markdown_section_file_table_rows process/README.md 単位)
+process_actual=$(find process -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+echo "process: 台帳=$process_readme_rows 実ファイル=$process_actual 期待=$process_expected"
+if [ "$process_readme_rows" != "$process_expected" ] || [ "$process_actual" != "$process_expected" ]; then
+  fail "process の単位数が不一致(台帳=$process_readme_rows, 実ファイル=$process_actual, 期待=$process_expected)"
+  numeric_ok=0
+fi
+
+tools_expected=5
+tools_actual=$(find tools -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+echo "tools: 実ファイル=$tools_actual 期待=$tools_expected"
+if [ "$tools_actual" != "$tools_expected" ]; then
+  fail "tools の分割数が不一致(実ファイル=$tools_actual, 期待=$tools_expected)"
+  numeric_ok=0
+fi
+
+language_dirs_expected=3
+language_dirs_actual=$(find languages -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+language_files_expected=8
+language_counts=""
+languages_ok=1
+for language in rust csharp typescript; do
+  if [ -d "languages/$language" ]; then
+    language_count=$(find "languages/$language" -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+  else
+    language_count=0
+  fi
+  language_counts+="$language=$language_count "
+  [ "$language_count" = "$language_files_expected" ] || languages_ok=0
+done
+echo "languages: 言語ディレクトリ=$language_dirs_actual 期待=$language_dirs_expected; $language_counts"
+if [ "$language_dirs_actual" != "$language_dirs_expected" ] || [ "$languages_ok" = 0 ]; then
+  fail "languages の単位数が不一致(言語数=$language_dirs_actual, $language_counts期待=各$language_files_expected)"
+  numeric_ok=0
+fi
+if [ "$numeric_ok" = 1 ]; then pass "process=7、tools=5、languages=3×8 で一致"; fi
+
+echo
+echo "=== 7. skill の概念列挙と concerns/ 実ファイルの突合 ==="
 concerns_files=$(find concerns -maxdepth 1 -name '*.md' ! -name 'README.md' -exec basename {} .md \; | sort)
 skill_ok=1
 for f in ".claude/skills/standard-update/SKILL.md" ".claude/skills/standard-update/references/concerns.md"; do
@@ -82,14 +162,14 @@ for f in ".claude/skills/standard-update/SKILL.md" ".claude/skills/standard-upda
   diff_out=$(diff <(echo "$concerns_files") <(echo "$listed"))
   if [ -n "$diff_out" ]; then
     echo "  $f: concerns/ 実ファイルと不一致"
-    echo "$diff_out" | sed 's/^/    /'
+    while IFS= read -r diff_line; do echo "    $diff_line"; done <<< "$diff_out"
     skill_ok=0
   fi
 done
 if [ "$skill_ok" = 1 ]; then pass "skill の概念列挙が concerns/ 実ファイルと一致"; else fail "skill の概念列挙が concerns/ 実ファイルと不一致"; fi
 
 echo
-echo "=== 7. principles と concerns の逐語一致(18文字連続一致・5文節相当の近似。goal-04 再発防止) ==="
+echo "=== 8. principles と concerns の逐語一致(18文字連続一致・5文節相当の近似。goal-04 再発防止) ==="
 if ! command -v node >/dev/null 2>&1; then
   echo "(node が見つからないため skip)"
 else
@@ -104,7 +184,7 @@ else
 fi
 
 echo
-echo "=== 8. concerns・structure・languages の製品名指しが tools のエントリに登録済みか(goal-25・goal-26) ==="
+echo "=== 9. concerns・structure・languages の製品名指しが tools のエントリに登録済みか(goal-25・goal-26) ==="
 if ! command -v node >/dev/null 2>&1; then
   echo "(node が見つからないため skip)"
 else

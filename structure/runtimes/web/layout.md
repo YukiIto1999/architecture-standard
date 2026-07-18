@@ -4,6 +4,7 @@ web は、[viewer](../../surfaces/viewer/layout.md) を browser でホストす�
 viewer の ui port を browser の API で実装する。
 viewer を起動する。
 web は core を埋め込まず、remote の通信で動く。
+core のプロセスを browser に置く採用を、標準は持たない。
 web は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成

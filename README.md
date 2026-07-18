@@ -20,9 +20,12 @@ architecture-standard は、ソフトウェアアーキテクチャの標準そ�
 | [structure](./structure/) | 各部をどう組むか | ターゲットプロジェクトの骨格と各部の構造 |
 | [languages](./languages/) | 言語でどう実現するか | 言語ごとの採用機構とイディオム |
 | [tools](./tools/) | 何を使うか、どう選ぶか | 用途ごとの採用と判断基準。language・stack・inspection・services・platforms の5分割 |
+| [process](./process/) | どの順で作り、どこで確かめるか | 作業の種別ごとの順序と確認点。7単位 |
 
 参照は、具象から抽象への一方向に保つ。
 tools は languages・structure・concerns・principles に、languages は structure・concerns・principles に、structure は concerns・principles に、concerns は principles に従う。
+process は principles・concerns に従い、順序の入力と確認点の照合先として structure・languages・tools を指す。
+process は順序と確認点だけを所有し、性質の規範を再定義しない。
 具象の側から、より抽象の側への参照は、常に適法である。
 抽象の側は、機構の置き場として具象の側を指すだけで、具象の内容に依存しない。
 具象の側は、抽象が定めた規律を再定義しない。
@@ -34,6 +37,7 @@ docs/ は、決定・調査・議事録・レビューの材料であり、標�
 
 記述が層をまたいで矛盾したときは、抽象側の記述を正とする。
 優先は principles、concerns、structure、languages、tools の順である。
+process の記述が他の層と食い違うときは、他の層を正とする。
 同じ層の中の矛盾は、その層の README が正本と指すファイルを正とする。
 root の構成は skeleton が、各部の内部は各 layout が、概念の規律は当該概念のファイルが、言語の機構は該当する実現軸のファイルが正本である。
 適用の場では、この順で選んだ記述に従って作業を続ける。
@@ -61,9 +65,10 @@ root の構成は skeleton が、各部の内部は各 layout が、概念の規
 3. 置き場は次の順で判定し、最初に該当した所へ置く。
    1. 値・なぜ → principles/
    2. 採用と判断基準 → tools/
-   3. 特定言語の実現 → languages/
-   4. ちょうど1つの部の境界・中身 → structure/
-   5. 複数の部にまたがる、または全層に効く → concerns/
+   3. 作業の順序と確認点 → process/
+   4. 特定言語の実現 → languages/
+   5. ちょうど1つの部の境界・中身 → structure/
+   6. 複数の部にまたがる、または全層に効く → concerns/
 
 ## 適用の3則
 
@@ -92,37 +97,11 @@ project の入口の文書は、次の3点だけを書き、標準の内容を�
 適用は、標準の README の適用の3則と利用の手順に従う。
 ```
 
-### 新規構築
+### 適用の手順
 
-1. project の関心を列挙し、[structure/skeleton](./structure/skeleton.md) の条件で root と surface の境界集合を決める。
-2. core の言語を [languages](./languages/) から一つ選び、選定の理由と単一採用を project の ADR に記録する。
-3. 置いた境界ごとに、対応する layout に従って内部を組む。
-4. 設計判断の都度、principles の要求・禁止事項と、関係する concerns の完了条件・禁止事項に照合する。
-5. languages の7つの実現軸で、言語の機構を固定する。
-6. [structure/tests](./structure/tests/layout.md) の機械検証を設置する。
-7. 決定は docs/adr に ADR として記録しながら進める。
-
-### 監査
-
-1. [structure/skeleton](./structure/skeleton.md) の境界と依存方向表に、root の実態を照合する。
-2. 各境界の内部を、対応する layout の構成と固有規律に照合する。
-3. 横断の規律を、concerns の完了条件と禁止事項に照合する。
-4. 設計の判断を、principles の完了条件と禁止事項に照合する。
-5. 実装を、languages の採用機構と各規律の完了条件に照合する。
-6. 違反は、severity・file と該当箇所・対応する標準の規律を添えて列挙する。
-
-### 移行
-
-1. 監査の手順で差分を出す。
-2. skeleton の境界から順に、内側の core へ向かって標準へ揃える。
-3. 揃えられない箇所は、標準の単一性の定めに従い、project の ADR に逸脱として記録する。
-
-### 実装とレビュー
-
-1. 変更対象がどの境界に属すかを特定する。
-2. その境界の layout と、変更が触れる concerns を読む。
-3. 対象言語の該当する実現軸で、使う機構を確かめる。
-4. レビューは判定の枠で照合し、指摘に該当規律の file を添える。
+手順の正本は [process](./process/) にある。
+新規構築は [process/bootstrap](./process/bootstrap.md)、監査は [process/audit](./process/audit.md)、移行は [process/migration](./process/migration.md) に従う。
+日常の作業は、設計が [process/design](./process/design.md)、実装が [process/implementation](./process/implementation.md)、構造改善が [process/refactoring](./process/refactoring.md)、レビューが [process/review](./process/review.md) に従う。
 
 ## 判定の枠
 
@@ -132,3 +111,4 @@ principles と concerns は、要求で意図を捉え、完了条件と禁止�
 structure は、構成・依存方向・各 layout の固有規律で判定する。
 languages は、採用機構と各規律の完了条件で判定する。
 tools は、採用と判断基準で判定する。
+process は、順序の遵守と確認点の照合で判定する。

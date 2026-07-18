@@ -11,6 +11,7 @@ concerns の [effect](../../concerns/effect.md) が定める効果システム�
 ### 要求
 副作用を伴う計算は、`Effect<TRequirements, TFailure, TValue>` で表す。
 これは `Func<TRequirements, CancellationToken, ValueTask<EffectExit<TFailure, TValue>>>` を包む `readonly struct` とし、生成では実行しない。
+`default(Effect<...>)` の構築は、companion の analyzer で検出する。
 純粋な計算は Effect で包まず、純粋な関数のままにする。
 
 ### 根拠
@@ -109,23 +110,28 @@ Effect<NoRequirements, TFailure, TValue>  Provide(TRequirements requirements);
 ### 要求
 Effect の終了は `EffectExit<TFailure, TValue>` の閉じた階層で表し、Succeeded・Failed・Defected・Canceled に分ける。
 想定内失敗は TFailure の sealed record の階層で表し、欠陥と取り消しを TFailure に混ぜない。
-純粋な計算の想定内失敗は CSharpFunctionalExtensions の Result で表す。
+純粋な計算の想定内失敗は、自作の閉じた `Result<TValue, TFailure>` で表し、TFailure には Effect と同じ sealed record の階層を使う。
+Result の実装は、Effect と同じく libs の機構が持つ。
 
 ### 根拠
 Result の二状態では、欠陥と取り消しを一つの型に分けて全域化できず、失敗に畳むか型の外へ逃がすことになる。
 四つの終了に分けると、回復できる失敗と回復できない欠陥と取り消しを取り違えない。
 TFailure を sealed record の階層にすると、網羅の switch で扱える。
+外部ライブラリの `readonly struct` の Result は、`default` の構築を型で防げず、不正な状態の排除が崩れる。
+自作の閉じた Result なら、TFailure の階層と `default` 検出の analyzer を Effect と共有できる。
 外部依存の失敗は adapter で回復できる失敗と欠陥に分け、回復できる失敗を Failed に、欠陥を Defected にする。
 EffectExit の基底も非 sealed な abstract record で、外部 assembly からの派生を型だけでは防げない限界と、その手当ては [formation](./formation.md) の閉じた階層の規律に従う。
 
 ### 完了条件
 Effect の終了が、Succeeded・Failed・Defected・Canceled に分かれている。
 想定内失敗が、TFailure の sealed record の階層で表されている。
+純粋な計算の想定内失敗が、libs の機構の `Result<TValue, TFailure>` で表されている。
 欠陥と取り消しが、TFailure に混ざっていない。
 
 ### 禁止事項
 欠陥や取り消しを、TFailure に混ぜること。
 想定内失敗を、例外で送出すること。
+純粋な計算の失敗の表現に、外部ライブラリの Result 型を使うこと。
 
 ### 行動
 終了を EffectExit の四状態に分け、TFailure を sealed record の階層にする。
