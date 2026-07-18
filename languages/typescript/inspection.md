@@ -118,7 +118,7 @@ Stryker は `thresholds.break` を割ったら exit code を非 0 にして CI �
 mutation が Stryker で検査され、生き残った欠陥が潰されている。
 `thresholds.break` を割ったら、ビルドが止まる。
 `thresholds.break` が、0 より大きい。
-対象と絞り方の床が、structure/tests の methods の完了条件を満たしている。
+対象と絞り方の床が、[structure/tests の methods](../../structure/tests/methods.md) の完了条件を満たしている。
 
 ### 禁止事項
 `thresholds.break` を定めず、有効性が下がってもビルドを通すこと。
@@ -127,7 +127,7 @@ mutation が Stryker で検査され、生き残った欠陥が潰されてい�
 ### 行動
 Stryker を回し、生き残った欠陥にテストを足す。
 `thresholds.break` を 0 でない値に定め、絞り込みは変異演算子と低リスク要素に限って CI に組む。
-対象と絞り方は、structure/tests の methods に従う。
+対象と絞り方は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ## 構造
 
@@ -176,7 +176,7 @@ oxlint は既に採用した Vite・Vitest と同じ基盤の単一の linter �
 max-lines・max-lines-per-function・max-depth は、ファイル・関数の大きさとネストの深さを早く気づかせる。
 oxlint の complexity 規則は cyclomatic complexity であり cognitive complexity と同一でないため、複雑度は SonarQube の S3776 に一本化し二重に測らない。
 SonarQube の cognitive complexity は switch の構造化を一度だけ加点し case の数に比例しないので、判別子つき union の網羅的な switch を罰しない。
-SonarQube の profile を cognitive complexity だけに絞れば、oxlint が既に検査する命名や未使用変数などの規則を SonarQube 側で重ねて測ることがない。
+SonarQube の profile を cognitive complexity だけに絞れば、oxlint が既に検査する未使用変数などの規則を SonarQube 側で重ねて測ることがない。
 既定から緩める判断を ADR に残せば、緩和の理由が追える。
 
 ### 完了条件

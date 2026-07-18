@@ -8,6 +8,8 @@ methods は [layout](./layout.md) の配置に従う。
 
 純粋なロジックは、stateless の property-based testing で検証する。
 状態の遷移は、状態を持つ property-based testing で検証する。
+性質は、出力が常に満たす不変条件・二度適用しても結果が変わらない冪等・変換と逆変換の往復・信頼できる別実装との一致から選ぶ。
+生成される入力が一つの区分に偏ると検査が形だけになるため、偏るときは生成を工夫するか、区分ごとに性質を分ける。
 use-case は、port を fake に置き換えて検証する。
 冪等性は、同じ command の識別子の再実行が同じ結果を生むことで確かめる。
 これらはプロセスの外への依存を持たない Small である。配置は [layout](./layout.md) に従う。
@@ -28,6 +30,7 @@ symbolic と concolic の実行を、標準の検証に組み込まない。
 権限は、主体・操作・資源・条件と、期待する許可と拒否の組み合わせの matrix で検証する。
 matrix は、公開された interface を越して検証する。
 権限の matrix は、業務の振る舞いの検証として対象に含める。
+権限の規律は [concerns/authorization](../../concerns/authorization.md) に従う。
 
 ## 実依存
 
@@ -43,7 +46,7 @@ oracle が得にくい対象は、metamorphic な関係で検証する。
 移行と置換は、旧と新の経路の差分で検証する。
 replay は、イベントから projection を再構築して検証する。
 信頼できない入力は、契約を駆動にした fuzz で検証する。
-契約駆動の fuzz は、生成した OpenAPI を駆動元にした Schemathesis で行う。
+契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools の inspection](../../tools/inspection.md) に従う。
 公開 API の契約への適合も、同じ機構で検証する。
 protocol 経路の適合は、生成物と実装の drift の検査と conformance で検証する。
 
