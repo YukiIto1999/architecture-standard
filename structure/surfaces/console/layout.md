@@ -3,6 +3,7 @@
 console は、CLI の surface である。
 core を埋め込み、コマンドの引数を use-case へ写像する。
 自己ホストであり、自身でプロセスを起動する。
+対話の体験は [concerns/experience](../../../concerns/experience.md) に従う。
 console は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成
