@@ -40,7 +40,7 @@ while IFS= read -r f; do
     [ -z "$l" ] && continue
     [ -f "$d/$l" ] || { echo "  broken: $f -> $l"; broken=1; }
   done < <(rg -oN '\]\(([^)]+\.md)\)' "$f" -r '$1' 2>/dev/null)
-done < <(fd . principles concerns languages structure tools -e md 2>/dev/null; echo README.md)
+done < <(fd . principles concerns languages structure tools process -e md 2>/dev/null; echo README.md)
 if [ "$broken" = 0 ]; then pass "リンク切れなし"; else fail "リンク切れあり(上記 broken 行)"; fi
 
 echo
@@ -109,6 +109,47 @@ if [ -n "$root_claim" ] && [ "$concerns_actual" = "$concerns_readme_rows" ] && [
 else
   fail "概念数が不一致(台帳=$concerns_readme_rows, 実ファイル=$concerns_actual, root=${root_claim:-<抽出できず>})"
 fi
+
+echo
+echo "=== 6. process/tools/languages の単位数 ==="
+numeric_ok=1
+process_expected=7
+process_readme_rows=$(markdown_section_file_table_rows process/README.md 単位)
+process_actual=$(find process -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+echo "process: 台帳=$process_readme_rows 実ファイル=$process_actual 期待=$process_expected"
+if [ "$process_readme_rows" != "$process_expected" ] || [ "$process_actual" != "$process_expected" ]; then
+  fail "process の単位数が不一致(台帳=$process_readme_rows, 実ファイル=$process_actual, 期待=$process_expected)"
+  numeric_ok=0
+fi
+
+tools_expected=5
+tools_actual=$(find tools -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+echo "tools: 実ファイル=$tools_actual 期待=$tools_expected"
+if [ "$tools_actual" != "$tools_expected" ]; then
+  fail "tools の分割数が不一致(実ファイル=$tools_actual, 期待=$tools_expected)"
+  numeric_ok=0
+fi
+
+language_dirs_expected=3
+language_dirs_actual=$(find languages -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+language_files_expected=8
+language_counts=""
+languages_ok=1
+for language in rust csharp typescript; do
+  if [ -d "languages/$language" ]; then
+    language_count=$(find "languages/$language" -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+  else
+    language_count=0
+  fi
+  language_counts+="$language=$language_count "
+  [ "$language_count" = "$language_files_expected" ] || languages_ok=0
+done
+echo "languages: 言語ディレクトリ=$language_dirs_actual 期待=$language_dirs_expected; $language_counts"
+if [ "$language_dirs_actual" != "$language_dirs_expected" ] || [ "$languages_ok" = 0 ]; then
+  fail "languages の単位数が不一致(言語数=$language_dirs_actual, $language_counts期待=各$language_files_expected)"
+  numeric_ok=0
+fi
+if [ "$numeric_ok" = 1 ]; then pass "process=7、tools=5、languages=3×8 で一致"; fi
 
 echo
 echo "=== 7. skill の概念列挙と concerns/ 実ファイルの突合 ==="

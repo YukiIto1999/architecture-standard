@@ -21,6 +21,7 @@ make_fixture() {
     "$REPO_ROOT/languages" \
     "$REPO_ROOT/structure" \
     "$REPO_ROOT/tools" \
+    "$REPO_ROOT/process" \
     "$fixture/"
   cp -a \
     "$REPO_ROOT/.claude/skills/standard-update/SKILL.md" \
@@ -112,6 +113,23 @@ expect_fail "層合計が均衡していても規律単位内の重複と欠落�
 fixture=$(make_fixture section-exclusion-scope)
 printf '\n## 概要\n\nprinciples では全ての第2見出しが規律単位である。\n' >> "$fixture/principles/comment.md"
 expect_fail "非単位節の除外を該当する領域だけに限定する" "$fixture" "必須節が不正"
+
+fixture=$(make_fixture process-count)
+printf '# extra\n' > "$fixture/process/extra.md"
+sed -i '/^| \[migration\]/a | [extra](./extra.md) | 検査用の追加単位 |' "$fixture/process/README.md"
+expect_fail "process の台帳と実ファイルが7単位であることを検査する" "$fixture" "process の単位数が不一致"
+
+fixture=$(make_fixture process-table-scope)
+printf '\n## 補助表\n\n| ファイル | 用途 |\n|---|---|\n| [audit](./audit.md) | 既存単位への補助参照 |\n' >> "$fixture/process/README.md"
+expect_pass "process の単位台帳以外のファイル表を数えない" "$fixture"
+
+fixture=$(make_fixture tools-count)
+printf '# extra\n' > "$fixture/tools/extra.md"
+expect_fail "tools がREADMEを除いて5分割であることを検査する" "$fixture" "tools の分割数が不一致"
+
+fixture=$(make_fixture languages-count)
+cp "$fixture/languages/rust/retention.md" "$fixture/languages/rust/extra.md"
+expect_fail "languages が3言語それぞれ8ファイルであることを検査する" "$fixture" "languages の単位数が不一致"
 
 fixture=$(make_fixture product-leak)
 printf '\nSchemathesis を原則本文で名指しする。\n' >> "$fixture/principles/comment.md"
