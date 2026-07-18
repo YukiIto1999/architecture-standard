@@ -10,7 +10,7 @@ inspection は、検証の道具の採用を定める。
 用途は、表記を道具の既定で一意に揃える formatter である。
 採用は、Rust は rustfmt、C# は CSharpier、TypeScript は oxfmt である。
 判断基準は、既定の設定で出力が一意に決まることである。
-CSharpier は、設定項目が少ない opinionated な formatter で、.editorconfig の書き方に出力が左右されない。
+CSharpier は、設定項目を少数に絞った opinionated な formatter で、整形の細部を設定で変える余地が狭い。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止と oxfmt の安定版のリリースを再評価のトリガーとする。
 
 ## lint
