@@ -3,6 +3,7 @@
 inspection は、検証の道具の採用を定める。
 エントリは、[README](./README.md) の書式と選定の共通基準に従う。
 道具の使い方と規則の割り当ては、[languages](../languages/) の inspection と [structure/tests](../structure/tests/layout.md) に従う。
+計算の重い解析は、ビルド時の lint に載せず、独立の道具かセルフホストの基盤に分ける。
 
 ## 整形
 
@@ -17,8 +18,10 @@ CSharpier は、設定項目が少ない opinionated な formatter で、.editor
 用途は、規則の違反をビルドで止める linter である。
 採用は、Rust は clippy、C# は SonarAnalyzer.CSharp、TypeScript は oxlint と tsgolint の type-aware 実行である。
 判断基準は、規則を全体に一律に強制でき、警告を CI でエラーとして扱えることである。
-SonarAnalyzer.CSharp は、cognitive complexity(S3776)を実装する数少ない候補で、保守も活発である。
+SonarAnalyzer.CSharp は、大きさとネストのしきい値(S104・S138・S134)を規則として持ち、保守も活発である。
+認知的複雑さ(S3776)は二重計測を避けるためビルド時 lint 側で有効にせず、認知的複雑さの検査の採用に従う。
 oxlint は、既に採用した Vite・Vitest と同じ基盤の単一の linter で、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
+oxlint は Rust 実装であり、ファイル数の増加に対して実行の費用が延びにくい。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止と、Vite Plus の統合 CLI(vp)の 1.0 到達を再評価のトリガーとする。
 
 ## API の禁止
