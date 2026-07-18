@@ -110,7 +110,8 @@ core が C# のときの desktop は、core の言語と host の言語を合わ
 ## 効果の表現(viewer・extension・host)
 
 用途は、viewer・extension・host の軽い役割に見合う、副作用と想定内失敗を型で表す機構である。
-採用は、TypeScript は neverthrow である。Rust と C# は言語機構(Future・Result / Effect 型)で表し、外部ライブラリを採らない。
+採用は、TypeScript は neverthrow である。
+Rust は言語機構(Future・Result)で表し、C# は libs の自作機構(Effect 型と Result 型)で表し、どちらも外部ライブラリを採らない。
 判断基準は、軽量な Result 型を提供することである。effect-ts のような要求チャネル・依存注入・fiber runtime を含む重い FW は、server 側の効果と永続化を持たない役割に対して過大である。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
