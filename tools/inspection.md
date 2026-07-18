@@ -71,10 +71,10 @@ Reqnroll は自前のテスト実行系を持たないため、実行基盤は R
 ## mutation
 
 用途は、テストが振る舞いを固定しているかを測る mutation 検査である。
-採用は、Rust は cargo-mutants、C# は Stryker.NET、TypeScript は Stryker である。
+採用は、Rust は cargo-mutants、C# は Stryker.NET、TypeScript は StrykerJS である。
 判断基準は、生存した mutant を exit code で報告し、CI を失敗で止められることである。
 cargo-mutants は、生存した mutant の有無を exit code で報告するので、しきい値は検出されない mutant が無いという二値の床になる。
-Stryker.NET は、test-runner を mtp に設定すれば、Microsoft.Testing.Platform 専用の TUnit のテストを発見して mutation を実行できる。
+Stryker.NET は、preview の mtp test-runner を設定すれば、Microsoft.Testing.Platform 専用の TUnit のテストを発見して mutation を実行できる。
 撤回条件は、判断基準を満たさなくなることであり、test runner の対応状況の変化と Stryker.NET の mtp test-runner の正式化を再評価のトリガーとする。
 
 ## 構造検査

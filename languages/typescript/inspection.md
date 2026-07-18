@@ -126,15 +126,15 @@ knip はエントリーポイントからの到達可能性で判定するので
 ## 有効性
 
 ### 要求
-mutation は Stryker で検査し、`thresholds.break` を割ったらビルドを止める。
-対象と絞り方の床は、structure/tests の methods に従う。
+mutation は StrykerJS で検査し、`thresholds.break` を割ったらビルドを止める。
+対象と絞り方の床は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ### 根拠
 テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
-Stryker は `thresholds.break` を割ったら exit code を非 0 にして CI を止める。
+StrykerJS は `thresholds.break` を割ったら exit code を非 0 にして CI を止める。
 
 ### 完了条件
-mutation が Stryker で検査され、生き残った欠陥が潰されている。
+mutation が StrykerJS で検査され、生き残った欠陥が潰されている。
 `thresholds.break` を割ったら、ビルドが止まる。
 `thresholds.break` が、0 より大きい。
 対象と絞り方の床が、[structure/tests の methods](../../structure/tests/methods.md) の完了条件を満たしている。
@@ -144,7 +144,7 @@ mutation が Stryker で検査され、生き残った欠陥が潰されてい�
 `thresholds.break` を、0 のままにすること。
 
 ### 行動
-Stryker を回し、生き残った欠陥にテストを足す。
+StrykerJS を回し、生き残った欠陥にテストを足す。
 `thresholds.break` を 0 でない値に定め、絞り込みは変異演算子と低リスク要素に限って CI に組む。
 対象と絞り方は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
