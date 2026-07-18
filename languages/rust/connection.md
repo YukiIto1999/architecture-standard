@@ -202,4 +202,4 @@ async fn main() {
 
 ## 参照
 効果システムは [effect](../../concerns/effect.md)、依存の向きは [dependency](../../concerns/dependency.md) に従う。
-取り消しは [coordination](./coordination.md)、資源は [retention](./retention.md)、組立点の構造は [structure/core/application](../../structure/core/application.md) に従う。
+取り消しは [coordination](./coordination.md)、資源は [retention](./retention.md)、組立点の構造は [structure/core/composition](../../structure/core/composition.md) に従う。

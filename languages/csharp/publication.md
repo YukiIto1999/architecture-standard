@@ -280,4 +280,5 @@ file sealed class JsonHelper { }        // このファイルの中だけ
 ## 参照
 境界と依存の向きは [separation](../../principles/separation.md)、入口での評価は [authorization](../../concerns/authorization.md)、攻撃面の最小化は [security](../../concerns/security.md)、本人性の確立と資格情報の非流出は [authentication](../../concerns/authentication.md) に従う。
 配置は [structure/surfaces](../../structure/surfaces/)・[structure/runtimes](../../structure/runtimes/)・[structure/skeleton](../../structure/skeleton.md) に従う。
+コンテキストの境界は [structure/core](../../structure/core/layout.md) に従う。
 認証チケットの永続化は [retention](./retention.md) に従う。

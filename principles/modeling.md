@@ -57,7 +57,7 @@ class EmailAddress {
 function register(email: EmailAddress, zip: ZipCode, country: CountryCode) { /* ... */ }
 ```
 
-Rust では newtype と非公開フィールド、C# では record と検証付きファクトリで、同じ封入ができる。
+専用の型と、外から値を組み立てられない構築経路があれば、同じ封入ができる。
 
 ## 不正な状態を表現できなくする
 
@@ -116,7 +116,7 @@ type ContactInfo =
 // 「どちらも無い」は型として作れない
 ```
 
-Rust ではデータを持つ enum、C# では sealed な階層型とパターンマッチで、同じ排他表現ができる。
+データを持つ直和と、それを分岐で扱う機構があれば、同じ排他表現ができる。
 
 ## 境界で検証して型に通す
 
@@ -161,7 +161,7 @@ if (email instanceof Error) return reject(email);
 send(email);   // send(email: EmailAddress)
 ```
 
-Rust では Result 型、C# では例外か検証結果を表す型で、同じ失敗の表現ができる。
+検証の失敗は、送出でなく値として返す。
 失敗しうる変換の連なりの形は、concerns の [effect](../concerns/effect.md) が具象化する。
 
 ## 論理設計と物理設計を分ける

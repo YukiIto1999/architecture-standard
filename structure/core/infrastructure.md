@@ -62,8 +62,7 @@ outbox は単一の表であり、事実を識別子で参照して本体を複�
 外部システムへの接続は、client と adapter を持つ。
 外部システムの wire 型と、domain との写像は、外部システムのファイル内に置く。
 認可の判定の adapter は、認可の engine を呼ぶ。
-権限のモデルは、役割・関係・属性の宣言的な組み合わせで表す。
-認可の engine は OpenFGA である。
+認可の engine の採用は [tools/platforms](../../tools/platforms.md) に従う。
 判定の cache と engine の datastore の採用は [concerns/persistence](../../concerns/persistence.md) に従う。
 認可のモデルと判定の規律は [concerns/authorization](../../concerns/authorization.md) に従う。
 
