@@ -3,6 +3,7 @@
 methods は、検証に用いる技法を定める。
 技法は、検証する対象の性質で選ぶ。
 methods は [layout](./layout.md) の配置に従う。
+ダブルとフィクスチャの扱いは [doubles](./doubles.md) に従う。
 
 ## ロジックと状態
 
