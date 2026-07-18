@@ -159,6 +159,14 @@ Rust は言語機構(Future・Result)で表し、C# は libs の自作機構(Eff
 判断基準は、SQL を隠さず、事実の形がそのまま型に写ることである。フル ORM は SQL を不透明にしたり、変更追跡で確定の時点を暗黙にしたりするため採らない。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
+## schema migration
+
+用途は、schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である。
+採用は、Rust は sqlx-cli、C# は grate の up の one-time script である。
+TypeScript は、server 側の永続化の役割を持たないため採用を持たない。
+判断基準は、migration を言語の class に包まず素の SQL script のまま扱い、適用済みの履歴と script の改変を検出し、独立した CLI から非対話で実行できることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止・PostgreSQL 対応の終了・改変検出の既定の変化を再評価のトリガーとする。
+
 ## 一時 store への接続
 
 用途は、Valkey へ接続する client である。
