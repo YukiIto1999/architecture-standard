@@ -144,6 +144,27 @@ openapi-typescript は型定義だけを出力し、runtime のコードを持�
 DapperAOT は DB のスキーマを参照しないため、列の型と nullable の対応は対象外であり、[languages の csharp/retention](../languages/csharp/retention.md) が定める SQL と DTO の照合テストで別に埋める。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
+## SBOM の生成
+
+用途は、release する成果物を構成する部品を、言語横断の機械可読な一覧にする道具である。
+採用は、Syft であり、出力は SPDX JSON とする。
+判断基準は、filesystem・archive・container image の完成した成果物を走査でき、対象言語と OS package を一つの形式に出力し、署名と脆弱性検査の共通入力にできることである。
+撤回条件は、判断基準を満たさなくなることであり、対象 ecosystem の対応終了と保守の停止を再評価のトリガーとする。
+
+## SBOM の既知脆弱性検査
+
+用途は、release 成果物の SBOM を既知脆弱性と照合し、検出を release の失敗にする道具である。
+採用は、OSV-Scanner である。
+判断基準は、SPDX の SBOM を入力にでき、言語を横断して既知脆弱性が一件でもあれば非ゼロの終了値を返すことである。
+撤回条件は、判断基準を満たさなくなることであり、advisory database の更新停止と保守の停止を再評価のトリガーとする。
+
+## 成果物の署名と provenance
+
+用途は、release する成果物の digest と生成経路を、検証可能な署名済みの証明に結び付ける機構である。
+採用は、CI の基盤に依存するため、project が単一の採用を ADR に明記する。
+判断基準は、鍵を長期に保管せずに署名でき、SLSA の build provenance を生成し、成果物の digest と生成元を検証できることである。
+撤回条件は、判断基準を満たさなくなることであり、署名と検証の機能の変化を再評価のトリガーとする。
+
 ## orchestrator
 
 用途は、言語ごとの package を横断する build の実行である。
