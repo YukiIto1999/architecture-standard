@@ -141,7 +141,7 @@ openapi-typescript は型定義だけを出力し、runtime のコードを持�
 用途は、SQL 中の変数と parameter の対応を DB を起動せずに検査する道具である。
 採用は、C# は DapperAOT である。
 判断基準は、ソース生成に基づくビルド時解析で、DB へ接続せずに対応を検査できることである。
-DapperAOT は DB のスキーマを参照しないため、列の型と nullable の対応は対象外であり、structure/tests の照合テストで別に埋める。
+DapperAOT は DB のスキーマを参照しないため、列の型と nullable の対応は対象外であり、[languages の csharp/retention](../languages/csharp/retention.md) が定める SQL と DTO の照合テストで別に埋める。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## orchestrator
