@@ -1,6 +1,6 @@
 ---
 name: standard-audit
-description: architecture-standard(principles/concerns/languages/structure/tools)を MECE と忠実度で監査する。フォルダ間とファイル間の重複・抜け、11名の参考エンジニアの足場、humanizer-ja の文体、6節書式(structure は layout 書式)、標準は単一の維持、言語非依存、自己充足、作り切り、事実誤り、層の役割適合(その文が答える問いが宿主の層の問いと合っているか)を、読み取り専用で点検し、重大度つきで指摘を返す。標準を変更する前後、コミット前、また「監査」「見直す」「MECE を確認」「矛盾や重複がないか」「足場が薄くないか」「層の役割が合っているか」と言われたときは、skill 名を明示されなくても必ずこれを使う。修正はせず指摘に留める(修正は standard-update)。
+description: architecture-standard(principles/concerns/languages/structure/tools/process)を MECE と忠実度で監査する。フォルダ間とファイル間の重複・抜け、11名の参考エンジニアの足場、humanizer-ja の文体、6節書式(structure は layout 書式、process は手順書式)、標準は単一の維持、言語非依存、自己充足、作り切り、事実誤り、層の役割適合(その文が答える問いが宿主の層の問いと合っているか)を、読み取り専用で点検し、重大度つきで指摘を返す。標準を変更する前後、コミット前、また「監査」「見直す」「MECE を確認」「矛盾や重複がないか」「足場が薄くないか」「層の役割が合っているか」と言われたときは、skill 名を明示されなくても必ずこれを使う。修正はせず指摘に留める(修正は standard-update)。
 ---
 
 # standard-audit
@@ -13,7 +13,7 @@ description: architecture-standard(principles/concerns/languages/structure/tools
 
 標準をスライスに分け、スライスごとに**白紙の subagent** を当てる。
 書いた当人の再読では bias が入るので、必ず新しい subagent に読ませる。先入観を与えない brief を渡し、白紙の状態から10軸を独立に評価させる。
-スライスの目安は、principles 全体、concerns を前半と後半、languages を rust・csharp・typescript、structure を skeleton+core+libs+contracts と surfaces+runtimes+deploy+tests、tools を1スライス。
+スライスの目安は、principles 全体、concerns を前半と後半、languages を rust・csharp・typescript、structure を skeleton+core+libs+contracts と surfaces+runtimes+deploy+tests、tools を1スライス、process を1スライス。
 独立した複数スライスは、一つのメッセージで並行に投げる。
 各 subagent は下の10軸で読み、重大度つきで指摘を返す。最後に統合する。
 機械検査は standard-update の `scripts/verify.sh` を使う。
@@ -22,9 +22,9 @@ description: architecture-standard(principles/concerns/languages/structure/tools
 
 汎用ベストプラクティスでなく、この標準の確立済みの前提を基準にする。
 
-- **A 思想の足場(11名)**: ミノ駆動・増田・nwiizo・mizchi・そーだい・t-wada・kawasima・A.King・R.C.Martin・Fowler・farstep。各単位が、その領域に効く参考者の主張とずれていないか。明らかな足場が反映されていない箇所(運用面の nwiizo、DB の そーだい、型の King/farstep など)。本文に人名は出さないので内容で見る。検出したずれは `docs/decisions/0011-deliberate-divergences.md` の台帳に照合し、意図的な採否は指摘でなく台帳との一致確認として扱う。
+- **A 思想の足場(11名)**: ミノ駆動・増田・nwiizo・mizchi・そーだい・t-wada・kawasima・A.King・R.C.Martin・Fowler・farstep。各単位が、その領域に効く参考者の主張とずれていないか。明らかな足場が反映されていない箇所(運用面の nwiizo、DB の そーだい、型の King/farstep など)。本文に人名は出さないので内容で見る。検出したずれは `docs/decisions/0011-deliberate-divergences.md` とその追記 ADR(0017 以降の deliberate-divergences addendum)の台帳に照合し、意図的な採否は指摘でなく台帳との一致確認として扱う。
 - **B 文章スタイル(humanizer-ja・k16shikano)**: 記号(❌✅・emoji)、見出しの括弧、冗長・水増し、hedging(〜かもしれない)、経緯・進捗・予定のマーカー、一文多義、不要な前置き。
-- **C 6節書式**: `## 概要`＋単位ごとの `## 名`(`### 要求/根拠/完了条件/禁止事項/行動`、必要なら `### 例`)＋`## 参照`(principles は概要にリードとして埋める)。欠落・順序乱れ・空節。structure は6節を使わず、導入の参照文・フォルダ構成の図・単位表または依存方向表・topical な見出しからなる layout 書式に従う(該当なし、または6節を持ち込んでいれば指摘)。
+- **C 6節書式**: `## 概要`＋単位ごとの `## 名`(`### 要求/根拠/完了条件/禁止事項/行動`、必要なら `### 例`)＋`## 参照`(principles は概要にリードとして埋める)。欠落・順序乱れ・空節。structure は6節を使わず、導入の参照文・フォルダ構成の図・単位表または依存方向表・topical な見出しからなる layout 書式に従う(該当なし、または6節を持ち込んでいれば指摘)。process も6節を使わず、導入の参照文・順序・確認点・範囲外の手順書式に従う。
 - **D 整合性・フォルダ内 MECE**: ファイル間の重複(同じことを二箇所で根拠ごと書く)、矛盾、根拠の高度(principles=根本/concerns=概念/languages=機構/tools=選定の決め手)、相互参照の正しさ(concerns が正本、structure が参照側、逆転していないか)。
 - **E 標準は単一**: 条件付きの分岐や例外を標準の側に作っていないか。逸脱は project の ADR へ送る形か。
 - **F 言語非依存・フォルダ間 MECE**: principles と concerns に言語機構・製品名・方言が漏れていないか(製品名は tools、言語機構は languages が受け皿)。設計原則が principles のみ、モジュール設計の詳細が concerns のみ、ちょうど一つの部の境界・中身が structure のみ、言語の扱いが languages のみ、採用と判断基準が tools のみに分かれているか。原則の再導出を concerns や structure でしていないか。concerns の横断規律を structure が再定義していないか。
