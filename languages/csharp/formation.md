@@ -68,8 +68,8 @@ discard のアームを置くと、バリアントを追加しても未処理が
 default や discard のアームで例外を投げる形は、漏れを実行時まで遅らせる。
 nullable reference types は、不在を型に現し、null の取り違えを型検査で防ぐ。
 record は、通常の constructor を private にしても外部 assembly からの派生を型だけでは防げない。
-非 sealed な record が explicit な copy constructor を宣言する場合、その accessibility は protected でなければならず、private や private protected は CS8875 で拒否される。
-このためコンパイラが合成する copy constructor は常に protected になり、他の assembly の派生型がそれを `base(original)` で呼べば、閉じたはずの階層の外に新しいバリアントを作れてしまう。
+非 sealed な record が explicit な copy constructor を宣言する場合、その accessibility は public または protected でなければならず、private や private protected は CS8878 で拒否される。
+コンパイラが合成する copy constructor も常に protected になり、他の assembly の派生型がそれを `base(original)` で呼べば、閉じたはずの階層の外に新しいバリアントを作れてしまう。
 この経路は型では塞げないので、階層の外にある派生型の有無を ArchUnitNET の構造検査で検出し、CI で気づけるようにする。
 
 ### 完了条件
