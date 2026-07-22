@@ -47,7 +47,7 @@ oracle が得にくい対象は、metamorphic な関係で検証する。
 移行と置換は、旧と新の経路の差分で検証する。
 replay は、イベントから projection を再構築して検証する。
 信頼できない入力は、契約を駆動にした fuzz で検証する。
-契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools の inspection](../../tools/inspection.md) に従う。
+契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools の inspection](../../tools/inspection.md) が定める。
 公開 API の契約への適合も、同じ機構で検証する。
 protocol 経路の適合は、生成物と実装の drift の検査と conformance で検証する。
 
@@ -63,7 +63,7 @@ protocol 経路の適合は、生成物と実装の drift の検査と conforman
 構造で検証できない規則は、型と lint・実行テスト・人手レビューのいずれかに割り当てる。
 structure と languages の各規律は、検証手段を名指しで持つ。
 どの手段にも割り当てない規則を、残さない。
-言語ごとの検査の機構は [languages](../../languages/) に従う。
+言語ごとの検査の機構は [languages](../../languages/) が定める。
 
 ## テストの有効性
 
@@ -78,6 +78,7 @@ mutation は CI に配線し、しきい値を割ったら失敗で止める。
 数値が高くてもアサーションの強さは示されず、その検査は mutation が担う。
 低いカバレッジは、確実に検証の不足を意味する。
 基準は分岐の網羅を下限とし、複合条件は各条件の真偽を含めて確かめ、条件の多い複合条件は各条件が独立に結果を左右することまで確かめる(MC/DC)。
+MC/DC を適用する条件の数のしきい値は、project が定める。
 分岐より強い基準は、採用する計測の道具が自動計測に対応しないため、複合条件の分析は手で行う。
 カバーしない箇所は、見落としでなく判断の結果として残す。
 snapshot を、主たる検証にしない。
@@ -93,4 +94,4 @@ AI が生成したテストを、有効性の検査なしに受け入れない�
 chaos と並行の race は対象外とし、過負荷と障害への耐性は [concerns/resilience](../../concerns/resilience.md)、全停止の回避は [concerns/lifecycle](../../concerns/lifecycle.md) に従う。
 security の専用の検証は対象外とし、設計上の安全姿勢と供給網の保証は [concerns/security](../../concerns/security.md) に従う。
 AI エージェントの統制と prompt の検証は、対象外とする。
-言語ごとの具体のツールは [languages](../../languages/) に従う。
+言語ごとの具体のツールは [languages](../../languages/) が定める。
