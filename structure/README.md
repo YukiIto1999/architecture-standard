@@ -15,10 +15,11 @@ structure は、ターゲットプロジェクトの各部の、言語非依存�
 | [surfaces](./surfaces/) | 対話様式ごとの入口。server・console・worker・viewer・extension・embedded |
 | [runtimes](./runtimes/) | 被ホスト surface の具体 host。web・desktop・mobile・ide |
 | [deploy](./deploy/layout.md) | 配備。infrastructure・delivery・provenance・secrets |
-| [tests](./tests/layout.md) | root の規模の検証。layout と methods |
+| [tests](./tests/layout.md) | root の規模の検証。layout と methods・doubles |
 
 skeleton が root の構成の正本である。
 root をまたぐ依存の規則は skeleton が持ち、各部は自身の内部だけを定める。
+遵守は、skeleton の構成と依存方向表への一致と、各 layout の構成・固有規律への一致で判定し、依存方向は機械検証の実測で確かめる。
 
 ## 読み方
 
