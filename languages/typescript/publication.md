@@ -83,6 +83,32 @@ design token を `@theme` に集約し、styling の機構を Tailwind の Vite 
 <div class="@container"><div class="grid grid-cols-1 @md:grid-cols-2">{props.children}</div></div>
 ```
 
+## viewer の telemetry
+
+### 要求
+viewer の trace と構造化 event の収集は、ui port の背後に閉じる。これを OpenTelemetry JS の modular な browser 構成で満たす。
+trace と event は同じ文脈で相関させ、OTLP/HTTP で collector へ送る。
+SDK の登録と exporter の構成は、host の adapter が持つ。
+
+### 根拠
+収集を境界の殻で行う規律([observability](../../concerns/observability.md))に、ui port の背後の OpenTelemetry で応える。
+viewer 本体が SDK に触れると、収集の機構が UI の関心へ漏れる。
+API と SDK を分ける OpenTelemetry の構成は、port の型を API だけに依存させ、SDK を adapter に隔離できる。
+独立した UI の event は、trace の文脈を付けた LogRecord で表すと、trace と同じ文脈で相関できる。
+
+### 完了条件
+収集の呼び出しが、ui port の型だけに依存している。
+SDK の登録と exporter が、host の adapter に閉じている。
+trace と event が、同じ文脈で相関して collector へ届いている。
+
+### 禁止事項
+viewer の component から、SDK や exporter を直接使うこと。
+収集の失敗を、UI の操作の失敗にすること。
+
+### 行動
+telemetry の ui port を定義し、host の adapter で OpenTelemetry の SDK と exporter を構成する。
+event には trace の文脈を付け、OTLP/HTTP で collector へ送る。
+
 ## web の host
 
 ### 要求
@@ -90,7 +116,7 @@ entry と bundler は Vite で組み、composition が ui port を注入し view
 
 ### 根拠
 composition が ui port を注入し viewer を mount すれば、依存が一箇所で注入される。
-Vite は index.html を entry として扱い、ビルドの設定をテストと共有する。
+Vite は index.html を entry として扱う。
 
 ### 完了条件
 entry と bundler が、Vite である。

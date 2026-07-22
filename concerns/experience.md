@@ -310,4 +310,4 @@ outputFormat: 選択(CSV / JSON)
 
 ## 参照
 明快さは [legibility](../principles/legibility.md)、責務の境界は [separation](../principles/separation.md)、不正状態の排除は [modeling](../principles/modeling.md)、境界での parse は [types](./types.md)、語彙の統一は [naming](../principles/naming.md) に従う。
-viewer の構造は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md)、見た目と機構は [languages](../languages/) に従う。
+viewer の構造は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md)、見た目と機構は [languages](../languages/) が定める。

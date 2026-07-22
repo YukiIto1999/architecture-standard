@@ -65,4 +65,4 @@ lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に�
 観測の規律は [concerns/observability](../../../concerns/observability.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。
-queue と schedule の機構は [languages](../../../languages/) に従う。
+queue と schedule の機構は [languages](../../../languages/) が定める。

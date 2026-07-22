@@ -22,7 +22,8 @@ use-case は、別の use-case を参照しない。
 use-case の強整合な書き込みは、一つの集約に閉じる。
 複数の集約、または複数の use-case にまたがる流れは [composition](./composition.md) が担う。
 use-case の名前は、単一の動作を表す動詞と名詞の組とする。
-命名は [principles/naming](../../principles/naming.md) に、表記の規約は [languages](../../languages/) に従う。
+命名は [principles/naming](../../principles/naming.md) に従う。
+表記の規約は [languages](../../languages/) が定める。
 
 ## 入口での検証と認可
 

@@ -178,4 +178,5 @@ function parseUser(input: unknown): ValidUser | Error { /* ここだけが検証
 
 ## 参照
 封入と分類の原則は [modeling](../principles/modeling.md)、語彙は [naming](../principles/naming.md) に従う。
-境界での検証に伴う効果の実行は [effect](./effect.md)、言語別の型機構は [languages](../languages/) に従う。
+境界での検証に伴う効果の実行は [effect](./effect.md) に従う。
+言語別の型機構は [languages](../languages/) が定める。

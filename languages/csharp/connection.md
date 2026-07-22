@@ -117,7 +117,6 @@ Result の実装は、Effect と同じく libs の機構が持つ。
 Result の二状態では、欠陥と取り消しを一つの型に分けて全域化できず、失敗に畳むか型の外へ逃がすことになる。
 四つの終了に分けると、回復できる失敗と回復できない欠陥と取り消しを取り違えない。
 TFailure を sealed record の階層にすると、網羅の switch で扱える。
-外部ライブラリの `readonly struct` の Result は、`default` の構築を型で防げず、不正な状態の排除が崩れる。
 自作の閉じた Result なら、TFailure の階層と `default` 検出の analyzer を Effect と共有できる。
 外部依存の失敗は adapter で回復できる失敗と欠陥に分け、回復できる失敗を Failed に、欠陥を Defected にする。
 EffectExit の基底も非 sealed な abstract record で、外部 assembly からの派生を型だけでは防げない限界と、その手当ては [formation](./formation.md) の閉じた階層の規律に従う。

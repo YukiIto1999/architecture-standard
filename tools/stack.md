@@ -74,6 +74,15 @@ design token は `@theme` に一元化し、W3C Design Tokens Community Group �
 判断基準は、振る舞いと design token による見た目を分離できることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
+## browser の telemetry 収集
+
+用途は、利用者の環境で動く viewer の trace と構造化 event を、境界の殻で収集する機構である。
+採用は、TypeScript は OpenTelemetry JS の modular な browser 構成である。
+構成には、trace と logs の各 API と SDK、OTLP/HTTP の exporter を使う。
+Rust と C# は、viewer を TypeScript に委ねるため採用を持たない。
+判断基準は、ui port の背後で trace と event を同じ文脈に相関させ、採用済みの collector へ出力できることである。
+撤回条件は、判断基準を満たさなくなることであり、browser と logs の SDK の互換性の破壊・保守の停止・bundle と実行負荷の実測が project の予算を超えることを再評価のトリガーとする。
+
 ## web の host
 
 用途は、web の host の entry と bundler である。

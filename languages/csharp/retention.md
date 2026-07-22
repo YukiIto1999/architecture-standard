@@ -13,6 +13,7 @@ SQL の値は parameter で渡し、文字列の連結で組み立てない。
 フル ORM と変更追跡を持ち込まない。
 SQL 中の変数と parameter の対応は DapperAOT を有効にして検査する。
 列の型と nullable の対応は、SQL から抽出した列挙と DTO のプロパティを突き合わせる照合テストで、DB を起動せずに検証する。
+schema の変更は grate で、up の one-time script として forward-only に適用する。
 
 ### 根拠
 Dapper は SQL を隠さず、薄い写像で結果を型に移す。
@@ -21,6 +22,9 @@ DapperAOT はソース生成に基づくビルド時解析で、DB へ接続せ�
 PostgreSQL は DapperAOT の既定の照合にとどまり、SQL Server 向けの高精度な構文解析を持たないため、名前対応の検査が部分的にとどまる。
 DapperAOT は DB のスキーマを参照しないため、列の型と nullable の対応は対象外であり、SQL と DTO を突き合わせる照合テストで別に埋める必要がある。
 単一のツールで名前・型・nullable の対応すべてを検証できないため、二つの手段を組み合わせて観測可能にする。
+grate は素の SQL を専用の CLI で適用し、up の script を一度だけ実行して、適用済み script の改変を既定で失敗にする。
+migration を言語の class に包まないので、schema の変更が SQL のまま履歴に残る。
+forward-only の規律そのものは [structure/core/infrastructure](../../structure/core/infrastructure.md) に従う。
 
 ### 完了条件
 永続化が、Npgsql の上の Dapper の薄い写像で書かれている。
@@ -28,6 +32,7 @@ SQL の値が parameter で渡され、文字列の連結で組み立てられ�
 変更追跡を、持ち込んでいない。
 DapperAOT が有効になっており、SQL 中の変数と parameter の対応が検査されている。
 列の型と nullable の対応が、DB を起動しない照合テストで検証されている。
+schema の変更が、grate の up の one-time script として forward-only に適用されている。
 
 ### 禁止事項
 SQL の値を、文字列の連結や補間で組み立てること。
@@ -38,6 +43,7 @@ parameter の対応検証を、単一のツールで完結すると称するこ�
 ### 行動
 SQL を Dapper で書き、値を parameter で渡す。
 DapperAOT を導入し、名前対応の診断をエラーへ昇格する。
+schema の変更は up の one-time script として書き、grate の CLI を CI から非対話で実行する。
 SQL から抽出した列挙と DTO のプロパティを突き合わせる照合テストを書き、CI で実行する。
 
 ### 例

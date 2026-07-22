@@ -184,4 +184,4 @@ flag の判定を一点に集約し、不要になった flag を在庫として
 
 ## 参照
 分離の原則は [separation](../principles/separation.md)、検証に失敗した起動の停止は [lifecycle](./lifecycle.md)、secret の伝送は [security](./security.md) に従う。
-設定の読み込みと flag の機構は [structure/core/composition](../structure/core/composition.md)、言語別の機構は [languages](../languages/) に従う。
+設定の読み込みと flag の機構は [structure/core/composition](../structure/core/composition.md)、言語別の機構は [languages](../languages/) が定める。

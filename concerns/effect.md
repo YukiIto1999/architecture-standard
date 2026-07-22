@@ -262,4 +262,5 @@ validate(input) |> flatMap(decide) |> map(toEvents)
 不変と変換は [construction](../principles/construction.md)、副作用の隔離は [separation](../principles/separation.md) に従う。
 非同期と取り消しは [concurrency](./concurrency.md)、依存の配線は [dependency](./dependency.md) に従う。
 失敗の直和の構築規律は [types](./types.md) に従う。
-書き込みの確定は [transaction](./transaction.md)、機構の置き場は [structure](../structure/)、言語別の実現は [languages](../languages/) に従う。
+書き込みの確定は [transaction](./transaction.md) に従う。
+機構の置き場は [structure](../structure/)、言語別の実現は [languages](../languages/) が定める。

@@ -86,6 +86,28 @@ executable spec と UI の E2E smoke・visual を、代替として並べるこ�
 業務の語彙でシナリオを書き、cucumber-js のステップで実装する。
 UI の E2E smoke と visual は playwright-bdd と Playwright で別に書く。
 
+## accessibility
+
+### 要求
+自動判定できる accessibility の違反は、E2E で機械検査する。これを @axe-core/playwright で満たす。
+キーボードの到達性は、Playwright の操作と focus の assertion で E2E シナリオとして確かめる。
+
+### 根拠
+[experience](../../concerns/experience.md) が要求する対比・ラベル・色だけに頼らない表現のうち、機械判定できる違反は axe の規則が検出する。
+playwright-bdd は Playwright Test へ変換するので、生成されたテストの page に AxeBuilder を適用すれば、既存の runner のまま検査が加わる。
+axe は focus trap やキーボードの全機能への到達を判定し切れないので、到達性は操作のシナリオで確かめる。
+
+### 完了条件
+操作後の各状態が、@axe-core/playwright で検査され、違反が CI で失敗になっている。
+キーボードの到達性が、E2E シナリオで確かめられている。
+
+### 禁止事項
+機械検査の通過だけで、accessibility を満たしたと称すること。
+
+### 行動
+E2E の各状態で AxeBuilder を適用し、違反を失敗として報告する。
+Tab・Escape・focus の assertion で、キーボードの到達性のシナリオを書く。
+
 ## 実依存
 
 ### 要求
@@ -192,7 +214,7 @@ SonarQube の profile は cognitive complexity(S3776)に絞り、ローカル li
 strict を有効にすれば、不在や暗黙の any が型検査で止まる。
 noUncheckedIndexedAccess は配列・索引アクセスの結果に `undefined` を型で強制し、exactOptionalPropertyTypes は省略可能なプロパティへの明示的な `undefined` 代入を区別するので、formation が定める不在の union と厳密な型検査の規律を tsconfig が機械で支える。
 型検査と lint の警告をエラーにすれば、規則の違反がビルドで止まる。
-oxlint は既に採用した Vite・Vitest と同じ基盤の単一の linter で、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
+oxlint は、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
 max-lines・max-lines-per-function・max-depth は、ファイル・関数の大きさとネストの深さを早く気づかせる。
 oxlint の complexity 規則は cyclomatic complexity であり cognitive complexity と同一でないため、複雑度は SonarQube の S3776 に一本化し二重に測らない。
 SonarQube の cognitive complexity は switch の構造化を一度だけ加点し case の数に比例しないので、判別子つき union の網羅的な switch を罰しない。
@@ -235,7 +257,7 @@ SonarQube の profile は cognitive complexity だけに絞る。
 ### 根拠
 oxlint の jsdoc 系の規則は、ドキュメントコメントが既に在るときの @param・@returns の網羅を検査できるが、ドキュメントコメントの存在そのものを要求する規則を持たない。
 oxlint の jsdoc 系の規則は @typeParam・@throws の網羅と最初の一行の体裁を検査する規則を持たないため、その部分はレビューで埋める。
-TSDoc の構文検査は oxlint に無く、単一の採用を守るために eslint-plugin-tsdoc のような別の linter を並走させない。
+TSDoc の構文検査は oxlint に無く、単一の採用を守るために別の linter を並走させない。
 内容がユビキタス言語と一致しているかの判断は意味を読む必要があり、機械化できない。
 
 ### 完了条件
@@ -262,9 +284,9 @@ formation・translation・connection・retention・coordination・publication・
 | formation | 不正な状態を構築できなくする | 型(判別子つき union・never 網羅) |
 | formation | 不変を既定にする | 型(readonly・as const) |
 | formation | 意味と単位を型で区別する | 型(branded type) |
-| conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+レビュー(型・値の PascalCase・camelCase の命名規約) |
+| conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+構造検査(自作の命名照合。型・値の PascalCase・camelCase) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(oxlint の jsdoc 規則群。@param・@returns の網羅)+レビュー(@typeParam・@throws の網羅・存在・構文・最初の一行の体裁・意味の妥当性) |
-| conventions | 型名の接尾辞を役割で揃える | レビュー |
+| conventions | 型名の接尾辞を役割で揃える | 構造検査(自作の命名照合) |
 | translation | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・境界の parse の単体テスト) |
 | translation | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(4xx・5xx の分岐の単体テスト) |
 | translation | 契約の型を生成する | 実行テスト(drift 検査の CI gate) |
@@ -280,8 +302,10 @@ formation・translation・connection・retention・coordination・publication・
 | coordination | 非同期 | レビュー |
 | coordination | 取り消し | 実行テスト(AbortSignal の伝播の単体テスト) |
 | coordination | 並行の組 | 実行テスト(AbortController での一括 abort の単体テスト) |
+| coordination | メインスレッドを塞がない | レビュー(重い同期計算の特定と退避の判断) |
 | coordination | 後始末 | レビュー(onCleanup 登録漏れの判断) |
 | publication | viewer | レビュー(props の分割代入の禁止) |
+| publication | viewer の telemetry | 型(ui port の型)+レビュー(SDK の adapter への隔離の判断) |
 | publication | styling | レビュー |
 | publication | web の host | レビュー |
 | publication | extension | 型(port の interface) |
