@@ -46,7 +46,7 @@ styling の機構は Tailwind CSS の Vite plugin に一つ固定し、CSS を�
 runtime に style を生成する CSS-in-JS は使わない。
 スタイルはマークアップのタグ内で完結させ、component 単位の独立した CSS は標準外とする。
 layout primitive は container query で組み、headless は Kobalte を使い見た目は design token で与える。
-W3C Design Tokens Community Group の draft の交換形式は採用しない。
+design token の交換形式の採否は、[tools/stack](../../tools/stack.md) の styling の機構が定める。
 
 ### 根拠
 design token を `@theme` に集約すれば、変わりそうな見た目の決定が一箇所に隠れる。
@@ -66,7 +66,7 @@ layout primitive が container query で組まれ、headless が Kobalte で見�
 design token を、`@theme` の外へ散らすこと。
 runtime CSS-in-JS で、style を生成すること。
 component 単位の独立した CSS を作ること。
-W3C Design Tokens Community Group の draft の交換形式を採用すること。
+design token を、`@theme` の外の交換形式で持つこと。
 
 ### 行動
 design token を `@theme` に集約し、styling の機構を Tailwind の Vite plugin に一本化して runtime CSS-in-JS を導入しない。
