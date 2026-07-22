@@ -19,7 +19,7 @@ CSharpier は、設定項目を少数に絞った opinionated な formatter で�
 採用は、Rust は clippy、C# は SonarAnalyzer.CSharp、TypeScript は oxlint と tsgolint の type-aware 実行である。
 判断基準は、規則を全体に一律に強制でき、警告を CI でエラーとして扱えることである。
 SonarAnalyzer.CSharp は、大きさとネストのしきい値(S104・S138・S134)を規則として持ち、保守も活発である。
-認知的複雑さ(S3776)は二重計測を避けるためビルド時 lint 側で有効にせず、認知的複雑さの検査の採用に従う。
+認知的複雑さ(S3776)の規則の割り当ては、二重計測を避けるため languages の inspection が定める。
 oxlint は、既に採用した Vite・Vitest と同じ基盤の単一の linter で、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
 oxlint は Rust 実装であり、ファイル数の増加に対して実行の費用が延びにくい。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止と、Vite Plus の統合 CLI(vp)の 1.0 到達を再評価のトリガーとする。
@@ -70,6 +70,14 @@ Reqnroll は自前のテスト実行系を持たないため、実行基盤は R
 採用は、TypeScript は playwright-bdd と Playwright である。
 判断基準は、Gherkin の記法で smoke を書きながら実行を Playwright の runner に委ねられることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
+
+## UI の accessibility 検査
+
+用途は、UI の E2E で、自動判定できる accessibility の違反を検出する道具である。
+採用は、TypeScript は @axe-core/playwright である。
+Rust と C# は、viewer を TypeScript に委ねるため採用を持たない。
+判断基準は、採用済みの Playwright の runner と page に対して、操作後の各状態で対比・ラベル・focus の機械判定できる違反を検査し、CI で止められることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止と Playwright との互換性の喪失を再評価のトリガーとする。
 
 ## mutation
 

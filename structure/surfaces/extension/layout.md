@@ -51,7 +51,8 @@ local の関心は、core を埋め込んだ埋め込み surface へ、[contract
 local の接続は、host が要求する場合に限って使う。
 server の API を、この接続で置き換えない。
 extension は、core の操作を呼び、業務判断を持たない。
-接続の依存は [skeleton](../../skeleton.md) に、機構は [languages](../../../languages/) に従う。
+接続の依存は [skeleton](../../skeleton.md) に従う。
+接続の機構は [languages](../../../languages/) が定める。
 
 ## 配布
 

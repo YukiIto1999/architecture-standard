@@ -31,13 +31,12 @@ principles・concerns・structure の上位規律に従属し、上位規律を�
 | [csharp](./csharp/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセス | .NET 10・C# 14 |
 | [typescript](./typescript/) | viewer・extension・web と ide の host | TypeScript 6.0 |
 
-project は、core の言語を一つ選び、選定の理由と単一採用を project の ADR に記録する。
-選ぶ基準は、上表の役割の差である。
-extension が言語サービスを要する構成では、rust を選ぶ。
+core の言語の選定は、[tools/language](../tools/language.md) が定める。
 自己ホストの surface と、desktop・mobile の host は、core の言語に従う。
 web の host の platform は browser であり、言語を持たない。
 その bundler と entry は typescript が担う。
 基盤の版の改訂は、standard-update で行う。
+遵守は、各実現軸の規律の完了条件と禁止事項で照合して判定する。
 
 rust と csharp は、[structure/libs/layout](../structure/libs/layout.md) が定める libs の機構として、companion のビルド時ツール crate・project を持つ。
 typescript は、型が compile 時にのみ存在し実行時には消えるので、companion に相当する別のビルド時ツールを持たない。

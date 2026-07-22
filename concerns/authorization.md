@@ -175,4 +175,4 @@ log({ denied: true, actorId, target, reason }); return forbidden()
 ## 参照
 分離の原則は [separation](../principles/separation.md)、principal の伝播は [observability](./observability.md)、安全の姿勢は [security](./security.md) に従う。
 外部へ公開するエラーの形は [effect](./effect.md) に従う。
-principal の解決と actor の写像の構造は [structure/core/composition](../structure/core/composition.md)、言語別の実現は [languages](../languages/) に従う。
+principal の解決と actor の写像の構造は [structure/core/composition](../structure/core/composition.md)、言語別の実現は [languages](../languages/) が定める。

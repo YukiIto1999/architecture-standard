@@ -87,18 +87,20 @@ surfaces に surface として置き、protocol の対話様式を表す名で�
 |---|---|
 | core | libs |
 | core/composition | contracts/canonical |
+| libs | なし |
 | server | core・contracts/canonical・contracts/http |
 | console・worker | core・contracts/canonical |
 | 埋め込み surface | core・contracts/canonical・contracts/protocol |
 | viewer | contracts/generated の型 |
 | extension の remote | contracts/generated の型 |
-| extension の local | contracts/protocol(契約と、その生成物) |
+| extension の local | contracts/protocol と、protocol から生成した contracts/generated |
 | extension(UI を持つ場合) | viewer の公開 API |
 | runtimes/\<host\> | 対応する surface・その host の API・port の実装に用いる contracts/generated・core を埋め込む場合は core と contracts/canonical |
 | deploy | 配備の対象となる成果物 |
 | tests | 検証のために全ての境界 |
 
 この表が root またぎ依存の機械検証の唯一の駆動元である。
+表に無い参照元から参照先への root またぎ依存は、すべて禁止とする。
 
 contracts 内部の層間の依存は [contracts](./contracts/layout.md) に従う。
 contracts/generated は、contracts/canonical と binding(http・protocol)から生成する。
@@ -108,13 +110,8 @@ extension は、core を直接埋め込まない。
 extension の local の関心は、core を埋め込んだ別プロセスへ、言語非依存の protocol で接続する。
 そのプロセスは、対応する runtime が同梱して起動する。
 extension が UI を持つ場合は viewer を再利用し、ide の host が viewer もホストして ui port を注入する。
-core の各コンテキストと shared は、contracts を参照しない。
-libs は、core・contracts を参照しない。
-core は、contracts/http と contracts/generated を参照しない。
-viewer と extension は、server や core の内部の型を参照しない。
-runtimes は、互いに参照しない。
+contracts への依存を core で持てるのは composition だけであり、各コンテキストと shared は表の core 行に従う。
 自己ホスト surface が持つ一時 store の置き場は、各 surface の layout が定める。
-これらの禁止は、root の [tests の arch](./tests/layout.md) で機械検証する。
 
 ## workspace
 
@@ -123,7 +120,7 @@ root は、言語ごとの package を集めた polyglot の monorepo である�
 package の境界は、依存方向の規律で守る。
 build は、言語ごとの package を横断する orchestrator で実行する。
 orchestrator は、package の依存境界を強制する。
-orchestrator の採用と選定の判断基準は、[tools/inspection](../tools/inspection.md) に従う。
+orchestrator の採用と選定の判断基準は、[tools/inspection](../tools/inspection.md) が定める。
 
 ## 加算
 

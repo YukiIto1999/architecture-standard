@@ -15,6 +15,7 @@ language は、言語の選定を定める。
 
 project は、core の言語を一つ選び、選定の理由と単一採用を project の ADR に記録する。
 選定の基準は、[languages/README](../languages/README.md) の言語と役割の表の役割の差である。
+extension が言語サービスを要する構成では、Rust を選ぶ。
 
 ## 対象外言語の縮退経路
 

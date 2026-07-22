@@ -201,4 +201,4 @@ release の経路に、SBOM の生成・provenance の生成・署名を組み�
 入力の検証は [types](./types.md)、認可は [authorization](./authorization.md) に従う。
 secret と鍵の保管は [configuration](./configuration.md) に従う。
 伝送・供給網などの機構は [structure](../structure/) に置き、一つの箱へまとめない。
-言語別の実現は [languages](../languages/) に従う。
+言語別の実現は [languages](../languages/) が定める。

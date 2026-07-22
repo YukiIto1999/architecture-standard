@@ -69,22 +69,26 @@ const [user, { refetch }] = createResource(userId, fetchUser); // 無効化は r
 ## 保存の禁止
 
 ### 要求
-token を localStorage・sessionStorage・メモリの store に置かない。
-API の呼び出しは、session cookie を送るだけにする。
+認証の token を localStorage・sessionStorage・メモリの store に置かない。
+API の呼び出しは、session cookie と、状態を変える要求の CSRF token の専用 header だけを送る。
+CSRF token は、専用 header で返すためだけに保持し、localStorage・sessionStorage に置かない。
 
 ### 根拠
 localStorage・sessionStorage・メモリの store はいずれも JavaScript から読めるので、XSS で token が持ち出される。
-token を信頼境界の外へ出さない理由と、利用者へ session cookie だけを渡す理由は [concerns/authentication](../../concerns/authentication.md) に従う。
+CSRF token は応答で受け取り header で返す設計なので JavaScript から扱うが、永続の保管に置くと有効な期間が session を越えて残る。
+token を信頼境界の外へ出さない理由と、CSRF の方式は [concerns/authentication](../../concerns/authentication.md) に従う。
 
 ### 完了条件
-token が、localStorage・sessionStorage・メモリの store に置かれていない。
-API の呼び出しが、session cookie を送るだけになっている。
+認証の token が、localStorage・sessionStorage・メモリの store に置かれていない。
+API の呼び出しが、session cookie と CSRF token の専用 header だけを送っている。
+CSRF token が、localStorage・sessionStorage に置かれていない。
 
 ### 禁止事項
-token を、localStorage・sessionStorage・メモリの store に置くこと。
+認証の token を、localStorage・sessionStorage・メモリの store に置くこと。
+CSRF token を、localStorage・sessionStorage に置くこと。
 
 ### 行動
-token をブラウザの store に置かず、API の呼び出しを session cookie を送るだけにする。
+認証の token をブラウザの store に置かず、API の呼び出しを session cookie と CSRF token の header だけにする。
 token・session・CSRF の規律は [concerns/authentication](../../concerns/authentication.md) に従う。
 
 ### 例

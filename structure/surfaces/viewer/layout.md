@@ -65,4 +65,5 @@ viewer は、host の分岐を持たない。
 収集は ui port として定義し、host が実装を注入する。
 viewer 自体は、収集の機構を持たない。
 個人情報を含む観測は、[concerns/observability](../../../concerns/observability.md) の個人情報の規律に従う。
-収集の機構は [languages](../../../languages/) に、host の実装は [runtimes](../../runtimes/) に従う。
+収集の機構は [languages](../../../languages/) が定める。
+host の実装は [runtimes](../../runtimes/) に従う。

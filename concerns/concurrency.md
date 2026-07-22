@@ -218,4 +218,4 @@ function decide(x, fetched) { return fetched.ok ? a : b; }   // 純粋。テス�
 不変は [construction](../principles/construction.md)、副作用の隔離は [separation](../principles/separation.md) に従う。
 効果の合成は [effect](./effect.md)、文脈の伝播は [observability](./observability.md) に従う。
 待ち行列と流入の上限は [resilience](./resilience.md)、性能目的の並列化は [performance](./performance.md) に従う。
-言語別の実現は [languages](../languages/) に従う。
+言語別の実現は [languages](../languages/) が定める。

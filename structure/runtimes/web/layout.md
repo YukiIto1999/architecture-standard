@@ -38,10 +38,10 @@ composition は、viewer が公開する起動の入口に依存する。
 web は、viewer の内部へ踏み込まない。
 web 固有の処理は、adapters と composition に置く。
 viewer の中に、browser や web の分岐を置かない。
-具体の API の機構は [languages](../../../languages/) に従う。
+具体の API の機構は [languages](../../../languages/) が定める。
 
 ## 組み立てと起動
 
 composition は、adapters を viewer へ注入する。
 composition は、viewer を DOM に mount して起動する。
-entry と bundler の機構は [languages](../../../languages/) に従う。
+entry と bundler の機構は [languages](../../../languages/) が定める。
