@@ -49,7 +49,7 @@ let app = Router::new()
 ### 要求
 session は tower-sessions で扱い、store は fred で Valkey に保持する。
 OIDC は openidconnect を使う。
-CSRF の検査は [concerns/authentication](../../concerns/authentication.md) に従う。
+CSRF の検査は、session に保持した token と専用 header の一致を検査する自作の middleware で行う([concerns/authentication](../../concerns/authentication.md) に従う)。
 access token と refresh token は server 側の session に保持し、ブラウザへは session を指す cookie だけを渡す。
 token の更新は、単一の更新に制御し、競合による上書きを防ぐ。
 resource への要求は server が中継し、内部の JWT を付与してから転送する。中継の機構は project が単一の採用を ADR に明記する。
@@ -81,7 +81,7 @@ token を server 側の session に保持し、ブラウザへは session を指
 session の store を fred backed の実装に差し、Valkey に保持する。
 token の更新経路に、単一の更新に絞る制御を入れる。
 resource への要求を server で中継し、内部の JWT を付与してから転送する。中継の機構は project の ADR に明記する。
-CSRF の検査は [concerns/authentication](../../concerns/authentication.md) に従って実装する。
+CSRF の検査は、session の token と専用 header の一致を検査する middleware として自作する。
 
 ### 例
 ```rust

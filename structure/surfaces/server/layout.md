@@ -45,7 +45,7 @@ port は [structure/core/application](../../core/application.md) に、engine �
 server は、BFF として token を仲介する。
 本人性の確立・token の非流出・session cookie・CSRF の検査・token の交換と保持の規律は [concerns/authentication](../../../concerns/authentication.md) に従う。
 session store の採用は [concerns/persistence](../../../concerns/persistence.md) に従う。
-session store・token 交換・CSRF の機構は [languages](../../../languages/) に従う。
+session store・token 交換・CSRF の機構は [languages](../../../languages/) が定める。
 
 ## 安全の境界
 
