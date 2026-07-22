@@ -235,7 +235,7 @@ formation・translation・connection・retention・coordination・publication・
 | formation | companion を libs の機構として netstandard2.0 プロジェクトに分ける | 構造検査(companion 境界)+型(netstandard2.0 の Analyzer 参照制約) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、SonarAnalyzer.CSharp の命名規則) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化・companion)+レビュー(意味の妥当性) |
-| conventions | 型名の接尾辞を役割で揃える | レビュー |
+| conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET の命名照合) |
 | translation | 境界で一度だけ parse してドメイン型へ移す | 型(JsonSerializerContext・required・JsonExtensionData)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | translation | 公開するエラーを境界で problem+json へ写す | 実行テスト(ProblemDetails の単体テスト) |
 | translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の CI gate) |

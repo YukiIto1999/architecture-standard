@@ -228,4 +228,4 @@ function compensate(saga) {
 ## 参照
 outbox の書き込みは [transaction](./transaction.md)、冪等・再試行・行き止まりの正本は [resilience](./resilience.md)、契約の独立は [separation](../principles/separation.md) に従う。
 打ち消す事実の追記の形は [data](../principles/data.md) に従う。
-言語別の実現は [languages](../languages/) に従う。
+言語別の実現は [languages](../languages/) が定める。

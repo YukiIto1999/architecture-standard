@@ -63,6 +63,7 @@ C# と TypeScript は、組み込みの機構(CancellationToken・AbortControlle
 
 用途は、styling を組む機構である。
 採用は、TypeScript は Tailwind CSS の Vite plugin である。
+design token は `@theme` に一元化し、W3C Design Tokens Community Group の draft の交換形式は、安定版でないため採用しない。
 判断基準は、design token を一元化でき、CSS をビルド時に静的に出せることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
@@ -72,6 +73,15 @@ C# と TypeScript は、組み込みの機構(CancellationToken・AbortControlle
 採用は、TypeScript は Kobalte である。
 判断基準は、振る舞いと design token による見た目を分離できることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
+
+## browser の telemetry 収集
+
+用途は、利用者の環境で動く viewer の trace と構造化 event を、境界の殻で収集する機構である。
+採用は、TypeScript は OpenTelemetry JS の modular な browser 構成である。
+構成には、trace と logs の各 API と SDK、OTLP/HTTP の exporter を使う。
+Rust と C# は、viewer を TypeScript に委ねるため採用を持たない。
+判断基準は、ui port の背後で trace と event を同じ文脈に相関させ、採用済みの collector へ出力できることである。
+撤回条件は、判断基準を満たさなくなることであり、browser と logs の SDK の互換性の破壊・保守の停止・bundle と実行負荷の実測が project の予算を超えることを再評価のトリガーとする。
 
 ## web の host
 
@@ -99,7 +109,7 @@ core が C# のときの desktop は、core の言語と host の言語を合わ
 
 用途は、BFF が session を保持し cookie で運ぶ機構である。
 採用は、Rust は tower-sessions である。C# は ASP.NET Core 標準の cookie 認証を使い、外部ライブラリを別に選ばない。
-判断基準は、既定で Secure・HttpOnly・SameSite=Strict な安全な cookie を発行できることである。
+判断基準は、Secure・HttpOnly・SameSite=Strict の cookie 属性を、既定または明示の設定で強制できることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## BFF の中継

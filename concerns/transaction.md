@@ -86,8 +86,8 @@ domain event と integration event の区別は [messaging](./messaging.md) に�
 integration event が、outbox を経て配送されている。
 
 ### 禁止事項
-状態の変更とイベントの配送を、別々の書き込みパスへ分けること。
-outbox を経ずに、状態変更とイベント配送を別の経路で行うこと。
+状態の変更とイベントの記録を、別々の書き込みパスへ分けること。
+outbox の記録を経ずに、イベントを配送すること。
 
 ### 行動
 状態の変更と outbox への記録を、一つのトランザクションにまとめる。
@@ -192,4 +192,4 @@ function place(order): Result<Events, E> { /* 純粋。確定はしない */ }
 ## 参照
 整合性と集約は [data](../principles/data.md)、効果とエラーは [effect](./effect.md) に従う。
 配送は [messaging](./messaging.md)、冪等と再試行は [resilience](./resilience.md) に従う。
-書き込みパスの所有を実現する構造は [structure/core/composition](../structure/core/composition.md)、言語別の実現は [languages](../languages/) に従う。
+書き込みパスの所有を実現する構造は [structure/core/composition](../structure/core/composition.md)、言語別の実現は [languages](../languages/) が定める。

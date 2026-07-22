@@ -199,6 +199,24 @@ else
 fi
 
 echo
+echo "=== 10. 参照動詞の向き(抽象から具象へは「が定める」) ==="
+verb_violations=$(
+  {
+    rg -n "に従う。" principles concerns --no-heading 2>/dev/null | rg "\]\((\.\./)+(structure|languages|tools|process)" || true
+    rg -n "に従う。" structure --no-heading 2>/dev/null | rg "\]\((\.\./)+(languages|tools)" || true
+  } | wc -l
+)
+if [ "${verb_violations:-0}" = "0" ]; then
+  pass "抽象から具象への「従う」参照なし"
+else
+  {
+    rg -n "に従う。" principles concerns --no-heading 2>/dev/null | rg "\]\((\.\./)+(structure|languages|tools|process)" || true
+    rg -n "に従う。" structure --no-heading 2>/dev/null | rg "\]\((\.\./)+(languages|tools)" || true
+  }
+  fail "抽象から具象への参照に「従う」が残っている(「が定める」へ)"
+fi
+
+echo
 if [ "$FAILED" = 0 ]; then
   echo "=== 総合: PASS ==="
 else

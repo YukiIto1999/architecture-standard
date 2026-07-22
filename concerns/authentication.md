@@ -83,8 +83,9 @@ setSessionCookie(opaqueSessionId) // access token・refresh token は仲介点�
 ## 利用者へは opaque な session cookie だけを渡す
 
 ### 要求
-利用者へ渡すのは、httpOnly・Secure・SameSite を備えた session cookie だけとする。
+利用者へ渡す認証の状態は、httpOnly・Secure・SameSite を備えた session cookie だけとする。
 cookie の値は、仲介点の外から意味を読めない opaque な識別子にする。
+CSRF token の受け渡しは認証の状態でなく、CSRF の検査の規律が定める形で行う。
 
 ### 根拠
 httpOnly は JavaScript からの読み出しを防ぎ、XSS による持ち出しを塞ぐ。
@@ -111,6 +112,36 @@ setCookie("session", encodeJwt(claims))
 // 仲介点だけが意味を知る opaque な識別子を、安全な属性で渡す
 setCookie("session", randomOpaqueId(), { httpOnly: true, secure: true, sameSite: "strict" })
 ```
+
+## session を発行し期限で失効させる
+
+### 要求
+session の識別子は、推測できない乱数で生成し、意味を持たせない。
+権限の水準が変わる時、特に認証の成功時に、識別子を再生成する。
+session には、無操作の期限と絶対の期限の二つを持たせ、期限の値は project が定める。
+失効した session は、共有ストアから削除する。
+
+### 根拠
+意味を持つ識別子は、情報を漏らし、推測の手がかりになる。
+認証の前から続く識別子を使い続けると、攻撃者が事前に植え付けた識別子で確立後の session を乗っ取れる。
+認証の成功で再生成すれば、確立前の識別子は確立後の session に届かない。
+無操作の期限は放置された session の悪用の窓を絞り、絶対の期限は盗まれた session の有効な期間を有限にする。
+cookie の破棄は利用者側の状態にすぎず、共有ストアから消して初めて server 側で失効する。
+
+### 完了条件
+session の識別子が、推測できない乱数で生成され、意味を持っていない。
+認証の成功時に、識別子が再生成されている。
+session に、無操作の期限と絶対の期限がある。
+失効した session が、共有ストアから削除されている。
+
+### 禁止事項
+認証の前後で、同じ session の識別子を使い続けること。
+期限のない session を発行すること。
+logout や失効を、cookie の破棄だけで済ませること。
+
+### 行動
+session の発行・再生成・失効を仲介点に集め、失効は共有ストアの削除まで行う。
+無操作と絶対の期限を定め、期限切れの session を刈り取る。
 
 ## 状態を変える要求は CSRF 検査を通す
 
@@ -198,4 +229,4 @@ await store.set(sessionId, tokens, { ttl })
 
 ## 参照
 境界を内に隠す原則は [separation](../principles/separation.md)、確立した principal の権限評価は [authorization](./authorization.md)、session store の採用は [persistence](./persistence.md)、安全の姿勢は [security](./security.md) に従う。
-仲介点の置き場は [structure/surfaces/server/layout](../structure/surfaces/server/layout.md)、言語別の実現は [languages](../languages/) に従う。
+仲介点の置き場は [structure/surfaces/server/layout](../structure/surfaces/server/layout.md)、言語別の実現は [languages](../languages/) が定める。

@@ -47,7 +47,8 @@ user_withdrawals(user_id, withdrawn_at)  -- 退会という出来事を追記す
 追記が続く関係では、一定の区切りで確定した値を別の関係に記録する。
 現在状態は、最新の区切りの行を起点に、それ以降の事実だけで導く。
 区切りより前の履歴は、削除せず別の保管へ分離してよい。
-現在状態を導く関係の名前は `<対象>_current` とし、対象ごとに一つの関係にする。
+現在状態を読み取りのために実体化する場合、その関係の名前は `<対象>_current` とし、対象ごとに一つの関係にする。
+`<対象>_current` は事実から導出した控えであり、区切りの確定を追記する関係とは別に扱う。
 事実を追記する関係の名前は出来事を表す名詞とし、情報・データ・履歴・管理・マスタ・記録という語を避ける。
 
 ### 根拠
@@ -62,7 +63,7 @@ user_withdrawals(user_id, withdrawn_at)  -- 退会という出来事を追記す
 追記が続く関係で、現在状態の導出が最新の区切りの行から先の事実に限られている。
 区切りの確定値が、元の関係と別の関係に記録されている。
 区切りより前の履歴が、削除でなく分離された保管に残っている。
-現在状態を導く関係の名前が `<対象>_current` であり、対象ごとに一つである。
+実体化した現在状態の関係の名前が `<対象>_current` であり、対象ごとに一つで、区切りの関係と分かれている。
 事実を追記する関係の名前が出来事を表す名詞であり、情報・データ・履歴・管理・マスタ・記録という語を含んでいない。
 
 ### 禁止事項
@@ -92,6 +93,8 @@ order_status_events(order_id, status, occurred_at)    -- 遷移を追記する
 point_events(user_id, delta, occurred_at)
 -- 区切りで確定残高を事実として記録し、導出は最新の区切りから先に限る
 point_closings(user_id, balance, closed_at)           -- 区切りの確定を追記する
+-- 読み取りのために現在状態を実体化するなら、導出した控えを別の関係に置く
+point_balance_current(user_id, balance, version)      -- 導出値であり正本でない
 -- 古い期間のイベントは別の保管へ分離し、削除はしない
 ```
 
@@ -100,6 +103,7 @@ point_closings(user_id, balance, closed_at)           -- 区切りの確定を�
 ### 要求
 関係を正規化し、一つの事実を一つの表の一つの列にだけ置く。
 他の列や他の表から導出できる値を、別の列として重ねて持たない。
+導出値を独立に保存してよいのは、失っても事実が残る技術的な控えだけである。
 
 ### 根拠
 正規化の理由は [data](../principles/data.md) に従う。
@@ -108,11 +112,11 @@ point_closings(user_id, balance, closed_at)           -- 区切りの確定を�
 
 ### 完了条件
 一つの事実が、一つの表の一つの列にだけ存在する。
-他の列や他の表から導出できる値が、独立した列として保存されていない。
+技術的な控えでない導出値が、独立した列として保存されていない。
 
 ### 禁止事項
 参照先の表が持つ値を、参照元の表へ複製して持つこと。
-他の列から導出できる値を、独立した列として保存すること。
+技術的な控えでない導出値を、独立した列として保存すること。
 
 ### 行動
 表の列を洗い出し、他の表や他の列から導出できるものを特定する。
@@ -225,7 +229,7 @@ engine の単一採用は project が ADR に明記する。
 互換を保てない変更を見つけたら、新しい構造を一時的な nullable として加え、旧い構造と併存させる。
 新旧どちらの書き込みも新しい構造に反映されることを確かめてから、読み出しを新しい構造へ切り替える。
 参照が消えたことを確認し、旧い構造を落とす。
-適用の手段(forward-only の migration・配備からの独立)は [structure/core/infrastructure](../structure/core/infrastructure.md) に従う。
+適用の手段(forward-only の migration・配備からの独立)は [structure/core/infrastructure](../structure/core/infrastructure.md) が定める。
 
 ### 例
 ```sql
@@ -267,4 +271,4 @@ datastore と一時データの store を project ごとに選び直すと、選
 
 ## 参照
 データの原則は [data](../principles/data.md)、論理設計と物理設計の分離は [modeling](../principles/modeling.md)、書き込みパスの一貫性は [transaction](./transaction.md) に従う。
-永続化の置き場は [structure/core/infrastructure](../structure/core/infrastructure.md)、言語別の実現は [languages](../languages/) に従う。
+永続化の置き場は [structure/core/infrastructure](../structure/core/infrastructure.md)、言語別の実現は [languages](../languages/) が定める。

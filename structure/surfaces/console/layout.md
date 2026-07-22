@@ -32,7 +32,7 @@ command は、引数を use-case へ写像する。
 command は、業務判断を持たず、入力の解析と use-case の呼び出しだけを行う。
 console は wire の binding を持たず、外部へ面を公開しない。
 console は、派生読みモデルの臨時・手動の再構築 operation を command として起動する役割を担う。
-引数の解析の機構は [languages](../../../languages/) に従う。
+引数の解析の機構は [languages](../../../languages/) が定める。
 
 ## 配布
 

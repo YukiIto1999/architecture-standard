@@ -56,7 +56,16 @@ infrastructure は、機構の公開面に含まれない。
 
 各機構は、spec.md を持つ。
 spec.md の front-matter は、その機構を参照してよい境界の消費範囲を宣言する。
+front-matter の書式は、`consumers:` に [skeleton](../skeleton.md) の root 境界名を列挙する形とする。
 消費範囲を宣言していない境界からの参照を、認めない。
+
+```yaml
+---
+consumers:
+  - core
+  - server
+---
+```
 [tests/arch](../tests/layout.md) は、宣言された消費範囲と実際の参照を照合し、宣言を超えた参照を機械検証する。
 
 ## compile 時ツール
@@ -65,10 +74,11 @@ spec.md の front-matter は、その機構を参照してよい境界の消費�
 これは実行時の層に属さず、出荷物にも含まれず、対象とは別のコンパイル単位になる。
 compile 時のツールは、libs の機構として置く。
 compile 時のツールは、ビルド時にだけ参照され、実行時の依存に現れない。
-言語ごとの検査と生成の機構、およびその構築と参照の仕方は [languages](../../languages/) に従う。
+言語ごとの検査と生成の機構、およびその構築と参照の仕方は [languages](../../languages/) が定める。
 
-## standard-libs からの取り込み
+## 共有ライブラリからの取り込み
 
-libs の機構の共有は、standard-libs リポジトリから取り込む。
+libs の機構の共有は、機構ごとに独立したライブラリリポジトリから取り込む。
+リポジトリの名は、機構名に言語の接尾辞を付ける。
 取り込みは、GitHub からの取得、またはローカルコピーで行う。
 registry での配布は、行わない。

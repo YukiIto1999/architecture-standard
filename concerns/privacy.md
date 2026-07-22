@@ -33,7 +33,8 @@ principles の [data](../principles/data.md) が定める事実の保持と削�
 記録へ載せる項目を洗い出し、目的に必要な範囲を確認する。
 本人を特定できる項目は、仮名化するか識別子に置き換える。
 個人情報を含む記録に保持の期限を設定し、期限で消す仕組みを用意する。
-消去の義務を負う個人データそのものの消去は [structure/core/infrastructure](../structure/core/infrastructure.md) の消去の規律に従う。
+期限や義務による消去は、[data](../principles/data.md) の破壊的更新の定めに従い、失う情報が不要である根拠を project の決定記録に残す。
+消去の義務を負う個人データそのものの消去は [structure/core/infrastructure](../structure/core/infrastructure.md) が定める。
 
 ### 例
 ```
@@ -46,5 +47,5 @@ log({ event: "order_placed", customerId, amount })
 ## 参照
 事実の保持と削除の判断は [data](../principles/data.md) に従う。
 観測の記録への適用と、境界を越えて伝播する文脈の扱いは [observability](./observability.md) に従う。
-消去の義務を負う個人データそのものの消去は [structure/core/infrastructure](../structure/core/infrastructure.md) に従う。
-言語別の実現は [languages](../languages/) に従う。
+消去の義務を負う個人データそのものの消去は [structure/core/infrastructure](../structure/core/infrastructure.md) が定める。
+言語別の実現は [languages](../languages/) が定める。

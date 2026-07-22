@@ -34,8 +34,8 @@ middleware を認証・認可・業務の順に積む。
 // 認可を認証より前に置く。principal が未確立で評価される
 app.UseAuthorization(); app.UseAuthentication();
 
-// 認証・認可の順に積み、endpoint はコンテキストごとに登録する
-app.UseAuthentication(); app.UseAuthorization(); app.UseAntiforgery();
+// 認証・認可・CSRF の順に積み、endpoint はコンテキストごとに登録する
+app.UseAuthentication(); app.UseAuthorization(); app.UseMiddleware<CsrfMiddleware>();
 app.MapTodoEndpoints(); app.MapUserEndpoints();
 public static RouteGroupBuilder MapTodoEndpoints(this IEndpointRouteBuilder app) =>
     app.MapGroup("/todos").WithTags("Todos");
@@ -46,7 +46,7 @@ public static RouteGroupBuilder MapTodoEndpoints(this IEndpointRouteBuilder app)
 ### 要求
 中継は YARP を使い、session は ASP.NET Core の cookie 認証、OIDC は標準の handler を使う。
 token の管理は Duende.AccessTokenManagement を使う。
-CSRF の検査は [concerns/authentication](../../concerns/authentication.md) に従う。
+CSRF の検査は、session に保持した token と専用 header の一致を検査する自作の middleware で行う([concerns/authentication](../../concerns/authentication.md) に従う)。
 access token と refresh token は server 側に保持し、ブラウザへは session を指す識別子だけを持つ認証の cookie を渡す。
 認証チケットは `ITicketStore` で `CookieAuthenticationOptions.SessionStore` に差し、retention の Valkey に保持する。
 
@@ -66,13 +66,14 @@ CSRF の検査が、[concerns/authentication](../../concerns/authentication.md) 
 access token・refresh token を、ブラウザへ渡すこと。
 `SessionStore` を差さずに `SaveTokens` だけに頼り、token を含む認証チケットを cookie に詰めてブラウザへ渡すこと。
 token の管理で、Duende の商用製品(BFF・IdentityServer)に踏み込むこと。
+ASP.NET Core の Antiforgery を CSRF の検査に使い、期待値の保持を cookie に頼ること。
 cookie の HttpOnly・Secure・SameSite を、緩めること。
 
 ### 行動
 OIDC を code と PKCE で server で終端し、token を server 側に保持する。
 `CookieAuthenticationOptions.SessionStore` に `ITicketStore` の実装を差し、認証チケットを retention の Valkey に保持する。
 YARP で同一オリジンの中継を行い、cookie を HttpOnly・Secure・SameSite=Strict にする。
-CSRF の検査は [concerns/authentication](../../concerns/authentication.md) に従って実装する。
+CSRF の検査は、session の token と専用 header の一致を検査する middleware として自作する。
 
 ### 例
 ```csharp
