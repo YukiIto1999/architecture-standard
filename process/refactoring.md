@@ -17,12 +17,11 @@
 ## 確認点
 
 各段で、全テストが緑であり、外から見た振る舞いが変わっていないことを確かめる([principles/verification](../principles/verification.md) のテストを振る舞いの安全網にするに従う)。
-安全網に頼る前に、テストを意図的に壊して赤になることを確かめる([principles/verification](../principles/verification.md) のテストを振る舞いの安全網にするに従う)。
-差分が追加に寄っているかを確かめ、修正が多いなら [principles/construction](../principles/construction.md) の業務判断を型と多態で構造化するに照合する。
+安全網に頼る前に、テストを意図的に壊して赤になることを確かめる([principles/verification](../principles/verification.md) のテストの信頼性を保つに照合する)。
+新しい場合の追加が既存の分岐本体の修正を要したなら、[principles/construction](../principles/construction.md) の業務判断を型と多態で構造化するに照合する。
 結合の診断は、[principles/separation](../principles/separation.md) の結合を距離に見合う強さにするに従う。
 テストの有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
 
 ## 範囲外
 
-基盤の入れ替えと契約の変更は、[principles/evolution](../principles/evolution.md) の変更は段階的で可逆にするに従う。
-標準との差分を埋める移行は [migration](./migration.md) に従う。
+基盤の入れ替えと契約の変更、標準との差分を埋める移行は、[migration](./migration.md) に従う。
