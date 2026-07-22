@@ -256,8 +256,8 @@ formation・translation・connection・retention・coordination・publication・
 | formation | 意味と単位を型で区別する | 型(newtype) |
 | formation | companion を libs の proc-macro crate に分ける | 構造検査(companion 境界)+型(proc-macro crate type の compiler 制約) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(rustfmt --check、rustc の non_snake_case 系 lint) |
-| conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・missing_panics_doc・missing_safety_doc で公開要素の節の網羅)+未充足(自作: 最初の一行の体裁の検査)+レビュー(ユビキタス言語の一致) |
-| conventions | 型名の接尾辞を役割で揃える | レビュー |
+| conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・missing_panics_doc・missing_safety_doc で公開要素の節の網羅)+構造検査(自作の体裁検査。最初の一行)+レビュー(ユビキタス言語の一致) |
+| conventions | 型名の接尾辞を役割で揃える | 構造検査(自作の命名照合) |
 | translation | 境界で一度だけ parse してドメイン型へ移す | 型(TryFrom)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | translation | 公開するエラーを境界で problem+json へ写す | 実行テスト(IntoResponse の単体テスト・CatchPanicLayer の単体テスト) |
 | translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の CI gate) |

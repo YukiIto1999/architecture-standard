@@ -18,7 +18,7 @@ principles の [comment](../../principles/comment.md) が定めるドキュメ�
 [verification](../../principles/verification.md) が定める、コードスタイルの細則は人の合意でなく単一の formatter と linter に委ねるという要求に、oxfmt で応える。
 TypeScript はファイル名の標準の規約を持たないため、一つの表記に固定しないと表記が揺れる。
 kebab-case に固定して `unicorn/filename-case` で揃えれば、ファイル名が一意に決まる。
-型と値の命名規約(PascalCase・camelCase)自体を検査する規則は oxlint に無く、この部分はレビューで確認する。
+型と値の命名規約(PascalCase・camelCase)自体を検査する規則は oxlint に無いため、自作の命名照合を CI に置いて検査する。
 ファイル名はモジュールを指す名前であり、コードの識別子である値や型の名前とは指す対象が異なる。
 指す対象が異なるファイル名とコードの識別子を、同じ命名規約に揃える理由はない。
 種別を第二拡張子に置けば、内容を開かずに名前の走査だけで種別を判定できる。

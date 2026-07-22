@@ -20,6 +20,12 @@ deploy/
 `provenance` は成果物の完全性を検証できるようにする。
 `secrets` は暗号化した secret を持つ。
 
+## 配備の単位
+
+配備は、1 顧客 1 配備を既定とする。
+顧客ごとに専有の実行環境を用意し、その中にシステムと datastore を立てる。
+複数の顧客が一つの実行環境を共有するマルチテナントの基盤を、前提にしない。
+
 ## 配備対象と配備先
 
 deploy は、surface と runtime が作る成果物を配備対象として受け取る。
@@ -67,5 +73,5 @@ attestation は、署名と内容を検証するまで、安全の証明にな�
 ## secrets
 
 secrets は、secret を at-rest 暗号化して保つ。
-暗号化の機構の採用は、[tools/platforms](../../tools/platforms.md) に従う。
+暗号化の機構の採用は、[tools/platforms](../../tools/platforms.md) が定める。
 secret の型・読み込み・回転・失効・監査は、[concerns/configuration](../../concerns/configuration.md) に従う。

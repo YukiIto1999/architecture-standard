@@ -16,4 +16,4 @@ component は、design tokens を通して見た目の値を参照する。
 
 振る舞いとアクセシビリティは、見た目を持たない headless の部品で担う。
 見た目の値は、design tokens で headless の部品に与える。
-具体の機構は [languages](../../../languages/) に従う。
+具体の機構は [languages](../../../languages/) が定める。

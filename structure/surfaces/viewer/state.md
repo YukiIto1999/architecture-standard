@@ -20,4 +20,4 @@ remote の状態を、横断 の client の状態と混ぜない。
 remote の通信は、ui port を通して行う。
 型は、contracts/generated の型を参照する。
 参照の規律は [layout](./layout.md) と [skeleton](../../skeleton.md) に従う。
-状態管理の機構は [languages](../../../languages/) に従う。
+状態管理の機構は [languages](../../../languages/) が定める。

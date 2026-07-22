@@ -229,4 +229,4 @@ await store.set(sessionId, tokens, { ttl })
 
 ## 参照
 境界を内に隠す原則は [separation](../principles/separation.md)、確立した principal の権限評価は [authorization](./authorization.md)、session store の採用は [persistence](./persistence.md)、安全の姿勢は [security](./security.md) に従う。
-仲介点の置き場は [structure/surfaces/server/layout](../structure/surfaces/server/layout.md)、言語別の実現は [languages](../languages/) に従う。
+仲介点の置き場は [structure/surfaces/server/layout](../structure/surfaces/server/layout.md)、言語別の実現は [languages](../languages/) が定める。
