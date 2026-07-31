@@ -19,6 +19,7 @@
 各段で、全テストが緑であり、外から見た振る舞いが変わっていないことを確かめる([principles/verification](../principles/verification.md) のテストを振る舞いの安全網にするに従う)。
 安全網に頼る前に、テストを意図的に壊して赤になることを確かめる([principles/verification](../principles/verification.md) のテストの信頼性を保つに照合する)。
 新しい場合の追加が既存の分岐本体の修正を要したなら、[principles/construction](../principles/construction.md) の業務判断を型と多態で構造化するに照合する。
+想定内の失敗が型に出ていれば、失敗の追加は全ての呼び出し側を型検査が指すので、拡張の圧は臭いの知覚でなくコンパイラが運ぶ([concerns/effect](../concerns/effect.md) の要求と想定内失敗を型に現すに照合する)。圧が来ないなら、失敗が型から漏れているか、呼び出し側が取りこぼしを黙らせる腕を持っている。
 結合の診断は、[principles/separation](../principles/separation.md) の結合を距離に見合う強さにするに従う。
 テストの有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
 
