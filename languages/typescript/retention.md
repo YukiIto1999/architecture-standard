@@ -2,7 +2,7 @@
 
 ## 概要
 retention は、TypeScript で永続化と共有される状態を扱う実現軸である。
-TypeScript は viewer・extension・web と ide の host の面を担い永続化を持たないので、状態を由来と面で分けて扱い、認証の秘密を保持しない。
+TypeScript は viewer・extension・web と ide の host の面を担い業務データの正本を持たないので、状態を権威の所在と local での寿命・共有範囲に分けて扱い、認証の秘密を保持しない。
 principles の [data](../../principles/data.md) が定める真実の所在の一意さと、concerns の [security](../../concerns/security.md) が定める境界の不信を、viewer は [structure/surfaces/viewer/state](../../structure/surfaces/viewer/state.md) の4分離で、extension は host の状態 API との切り分けで満たす。
 
 ## 状態の機構
@@ -76,7 +76,7 @@ CSRF token は、専用 header で返すためだけに保持し、localStorage�
 ### 根拠
 localStorage・sessionStorage・メモリの store はいずれも JavaScript から読めるので、XSS で token が持ち出される。
 CSRF token は応答で受け取り header で返す設計なので JavaScript から扱うが、永続の保管に置くと有効な期間が session を越えて残る。
-token を信頼境界の外へ出さない理由と、CSRF の方式は [concerns/authentication](../../concerns/authentication.md) に従う。
+Web BFF が token をブラウザへ公開しない理由と、CSRF の方式は [structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) に従う。
 
 ### 完了条件
 認証の token が、localStorage・sessionStorage・メモリの store に置かれていない。
@@ -89,17 +89,43 @@ CSRF token を、localStorage・sessionStorage に置くこと。
 
 ### 行動
 認証の token をブラウザの store に置かず、API の呼び出しを session cookie と CSRF token の header だけにする。
-token・session・CSRF の規律は [concerns/authentication](../../concerns/authentication.md) に従う。
+Web BFF の token・session・CSRF の規律は [structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) に従う。
 
 ### 例
 ```typescript
 // token を web ストレージに置く。XSS で抜かれる
 localStorage.setItem("access_token", response.accessToken);
+```
 
-// token をブラウザに置かない。BFF が HttpOnly の session cookie を設定する
-await fetch("/bff/login", { method: "POST", credentials: "include", body });
-// 以後の呼び出しは cookie を送るだけ
-const [session] = createResource(() => fetch("/bff/me", { credentials: "include" }));
+通信は branded Effect に遅延し、BFF adapter が session cookie と CSRF header を扱う。
+
+```typescript
+const submitLogin = (body: LoginBody): Effect<HasBff, LoginError, Session> =>
+  deferEffect((env, signal, deadlineAt) =>
+    ResultAsync.fromThrowable(
+      () => env.bff.login(body, signal, deadlineAt),
+      toLoginError,
+    )());
+const loginResult = await withDeadlineEffect(
+  env,
+  submitLogin(body),
+  deadlinePolicy.createAt(),
+  parentSignal,
+  resumeSource,
+);
+```
+
+以後の remote 読み出しも Effect を期限 wrapper から実行する。
+
+```typescript
+const [session] = createResource(() =>
+  withDeadlineEffect(
+    env,
+    loadSession(),
+    deadlinePolicy.createAt(),
+    parentSignal,
+    resumeSource,
+  ));
 ```
 
 ## extension の保持状態
@@ -138,4 +164,4 @@ interface SecretPort { getToken(): Promise<string | undefined>; } // 秘密は s
 ```
 
 ## 参照
-真実の所在は [data](../../principles/data.md)、境界の不信は [security](../../concerns/security.md)、token を信頼境界の外へ出さない規律は [authentication](../../concerns/authentication.md)、状態の4分離は [structure/surfaces/viewer/state](../../structure/surfaces/viewer/state.md)、extension の host 非依存の境界は [publication](./publication.md) に従う。
+真実の所在は [data](../../principles/data.md)、境界の不信は [security](../../concerns/security.md)、Web BFF が token をブラウザへ公開しない規律は [structure/surfaces/server/layout](../../structure/surfaces/server/layout.md)、状態の4分離は [structure/surfaces/viewer/state](../../structure/surfaces/viewer/state.md)、extension の host 非依存の境界は [publication](./publication.md) に従う。

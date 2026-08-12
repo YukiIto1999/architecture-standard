@@ -268,7 +268,9 @@ formation・translation・connection・retention・coordination・publication・
 | connection | 配線を組立点に置き、境界で実行する | 構造検査(自作。composition root 外の具象生成の検出)+レビュー |
 | retention | 型付き SQL | 型/実行テスト(sqlx の `query!` コンパイル時検証・CI の offline 照合) |
 | retention | 並行更新の表面 | 実行テスト(結合テストでの競合検出) |
-| retention | 書き込みパス | 構造検査(自作。store が transaction の begin・commit を持たないことの検査) |
+| retention | 書き込みパス | 構造検査(store が transaction の begin・commit を持たないことの検査) |
+| retention | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証済み actor、匿名の安定した opaque scope、logical system actor の分離、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
+| retention | durable inbox | 構造検査(scope・event ID の複合一意制約)+実行テスト(payload commit 前後の停止と upstream delivery ack、処理結果・処理済み記録 commit 前後の停止と inbox processing completion、前段の source 再配送、後段の item 再処理、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視出力) |
 | retention | 一時データ | 構造検査(DB と Valkey のクレート分離)+レビュー |
 | coordination | runtime | 構造検査(Cargo 依存の単一 runtime 検査) |
 | coordination | 構造化並行 | レビュー |
@@ -276,10 +278,11 @@ formation・translation・connection・retention・coordination・publication・
 | coordination | ブロッキング | analyzer/lint(clippy::disallowed_methods) |
 | coordination | 共有状態 | analyzer/lint(clippy::await_holding_lock) |
 | coordination | 資源の解放 | 型(Drop) |
-| publication | server | 構造検査(自作。認証 layer の位置の検出)+レビュー |
-| publication | BFF | レビュー+実行テスト(cookie 属性の統合テスト) |
+| publication | server | 構造検査(認証 layer の位置と core 公開 API への principal・token・claim 型の流入禁止)+実行テスト(検証済み principal から actor への写像、actor と検証済み入力による core 公開 API 呼出、IntoResponse と CatchPanicLayer の応答、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー |
+| publication | BFF | 型(openidconnect の client・actor・埋め込んだ core の公開 API)+構造検査(route が core の公開 API だけを呼ぶこと)+実行テスト(`__Host-`、Secure、HttpOnly、SameSite、Path、Domain 未設定の統合テスト、principal から actor への写像、token の交換と更新、back-channel logout token の署名と claim の検証、issuer と sid/subject による session 失効、token ID の replay 拒否、replay 記録と失効の原子的な確定) |
 | publication | console | 型(clap の derive) |
-| publication | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+レビュー(Data extractor による依存注入の判断) |
+| publication | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(Data extractor による依存注入の判断) |
+| 全域 | cast allowlist | 構造検査(reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | publication | desktop と mobile の host | レビュー |
 | publication | extension の接続 | 型(tower-lsp-server の trait 実装)+レビュー |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |

@@ -2,13 +2,19 @@
 
 ## 概要
 publication は、C# で外部公開面と host を扱う実現軸である。
-principles の [separation](../../principles/separation.md) が定める境界と依存の向きと、concerns の [authorization](../../concerns/authorization.md) が定める入口での評価・[security](../../concerns/security.md) が定める攻撃面の最小化・[authentication](../../concerns/authentication.md) が定める本人性の確立と資格情報の非流出を、C# の機構で満たす。
+principles の [separation](../../principles/separation.md) が定める境界と依存の向きと、concerns の [authorization](../../concerns/authorization.md) が定める入口での評価・[security](../../concerns/security.md) が定める攻撃面の最小化・[authentication](../../concerns/authentication.md) が定める資格情報の検証と actor の構築を、C# の機構で満たす。
 
 ## server
 
 ### 要求
 server は ASP.NET Core の Minimal API で組み、endpoint の登録はコンテキストごとの登録に分ける。
 境界の仕込みは middleware で一括して積み、認証を認可の前に、認可を業務の前に置く。
+server の認証境界は検証済み `ClaimsPrincipal` を actor へ写し、endpoint から埋め込んだ core の公開 API へ actor だけを渡す。
+`ClaimsPrincipal`、token、claim を core の公開 API または業務へ渡さない。
+冪等な endpoint は、認証済み actor ID、匿名の安定した session または client の opaque scope、logical system actor ID を要求の種別に応じた actor scope として retention へ渡す。
+multi-tenant operation は、認証済み claim または membership、authorization 済み選択、匿名の検証済み host または route と session/client context、system の logical actor 設定のいずれかから `TenantId` を構築する。
+single-tenant operation は正準な single-tenant sentinel を、tenant の概念を持たない operation は正準な no-tenant sentinel を retention へ渡す。
+安定した匿名 scope がない endpoint は、server 発行の全体で一意な key と proof だけを受け付ける。
 
 ### 根拠
 endpoint の登録をコンテキストごとに分ければ、面が変更理由ごとに分かれ、コンテキストが自分の endpoint を所有する。
@@ -20,6 +26,8 @@ endpoint の登録をコンテキストごとに分ければ、面が変更理�
 server が、Minimal API で組まれている。
 endpoint の登録が、コンテキストごとの登録に分かれている。
 境界の仕込みが middleware で一括して積まれ、認証・認可・業務の順序になっている。
+検証済み `ClaimsPrincipal` が server の認証境界で actor へ写され、core の公開 API が actor だけを受け取っている。
+冪等な endpoint が actor と tenant の全種別を retention の scope へ写し、未検証 tenant と `TenantId`・single-tenant sentinel・no-tenant sentinel の相互混同を拒否し、proof のない別 client へ保存済み response を返さないことが結合テストで検証されている。
 
 ### 禁止事項
 認可を、認証の前に置くこと。
@@ -28,13 +36,21 @@ endpoint を、一箇所にまとめてベタ書きすること。
 ### 行動
 endpoint の登録をコンテキストごとの拡張メソッドに分け、Program.cs は合成だけにする。
 middleware を認証・認可・業務の順に積む。
+検証済み `ClaimsPrincipal` を認証 middleware で actor へ写し、endpoint から actor と検証済み入力だけを core の公開 API へ渡す。
+actor と tenant の種別を retention の scope へ写し、安定した匿名 scope がなければ server 発行 key と proof を使う。
+multi-tenant は認証済み、匿名、system の検証済み context から `TenantId` を構築する。
+single-tenant は正準な single-tenant sentinel、tenant の概念外は正準な no-tenant sentinel を使う。
+全 actor/tenant 種別の競合、未検証 tenant と三つの tenant scope 表現の相互混同、proof のない別 client への response 漏洩拒否を結合テストで確かめる。
 
 ### 例
+認可を認証より先に置くと、principal が未確立のまま評価される。
+
 ```csharp
-// 認可を認証より前に置く。principal が未確立で評価される
 app.UseAuthorization(); app.UseAuthentication();
 
-// 認証・認可・CSRF の順に積み、endpoint はコンテキストごとに登録する
+認証、認可、CSRF の順に積み、endpoint はコンテキストごとに登録する。
+
+```csharp
 app.UseAuthentication(); app.UseAuthorization(); app.UseMiddleware<CsrfMiddleware>();
 app.MapTodoEndpoints(); app.MapUserEndpoints();
 public static RouteGroupBuilder MapTodoEndpoints(this IEndpointRouteBuilder app) =>
@@ -44,23 +60,37 @@ public static RouteGroupBuilder MapTodoEndpoints(this IEndpointRouteBuilder app)
 ## BFF
 
 ### 要求
-中継は YARP を使い、session は ASP.NET Core の cookie 認証、OIDC は標準の handler を使う。
+session は ASP.NET Core の cookie 認証、OIDC は標準の handler を使う。
 token の管理は Duende.AccessTokenManagement を使う。
-CSRF の検査は、session に保持した token と専用 header の一致を検査する自作の middleware で行う([concerns/authentication](../../concerns/authentication.md) に従う)。
+CSRF の検査は、session に保持した token と専用 header の一致を検査する CSRF middleware で行う([structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) に従う)。
 access token と refresh token は server 側に保持し、ブラウザへは session を指す識別子だけを持つ認証の cookie を渡す。
 認証チケットは `ITicketStore` で `CookieAuthenticationOptions.SessionStore` に差し、retention の Valkey に保持する。
+認証 middleware は、検証済みの `ClaimsPrincipal` を `ActorMapper` で actor へ写す。
+認証 middleware は、actor を request-scoped `ActorRequestContext` へ格納する。
+request-scoped の `Actor` は、同じ `ActorRequestContext` から DI で解決する。
+BFF の route は、request-scoped の `Actor` を引数として注入され、境界で検証した入力とともに埋め込んだ core の公開 API へ渡す。
+BFF の route は、`ClaimsPrincipal` を参照しない。
+`ActorMapper` は、認証 middleware からだけ呼び出す。
 
 ### 根拠
 `SaveTokens=true` は既定で token を `AuthenticationProperties` に載せ、`SessionStore` を差さない cookie 認証はその `AuthenticationProperties` を含む認証チケットをそのまま cookie に暗号化して詰める。
 `SessionStore` に `ITicketStore` を差せば、cookie は session を指す識別子だけになり、token を含む認証チケットは server 側の store に残る。
-YARP が同一オリジンの中継で token を付与すれば、ブラウザは token を持たずに resource へ届く。
 Duende.AccessTokenManagement は、token の保持と更新を server 側で担う。
+principal を認証境界で actor へ写せば、core は token と認証方式を知らず、検証済みの主体だけを受け取る。
+actor を request-scoped context に一度格納し、DI で同じ actor を route へ渡せば、認証境界と route が別の主体を構築しない。
+route が埋め込んだ core の公開 API を呼べば、認証境界と業務処理を同じ process の型付き呼出で接続できる。
 
 ### 完了条件
-中継が YARP で、session が cookie 認証、OIDC が標準の handler で行われている。
+session が cookie 認証、OIDC が標準の handler で行われている。
 token の管理が Duende.AccessTokenManagement で行われている。
 access token・refresh token が server 側の `ITicketStore` に保持され、ブラウザへ渡る cookie が session を指す識別子だけである。
-CSRF の検査が、[concerns/authentication](../../concerns/authentication.md) の方式で行われている。
+検証済みの `ClaimsPrincipal` が、認証 middleware の `ActorMapper` で actor へ写されている。
+認証 middleware が、actor を request-scoped `ActorRequestContext` へ格納している。
+DI が同じ `ActorRequestContext` から `Actor` を解決し、BFF の route へ注入している。
+BFF の route が、注入された actor と検証済みの入力を、埋め込んだ core の公開 API へ渡している。
+BFF の route が、`ClaimsPrincipal` を参照していない。
+`ActorMapper` が、認証 middleware からだけ呼び出されている。
+CSRF の検査が、[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) の方式で行われている。
 
 ### 禁止事項
 access token・refresh token を、ブラウザへ渡すこと。
@@ -68,16 +98,26 @@ access token・refresh token を、ブラウザへ渡すこと。
 token の管理で、Duende の商用製品(BFF・IdentityServer)に踏み込むこと。
 ASP.NET Core の Antiforgery を CSRF の検査に使い、期待値の保持を cookie に頼ること。
 cookie の HttpOnly・Secure・SameSite を、緩めること。
+BFF の route から、埋め込んだ core の公開 API 以外の業務処理を呼ぶこと。
+token または未検証の principal を、core へ渡すこと。
+BFF の route で、`ClaimsPrincipal` を受け取ること。
+認証 middleware の外から、`ActorMapper` を呼び出すこと。
+認証 middleware が格納した actor と異なる actor を、BFF の route で構築すること。
 
 ### 行動
 OIDC を code と PKCE で server で終端し、token を server 側に保持する。
 `CookieAuthenticationOptions.SessionStore` に `ITicketStore` の実装を差し、認証チケットを retention の Valkey に保持する。
-YARP で同一オリジンの中継を行い、cookie を HttpOnly・Secure・SameSite=Strict にする。
-CSRF の検査は、session の token と専用 header の一致を検査する middleware として自作する。
+cookie を HttpOnly・Secure・SameSite=Strict にする。
+認証 middleware で検証済みの `ClaimsPrincipal` を `ActorMapper` へ渡し、得た actor を request-scoped `ActorRequestContext` へ格納する。
+同じ `ActorRequestContext` から request-scoped の `Actor` を DI で解決する。
+BFF の route は、DI で注入された `Actor` と検証済みの入力を埋め込んだ core の公開 API へ渡す。
+BFF の route から `ClaimsPrincipal` と `ActorMapper` の参照を除く。
+CSRF の検査は、session の token と専用 header の一致を CSRF middleware で検査する。
 
 ### 例
+チケットは retention の Valkey に保持し、cookie には識別子だけを置く。`ITicketStore` は DI に登録し、options 構築時に解決する。検証済み principal は actor へ写して request scope に保持し、route から検証済み入力とともに core へ渡す。
+
 ```csharp
-// ITicketStore は DI に登録し、options の構築時に解決する。cookie は識別子だけになる
 builder.Services.AddSingleton<ITicketStore, ValkeyTicketStore>();
 builder.Services.AddAuthentication(options => { options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme; options.DefaultChallengeScheme = "oidc"; })
     .AddCookie(options =>
@@ -86,12 +126,28 @@ builder.Services.AddAuthentication(options => { options.DefaultScheme = CookieAu
     })
     .AddOpenIdConnect("oidc", options => { options.ResponseType = "code"; options.UsePkce = true; options.SaveTokens = true; });
 builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
-    .Configure<ITicketStore>((options, store) => options.SessionStore = store); // DI で解決した ITicketStore を差す
+    .Configure<ITicketStore>((options, store) => options.SessionStore = store);
 builder.Services.AddOpenIdConnectAccessTokenManagement();
-builder.Services.AddReverseProxy().LoadFromConfig(config.GetSection("ReverseProxy"));
+builder.Services.AddScoped<ActorRequestContext>();
+builder.Services.AddScoped(sp => sp.GetRequiredService<ActorRequestContext>().RequiredActor);
 
-// ITicketStore は retention の Valkey(StackExchange.Redis)へチケットを保持する
-public sealed class ValkeyTicketStore(IDistributedCache cache) : ITicketStore { /* StoreAsync・RenewAsync・RetrieveAsync・RemoveAsync を実装する */ }
+app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    var authentication = await context.AuthenticateAsync();
+    if (authentication.Succeeded && authentication.Principal is not null)
+    {
+        context.RequestServices.GetRequiredService<ActorRequestContext>()
+            .Set(ActorMapper.FromVerified(authentication.Principal));
+    }
+    await next(context);
+});
+app.UseAuthorization();
+
+app.MapPost("/orders", async (CreateOrderRequest request, Actor actor, ICoreApi core) =>
+    await core.CreateOrderAsync(actor, request)).RequireAuthorization();
+
+public sealed class ValkeyTicketStore(IDistributedCache cache) : ITicketStore { }
 ```
 
 ## console
@@ -169,23 +225,32 @@ public sealed class ShipOrderHandler(IOrderRepository repository)
 ### 要求
 C# の core を持つ desktop の host は Photino.NET とし、Tauri に C# の sidecar を載せる形は不採用とする。
 UI は viewer に閉じ、native の widget を別に作らない。
+desktop の bridge は、host の認証 adapter が保持する資格情報を認証境界で検証して actor を構築する。
+bridge は actor と資格情報を viewer から受け取らず、actor と検証済み入力だけを core へ渡す。
 
 ### 根拠
 Photino.NET は OS 内蔵の webview に viewer を載せ、C# の core を back-end にする。
 UI を viewer に閉じ native の widget を別に作らなければ、面の重複と攻撃面が増えない。
 Tauri に C# の sidecar を載せる形は、core の言語と host の言語が割れて構成が複雑になる。
+host が保持する資格情報から bridge の認証境界で actor を構築すれば、viewer が actor を指定できず、core は認証方式を知らずに済む。
 
 ### 完了条件
 desktop の host が、Photino.NET である。
 UI が viewer に閉じ、native の widget が別に作られていない。
 Tauri に C# の sidecar を載せる形が、採られていない。
+desktop の bridge の認証境界が、host の認証 adapter の資格情報を検証して actor を構築している。
+core の公開 API が、actor と検証済み入力だけを受け取っている。
 
 ### 禁止事項
 native の widget を、viewer と別に作ること。
 Tauri に C# の sidecar を載せる形を、採ること。
+actor または資格情報を、viewer から bridge へ渡すこと。
+資格情報を、core の公開 API へ渡すこと。
 
 ### 行動
 window を Photino.NET の shell にし、UI を viewer で載せる。
+bridge の入口で host の認証 adapter の資格情報を検証し、actor を構築する。
+actor と検証済み入力だけを core の公開 API へ渡す。
 業務の判断は C# の core に置く。
 
 ### 例
@@ -202,20 +267,29 @@ window.WaitForClose();
 ### 要求
 C# の core を持つ mobile の host は .NET MAUI の HybridWebView とし、viewer を HybridWebView の中で動かす。
 native の UI を別に作らない。
+mobile の bridge は、host の認証 adapter が保持する資格情報を認証境界で検証して actor を構築する。
+bridge は actor と資格情報を viewer から受け取らず、actor と検証済み入力だけを core へ渡す。
 
 ### 根拠
 HybridWebView は viewer を web view に載せ、C# の core との通信を担う。
 viewer を HybridWebView の中で動かし native の UI を別に作らなければ、面の重複と攻撃面が増えない。
+host が保持する資格情報から bridge の認証境界で actor を構築すれば、viewer が actor を指定できず、core は認証方式を知らずに済む。
 
 ### 完了条件
 mobile の host が、.NET MAUI の HybridWebView である。
 viewer が HybridWebView の中で動き、native の UI が別に作られていない。
+mobile の bridge の認証境界が、host の認証 adapter の資格情報を検証して actor を構築している。
+core の公開 API が、actor と検証済み入力だけを受け取っている。
 
 ### 禁止事項
 native の UI を、viewer と別に作ること。
+actor または資格情報を、viewer から bridge へ渡すこと。
+資格情報を、core の公開 API へ渡すこと。
 
 ### 行動
 viewer を HybridWebView の中で動かし、C# の core を back-end にする。
+bridge の入口で host の認証 adapter の資格情報を検証し、actor を構築する。
+actor と検証済み入力だけを core の公開 API へ渡す。
 
 ### 例
 ```xml
@@ -279,7 +353,7 @@ file sealed class JsonHelper { }        // このファイルの中だけ
 ```
 
 ## 参照
-境界と依存の向きは [separation](../../principles/separation.md)、入口での評価は [authorization](../../concerns/authorization.md)、攻撃面の最小化は [security](../../concerns/security.md)、本人性の確立と資格情報の非流出は [authentication](../../concerns/authentication.md) に従う。
+境界と依存の向きは [separation](../../principles/separation.md)、入口での評価は [authorization](../../concerns/authorization.md)、攻撃面の最小化は [security](../../concerns/security.md)、資格情報の検証と actor の構築は [authentication](../../concerns/authentication.md) に従う。
 配置は [structure/surfaces](../../structure/surfaces/)・[structure/runtimes](../../structure/runtimes/)・[structure/skeleton](../../structure/skeleton.md) に従う。
 コンテキストの境界は [structure/core](../../structure/core/layout.md) に従う。
 認証チケットの永続化は [retention](./retention.md) に従う。

@@ -101,22 +101,15 @@ core が C# のときの desktop は、core の言語と host の言語を合わ
 ## BFF の token 管理
 
 用途は、BFF が保持する token の交換と更新を担う機構である。
-採用は、C# は Duende.AccessTokenManagement である。Rust は project が単一の採用を ADR に明記する。
-判断基準は、Apache License 2.0 の OSS で token の保持と更新を server 側で担えることであり、Duende の商用製品(BFF・IdentityServer)は範囲に含めない。
-撤回条件は、判断基準を満たさなくなることであり、ライセンスとリリースポリシーの変化を再評価のトリガーとする。
+採用は、Rust は tower-sessions のサーバー側セッションと openidconnect のトークンエンドポイントクライアント、C# は Duende.AccessTokenManagement である。
+判断基準は、token set と expiry を server 側に保持し、期限前の更新で得た token set を同じ session へ置き換えられることである。
+撤回条件は、判断基準を満たさなくなることであり、ライセンス、リリースポリシー、session と token endpoint の互換性の変化を再評価のトリガーとする。
 
 ## BFF の session 管理
 
 用途は、BFF が session を保持し cookie で運ぶ機構である。
 採用は、Rust は tower-sessions である。C# は ASP.NET Core 標準の cookie 認証を使い、外部ライブラリを別に選ばない。
 判断基準は、Secure・HttpOnly・SameSite=Strict の cookie 属性を、既定または明示の設定で強制できることである。
-撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
-
-## BFF の中継
-
-用途は、BFF が resource への要求を中継する機構である。
-採用は、C# は YARP である。Rust は project が単一の採用を ADR に明記する。
-判断基準は、同一オリジンの中継で内部の JWT を付与できることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## OIDC クライアント

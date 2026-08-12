@@ -226,4 +226,4 @@ framework・DB の選択は組立点まで遅らせ、内側は port だけを�
 ## 参照
 依存と境界の原則は [separation](../principles/separation.md)、効果の合成は [effect](./effect.md) に従う。
 投機の排除は principles の [construction](../principles/construction.md) の要求に従う。
-組立点の構造は [structure/core/composition](../structure/core/composition.md)、言語別の依存注入は [languages](../languages/) が定める。
+プロセス全体の組立点は [structure/surfaces](../structure/surfaces/) と [structure/runtimes](../structure/runtimes/) が、core の module factory は [structure/core/composition](../structure/core/composition.md) が定める。言語別の依存注入は [languages](../languages/) が定める。

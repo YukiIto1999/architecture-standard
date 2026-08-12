@@ -42,8 +42,9 @@ console は、単一の配布 channel で配布する。
 ## 組み立てと起動
 
 composition は、build_core で core を埋め込み、自身でプロセスを起動する。
-composition は、実行の文脈を request context として組み立て、core へ渡す。
-actor への写像は [structure/core/composition](../../core/composition.md) が担う。
+composition は、実行環境が渡す起動主体の資格情報を認証境界で検証し、actor を一度だけ構築する。
+command は actor または資格情報を引数から受け取らず、composition が構築した actor と検証済み入力だけを core の公開 API へ渡す。
+資格情報と認証方式の型を、core の公開 API へ渡さない。
 終了の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。

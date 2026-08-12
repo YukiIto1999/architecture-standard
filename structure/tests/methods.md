@@ -50,6 +50,30 @@ replay は、イベントから projection を再構築して検証する。
 契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools の inspection](../../tools/inspection.md) が定める。
 公開 API の契約への適合も、同じ機構で検証する。
 protocol 経路の適合は、生成物と実装の drift の検査と conformance で検証する。
+契約 generator の生成結果は、全 variant の判別子と payload を serialize と deserialize で往復する generated-contract round-trip で検証し、repository の検証入口で失敗として扱う。
+
+## 規範から検証への対応
+
+標準の要求と禁止事項は、観測できる性質ごとに次の検証へ割り当てる。
+同じ性質を複数の道具で重複して判定せず、最も内側で確定できる型、静的検査、実行テスト、計測の順に一つの判定を選ぶ。
+
+| 対象 | 必須の検証 |
+|---|---|
+| domain の不変条件と状態遷移 | constructor の拒否、状態遷移の property、網羅する outcome |
+| use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、未検出 mutant |
+| canonical と binding | operation・型・error の欠落と余剰、generated drift、serialize round-trip、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
+| 認証と認可 | 各認証境界の credential 拒否と actor 構築、credential の core 非流入、主体・操作・資源・条件の許可と拒否 |
+| 永続化、transaction、messaging | 実 datastore の制約、version conflict、単一の確定点、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり |
+| effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test |
+| structure と dependency | root と単位の列挙、依存方向、公開面、配置、循環、禁止 import |
+| lifecycle と configuration | 不正設定での起動拒否、生存と準備、受付停止、期限内 drain、突然死後の回復 |
+| security と privacy | default deny と最小権限、信頼境界ごとの abuse case、標準暗号の設定、secret と個人情報の非流出、保持期限後の消去、供給物と依存の検査 |
+| experience と accessibility | 利用者が観測する状態遷移、keyboard 操作、focus、名前と役割、contrast、回復経路 |
+| performance | 固定した workload と環境での SLO 計測、変更前後の比較、計測結果を伴う退行判定 |
+
+canonical operation から core API、surface の binding、公開 interface の scenario までを一つの対応として列挙する。
+欠落した operation、実体のない mapping、canonical にない余分な入口、scenario が一つもない公開 operation は失敗する。
+ある規範を型、静的検査、実行テスト、計測のいずれでも判定できない場合だけ人手レビューへ割り当て、判定理由と見る箇所を明記する。
 
 ## 構造の検証
 
@@ -89,9 +113,11 @@ AI が生成したテストを、有効性の検査なしに受け入れない�
 
 ## 範囲
 
-この標準は、振る舞いと構造の正しさの検証を対象とする。
-性能と負荷の SLO の検証は対象外とし、信頼性の目標は [concerns/resilience](../../concerns/resilience.md)、本番の観測は [concerns/observability](../../concerns/observability.md) に従う。
-chaos と並行の race は対象外とし、過負荷と障害への耐性は [concerns/resilience](../../concerns/resilience.md)、全停止の回避は [concerns/lifecycle](../../concerns/lifecycle.md) に従う。
-security の専用の検証は対象外とし、設計上の安全姿勢と供給網の保証は [concerns/security](../../concerns/security.md) に従う。
-AI エージェントの統制と prompt の検証は、対象外とする。
-言語ごとの具体のツールは [languages](../../languages/) が定める。
+変更時の検証は、変更の影響を受ける型検査、静的検査、Small test を最初に実行し、触れた境界の Medium test まで広げる。
+契約、migration、認証・認可、供給網、検証入口そのものを変えた場合は、対応する全境界の検証を実行する。
+Large test、全 mutation、全 SLO 計測は、影響が及ぶ変更、定期実行、release 前の検証で実行する。
+同じ source、command、環境、入力の成功結果は、その同一性を確認できる間は再利用し、同じ検証を重ねて実行しない。
+失敗後の修正では失敗した検証と、修正した source の依存先と逆依存の consumer に対応する検証を再実行する。
+検証を省いたのでなく、影響がないことを差分と依存関係から示せない検証は実行する。
+性能の目標は [concerns/performance](../../concerns/performance.md)、耐障害性は [concerns/resilience](../../concerns/resilience.md) と [concerns/lifecycle](../../concerns/lifecycle.md)、security と privacy は [concerns/security](../../concerns/security.md) と [concerns/privacy](../../concerns/privacy.md) に従う。
+言語ごとの具体の機構は [languages](../../languages/) が定め、道具の採用は [tools/inspection](../../tools/inspection.md) が定める。

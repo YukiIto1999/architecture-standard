@@ -35,8 +35,11 @@ constructor が非公開で、構築が検証付きの static factory に限ら�
 
 ```csharp
 public record Address(string Street, string ZipCode);
+```
 
-// 非公開 ctor と検証付き factory に一点化する
+constructor を非公開にし、生成を検証付き factory へ一点化する。
+
+```csharp
 public sealed record Address
 {
     public string Street { get; init; }
@@ -182,9 +185,12 @@ with 式は元を複製して指定したプロパティだけ変えた新しい
 
 ```csharp
 var moved = address with { ZipCode = "00000" };
+```
 
-// 値オブジェクトの変更は検証付き factory を通す
-Result<Address, AddressFailure> moved = address.WithZipCode("00000"); // 内部で Create を呼び検証する
+変更も検証付き factory を通す。
+
+```csharp
+Result<Address, AddressFailure> moved = address.WithZipCode("00000");
 ```
 
 ## 意味と単位を型で区別する
