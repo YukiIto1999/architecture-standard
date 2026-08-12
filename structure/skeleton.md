@@ -83,6 +83,8 @@ surfaces に surface として置き、protocol の対話様式を表す名で�
 
 依存方向の規律は [concerns/dependency](../concerns/dependency.md) に従う。
 
+実行時の root またぎ依存は、次の表に従う。
+
 | 境界 | 依存してよい先 |
 |---|---|
 | core | libs |

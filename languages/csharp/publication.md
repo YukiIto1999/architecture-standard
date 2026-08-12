@@ -33,6 +33,9 @@ endpoint の登録が、コンテキストごとの登録に分かれている�
 認可を、認証の前に置くこと。
 `ClaimsPrincipal`、token、claim を core の公開 API または業務へ渡すこと。
 endpoint を、一箇所にまとめてベタ書きすること。
+安定した scope のない匿名要求で client 指定 key を受け付けること。
+発行時の proof を検証せずに保存済み response を返すこと。
+未検証の tenant context を `TenantId` として retention へ渡すこと。
 
 ### 行動
 endpoint の登録をコンテキストごとの拡張メソッドに分け、Program.cs は合成だけにする。
@@ -48,12 +51,16 @@ single-tenant は正準な single-tenant sentinel、tenant の概念外は正準
 
 ```csharp
 app.UseAuthorization(); app.UseAuthentication();
+```
 
 認証、認可、CSRF の順に積み、endpoint はコンテキストごとに登録する。
 
 ```csharp
 app.UseAuthentication(); app.UseAuthorization(); app.UseMiddleware<CsrfMiddleware>();
 app.MapTodoEndpoints(); app.MapUserEndpoints();
+```
+
+```csharp
 public static RouteGroupBuilder MapTodoEndpoints(this IEndpointRouteBuilder app) =>
     app.MapGroup("/todos").WithTags("Todos");
 ```
@@ -171,8 +178,9 @@ console が、ConsoleAppFramework で組まれている。
 コマンドをクラスとして登録し、依存を constructor で受ける。
 
 ### 例
+`Add<T>` で command を登録し、依存は constructor、引数は型でバインドする。
+
 ```csharp
-// Add<T> と constructor injection。引数は型でバインドする
 var app = ConsoleApp.Create().ConfigureServices(services => services.AddSingleton<IGreetingService, GreetingService>());
 app.Add<GreetCommands>(); app.Run(args);
 public sealed class GreetCommands(IGreetingService greeter)
@@ -186,30 +194,64 @@ public sealed class GreetCommands(IGreetingService greeter)
 ### 要求
 worker は Wolverine を、PostgreSQL の queue と scheduler に限って使う。
 broker・durable workflow・外部の message bus としての利用は標準外とする。
-handler の依存は constructor で受け取り、実行時の IoC 解決を使わない。
+handler の依存は、`IMessageBus` を含め constructor で受け取る。
+handler で、実行時の IoC 解決を使わない。
+handler は CancellationToken を受け取り、token を受ける全ての非同期 API へ渡す。
+再配送契約を持つ source の event は durable inbox の容量を予約し、payload の commit 後だけ upstream delivery ack を返す。
+inbox processing completion と処理 item の削除は、処理結果と処理済み記録の commit 後だけ行う。
+外部効果には、配備上の consumer 名に依存しない安定した effect operation の識別子と event ID から作る冪等キーを渡す。
+外部効果が成功した後に処理済み記録を commit し、その後に inbox processing completion を行う。
+durable inbox が満杯なら nack または再試行可能な失敗を返し、使用量、上限、backlog、nack を監視へ出す。
 
 ### 根拠
 queue と scheduler を PostgreSQL に閉じれば、外部の broker や message bus を開かず、攻撃面が増えない。
 handler の依存を constructor で受ければ、依存がシグネチャに現れる。
+`IMessageBus` を method parameter で受けず constructor に揃えると、handler の依存が一箇所に現れる。
+CancellationToken を下流へ渡せば、worker の停止と期限切れが非同期処理の末端まで伝わる。
 実行時の IoC 解決は、依存をシグネチャから隠し、コンパイル時の誤りを実行時へ遅らせる。
 broker・durable workflow・外部の message bus は別の関心で、ここで担うと面が広がる。
+payload commit 後だけ upstream delivery ack を返せば、前段の停止で未確定になった event を source から再配送できる。
+処理結果と処理済み記録の commit 後だけ inbox processing completion を行えば、後段の停止で item を再処理できる。
+外部効果の境界へ安定した冪等キーを渡せば、効果成功後から処理済み記録前の停止でも再配送の結果を一度分にできる。
+容量を予約できない event を nack すれば、必要な入力を受領済みとして失わない。
 
 ### 完了条件
 worker が、Wolverine を PostgreSQL の queue と scheduler に限って使っている。
-handler の依存が constructor で受け取られ、実行時の IoC 解決を使っていない。
+handler の依存が、`IMessageBus` を含め constructor で受け取られている。
+handler で、実行時の IoC 解決が使われていない。
+CancellationToken が、token を受ける全ての非同期 API へ渡されている。
 broker・durable workflow・外部の message bus として、使われていない。
+upstream delivery ack が、payload の durable inbox への commit 後だけ返されている。
+inbox processing completion と処理 item の削除が、処理結果と処理済み記録の commit 後だけ行われている。
+外部効果に安定した effect operation の識別子と event ID から作った冪等キーが渡され、効果成功後に処理済み記録が確定している。
+payload commit と、外部効果成功と、処理済み記録 commit の各前後で停止して再配送しても、結果が一度分になることが実行テストで検証されている。
+durable inbox の容量上限で nack または再試行可能な失敗が返され、使用量、上限、backlog、nack が監視されている。
 
 ### 禁止事項
 worker を、broker・durable workflow・外部の message bus として使うこと。
 handler で、実行時に IoC から依存を解決すること。
+`IMessageBus` を、handler method の parameter で受け取ること。
+token を受ける非同期 API への CancellationToken の伝播を途切れさせること。
+payload の durable inbox への commit 前に、upstream delivery ack を返すこと。
+処理結果と処理済み記録の commit 前に、inbox processing completion または処理 item の削除を行うこと。
+外部効果の成功前に、処理済みを記録すること。
+配備上の consumer 名を、外部効果の冪等キーに使うこと。
+durable inbox が満杯の event を受領済みとして捨てること。
 
 ### 行動
-永続化を PostgreSQL に限り、handler の依存を constructor で受ける。
+永続化を PostgreSQL に限り、`IMessageBus` を含む handler の依存を constructor で受ける。
+handler の CancellationToken を、token を受ける全ての非同期 API へ渡す。
 予約は durable な scheduler で行う。
+受領時に durable inbox の容量を予約し、payload を commit してから upstream delivery ack を返す。
+処理結果と処理済み記録を retention の同じ transaction で確定してから、inbox processing completion を行う。
+外部効果へ安定した effect operation の識別子と event ID の組を冪等キーとして渡し、成功後に処理済み記録を commit する。
+payload commit、外部効果成功、処理済み記録 commit の各直前と直後へ停止を注入し、再配送後の結果が一度分であることをテストする。
+容量を予約できない場合は nack または再試行可能な失敗を返し、inbox の使用量、上限、backlog、nack を観測する。
 
 ### 例
+永続化は PostgreSQL に閉じ、`IMessageBus` を含む依存は constructor で受ける。token を受けない API の直前で取り消しを確認する。inbox は payload の durable commit、delivery ack、外部効果、処理済み記録、完了の順に進める。
+
 ```csharp
-// 永続化は PostgreSQL のみ、依存は constructor injection
 builder.UseWolverine(options => options.PersistMessagesWithPostgresql(connectionString));
 public sealed class ShipOrderHandler(IOrderRepository repository, IMessageBus bus)
 {
@@ -225,8 +267,13 @@ public sealed class ProjectionHandler(IDurableInbox inbox, IEventSource source, 
 {
     public async Task HandleAsync(ProjectOrder message, CancellationToken cancellationToken)
     {
-        await repository.MarkShippedAsync(message.OrderId);
-        await bus.ScheduleAsync(new ConfirmDelivery(message.OrderId), 3.Days()); // durable scheduled
+        var permit = await inbox.TryReserveAsync(cancellationToken) ?? throw new RetryableReceiveException();
+        var item = await inbox.CommitPayloadAsync(permit, message, cancellationToken);
+        await source.DeliveryAckAsync(message.Id, cancellationToken);
+        var effectKey = EffectKey.Create("capture-payment", message.Id);
+        await payment.CaptureAsync(message.Amount, effectKey, cancellationToken);
+        await inbox.RecordProcessedAsync(item, cancellationToken);
+        await inbox.CompleteAsync(item, cancellationToken);
     }
 }
 ```
@@ -265,8 +312,9 @@ actor と検証済み入力だけを core の公開 API へ渡す。
 業務の判断は C# の core に置く。
 
 ### 例
+ウィンドウは shell、UI は viewer とし、別の native widget を作らない。
+
 ```csharp
-// window は shell、UI は viewer。native widget を別に作らない
 var window = new PhotinoWindow().SetTitle("Viewer").SetSize(new Size(1280, 800)).Center()
     .RegisterWebMessageReceivedHandler((sender, message) => ((PhotinoWindow)sender).SendWebMessage($"ack:{message}"))
     .Load("wwwroot/index.html");
@@ -303,8 +351,9 @@ bridge の入口で host の認証 adapter の資格情報を検証し、actor �
 actor と検証済み入力だけを core の公開 API へ渡す。
 
 ### 例
+モバイルでも viewer を `HybridWebView` で host し、別の native UI を作らない。
+
 ```xml
-<!-- viewer を HybridWebView で host する。native UI を別に作らない -->
 <HybridWebView x:Name="webView" HybridRoot="wwwroot" RawMessageReceived="OnRaw" />
 ```
 
@@ -312,28 +361,31 @@ actor と検証済み入力だけを core の公開 API へ渡す。
 
 ### 要求
 extension が接続する core のプロセスは、外へ出すのを小さい契約だけにして公開する。これを StreamJsonRpc で満たす。
-LSP を自作しない。
+LSP の framing と protocol を再実装しない。
 
 ### 根拠
 core を JSON-RPC の小さい契約で公開すれば、外へ出すのは契約だけになる。
 StreamJsonRpc は protocol と transport を担うので、自前で書くのは振る舞いだけになる。
-LSP を自作すると、framing の手書きが関心を境界の外へ漏らす。
+LSP の framing と protocol を再実装すると、手書きの処理が関心を境界の外へ漏らす。
 
 ### 完了条件
 core のプロセスが、StreamJsonRpc で公開されている。
-LSP を、自作していない。
+LSP の framing と protocol を、再実装していない。
 
 ### 禁止事項
-JSON-RPC や LSP の framing・protocol を、自作すること。
+JSON-RPC や LSP の framing・protocol を、再実装すること。
 
 ### 行動
 core を StreamJsonRpc で公開し、target を attach して `JsonRpc.Attach<T>` の型付き proxy で呼ぶ。
 
 ### 例
+target を attach し、型付き proxy で呼び出す。framing は StreamJsonRpc へ委譲する。
+
 ```csharp
 public interface IExtensionServer { Task<int> AddAsync(int a, int b); }
+```
 
-// target を attach しつつ、型付き proxy(IExtensionServer)で呼ぶ。framing は委譲
+```csharp
 var rpc = JsonRpc.Attach<IExtensionServer>(stream, new ExtensionHandler());
 int sum = await rpc.AddAsync(1, 2);
 ```
@@ -358,9 +410,11 @@ int sum = await rpc.AddAsync(1, 2);
 公開する API だけを public にし、内部を internal、1ファイルに閉じる型を file 修飾子で閉じる。
 
 ### 例
+アセンブリ内だけで使う型は `internal`、1ファイルに閉じる型は `file` にする。
+
 ```csharp
-internal sealed class OrderStore { }   // アセンブリの中だけ
-file sealed class JsonHelper { }        // このファイルの中だけ
+internal sealed class OrderStore { }
+file sealed class JsonHelper { }
 ```
 
 ## 参照

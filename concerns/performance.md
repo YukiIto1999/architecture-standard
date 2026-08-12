@@ -83,5 +83,5 @@ principles の [construction](../principles/construction.md) が定める単純�
 ## 参照
 単純な形の既定と投機の排除は、principles の [construction](../principles/construction.md) の要求に従う。
 永続データの物理の最適化への適用は [persistence](./persistence.md)、並行の構造は [concurrency](./concurrency.md) に従う。
-永続化の改善の順序は [structure/core/infrastructure](../structure/core/infrastructure.md) が定める。
+永続化の改善も、計測した制約を一つずつ解消するこの規律に従う。
 言語別の機構は [languages](../languages/) が定める。

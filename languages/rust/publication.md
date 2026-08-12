@@ -25,6 +25,8 @@ single-tenant operation は正準な single-tenant sentinel を、tenant の概�
 router をコンテキストごとに分けて合成すれば、面が変更理由ごとに分かれる。
 境界の仕込みを tower の middleware で一括して積めば、横断の関心が入口に集まる。
 認証を route の一致時にだけ走る層に置けば、未一致の要求が 404 のまま留まり、認証で 404 が 401 に化けて対象の存在を露出しない。
+`IntoResponse` に集約すれば、想定内の失敗の HTTP 表現が handler ごとに揺れない。
+`CatchPanicLayer` で server の最上位を覆えば、欠陥を個々の handler で想定内の失敗に変えずに報告できる。
 
 ### 完了条件
 server が axum で組まれ、依存が State で handler へ渡されている。
@@ -40,6 +42,12 @@ router が、コンテキストごとに合成されている。
 認証を、route の一致に関わらず走る層に置き、404 を 401 に化けさせること。
 principal、token、claim を core の公開 API または業務へ渡すこと。
 依存を、handler の中で直接生成すること。
+想定内の失敗の写像を、handler ごとに散らすこと。
+未処理の panic の内部詳細を、problem+json に出すこと。
+取り消しを、想定内の失敗の problem+json へ写すこと。
+安定した scope のない匿名要求で client 指定 key を受け付けること。
+発行時の proof を検証せずに保存済み response を返すこと。
+未検証の tenant context を `TenantId` として retention へ渡すこと。
 
 ### 行動
 依存を State で渡し、router をコンテキストごとに nest・merge で合成する。
@@ -68,8 +76,10 @@ impl IntoResponse for ApiError {
 }
 let app = Router::new()
     .nest("/api", api_router())
-    .route_layer(middleware::from_fn(auth))          // 一致時だけ。404 を保つ
-    .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
+    .route_layer(middleware::from_fn(auth))
+    .layer(ServiceBuilder::new()
+        .layer(CatchPanicLayer::custom(problem_without_internal_detail))
+        .layer(TraceLayer::new_for_http()))
     .with_state(state);
 ```
 
@@ -220,11 +230,15 @@ console が clap で組まれている。
 引数を struct・enum と derive で宣言し、入口で一度 parse する。
 
 ### 例
-```rust
-// 文字列のキーで取り出す。型に現れず手で復元する
-let matches = Command::new("app").arg(Arg::new("verbose")).get_matches();
+文字列のキーで引数を取り出すと、引数が型に現れず、手作業での復元が必要になる。
 
-// derive で型宣言し、parse 一発で構造化する
+```rust
+let matches = Command::new("app").arg(Arg::new("verbose")).get_matches();
+```
+
+derive で引数の型を宣言し、入口の一度の parse で構造化する。
+
+```rust
 #[derive(Parser)] struct Cli { #[arg(short, long)] verbose: bool, #[command(subcommand)] command: Commands }
 let cli = Cli::parse();
 ```
@@ -235,6 +249,11 @@ let cli = Cli::parse();
 worker は apalis を、PostgreSQL を backend にした queue と scheduler に限って使う。
 broker・durable workflow・外部の message bus としての利用は標準外とする。
 handler の依存は `Data` extractor で受け取り、handler の中で直接生成しない。
+再配送契約を持つ source の event は durable inbox の容量を予約し、payload の commit 後だけ upstream delivery ack を返す。
+inbox processing completion と処理 item の削除は、処理結果と処理済み記録の commit 後だけ行う。
+外部効果には、配備上の consumer 名に依存しない安定した effect operation の識別子と event ID から作る冪等キーを渡す。
+外部効果が成功した後に処理済み記録を commit し、その後に inbox processing completion を行う。
+durable inbox が満杯なら nack または再試行可能な失敗を返し、使用量、上限、backlog、nack を監視へ出す。
 
 ### 根拠
 queue を PostgreSQL に閉じれば、外部の broker や message bus を開かず、攻撃面が増えない。
@@ -242,29 +261,54 @@ apalis の cron 機構を scheduler に使えば、定期実行も同じ Postgre
 job の処理を queue から受ける形にすれば、副作用が処理の中に集まる。
 `Data` extractor で依存を渡せば、依存がシグネチャに現れ、組立点だけが具象を知る。
 broker・durable workflow・外部の message bus は別の関心で、ここで担うと面が広がる。
+payload commit 後だけ upstream delivery ack を返せば、前段の停止で未確定になった event を source から再配送できる。
+処理結果と処理済み記録の commit 後だけ inbox processing completion を行えば、後段の停止で item を再処理できる。
+外部効果の境界へ安定した冪等キーを渡せば、効果成功後から処理済み記録前の停止でも再配送の結果を一度分にできる。
+容量を予約できない event を nack すれば、必要な入力を受領済みとして失わない。
 
 ### 完了条件
 worker が、apalis を PostgreSQL を backend にした queue と scheduler に限って使っている。
 broker・durable workflow・外部の message bus として、使われていない。
 handler の依存が、`Data` extractor で受け取られ、handler の中で直接生成されていない。
+upstream delivery ack が、payload の durable inbox への commit 後だけ返されている。
+inbox processing completion と処理 item の削除が、処理結果と処理済み記録の commit 後だけ行われている。
+外部効果に安定した effect operation の識別子と event ID から作った冪等キーが渡され、効果成功後に処理済み記録が確定している。
+payload commit と、外部効果成功と、処理済み記録 commit の各前後で停止して再配送しても、結果が一度分になることが実行テストで検証されている。
+durable inbox の容量上限で nack または再試行可能な失敗が返され、使用量、上限、backlog、nack が監視されている。
 
 ### 禁止事項
 worker を、broker・durable workflow・外部の message bus として使うこと。
 handler の中で、依存を直接生成すること。
+payload の durable inbox への commit 前に、upstream delivery ack を返すこと。
+処理結果と処理済み記録の commit 前に、inbox processing completion または処理 item の削除を行うこと。
+外部効果の成功前に、処理済みを記録すること。
+配備上の consumer 名を、外部効果の冪等キーに使うこと。
+durable inbox が満杯の event を受領済みとして捨てること。
 
 ### 行動
 queue を PostgreSQL の backend に限り、apalis で enqueue と worker を組む。
 定期実行は apalis の cron 機構で scheduler として組む。
 worker の起動は WorkerBuilder で組み、apalis の Monitor で走らせる。
 handler の依存は `Data` extractor で渡す。
+受領時に durable inbox の容量を予約し、payload を commit してから upstream delivery ack を返す。
+処理結果と処理済み記録を retention の同じ Transaction で確定してから、inbox processing completion を行う。
+外部効果へ安定した effect operation の識別子と event ID の組を冪等キーとして渡し、成功後に処理済み記録を commit する。
+payload commit、外部効果成功、処理済み記録 commit の各直前と直後へ停止を注入し、再配送後の結果が一度分であることをテストする。
+容量を予約できない場合は nack または再試行可能な失敗を返し、inbox の使用量、上限、backlog、nack を観測する。
 
 ### 例
+queue は PostgreSQL backend に閉じる。`PostgresStorage::push` は可変参照を要求するため、storage を可変束縛にする。worker の起動は `WorkerBuilder` と apalis の `Monitor` で組むが、版によって変わる具体の呼び出し形はここでは固定しない。
+
 ```rust
-// queue を PostgreSQL の backend に閉じる。外部 broker を開かない
-PostgresStorage::setup(&pool).await?;          // schema の用意。setup は pool の参照を取る静的関数
-let mut storage = PostgresStorage::new(&pool); // push は &mut self を要する
-storage.push(SendEmail { to }).await?;         // enqueue
-// worker の起動は WorkerBuilder で組み、apalis の Monitor で走らせる(具体の呼び出し形は版で変わるため、ここでは固定しない)
+let mut storage = PostgresStorage::new(&pool);
+storage.push(SendEmail { to }).await?;
+let permit = inbox.try_reserve().ok_or(ReceiveError::Retryable)?;
+let item = inbox.commit_payload(permit, event).await?;
+source.delivery_ack(item.event_id()).await?;
+let key = EffectKey::new("capture-payment", item.event_id());
+payment.capture(item.amount(), key).await?;
+record_processed_in_transaction(item.id()).await?;
+inbox.complete(item.id()).await?;
 ```
 
 ## desktop と mobile の host
@@ -313,41 +357,35 @@ fn place_order(state: State<AppState>, request: OrderRequest) -> Result<OrderId,
 ## extension の接続
 
 ### 要求
-extension が接続する core のプロセスは、外へ出すのを小さい契約だけにして公開する。これを JSON-RPC で満たし、直列化は serde を使う。
-JSON-RPC の framing の機構は、project が単一の採用を ADR に明記する。
-言語機能を提供する場合に限り tower-lsp-server で LSP を公開する。
-フル LSP を自作しない。
+extension が接続する core のプロセスは、外へ出すのを小さい契約だけにして公開する。これを tower-lsp-server の custom method による JSON-RPC で満たし、直列化は serde を使う。
+標準の言語機能は、tower-lsp-server の LanguageServer で LSP として公開する。
+LSP の framing と protocol を再実装しない。
 
 ### 根拠
-serde は値の直列化と逆直列化を担うだけで、JSON-RPC のメッセージの区切りや相関を扱う framing までは担わない。
-framing の機構を project の ADR に固定すれば、実装ごとに框組みが割れない。
 core を JSON-RPC の小さい契約で公開すれば、外へ出すのは契約だけになる。
 tower-lsp-server の custom method は protocol と transport を担うので、自前で書くのは小さい契約の振る舞いと serde の値だけになる。
 LSP の framing と protocol を再実装すると、手書きの処理が関心を境界の外へ漏らす。
 
 ### 完了条件
-core のプロセスが JSON-RPC で公開され、直列化に serde が使われている。
-JSON-RPC の framing の機構が、project の ADR に明記されている。
-言語機能の提供が、tower-lsp-server で行われている。
-フル LSP を、自作していない。
+core のプロセスが tower-lsp-server の custom method による JSON-RPC で公開され、直列化に serde が使われている。
+標準の言語機能が、tower-lsp-server の LanguageServer で公開されている。
+LSP の framing と protocol を、再実装していない。
 
 ### 禁止事項
-LSP の framing や protocol を、自作すること。
-JSON-RPC の framing の機構を、project の ADR に明記せず場当たりに選ぶこと。
+LSP の framing や protocol を、再実装すること。
+tower-lsp-server の外に、extension 用の JSON-RPC framing を重ねること。
 
 ### 行動
-core を JSON-RPC で公開し、直列化を serde で行う。
-framing の機構は project の ADR に選定と単一採用を明記する。
-言語機能は tower-lsp-server で LanguageServer を実装する。
+core の小さい契約を tower-lsp-server の custom method で公開し、直列化を serde で行う。
+標準の言語機能は、tower-lsp-server で LanguageServer を実装する。
 
 ### 例
+標準 LSP と小さい application protocol を、同じ transport へ載せる。
+
 ```rust
-// 振る舞いだけを実装し、transport と protocol は委譲する
-impl LanguageServer for Backend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> { Ok(Default::default()) }
-    async fn shutdown(&self) -> Result<()> { Ok(()) }
-}
-let (service, socket) = LspService::new(|client| Backend { client });
+let (service, socket) = LspService::build(|client| Backend { client })
+    .custom_method("project/read-model", Backend::read_model)
+    .finish();
 Server::new(stdin(), stdout(), socket).serve(service).await;
 ```
 
@@ -372,11 +410,15 @@ crate の外へ出すもの以外が、pub(crate) 以下である。
 外向きの API だけを pub にし、内部を pub(crate) 以下に保つ。
 
 ### 例
-```rust
-// 内部の実装まで全部 pub。crate の外から触れる
-pub struct Connection { pub raw_handle: RawHandle }
+内部の実装まで `pub` にすると、crate の外から直接触れられる。
 
-// 外向き API だけ pub、内部は pub(crate)
+```rust
+pub struct Connection { pub raw_handle: RawHandle }
+```
+
+外向き API だけを `pub` にし、内部は `pub(crate)` 以下に保つ。
+
+```rust
 pub struct Connection { pub(crate) raw_handle: RawHandle }
 pub fn open() -> Connection { open_internal() }
 ```
