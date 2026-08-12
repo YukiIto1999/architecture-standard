@@ -31,7 +31,7 @@ concerns は、システム全体を通す、概念ごとの規律をまとめ�
 | [persistence](./persistence.md) | 永続データの設計。分類・追記・正規化・制約 |
 | [transaction](./transaction.md) | 書き込みパスの一貫性と確定点 |
 | [messaging](./messaging.md) | イベントによる連携 |
-| [authentication](./authentication.md) | 本人性の確立と資格情報の非流出 |
+| [authentication](./authentication.md) | 資格情報の検証と actor の構築 |
 | [authorization](./authorization.md) | アクセス制御の流れ |
 | [observability](./observability.md) | 外部出力から内部状態を推し量る。文脈の伝播と探索可能性 |
 | [privacy](./privacy.md) | 個人情報の最小化と期限の消去 |

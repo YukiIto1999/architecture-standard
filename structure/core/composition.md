@@ -10,6 +10,8 @@ build_core は、core の組立点である。
 build_core は、コンテキストと shared を配線し、組み立て済みの API を返す。
 build_core は、core の唯一の外部入口である。
 build_core は起動しない。
+build_core は module factory であり、プロセス全体の composition root ではない。
+起動側が解釈済みの型付き設定と生成済みの外部依存を受け取り、設定源を読み込まない。
 プロセスの起動は、core を埋め込む surface または host が担う。
 
 ## 配線
@@ -57,6 +59,7 @@ config は、型付きの設定を起動時に読み込む。
 
 ## actor
 
-composition は、request context から principal を actor へ写像する。
-actor は、use-case へ引数として渡す。
-actor の写像の規律は [concerns/authorization](../../concerns/authorization.md) に従う。
+composition は、surface の認証境界が構築した actor だけを受け取る。
+composition と core の公開 API は、principal、token、claim を受け取らない。
+actor は、use-case または workflow へ引数として渡す。
+actor の認可規律は [concerns/authorization](../../concerns/authorization.md) に従う。

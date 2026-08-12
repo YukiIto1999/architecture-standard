@@ -34,7 +34,11 @@ principles の [separation](../principles/separation.md) が定める境界と�
 ```
 // 外部入力をそのまま信頼して使う
 database.query(request.body.filter)
-// 境界で検証して型へ通し、認可を経たものだけを内側へ
+```
+
+境界で入力を検証して型へ変換し、認可を通過した値だけを内側へ渡す。
+
+```
 const query = parseQuery(request.body); authorize(actor, query); search(query)
 ```
 
@@ -99,7 +103,11 @@ project が重要と定めた資産が、複数の層で重ねて守られてい
 ```
 // 入口の検証だけに頼る。抜けると無防備
 validateAtGateway()
-// 入口の検証に加え、認可・最小権限・データ層の制約でも重ねて守る
+```
+
+入口の検証に加え、認可、最小権限、データ層の制約で防御を重ねる。
+
+```
 validateAtGateway(); authorize(); leastPrivilege(); dbConstraints()
 ```
 

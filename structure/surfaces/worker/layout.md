@@ -57,8 +57,9 @@ queue と schedule の engine は、project の選択の対象でなく、langua
 ## 組み立てと起動
 
 composition は、build_core で core を埋め込み、自身でプロセスを起動する。
-composition は、job の文脈を request context として組み立て、core へ渡す。
-actor への写像は [structure/core/composition](../../core/composition.md) が担う。
+queue と schedule の runner は、job context の発行元、対象、完全性、有効性を認証境界で検証し、actor を一度だけ構築する。
+job は actor または資格情報を payload から受け取らず、認証境界が構築した actor と検証済み入力だけを core の公開 API へ渡す。
+資格情報、job context に含まれる認証素材、queue と schedule の認証方式の型を、core の公開 API へ渡さない。
 worker は、生存と準備の面を公開する。
 期限の中で終わらない job は、queue へ返す。
 lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。

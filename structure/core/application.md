@@ -27,9 +27,9 @@ use-case の名前は、単一の動作を表す動詞と名詞の組とする�
 
 ## 入口での検証と認可
 
-use-case は、入口で入力を parse し、型付きの command として受け取る。
+use-case と workflow は、公開入口で入力を parse し、型付きの command として受け取る。
 parse の規律は [concerns/types](../../concerns/types.md) に従う。
-認可は、use-case の入口で評価する。
+workflow は全体の入力検証と認可を最初の確定前に行い、各 use-case も自身の操作に対する認可を入口で評価する。
 認可の判定の port は目的で宣言し、engine への写像は adapter が担う。
 認可の規律は [concerns/authorization](../../concerns/authorization.md) に従う。
 

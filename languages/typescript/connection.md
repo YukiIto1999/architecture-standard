@@ -9,12 +9,22 @@ concerns の [effect](../../concerns/effect.md) が定める効果システム�
 ## 効果を遅延した関数で表す
 
 ### 要求
-副作用を伴う計算は、環境と AbortSignal を受け取り ResultAsync を返す遅延した関数で表す。
+副作用を伴う計算は、環境、AbortSignal、wall-clock の絶対期限を受け取り ResultAsync を返す遅延した関数で表す。
+Effect は、`unique symbol` の nominal brand を持つ callable な値にする。
+Effect の brand は、`deferEffect` だけが構築する。
+全ての公開 Effect factory は、共通の `deferEffect` constructor に実行用の関数リテラルを渡す。
+公開 Effect factory の parameter は、default parameter と destructuring の binding initializer を持たない。
+公開 Effect factory の本体は、副作用を実行せず `deferEffect` への委譲だけを行う。
 生成では実行せず、UI のイベント境界でだけ呼ぶ。
 純粋な view の計算は、この関数で包まず純粋なままにする。
 
 ### 根拠
 関数は呼ぶまで動かない遅延した値なので、合成し、取り消し、差し替えても、その時点では副作用が起きない。
+関数型だけでは、factory の本体が Effect を返す前に副作用を起動していないことを保証できない。
+構造だけが同じ関数から Effect を区別するには、callee の型に固有の nominal brand が要る。
+Effect の呼出結果は ResultAsync なので、call expression の戻り値だけでは Effect の呼出かを判定できない。
+default parameter と destructuring の binding initializer は、factory 本体へ入る前に評価される。
+全ての公開 factory を `deferEffect` へ限定すれば、副作用を開始できる箇所を実行用の関数リテラルの内側へ集約できる。
 環境を引数に受けると、計算が要求する能力が型に出て、テストで差し替えられる。
 AbortSignal を通すと、取り消しを計算全体へ伝播できる。
 wall-clock の絶対期限を通すと、[coordination](./coordination.md) の Effect 専用 `withDeadlineEffect` が定める期限の正本を下流へ渡せる。
@@ -22,21 +32,79 @@ wall-clock の絶対期限を通すと、[coordination](./coordination.md) の E
 viewer・extension・host は server の効果と永続化を持たないので、重い効果型を作らず、この軽い形で足りる。
 
 ### 完了条件
-副作用を伴う計算が、環境と AbortSignal を受け ResultAsync を返す遅延した関数になっている。
+副作用を伴う計算が、環境、AbortSignal、wall-clock の絶対期限を受け ResultAsync を返す遅延した関数になっている。
+Effect の callable な型が、`unique symbol` の nominal brand を持っている。
+`deferEffect` だけが、Effect の brand を持つ値を構築している。
+全ての公開 Effect factory が、副作用を実行しない本体から実行用の関数リテラルを `deferEffect` へ渡している。
+全ての公開 Effect factory の parameter に、default parameter と destructuring の binding initializer が無い。
+`deferEffect` が、返した Effect の呼出前に実行用の関数リテラルを呼ばず、呼出後にだけ開始することが実行テストで確認されている。
+全ての公開 Effect factory の委譲が、TypeScript compiler API による AST 構造検査で確認されている。
 実行が、UI のイベント境界に集まっている。
 純粋な view の計算が、効果の関数で包まれていない。
 
 ### 禁止事項
 生成と同時に副作用を起動すること。
+`deferEffect` の外で、Effect の brand を構築または型変換で偽装すること。
+公開 Effect factory から、`deferEffect` を介さず Effect を返すこと。
+公開 Effect factory の parameter に、default parameter を置くこと。
+公開 Effect factory の destructuring parameter に、binding initializer を置くこと。
+公開 Effect factory の本体で、副作用を伴う API を呼ぶこと。
 viewer・extension・host に、server 側の重い効果型を持ち込むこと。
 
 ### 行動
-副作用を、環境と AbortSignal を受け ResultAsync を返す関数で表し、イベント境界で呼ぶ。
+副作用を、環境、AbortSignal、wall-clock の絶対期限を受け ResultAsync を返す実行用の関数リテラルにする。
+Effect の callable な型へ `unique symbol` の brand を加える。
+Effect の brand は、`deferEffect` の実装内だけで構築する。
+TypeScript compiler API による AST 構造検査で、brand の値参照と Effect への type assertion を `deferEffect` の実装内へ限定する。
+公開 Effect factory の parameter から、default parameter と destructuring の binding initializer を除く。
+全ての公開 Effect factory から、その関数リテラルを共通の `deferEffect` へ渡す。
+TypeScript compiler API による AST 構造検査で、全ての公開 Effect factory に parameter initializer が無く、本体が副作用を実行せず `deferEffect` へ委譲することを検査する。
+実行テストでは `deferEffect` 自体を構築し、返した Effect の呼出前は副作用が0件で、呼出後にだけ開始することを確認する。
+Effect は、イベント境界で呼ぶ。
 
 ### 例
+生の `Promise` は生成と同時に実行が始まる。
+
 ```typescript
-// Promise は生成で即実行され、合成も取り消しもしにくい
-const user = fetchUser(id);           // すぐ走る
+const user = fetchUser(id);
+```
+
+公開 factory は、実行用の関数リテラルを共通 constructor へ渡す。
+
+```typescript
+const effectBrand: unique symbol = Symbol("Effect");
+type Effect<Env, E, A> = {
+  (env: Env, signal: AbortSignal, deadlineAt: number): ResultAsync<A, E>;
+  readonly [effectBrand]: true;
+};
+const deferEffect = <Env, E, A>(
+  run: (env: Env, signal: AbortSignal, deadlineAt: number) => ResultAsync<A, E>,
+): Effect<Env, E, A> => {
+  const effect = (env: Env, signal: AbortSignal, deadlineAt: number) =>
+    run(env, signal, deadlineAt);
+  return Object.defineProperty(effect, effectBrand, { value: true }) as Effect<Env, E, A>;
+};
+```
+
+default parameter は factory 本体より前に評価される。
+
+```typescript
+export const eagerLoad = (
+  userId: UserId = readCurrentUserId(),
+): Effect<HasUsers, LoadError, User> =>
+  deferEffect((env, signal, deadlineAt) => env.users.find(userId, signal, deadlineAt));
+```
+
+destructuring の binding initializer も、factory 本体より前に評価される。
+
+```typescript
+export const eagerDestructuredLoad = (
+  { userId = readCurrentUserId() }: LoadInput,
+): Effect<HasUsers, LoadError, User> =>
+  deferEffect((env, signal, deadlineAt) => env.users.find(userId, signal, deadlineAt));
+```
+
+initializer の無い parameter と `deferEffect` に渡す関数リテラルだけで factory を構成する。
 
 ```typescript
 export const loadUser = (userId: UserId): Effect<HasUsers, LoadError, User> =>

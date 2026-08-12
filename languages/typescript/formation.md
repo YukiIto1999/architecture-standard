@@ -43,7 +43,9 @@ factory は schema の `safeParse` を呼び、失敗を Result の err、成功
 const email = request.body.email as Email;
 ```
 
-// schema を真実源にし、factory は safeParse を Result へ変換する
+schema を真実源にし、factory が `safeParse` の結果を `Result` へ変換する。
+
+```typescript
 const EmailSchema = v.pipe(v.string(), v.email(), v.brand("Email"));
 type Email = v.InferOutput<typeof EmailSchema>;
 type EmailError = { kind: "invalidEmail" };

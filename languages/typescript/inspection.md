@@ -184,6 +184,20 @@ StrykerJS を回し、生き残った欠陥にテストを足す。
 
 ### 要求
 依存方向と境界の禁止は dependency-cruiser で検証し、規則は層の参照禁止と exports の外への到達の禁止を持つ。
+root の構造検査は、skeleton の実行時表と build・test-only 表から runtime・build・test phase の許可 edge を生成する。
+root の構造検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
+外部 I/O、待機、下流 Effect の非同期呼出は、TypeScript compiler API による AST 構造検査で検査する。
+外部 I/O と待機の symbol は、構造検査の設定に列挙する。
+Promise を返す前に同期で throw し得る境界 API の symbol と、throw し得る同期 DOM API と postMessage の symbol は、構造検査の設定で別の集合に列挙する。
+前者の呼出式は `ResultAsync.fromThrowable` に渡して直後に呼ぶ関数リテラルの内側だけに、後者の呼出式は `Result.fromThrowable` に渡して直後に呼ぶ関数リテラルの内側だけに許す。
+同期で throw し得る呼出式を `ResultAsync.fromPromise` の第一引数へ直接渡す形は拒否する。
+下流 Effect は、callee expression の型が Effect の nominal brand を持つか、branded Effect へ代入可能かで識別する。
+外部 I/O、待機、下流 Effect は、`withDeadlineEffect` の operation からだけ呼ぶ。
+`withDeadlineEffect` は host ごとの `ResumeSource` capability を受け、`window` と `document` を直接参照しない。
+全ての公開 Effect factory は、TypeScript compiler API による AST 構造検査で検査する。
+Effect の callable な型は `unique symbol` の nominal brand を持ち、`deferEffect` だけが branded value を構築する形を許す。
+公開 Effect factory の parameter は、default parameter と destructuring の binding initializer を持たない形だけを許す。
+公開 Effect factory の本体は、実行用の関数リテラルを `deferEffect` へ渡す形だけを許す。
 
 ### 根拠
 [verification](../../principles/verification.md) が定める、依存の向きやレイヤー越境は実行できるテストとして強制するという要求に、dependency-cruiser で応える。
@@ -191,16 +205,62 @@ StrykerJS を回し、生き残った欠陥にテストを足す。
 規則を CI で回せば、違反でビルドが止まる。
 import を介さない呼び出し(グローバル API 等)は、import の走査に現れない。
 その禁止は、oxlint の no-restricted-properties などの banned API の lint に割り当てる。
+TypeScript compiler API は、export され、戻り値が Effect に代入可能な function と変数を全て列挙し、本体の call expression と引数を取得できる。
+TypeScript compiler API は `unique symbol` の参照と type assertion を取得できるため、型宣言を除く brand の値参照と Effect への assertion を `deferEffect` の実装内へ限定できる。
+TypeScript compiler API は call expression の symbol と callee expression の型を解決できる。
+Promise を返す境界と同期 DOM と postMessage の symbol を別々に列挙すれば、各呼出式を同期と非同期に対応する `fromThrowable` の関数リテラルへ限定できる。
+`ResultAsync.fromPromise` の第一引数は構文木から取得できるため、同期で throw し得る call expression が先に評価される形を拒否できる。
+callee expression の型に Effect の `unique symbol` brand があるか、branded Effect へ代入可能かを調べれば、呼出結果が ResultAsync でも下流 Effect の呼出を識別できる。
+設定に列挙した外部 I/O と待機、および callee expression で識別した下流 Effect の呼出を、`withDeadlineEffect` の operation 内に限定できる。
+TypeScript compiler API は wrapper 内の global symbol を解決できるため、`withDeadlineEffect` から `window` と `document` の直接参照を拒否できる。
+TypeScript compiler API は parameter の initializer と destructuring の binding element を取得できるため、factory 本体へ入る前の副作用経路を検出できる。
+公開 Effect factory の本体を `deferEffect` の直接呼出だけにし、その引数を関数リテラルだけにすれば、factory の評価中に副作用を起動する式を構造で排除できる。
+`deferEffect` 自体の実行テストは constructor の遅延を確認するが、全ての公開 factory の形は確認しない。
 
 ### 完了条件
 依存方向と境界の禁止が、dependency-cruiser で検証されている。
 規則が、層の参照禁止と exports の外への到達の禁止を持っている。
+root の構造検査が、skeleton の両表から phase ごとの許可 edge を生成している。
+build または test の edge が runtime の成果物へ混入した場合に、構造検査が失敗している。
+外部 I/O、待機、下流 Effect が、`withDeadlineEffect` の operation からだけ呼ばれている。
+Promise を返す前に同期で throw し得る境界 API が、`ResultAsync.fromThrowable` に渡して直後に呼ぶ関数リテラルの内側からだけ呼ばれている。
+throw し得る同期 DOM API と postMessage が、`Result.fromThrowable` に渡して直後に呼ぶ関数リテラルの内側からだけ呼ばれている。
+同期で throw し得る呼出式が、`ResultAsync.fromPromise` の第一引数へ直接渡されていない。
+`withDeadlineEffect` が host ごとの `ResumeSource` を受け、`window` と `document` を直接参照していない。
+外部 I/O と待機の symbol が、構造検査の設定に列挙されている。
+下流 Effect の呼出が、callee expression の nominal brand と branded Effect への代入可能性で識別されている。
+Effect の callable な型が `unique symbol` の nominal brand を持ち、`deferEffect` だけが branded value を構築している。
+全ての公開 Effect factory が、実行用の関数リテラルを `deferEffect` へ渡す形になっている。
+全ての公開 Effect factory の parameter に、default parameter と destructuring の binding initializer が無い。
+公開 Effect factory の本体に、`deferEffect` への委譲より前の副作用呼出が無い。
 
 ### 禁止事項
 構造の規則を、コメントや約束だけで守らせること。
+外部 I/O、待機、下流 Effect を、`withDeadlineEffect` の operation の外から直接呼ぶこと。
+Promise を返す前に同期で throw し得る境界 API を、`ResultAsync.fromThrowable` の関数リテラルの外から呼ぶこと。
+throw し得る同期 DOM API または postMessage を、`Result.fromThrowable` の関数リテラルの外から呼ぶこと。
+同期で throw し得る呼出式を、`ResultAsync.fromPromise` の第一引数へ直接渡すこと。
+`withDeadlineEffect` から `window` または `document` を直接参照すること。
+`deferEffect` の外で、Effect の brand を構築または型変換で偽装すること。
+公開 Effect factory を一部だけ抽出して、遅延を全件保証したとみなすこと。
+公開 Effect factory の default parameter または destructuring の binding initializer を、検査対象から外すこと。
+`deferEffect` の実行テストだけで、全ての公開 Effect factory の遅延を保証したとみなすこと。
 
 ### 行動
-dependency-cruiser に層の参照禁止と exports の外への到達の禁止を規則として書き、CI で回す。
+dependency-cruiser に層の参照禁止と exports の外への到達の禁止を規則として書き、検証入口で回す。
+skeleton の両表を TypeScript compiler API で読み、runtime・build・test phase の許可 edge を生成して dependency-cruiser の依存 graph と照合する。
+runtime の成果物を構成する依存 closure に build または test の edge があれば失敗させる。
+TypeScript compiler API で外部 I/O、待機、下流 Effect の call expression を列挙し、`withDeadlineEffect` の operation 内にあることを検証入口で検査する。
+Promise を返す前に同期で throw し得る境界 API と、throw し得る同期 DOM API と postMessage の symbol を別々に設定へ列挙する。
+前者が `ResultAsync.fromThrowable` に渡して直後に呼ぶ関数リテラルの内側に、後者が `Result.fromThrowable` に渡して直後に呼ぶ関数リテラルの内側にあることを検証入口で検査する。
+`ResultAsync.fromPromise` の第一引数に、同期で throw し得る call expression が無いことを検証入口で検査する。
+TypeScript compiler API で `withDeadlineEffect` の global symbol 参照を列挙し、`window` と `document` の直接参照を検証入口で拒否する。
+外部 I/O と待機は、設定に列挙した symbol で識別する。
+下流 Effect は、callee expression の型に nominal brand があるか、branded Effect へ代入可能かで識別する。
+TypeScript compiler API で export され、戻り値が Effect に代入可能な function と変数を全て列挙する。
+型宣言を除く Effect の `unique symbol` brand の値参照と Effect への type assertion が、`deferEffect` の実装内だけにあることを検証入口で検査する。
+公開 Effect factory の parameter に、default parameter と destructuring の binding initializer が無いことを検証入口で検査する。
+factory 本体が `deferEffect` を直接呼び、実行用の関数リテラルだけを渡す形であることを検証入口で検査する。
 
 ### 例
 ```javascript
@@ -301,12 +361,13 @@ formation・translation・connection・retention・coordination・publication・
 | translation | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(4xx・5xx の分岐の単体テスト) |
 | translation | 契約の型を生成する | 実行テスト(drift 検査の CI gate) |
 | translation | 生成型を型としてのみ使い、通信を port に通す | 構造検査(dependency-cruiser での runtime の import の検出)+型(import type) |
-| connection | 効果を遅延した関数で表す | 型(関数のシグネチャ・ResultAsync) |
+| connection | 効果を遅延した関数で表す | 構造検査(TypeScript compiler API。Effect が unique symbol の nominal brand を持ち、deferEffect だけが branded value を構築し、全ての公開 Effect factory に parameter initializer がなく、本体が実行用の関数リテラルを deferEffect へ直接渡すこと)+実行テスト(deferEffect の構築時は副作用0件で、返した Effect の呼出後にだけ開始すること)+型(Effect の nominal brand・環境・AbortSignal・wall-clock の絶対期限・ResultAsync のシグネチャ) |
 | connection | 想定内失敗を Result で返す | 型(neverthrow の Result・判別子つき union) |
 | connection | throw を欠陥として境界で分ける | 実行テスト(try-catch 境界の単体テスト) |
 | connection | 依存を環境で受け、host の能力を port で宣言する | 型(環境の型・ui port の型)+レビュー(singleton を作らないことの判断) |
-| retention | 状態の機構 | レビュー(由来ごとの機構選択の判断) |
-| retention | remote の規律 | レビュー(store への複製の禁止の判断) |
+| 全域 | cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
+| retention | 状態の機構 | レビュー(権威による remote/local と、local の寿命・共有範囲による URL/横断 UI/一時 UI の選択) |
+| retention | remote の規律 | レビュー(local の横断 UI store への複製禁止の判断) |
 | retention | 保存の禁止 | analyzer/lint(oxlint の no-restricted-properties で localStorage・sessionStorage の直呼びを禁止) |
 | retention | extension の保持状態 | 型(state port・secret port)+レビュー |
 | coordination | 非同期 | レビュー |

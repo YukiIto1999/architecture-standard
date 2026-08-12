@@ -47,16 +47,18 @@ DTO に `[JsonExtensionData]` の捕捉プロパティを持たせ、非空な�
 var user = JsonSerializer.Deserialize<User>(json);
 ```
 
-// 境界の DTO record に受け、factory でドメイン型へ詰め替える。未知は弾かず捕捉する
-public sealed record CreateUserDto
+境界の DTO record で受け、factory が検証したドメイン型へ写す。欠落は拒否し、未知のキーは捨てずに捕捉する。
+
+```csharp
+public sealed record CreateUserRequest
 {
     [JsonPropertyName("email")] public required string Email { get; init; }  // 欠落を弾く
     [JsonExtensionData] public IDictionary<string, JsonElement>? Extra { get; init; } // 未知のキーを捕捉する
 }
 Result<User> ToDomain(CreateUserRequest request)
 {
-    if (dto.Extra is { Count: > 0 }) logger.LogWarning("未知のフィールドを検知した: {Keys}", dto.Extra.Keys);
-    return Email.Create(dto.Email).Map(email => new User(email));        // factory が検証
+    if (request.Extra is { Count: > 0 }) logger.LogWarning("未知のフィールドを検知した: {Keys}", request.Extra.Keys);
+    return Email.Create(request.Email).Map(email => new User(email));
 }
 ```
 
