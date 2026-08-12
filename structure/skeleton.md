@@ -99,8 +99,19 @@ surfaces に surface として置き、protocol の対話様式を表す名で�
 | deploy | 配備の対象となる成果物 |
 | tests | 検証のために全ての境界 |
 
-この表が root またぎ依存の機械検証の唯一の駆動元である。
-表に無い参照元から参照先への root またぎ依存は、すべて禁止とする。
+build と test にだけ存在してよい root またぎ依存は、次の表に従う。
+
+| 参照元 | 依存してよい先 |
+|---|---|
+| 全ての境界の build | libs の compile-time tool package |
+| root tests・各境界内の test package | libs の mechanism testing package |
+
+実行時依存表と build・test-only 依存表が、root またぎ依存の機械検証の唯一の駆動元である。
+両表に無い参照元から参照先への root またぎ依存は、すべて禁止とする。
+root の arch test は、runtime・build・test の phase ごとに依存 edge を区別する。
+root の arch test は、両表から phase ごとの許可 edge を生成する。
+phase ごとの edge を検査する言語別の実現は、各言語の inspection が定める。
+各言語の検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
 
 contracts 内部の層間の依存は [contracts](./contracts/layout.md) に従う。
 contracts/generated は、contracts/canonical と binding(http・protocol)から生成する。

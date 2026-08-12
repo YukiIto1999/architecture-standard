@@ -50,5 +50,6 @@ arch と contract は Small の段、integration と conformance は Medium の�
 
 ## 依存方向
 
-tests の依存は [skeleton](../skeleton.md) の依存方向表に従う。
+tests の実行時依存は [skeleton](../skeleton.md) の実行時依存表に従う。
+libs の Testing package への依存は、skeleton の build・test-only 依存表に従う。
 production の code は、tests を参照しない。

@@ -128,6 +128,8 @@ mutation が cargo-mutants で検査され、生き残った欠陥が潰され�
 ### 要求
 依存方向は workspace の crate 依存で強制し、crate 依存に乗らない規則は root の tests/ に置く自作の構造検査で検証する。
 検査は import の走査で、層の参照禁止・公開面・配置の文法を確かめる。
+root の構造検査は、skeleton の実行時表と build・test-only 表から runtime・build・test phase の許可 edge を生成する。
+root の構造検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
 
 ### 根拠
 依存方向を crate の依存グラフにすれば、下位が上位を参照できず、向きがビルドで強制される。
