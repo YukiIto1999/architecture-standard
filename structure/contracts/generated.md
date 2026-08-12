@@ -17,7 +17,7 @@ generated を、正本にしない。
 
 ## drift の検査
 
-生成物と、生成元の canonical・binding(http・protocol)との drift を、CI で検査する。
+生成物と、生成元の canonical・binding(http・protocol)との drift を、リポジトリの検証入口で検査する。
 drift があるときは、ビルドを失敗させる。
 
 ## 利用

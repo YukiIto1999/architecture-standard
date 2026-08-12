@@ -128,15 +128,6 @@ Rust と C# は、コンパイラと lint の到達可能性に基づく検出�
 判断基準は、契約から検査を導出でき、実装の言語に依存しないことである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
-## 契約の記述と生成
-
-用途は、契約の意味の正本の記述と、そこからの client・型の生成である。
-採用は、記述は TypeSpec、OpenAPI の出力は `@typespec/openapi3`、生成は Rust が openapi-generator の rust generator(library=reqwest)、C# が NSwag(client・型の生成に限る)、TypeScript が openapi-typescript である。
-判断基準は、判別のある直和を判別が生成先で保たれる形で記述できることと、生成の入口が安定した OpenAPI であることである。
-`@typespec/openapi3` は OpenAPI を安定した出力として持ち、openapi-generator は生成元を特定の emitter に縛らない。
-openapi-typescript は型定義だけを出力し、runtime のコードを持たない。
-撤回条件は、判断基準を満たさなくなることであり、emitter と generator の対応状況の変化と typespec-rust の unbranded 化を再評価のトリガーとする。
-
 ## ドキュメントコメントの体裁検査
 
 用途は、ドキュメントコメントの最初の一行の体裁と節の網羅を検査する道具である。

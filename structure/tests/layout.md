@@ -22,7 +22,7 @@ tests/
 
 conformance は、業務の語彙で書いた Gherkin の executable spec を、公開された interface を越して検証する。
 適合は、シナリオの合否で判定し、点数化しない。
-contract は、[contracts/canonical](../contracts/canonical.md) の TypeSpec を駆動元として検証する。
+contract は、[contracts/canonical](../contracts/canonical.md) の契約定義を駆動元として検証する。
 generated が canonical と binding(http・protocol)から外れていないことを、drift の検査で確かめる。
 arch は、[skeleton](../skeleton.md) と各部の layout、[concerns/dependency](../../concerns/dependency.md) が定める依存と境界の禁止を、機械で検証する。
 viewer と extension が特定 host の API や型を参照しないことも、arch で検証する。
