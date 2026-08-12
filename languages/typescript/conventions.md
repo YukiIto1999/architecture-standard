@@ -133,16 +133,20 @@ function place(cart: ValidCart): Result<Order, OrderError> { /* ... */ }
 変換を担うオブジェクトや関数は、名前に mapper を含める。
 
 ### 例
-```typescript
-// 役割が名前から読み取れない
-interface Order { /* 永続化の行に相当 */ }
-interface OrderIn { /* wire */ }
+役割を表さない型名では、永続化の行と境界の wire を区別できない。
 
-// 接尾辞で役割を揃える
-interface OrderRecord { /* 永続化の行に相当 */ }
-interface CreateOrderRequest { /* 境界の入力 */ }
-interface OrderResponse { /* 境界の出力 */ }
-const orderMapper = { toResponse: (record: OrderRecord): OrderResponse => ({ /* ... */ }) };
+```text
+Order
+OrderIn
+```
+
+役割ごとに接尾辞を揃え、変換の名前に `mapper` を含める。
+
+```text
+OrderRecord
+CreateOrderRequest
+OrderResponse
+orderMapper
 ```
 
 ## 参照
