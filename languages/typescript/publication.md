@@ -30,7 +30,9 @@ props は mergeProps・splitProps で扱う。
 // props を分割代入し、反応性が切れる
 function Greeting({ name }: { name: string }) { return <h1>Hello {name}</h1>; }
 
-// composition root で provider と ui port を配り、props は直接参照する
+composition root が provider と ui port を配り、component は props を直接参照する。
+
+```tsx
 render(() => <AuthProvider><App ui={ui} /></AuthProvider>, document.getElementById("root")!);
 function Greeting(raw: { name: string; greeting?: string }) {
   const props = mergeProps({ greeting: "Hello" }, raw);
@@ -129,8 +131,9 @@ viewer を、composition の外で DOM に手で注入すること。
 index.html を entry にし、composition で ui port を注入して render で mount する。
 
 ### 例
+composition が ui port を注入し、viewer を `render` で mount する。
+
 ```tsx
-// composition が ui port を注入し、render で mount する
 const ui = composeUi();
 render(() => <App ui={ui} />, document.getElementById("root")!);
 ```

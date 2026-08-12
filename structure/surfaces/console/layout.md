@@ -1,7 +1,7 @@
 # console の構造
 
 console は、CLI の surface である。
-core を埋め込み、コマンドの引数を use-case へ写像する。
+core を埋め込み、コマンドの引数を build_core が返す API の operation へ写像する。
 自己ホストであり、自身でプロセスを起動する。
 対話の体験は [concerns/experience](../../../concerns/experience.md) に従う。
 console は [skeleton](../../skeleton.md) の依存と命名に従う。
@@ -11,7 +11,7 @@ console は [skeleton](../../skeleton.md) の依存と命名に従う。
 ```
 console/
 ├─ commands/
-│  └─ <command>     引数を use-case へ写像する。
+│  └─ <command>     引数を core API の operation へ写像する。
 └─ composition      core の埋め込み・設定の読み込み・起動。
 ```
 
@@ -28,10 +28,10 @@ console の外との依存は [skeleton](../../skeleton.md) に従う。
 
 ## 入口とコマンド
 
-command は、引数を use-case へ写像する。
-command は、業務判断を持たず、入力の解析と use-case の呼び出しだけを行う。
+command は、引数を core API の operation へ写像する。
+command は、業務判断を持たず、入力の解析と operation の呼び出しだけを行う。
 console は wire の binding を持たず、外部へ面を公開しない。
-console は、派生読みモデルの臨時・手動の再構築 operation を command として起動する役割を担う。
+console は、派生読みモデルの臨時・手動の再構築 workflow を command として起動する役割を担う。
 引数の解析の機構は [languages](../../../languages/) が定める。
 
 ## 配布

@@ -218,12 +218,16 @@ Result<Address, AddressFailure> moved = address.WithZipCode("00000");
 
 ```csharp
 decimal weight; decimal price;
-// 別の値オブジェクトに分け、取り違えをコンパイルで弾く
-public sealed record Weight { /* Create で検証 */ }
-public sealed record Money { /* Create で検証 */ }
 ```
 
-## companion を libs の機構として netstandard2.0 プロジェクトに分ける
+別の値オブジェクトに分けて型エラーにする。
+
+```csharp
+public sealed record Weight(decimal Value);
+public sealed record Money(decimal Value);
+```
+
+## 検証と生成を libs の analyzer project に分ける
 
 ### 要求
 値オブジェクトの生成、閉じた階層の網羅の suppressor、効果の規律の analyzer は、libs の機構として core と別の netstandard2.0 のプロジェクトに置く。

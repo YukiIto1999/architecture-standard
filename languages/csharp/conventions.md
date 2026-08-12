@@ -117,16 +117,20 @@ public Result<Order, OrderError> Place(ValidCart cart) { /* ... */ }
 変換を担う型は `<対象>Mapper` の静的クラスにする。
 
 ### 例
-```csharp
-// 役割が名前から読み取れない
-public sealed record Order { /* DB の行 */ }
-public sealed record OrderIn { /* wire */ }
+汎用的な名前では、永続化、境界入力、境界出力の役割を判別できない。
 
-// 接尾辞で役割を揃える
-public sealed record OrderRecord { /* 永続化の行 */ }
-public sealed record CreateOrderRequest { /* 境界の入力 */ }
-public sealed record OrderResponse { /* 境界の出力 */ }
-public static class OrderMapper { public static OrderResponse ToResponse(OrderRecord record) => new(/* ... */); }
+```text
+Order
+OrderIn
+```
+
+接尾辞で役割を揃える。
+
+```text
+OrderRecord
+CreateOrderRequest
+OrderResponse
+OrderMapper
 ```
 
 ## 参照

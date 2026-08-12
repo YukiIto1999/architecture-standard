@@ -489,11 +489,15 @@ port が、interface で宣言されている。
 port を interface で宣言し、adapter の依存を constructor の引数で受ける。
 
 ### 例
-```csharp
-// 核が具象を直接生成する
-public sealed class OrderService { private readonly SmtpNotifier _notifier = new(); }
+核が具象を直接生成する形は避ける。
 
-// port は interface、adapter の依存は constructor で受ける
+```csharp
+public sealed class OrderService { private readonly SmtpNotifier _notifier = new(); }
+```
+
+port は interface で宣言し、adapter の依存は constructor で受ける。
+
+```csharp
 public sealed class SmtpNotifier(ISmtpClient client) : INotifier;
 ```
 
@@ -519,13 +523,17 @@ adapter の登録と requirements の組み立てが、composition root に限�
 adapter の登録と requirements の組み立てを `Program.cs` に集め、runtime に requirements を与える。
 
 ### 例
-```csharp
-// 実行時に provider から引く service locator
-var validator = _provider.GetService<IOrderValidator>();
+実行時に provider から依存を引く service locator は避ける。
 
-// composition root で requirements を組み、runtime に与える
+```csharp
+var validator = _provider.GetService<IOrderValidator>();
+```
+
+composition root で requirements を組み、runtime に与える。
+
+```csharp
 var requirements = new ProductionRequirements(new SystemClock(), orderRepository);
-var runtime = new EffectRuntime<ProductionRequirements>(requirements);   // Program.cs
+var runtime = new EffectRuntime<ProductionRequirements>(requirements);
 ```
 
 ## 参照

@@ -62,6 +62,13 @@ fc.assert(fc.property(fc.array(fc.integer()), (values) => {
 ### 要求
 業務語彙の executable spec は、実行可能にして仕様と実装の継ぎ目を消す。これを cucumber-js で満たす。
 UI の E2E smoke と visual は playwright-bdd と Playwright で書き、両者は目的が別なので代替として並べない。
+[experience](../../concerns/experience.md) が定める状態または feedback の100ms、1秒を超える operation の progress 開始までの1秒と完了までの継続は、Playwright の E2E で表示時刻を測定する。
+visual の baseline 画像は、画像ごとか同じ実行環境を使う画像集合ごとに対応する metadata と組にし、レビューを通して版管理する。
+metadata は、実行 image digest、OS、arch、hardware rendering class、Playwright と browser の version、headless mode、font manifest digest、viewport を持つ。
+metadata の各値は、形式を固定した canonical serialization から environment fingerprint を生成できる形で記録する。
+visual は、実行環境の現在値から生成した environment fingerprint と metadata の fingerprint を screenshot の比較前に照合する。
+fingerprint が一致しないときは、visual を失敗させ、旧い baseline 画像との screenshot 比較を実行しない。
+baseline を更新するときは、画像と metadata を一つの更新単位として生成し、同じ変更で明示的にレビューする。
 
 ### 根拠
 [documentation](../../principles/documentation.md) が定める、仕様の記述にプログラミング言語を使えば仕様と実装の継ぎ目が消えるという要求に、cucumber-js で応える。
@@ -85,6 +92,47 @@ executable spec と UI の E2E smoke・visual を、代替として並べるこ�
 ### 行動
 業務の語彙でシナリオを書き、cucumber-js のステップで実装する。
 UI の E2E smoke と visual は playwright-bdd と Playwright で別に書く。
+Playwright で操作を入力し、入力時刻、状態または feedback の表示時刻、progress の表示時刻、完了時刻を記録して、experience の閾値と継続条件を検査する。
+baseline 画像ごとか同じ実行環境を使う画像集合ごとに metadata を置き、画像とともに版管理する。
+実行 image digest、OS、arch、hardware rendering class、Playwright と browser の version、headless mode、font manifest digest、viewport を metadata へ記録する。
+metadata と実行環境の現在値を同じ形式で canonical serialization し、それぞれの environment fingerprint を生成する。
+二つの fingerprint を screenshot の比較前に照合し、一致しなければ失敗させる。
+fingerprint が一致した場合だけ、`toHaveScreenshot` で baseline 画像を比較する。
+baseline を更新するときは、画像と metadata の両方を生成する単一の更新処理を使い、片方の生成に失敗したら両方を確定しない。
+baseline の画像と metadata の差分を、同じ変更として明示的にレビューする。
+
+### 例
+
+baseline 集合の metadata は、次のように環境の値だけを持つ。
+
+```json
+{
+  "arch": "x86_64",
+  "browserVersion": "1.2.3",
+  "ciImageDigest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "fontManifestDigest": "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+  "hardwareRenderingClass": "software",
+  "headlessMode": true,
+  "os": "linux",
+  "playwrightVersion": "1.2.3",
+  "viewport": { "height": 720, "width": 1280 }
+}
+```
+
+metadata と実行環境の現在値には同じ canonical serializer を適用し、fingerprint が一致した後だけ screenshot を比較する。
+
+```ts
+const expectedFingerprint = sha256(canonicalSerialize(baselineMetadata));
+const actualFingerprint = sha256(canonicalSerialize(readVisualEnvironment()));
+
+if (actualFingerprint !== expectedFingerprint) {
+  throw new Error("visual environment fingerprint mismatch");
+}
+
+await expect(page).toHaveScreenshot();
+```
+
+baseline の更新処理は画像と metadata を同時に生成し、両方を同じ変更としてレビューへ出す。
 
 ## accessibility
 
@@ -147,7 +195,7 @@ testcontainers で実依存のコンテナを起動すれば、本物に近い�
 knip はエントリーポイントからの到達可能性で判定するので、島ごと検出できる。
 
 ### 完了条件
-未使用のファイル・エクスポート・依存の検出が、CI に配線され、検出が失敗として扱われている。
+未使用のファイル・エクスポート・依存の検出が、検証入口に配線され、検出が失敗として扱われている。
 
 ### 禁止事項
 未使用の検出を、レビューの目視だけで行うこと。
@@ -345,11 +393,23 @@ oxlint に jsdoc の規則群を有効にし、CI で検査する。
 
 ## 規則と検証機構の対応
 
-formation・translation・connection・retention・coordination・publication・conventions の各規律を、検証手段へ写像する。
+formation・translation・connection・retention・coordination・publication・conventions・inspection の8実現軸の各規律を、検証手段へ写像する。
+inspection 軸は、この文書の規律を定める H2 見出しを対応表へ全て列挙する。
+標準 repository の verifier は、各実現軸の規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 
 | 実現軸 | 規律 | 検証手段 |
 |---|---|---|
+| inspection | 実行 | 実行テスト(Vitest の単体・性質・結合を検証入口で実行し、発見件数0を失敗にする) |
+| inspection | 性質 | 実行テスト(fast-check の生成・縮小・stateful property と回帰 seed の再実行) |
+| inspection | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift、baseline metadata と environment fingerprint の照合)+実行テスト(cucumber-js を実装と同じ検証入口で実行し、Playwright で状態・feedback・progress の表示時間を測定し、fingerprint 一致時だけ screenshot 差分を実行)+実行テスト・レビュー(baseline 画像と metadata の原子的な更新と明示承認) |
+| inspection | accessibility | 実行テスト(@axe-core/playwright による自動判定可能な違反、Playwright による keyboard 操作・pointer target の bounding box・WCAG 2.2 Level AA の text/non-text contrast と例外記録の照合)+レビュー(自動判定できない WCAG 2.2 Level AA の確認) |
+| inspection | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`vitest list --json` と Playwright `--list` が返す project・file・suite・test の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。cucumber-js scenario は URI・line・name の組を同じ集合へ加える) |
+| inspection | 未使用 | analyzer/lint(knip で未使用のファイル・export・依存を検出し検証入口で失敗) |
+| inspection | 有効性 | mutation(StrykerJS の totalUndetected または Survived+NoCoverage が0件の gate と対象件数0の失敗) |
+| inspection | 構造 | 構造検査(TypeScript compiler API と dependency-cruiser が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
+| inspection | 予防 | analyzer/lint(tsc・oxlint・tsgolint・SonarQube の設定と診断を検証入口でエラー化) |
+| inspection | ドキュメントコメントの検査 | 構造検査(TypeScript compiler API と `@microsoft/tsdoc`)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、語彙) |
 | formation | 業務の値を型に封じる | 型(valibot の brand・safeParse)+実行テスト(factory の単体テスト) |
 | formation | 不正な状態を構築できなくする | 型(判別子つき union・never 網羅) |
 | formation | 不変を既定にする | 型(readonly・as const) |

@@ -52,8 +52,8 @@ var user = JsonSerializer.Deserialize<User>(json);
 ```csharp
 public sealed record CreateUserRequest
 {
-    [JsonPropertyName("email")] public required string Email { get; init; }  // 欠落を弾く
-    [JsonExtensionData] public IDictionary<string, JsonElement>? Extra { get; init; } // 未知のキーを捕捉する
+    [JsonPropertyName("email")] public required string Email { get; init; }
+    [JsonExtensionData] public IDictionary<string, JsonElement>? Extra { get; init; }
 }
 Result<User> ToDomain(CreateUserRequest request)
 {

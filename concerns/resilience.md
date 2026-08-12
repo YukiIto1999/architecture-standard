@@ -101,8 +101,12 @@ port を包む層に、時間の上限・再試行・遮断を置く。
 
 ```
 function place(order) { for (i in 0..3) try { return api.call(order) } catch {} }
-// port を包む層で制御し、業務には結果だけ返す
-class ResilientRateClient implements RateClient { /* timeout・retry・遮断はここ */ }
+```
+
+時間上限、再試行、遮断は port を包む層で制御し、業務には結果だけを返す。
+
+```
+class ResilientRateClient implements RateClient { ... }
 ```
 
 ## 失敗を区画に閉じる

@@ -158,15 +158,19 @@ port が trait で宣言され、核が trait だけに依存している。
 port を trait で宣言し、差し替えは `Arc<dyn>`、単一の実装は generics で渡す。
 
 ### 例
-```rust
-// 核が具象に依存する
-struct OrderService { repository: PostgresOrderRepository }
+具象の repository を field に持つと、核が技術の実装へ依存する。
 
-// port の trait にだけ依存する。dyn で差し替える非同期 port は async-trait
+```rust
+struct OrderService { repository: PostgresOrderRepository }
+```
+
+port の trait だけに依存させる。単一実装は generics で渡し、実行時に差し替える非同期 port は `async-trait` と `Arc<dyn>` で渡す。
+
+```rust
 #[async_trait]
 pub trait OrderRepository { async fn save(&self, order: &Order) -> Result<(), RepositoryError>; }
-struct OrderService<R: OrderRepository> { repository: R }   // 単一実装は generics。効果を持たない構成要素の配線は port を保持する field と構成子注入で行う
-struct Router { repository: Arc<dyn OrderRepository> }      // 差し替えは Arc<dyn>
+struct OrderService<R: OrderRepository> { repository: R }
+struct Router { repository: Arc<dyn OrderRepository> }
 ```
 
 ## 配線を組立点に置き、境界で実行する
@@ -196,18 +200,22 @@ constructor の引数で受ければ、依存がシグネチャに現れ、組�
 本番の環境を組立点で組み、Future の実行を境界に置く。
 
 ### 例
+核がグローバルから依存を取得すると、依存関係がシグネチャから消える。
+
 ```rust
-// 核がグローバルから依存を引く
 fn run() {
     let database = GLOBAL_POOL.get();
     use_database(database);
 }
+```
 
-// constructor で受け、組立点で環境を組み、境界で実行する
+依存は constructor で受け、具象の環境は組立点だけで構築し、境界で実行する。
+
+```rust
 #[tokio::main]
 async fn main() {
-    let environment = ProductionEnvironment::new(connection);   // 組立点だけが具象を知る
-    serve(environment).await;                                   // 境界で Future を駆動する
+    let environment = ProductionEnvironment::new(connection);
+    serve(environment).await;
 }
 ```
 

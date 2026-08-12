@@ -10,10 +10,10 @@ server は [skeleton](../../skeleton.md) の依存と命名に従う。
 ```
 server/
 ├─ routes/
-│  └─ <route>       http の handler。要求を use-case へ写像する。
+│  └─ <route>       http の handler。要求を core API の operation へ写像する。
 ├─ bff/
-│  ├─ session       session の取り出しと保存。
-│  ├─ token         外部 token と内部 token の交換。
+│  ├─ session       session と cookie の発行・更新・失効。
+│  ├─ token         OIDC と token broker。
 │  ├─ csrf          CSRF の検査。
 │  └─ throttle      流入制限のカウンタの adapter。
 └─ composition      core の埋め込み・境界の仕込み・request context の構築・http の起動。
@@ -35,8 +35,8 @@ server の外との依存は [skeleton](../../skeleton.md) に従う。
 
 ## 入口と handler
 
-handler は、http の要求を use-case へ写像する。
-handler は、業務判断を持たず、入力の変換と use-case の呼び出しだけを行う。
+handler は、http の要求を core API の operation へ写像する。
+handler は、業務判断を持たず、入力の変換と operation の呼び出しだけを行う。
 API の様式と表現の形式は [contracts/http](../../contracts/http.md) に、操作の意味は [contracts/canonical](../../contracts/canonical.md) に従う。
 認可の規律は [concerns/authorization](../../../concerns/authorization.md) に従う。
 port は [structure/core/application](../../core/application.md) に、engine は [structure/core/infrastructure](../../core/infrastructure.md) に従う。

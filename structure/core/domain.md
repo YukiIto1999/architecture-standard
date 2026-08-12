@@ -11,7 +11,7 @@ domain は [layout](./layout.md) の単位と依存に従う。
 一つの集約が一つの強整合境界に対応する。
 集約は、別の集約の内部を参照しない。
 集約をまたぐ一貫性は domain では保証しない。
-composition が、イベントを用いて集約をまたぐ一貫性を最終的に保つ。
+application の workflow が、各 use-case の型付き outcome を用いて集約をまたぐ一貫性を最終的に保つ。
 整合性と集約境界の原則は [principles/data](../../principles/data.md) に従う。
 
 ## 常に正しい構築
@@ -43,5 +43,5 @@ domain は、persistence の record、wire 型、DTO、contracts の型を参照
 
 集約は、履歴として残すべき状態変更を domain イベントとして表す。
 ログではなくイベントで残すかの判断は [principles/data](../../principles/data.md) の履歴保持に従う。
-イベントの配送と integration event への写像は composition が担う。
+integration event への写像は application が担い、配送経路の配線は composition が担う。
 配送の規律は [concerns/messaging](../../concerns/messaging.md) に従う。

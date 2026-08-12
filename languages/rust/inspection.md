@@ -133,7 +133,7 @@ root の構造検査は、build または test の edge が runtime の成果物
 
 ### 根拠
 依存方向を crate の依存グラフにすれば、下位が上位を参照できず、向きがビルドで強制される。
-crate の依存に乗らない規則は、import を走査する自作の検査で確かめれば、構造の劣化が検査で止まる。
+crate の依存に乗らない規則は、import を走査する構造検査で確かめれば、構造の劣化が検査で止まる。
 import の走査は型を介さない静的な呼び出しを見ないので、その禁止は clippy::disallowed_methods などの banned API の lint に割り当てる。
 
 ### 完了条件
@@ -247,11 +247,21 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 
 ## 規則と検証機構の対応
 
-formation・translation・connection・retention・coordination・publication・conventions の各規律を、検証手段へ写像する。
+formation・translation・connection・retention・coordination・publication・conventions・inspection の8実現軸の各規律を、検証手段へ写像する。
+inspection 軸は、この文書の規律を定める H2 見出しを対応表へ全て列挙する。
+標準 repository の verifier は、各実現軸の規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 
 | 実現軸 | 規律 | 検証手段 |
 |---|---|---|
+| inspection | 実行 | 実行テスト(cargo-nextest の単体・性質・結合と `cargo test --doc` の doctest を検証入口で実行し、発見件数0を失敗にする) |
+| inspection | 性質 | 実行テスト(proptest の生成・縮小・stateful property と回帰 seed の再実行) |
+| inspection | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber を実装と同じ検証入口で実行) |
+| inspection | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`cargo nextest list --message-format json` の binary と test name の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。doctest と cucumber scenario は各実行入口の native ID を同じ集合へ加える) |
+| inspection | 有効性 | mutation(cargo-mutants の未検出 mutant 0件 gate と対象件数0の失敗) |
+| inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
+| inspection | 予防 | analyzer/lint(rustc・clippy・SonarQube の設定と診断を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
+| inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、語彙) |
 | formation | 業務の値を型に封じる | 型(newtype・非公開フィールド・Rust の可視性機構) |
 | formation | 不正な状態を構築できなくする | 型(enum・網羅 match・コンパイラの網羅性検査) |
 | formation | 不変を既定にする | 型(所有権・不変束縛) |
@@ -267,8 +277,8 @@ formation・translation・connection・retention・coordination・publication・
 | connection | 失敗を Result に、欠陥を panic にする | analyzer/lint(clippy unwrap_used・expect_used deny)+型(Result) |
 | connection | 要求する依存を能力の trait bound で型に出す | 型(trait bound) |
 | connection | port を trait で宣言する | 型(trait)+構造検査(依存方向) |
-| connection | 配線を組立点に置き、境界で実行する | 構造検査(自作。composition root 外の具象生成の検出)+レビュー |
-| retention | 型付き SQL | 型/実行テスト(sqlx の `query!` コンパイル時検証・CI の offline 照合) |
+| connection | 配線を組立点に置き、境界で実行する | 構造検査(composition root 外の具象生成の検出)+レビュー |
+| retention | 型付き SQL | 型/実行テスト(sqlx の `query!` コンパイル時検証・検証入口の offline 照合) |
 | retention | 並行更新の表面 | 実行テスト(結合テストでの競合検出) |
 | retention | 書き込みパス | 構造検査(store が transaction の begin・commit を持たないことの検査) |
 | retention | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証済み actor、匿名の安定した opaque scope、logical system actor の分離、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
@@ -286,7 +296,7 @@ formation・translation・connection・retention・coordination・publication・
 | publication | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(Data extractor による依存注入の判断) |
 | 全域 | cast allowlist | 構造検査(reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | publication | desktop と mobile の host | レビュー |
-| publication | extension の接続 | 型(tower-lsp-server の trait 実装)+レビュー |
+| publication | extension の接続 | 型(tower-lsp-server の LanguageServer 実装と custom method)+レビュー |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
 
 ## 参照

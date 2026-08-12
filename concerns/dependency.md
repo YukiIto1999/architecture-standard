@@ -110,11 +110,14 @@ port を、技術ごとに割ること。
 駆動する側はテストのドライバで、駆動される側はインメモリの代役で差し替える。
 
 ### 例
+
+port は技術から独立した目的で設計し、技術別のアダプタを差し替えられる形にする。
+
 ```
-// 目的で設計したport(技術非依存)。技術別アダプタが差し替わる
 interface NotificationPort { notify(to: Recipient, message: Message): Result<Sent, NotifyError> }
-// 利用側で実装ごとに分岐したら抽象の破綻。if (provider === "vendorA") のような分岐を書かない
 ```
+
+利用側で実装ごとに分岐すると抽象が破綻する。`if (provider === "vendorA")` のような分岐は置かない。
 
 ## 配線を組立点に集める
 
@@ -143,11 +146,13 @@ interface NotificationPort { notify(to: Recipient, message: Message): Result<Sen
 DI コンテナを使う場合も、その参照を組立点に限る。
 
 ### 例
+
+具体型を知る場所は、エントリ点の組立点に限定する。方針は構成子から port を受け取る。
+
 ```
-// エントリ点の組立点だけが具体型を知る
 main() {
   const repository = new PostgresRateRepository(connection);
-  const policy = new PricingPolicy(repository);    // 方針は port を受け取る
+  const policy = new PricingPolicy(repository);
   serve(new HttpController(policy));
 }
 ```
