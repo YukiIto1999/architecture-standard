@@ -30,12 +30,18 @@ import・参照・型共有の向きを確認し、内向きでない依存を�
 外側の名前が内側に現れていれば、抽象を挟んで向きを戻す。
 
 ### 例
+
+中心が具体的な詳細を参照すると、方針が外側の実装へ依存する。
+
 ```
-// 中心が具体の詳細を参照する
 PricingPolicy ── import ──> PostgresClient
-// 依存は内へ。中心は抽象だけを知る
-PricingPolicy ── uses ──> RateRepository           // 内側が定義し所有
-PostgresRateRepository ── implements ──> RateRepository  // 外側が実装
+```
+
+抽象は内側が所有し、外側が実装する。中心は抽象だけを参照する。
+
+```
+PricingPolicy ── uses ──> RateRepository
+PostgresRateRepository ── implements ──> RateRepository
 ```
 
 ## 抽象を方針側が所有する
@@ -67,11 +73,14 @@ PostgresRateRepository ── implements ──> RateRepository  // 外側が実
 詳細にその抽象を実装させ、方針が詳細の名前を知らない状態を保つ。
 
 ### 例
+
+方針側は、その方針に必要な操作だけを持つ抽象を所有する。
+
 ```
-// 方針が必要な分だけの抽象を所有する
-interface RateRepository { find(id: SkuId): Rate }   // domain が定義する
-// 全 CRUD を露出する汎用 Repository<T> を内側に置かない
+interface RateRepository { find(id: SkuId): Rate }
 ```
+
+全 CRUD を公開する汎用の `Repository<T>` は内側へ置かない。
 
 ## port を目的で宣言する
 
@@ -178,11 +187,14 @@ main() {
 動的生成は、目的の型に絞った注入ファクトリにする。
 
 ### 例
+
+依存はシグネチャに現す。
+
 ```
-// 依存をシグネチャに現す
 class PricingPolicy { constructor(private rates: RateRepository) {} }
-// その場で探す解決やグローバルで依存を取らない
 ```
+
+実行箇所で依存を探索したり、グローバルな状態から取得したりしない。
 
 ## 循環を作らず、安定へ依存し、詳細を先送りする
 
