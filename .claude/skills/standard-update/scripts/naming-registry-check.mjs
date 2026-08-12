@@ -2,7 +2,7 @@
 // concerns・structure・languages の製品名指しが tools のエントリに登録済みかを機械照合する。goal-25・goal-26(languages を追加)。
 //
 // 手法:
-//   1. tools/{language,stack,inspection,services,platforms}.md の各 `## 見出し` エントリから、
+//   1. tools/{language,stack,build,inspection,services,platforms}.md の各 `## 見出し` エントリから、
 //      見出しテキストと「採用は、」で始まる行を抽出し、名指し語(Latin token)の registry を作る。
 //      「判断基準」欄は却下・比較の記述を含みうるため、registry の抽出対象にしない。
 //   2. concerns/*.md・structure/**/*.md・languages/**/*.md の、fenced code と inline code(`...`)を
@@ -21,7 +21,7 @@ import path from "node:path";
 const ROOT = process.cwd();
 
 function extractRegistry() {
-  const toolFiles = ["language", "stack", "inspection", "services", "platforms"].map((f) =>
+  const toolFiles = ["language", "stack", "build", "inspection", "services", "platforms"].map((f) =>
     path.join(ROOT, "tools", `${f}.md`)
   );
   const tokenRe = /[A-Za-z][A-Za-z0-9_.#+@/-]*/g;

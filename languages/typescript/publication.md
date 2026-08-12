@@ -26,11 +26,15 @@ app を composition root にし、provider と ui port を配る。
 props は mergeProps・splitProps で扱う。
 
 ### 例
-```tsx
-// props を分割代入し、反応性が切れる
-function Greeting({ name }: { name: string }) { return <h1>Hello {name}</h1>; }
+props を分割代入すると反応性が切れる。
 
-// composition root で provider と ui port を配り、props は直接参照する
+```tsx
+function Greeting({ name }: { name: string }) { return <h1>Hello {name}</h1>; }
+```
+
+composition root が provider と ui port を配り、component は props を直接参照する。
+
+```tsx
 render(() => <AuthProvider><App ui={ui} /></AuthProvider>, document.getElementById("root")!);
 function Greeting(raw: { name: string; greeting?: string }) {
   const props = mergeProps({ greeting: "Hello" }, raw);
@@ -73,13 +77,16 @@ design token を `@theme` に集約し、styling の機構を Tailwind の Vite 
 スタイルをタグ内で完結させ、headless を Kobalte、layout を container query で組む。
 
 ### 例
+entry の CSS は `@import` と `@theme` だけで構成し、token を `@theme` に集約する。
+
 ```css
-/* entry の CSS は @import と @theme だけ。token を一元化する */
 @import "tailwindcss";
 @theme { --color-brand-500: oklch(0.62 0.21 256); --breakpoint-3xl: 120rem; }
 ```
+
+component ごとの CSS を作らず、class で完結させて layout に container query を使う。
+
 ```tsx
-// component 別の独立 CSS を作らず、class で完結し、layout は container query
 <div class="@container"><div class="grid grid-cols-1 @md:grid-cols-2">{props.children}</div></div>
 ```
 
@@ -129,8 +136,9 @@ viewer を、composition の外で DOM に手で注入すること。
 index.html を entry にし、composition で ui port を注入して render で mount する。
 
 ### 例
+composition が ui port を注入し、viewer を `render` で mount する。
+
 ```tsx
-// composition が ui port を注入し、render で mount する
 const ui = composeUi();
 render(() => <App ui={ui} />, document.getElementById("root")!);
 ```
@@ -155,11 +163,15 @@ surface を port にだけ依存させ、host の能力を port で受ける。
 adapter が host 固有を変換し、composition が注入する。
 
 ### 例
-```typescript
-// surface が host の API を直接呼ぶ。host に縛られ単体で動かせない
-import * as vscode from "vscode";
+surface が host API を直接呼ぶと、host に縛られて単体で動かせない。
 
-// surface は port にだけ依存し、adapter が host を満たす
+```typescript
+import * as vscode from "vscode";
+```
+
+surface は port にだけ依存し、adapter が host の API を port に写す。
+
+```typescript
 interface FileSystemPort { read(path: string): Promise<string>; }
 interface MessagingPort { notify(text: string): void; }
 async function showDoc(path: string, fileSystem: FileSystemPort, messaging: MessagingPort) { messaging.notify(await fileSystem.read(path)); }
@@ -197,14 +209,15 @@ adapters で host port を VSCode の API で実装し、webview で viewer を�
 acquireVsCodeApi を1回だけ呼び instance を保持し、postMessage を判別子つきの union の schema で safeParse する。
 
 ### 例
+判別子つき union の schema で `safeParse` し、`acquireVsCodeApi` が返す instance を一つ保持する。
+
 ```typescript
-// 判別子つき union の schema で safeParse し、acquireVsCodeApi は1回だけ
 const HostToViewSchema = v.variant("type", [v.object({ type: v.literal("render"), lines: v.number() })]);
 type HostToView = v.InferOutput<typeof HostToViewSchema>;
 type ViewToHost = { type: "alert"; text: string };
-const vscode = acquireVsCodeApi(); // 1回だけ、instance を保持
+const vscode = acquireVsCodeApi();
 window.addEventListener("message", (event: MessageEvent<unknown>) => {
-  const result = v.safeParse(HostToViewSchema, event.data); // 型アサーションでなく safeParse を通す
+  const result = v.safeParse(HostToViewSchema, event.data);
   if (result.success && result.output.type === "render") render(result.output.lines);
 });
 ```
@@ -221,14 +234,15 @@ extension が接続する core のプロセスへは、外へ出すのを小さ�
 core のプロセスへの接続が、vscode-jsonrpc で行われている。
 
 ### 禁止事項
-JSON-RPC の framing や protocol を、自作すること。
+JSON-RPC の framing や protocol を、再実装すること。
 
 ### 行動
 メソッドを RequestType・NotificationType で型宣言し、vscode-jsonrpc で接続して listen する。
 
 ### 例
+メソッドを型で宣言し、framing を `vscode-jsonrpc` に委ねる。
+
 ```typescript
-// メソッドを型で宣言し、framing は委譲する
 const EchoRequest = new rpc.RequestType<{ text: string }, { echoed: string }, void>("echo");
 const connection = rpc.createMessageConnection(new rpc.StreamMessageReader(stdout), new rpc.StreamMessageWriter(stdin));
 connection.listen();
@@ -255,8 +269,9 @@ exports に無い path を、外から import すること。
 package の公開面を exports で宣言し、内部の path を外へ出さない。
 
 ### 例
+公開面を `exports` で宣言し、内部 path を外へ出さない。
+
 ```jsonc
-// 公開面を exports で宣言し、内部の path を外へ出さない
 { "exports": { ".": "./dist/index.js", "./ports": "./dist/ports/index.js" } }
 ```
 

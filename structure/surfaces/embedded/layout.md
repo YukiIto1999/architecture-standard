@@ -10,7 +10,7 @@ server を持たないローカル優先の構成で、被ホストの surface �
 ```
 <embedded>/
 ├─ endpoints/
-│  └─ <operation>   protocol の要求を core の use-case へ写像する。
+│  └─ <operation>   protocol の要求を core API の operation へ写像する。
 └─ composition      core の埋め込み・protocol の公開・起動の入口。
 ```
 
@@ -28,11 +28,13 @@ endpoints は composition を参照しない。
 
 ## 入口と protocol
 
-endpoint は、protocol の要求を use-case へ写像する。
-endpoint は、業務判断を持たず、入力の解析と use-case の呼び出しだけを行う。
+endpoint は、protocol の要求を core API の operation へ写像する。
+endpoint は、業務判断を持たず、入力の解析と operation の呼び出しだけを行う。
 protocol の要求から operation を識別して endpoint へ振り分ける dispatch は、composition が持つ。
-endpoint は、振り分け済みの単一 operation を扱い、要求に含まれる principal の素材を取り出す。
-principal を actor へ写像するのは [structure/core/composition](../../core/composition.md) で、principal が自明な場合の扱いは project が ADR に明記する。
+認証境界は、要求に含まれる資格情報の発行元、対象、完全性、有効性を検証して actor を一度だけ構築する。
+endpoint は、振り分け済みの単一 operation と actor を受け取る。
+資格情報が protocol の接続から自明な場合も、接続のどの証拠を検証して actor を構築するかを project の ADR に明記する。
+endpoint と core の公開 API へ資格情報、principal、token、claim、protocol の認証方式の型を渡さない。
 公開する protocol の binding は [contracts/protocol](../../contracts/protocol.md) に従う。
 
 ## 組み立てと起動
@@ -42,6 +44,7 @@ composition は、build_core で core を埋め込み、protocol の listener �
 生存と準備の面は、protocol の予約した operation で公開する。
 host は準備を確認してから要求を振り分ける。
 lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
-actor への写像は [structure/core/composition](../../core/composition.md) が担う。
+認証境界が構築した actor を、core の公開 API へ渡す。
+要求側が指定した actor を受け入れず、actor と検証済み入力だけを core の公開 API へ渡す。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。

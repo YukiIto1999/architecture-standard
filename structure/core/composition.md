@@ -1,7 +1,7 @@
 # composition 単位
 
 composition 単位は、独立したコンテキストを組み立て、外部への入口を公開する。
-配線、コンテキストをまたぐ流れ、canonical の写像、トランザクション境界を担う。
+配線、canonical の写像、トランザクション境界の適用を担う。
 composition は [layout](./layout.md) の単位と依存に従う。
 
 ## build_core
@@ -10,36 +10,46 @@ build_core は、core の組立点である。
 build_core は、コンテキストと shared を配線し、組み立て済みの API を返す。
 build_core は、core の唯一の外部入口である。
 build_core は起動しない。
+build_core は module factory であり、プロセス全体の composition root ではない。
+起動側が解釈済みの型付き設定と生成済みの外部依存を受け取り、設定源を読み込まない。
 プロセスの起動は、core を埋め込む surface または host が担う。
 
 ## 配線
 
 composition は、port に adapter を結びつける。
 コンテキストの adapter を配線し、それぞれの port を結ぶ。
-コンテキストどうしは、composition が port を介して結ぶ。
-コンテキストの domain event を libs の機構の port へ駆動する経路も、composition が持つ。
+異なるコンテキストの状態変更を、同期呼び出しで結ばない。
+複数コンテキストの情報を即時に読む operation は、その query を所有するコンテキストの読みモデルへ写像する。
+application が公開した integration event を libs の配送 port へ渡す経路を、composition が配線する。
 整合の即時性を要さない派生読みモデルへは、outbox を経て非同期で駆動する。
 composition は、業務判断を持たない。
-composition が行うのは、配線、写像、コンテキストをまたぐ流れの調整である。
+composition が行うのは、配線と境界の写像である。
 依存注入の規律は [concerns/dependency](../../concerns/dependency.md) に従う。
 
 ## operations
 
-operations は、canonical operation ごとに置く。
-operations は、canonical とコンテキストの入出力を写像する。
-operations は、複数の集約・複数の use-case・複数のコンテキストにまたがる流れを担う。
-派生読みモデルへの問い合わせは、単一コンテキスト内なら当該コンテキストの application、複数コンテキストにまたがるなら operations に置く。
-operations は、domain イベントを integration event へ写像する。
+operations は、core が外へ公開する operation ごとに置く。
+contract で公開する operation は canonical operation と一対一に対応する。
+operations は、外部の operation を、一つのコンテキストの公開 application 入口へ写像する。
+公開 application 入口は use-case または workflow である。
+operations は、use-case の順序、結果による分岐、補償、コンテキストをまたぐ同期呼び出しを持たない。
+派生読みモデルへの問い合わせは、読みモデルを所有するコンテキストの application に置く。
 canonical の写像は、composition のみが持つ。
 canonical の定義は [contracts](../contracts/layout.md) で規定する。
-イベントの配送は [concerns/messaging](../../concerns/messaging.md) に従う。
+イベントの公開と配送は [application](./application.md) と [concerns/messaging](../../concerns/messaging.md) に従う。
 
 ## トランザクションと冪等性
 
 composition は、UnitOfWork を所有する。
 UnitOfWork が包む書き込みパスの内容は [concerns/transaction](../../concerns/transaction.md) に従う。
 use-case は、UnitOfWork のハンドルを受け取らない。
-composition は、request context または canonical から冪等キーを取り出し、use-case または port の入力へ写像する。
+composition の実行ラッパーは、use-case ごとに宣言された原子性を適用する。
+composition は、各 use-case の実行ラッパーを組み立て、その呼び出し口を operation と workflow へ渡す。
+workflow 全体を一つの UnitOfWork で包まない。
+composition は、request context または canonical から冪等キーを取り出し、公開 application 入口の入力へ写像する。
+実行ラッパーは、状態変更と公開 outcome に含まれる integration event の outbox 記録を同じ UnitOfWork で確定する。
+workflow から呼ぶ実行ラッパーは、workflow と step の識別子を受け取り、その組の一意性、状態変更、outbox 記録、step の完了記録を同じ UnitOfWork で確定する。
+composition は、outbox への記録経路と、確定済み outbox を読む配送経路を別々に配線する。
 冪等性の規律は [concerns/resilience](../../concerns/resilience.md) に従う。
 
 ## 観測
@@ -48,15 +58,9 @@ observability の仕込みは、composition と infrastructure の境界の殻�
 domain と application は、その機構を直接使わず、事実を event で表す。
 観測の規律は [concerns/observability](../../concerns/observability.md) に従う。
 
-## 設定
-
-config は、型付きの設定を起動時に読み込む。
-実行時に切り替える flag は設定と分離する。
-機構は、採る project が単一採用を ADR に明記する。
-設定の規律は [concerns/configuration](../../concerns/configuration.md) に従う。
-
 ## actor
 
-composition は、request context から principal を actor へ写像する。
-actor は、use-case へ引数として渡す。
-actor の写像の規律は [concerns/authorization](../../concerns/authorization.md) に従う。
+composition は、surface の認証境界が構築した actor だけを受け取る。
+composition と core の公開 API は、principal、token、claim を受け取らない。
+actor は、use-case または workflow へ引数として渡す。
+actor の認可規律は [concerns/authorization](../../concerns/authorization.md) に従う。

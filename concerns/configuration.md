@@ -28,22 +28,30 @@ principles の [separation](../principles/separation.md) が定める副作用�
 設定を型付きの構造へまとめ、処理には型付き設定を渡す。
 
 ### 例
+
+環境変数を各所で直接読むと、欠落や誤りが実行時まで残る。
+
 ```
-// 各所で裸の環境変数を読む。欠落や誤りが実行時まで残る
 const port = process.env.PORT
-// 型付き設定を通して読む
-const config: Config = loadConfig(); serve(config.port)   // port は検証済みの型
+```
+
+設定を一度読み取って検証し、型付きの値として参照する。
+
+```
+const config: Config = loadConfig(); serve(config.port)
 ```
 
 ## 定めた源からまとめて読む
 
 ### 要求
 設定は定めた源からまとめて読み込み、環境変数を設定や secret の供給源にしない。
-源は project が定め、ADR に記録する。
+設定の源は、project が定める。
+設定の源は、ADR に記録する。
 
 ### 根拠
 設定の源が散らばると、どこで何が決まるか追えない。
 一つの源にまとめれば、設定の全体を一箇所で読める。
+設定の源を ADR に記録すれば、採用した源と変更理由を追える。
 設定をコードから分けて環境から読む点は広く行われる作法と同じだが、その供給を環境変数に置かない。
 環境変数は名前空間が平坦で型がない。
 ログやダンプに紛れ、子プロセスへ既定で継承され、誰が変えたか追えない。
@@ -51,14 +59,17 @@ const config: Config = loadConfig(); serve(config.port)   // port は検証済�
 
 ### 完了条件
 設定が、定めた源からまとめて読み込まれている。
+設定の源が、ADR に記録されている。
 環境変数が、設定や secret の供給源になっていない。
 設定が、コードに焼き込まれていない。
 
 ### 禁止事項
 環境変数を、設定や secret の供給源にすること。
+設定の源を、ADR に記録せず運用すること。
 
 ### 行動
-設定の源を一つに定め、起動時にまとめて読み込む。
+設定の源を一つに定め、ADR に記録する。
+定めた源から、起動時に設定をまとめて読み込む。
 
 ## secret を分けて専用の型に封じる
 
@@ -95,11 +106,17 @@ secret を専用の型に封じ、表示と直列化を塞ぐ。
 secret の保存・回転・監査は、専用の仕組みへ委ねる。
 
 ### 例
+
+secret を一般の設定と同じ値として扱うと、ログへ漏れる。
+
 ```
-// secret を一般の設定と同じに扱い、ログに漏れる
-log(config)                       // config.dbPassword が出る
-// 専用の型に封じ、表示と直列化を塞ぐ
-class Secret { toString() { return "***" }; expose(): string { /* 限定的に */ } }
+log(config)
+```
+
+secret を専用の型へ封じ、表示と直列化を塞ぐ。平文を取り出せる経路は必要な箇所へ限定する。
+
+```
+class Secret { toString() { return "***" }; expose(): string { ... } }
 ```
 
 ## 環境差分を設定値で表す
@@ -125,11 +142,17 @@ class Secret { toString() { return "***" }; expose(): string { /* 限定的に *
 環境差分を設定の値として外に出し、コードは設定を読むだけにする。
 
 ### 例
+
+コードで環境を判定すると、環境ごとの分岐が各所へ散る。
+
 ```
-// コードで環境を判定する。分岐が各所に散る
 if (env === "prod") timeout = 1000; else timeout = 100;
-// 差分を設定値で表す
-timeout = config.timeout          // 環境ごとに設定の値が違う
+```
+
+環境差分は設定値で表す。
+
+```
+timeout = config.timeout
 ```
 
 ## 起動時に検証する
@@ -184,4 +207,4 @@ flag の判定を一点に集約し、不要になった flag を在庫として
 
 ## 参照
 分離の原則は [separation](../principles/separation.md)、検証に失敗した起動の停止は [lifecycle](./lifecycle.md)、secret の伝送は [security](./security.md) に従う。
-設定の読み込みと flag の機構は [structure/core/composition](../structure/core/composition.md)、言語別の機構は [languages](../languages/) が定める。
+設定の読み込みと flag の配置は、プロセスを起動する [structure/surfaces](../structure/surfaces/) または [structure/runtimes](../structure/runtimes/) が定め、言語別の機構は [languages](../languages/) が定める。

@@ -38,11 +38,15 @@ construction は、実装の構成に関する原則を置く。
 処理を、入力から出力への変換に切り出し、連ねて組む。
 
 ### 例
-```ts
-// 共有配列を破壊的に変更する。呼び出し側が持つ配列も変わる
-function addLine(order: Order, line: OrderLine): void { order.lines.push(line); }
+共有配列を破壊的に更新すると、呼び出し側の `order` まで変わる。
 
-// 新しい値を返す。元の order は変わらない
+```ts
+function addLine(order: Order, line: OrderLine): void { order.lines.push(line); }
+```
+
+新しい値を返せば、元の `order` は変わらない。
+
+```ts
 function addLine(order: Order, line: OrderLine): Order {
   return { ...order, lines: [...order.lines, line] };
 }
@@ -61,7 +65,7 @@ function addLine(order: Order, line: OrderLine): Order {
 それができない失敗は、成功か失敗の値として戻り値の型に現す。
 例外では表さない。
 戻り値を弱めると呼び出し側に毎回の失敗処理を強いるが、引数を狭めると失敗の場合がそもそも消える。
-全域な関数は、同じ入力に同じ出力を返す参照透過な計算として、置き換えても意味が変わらない。
+副作用を持たず、変化する依存を引数で受け取る全域関数は、同じ入力に同じ出力を返す参照透過な計算として、置き換えても意味が変わらない。
 持っている表現でなく、持っていたい表現に対して関数を書き、型にコードを導かせる。
 
 ### 完了条件
@@ -78,12 +82,16 @@ function addLine(order: Order, line: OrderLine): Order {
 失敗するなら、引数の型を前提を満たす型へ狭めるか、戻り値を成功か失敗の型へ広げる。
 
 ### 例
-```ts
-// 空配列で例外を投げる部分関数。失敗が型に現れない
-function head<T>(xs: T[]): T { if (xs.length === 0) throw Error("empty"); return xs[0]; }
+空配列を許す型で受けると、失敗が型に現れない部分関数になる。
 
-// 引数の型を「空でない配列」に狭め、全域にする
-function head<T>(xs: NonEmpty<T>): T { return xs[0]; }   // どの NonEmpty でも必ず返る
+```ts
+function head<T>(xs: T[]): T { if (xs.length === 0) throw Error("empty"); return xs[0]; }
+```
+
+引数を空でない配列の型へ狭めれば、すべての入力で先頭要素を返せる。
+
+```ts
+function head<T>(xs: NonEmpty<T>): T { return xs[0]; }
 ```
 
 Rust では先頭要素を型で保証する構造体、C# では要素数をコンストラクタで検証する型で、同じ絞り込みができる。
@@ -93,6 +101,7 @@ Rust では先頭要素を型で保証する構造体、C# では要素数をコ
 ### 要求
 業務上の判断は、裸の条件分岐に散らすのでなく、型・多態・状態・方針として表す。
 種別や状態のデータの場合分けは、判別子つきの直和に対する網羅した分岐で書く。
+直和へ新しい場合を追加するときは、網羅した分岐へ新しい arm を足し、既存の arm の本文を書き換えない。
 組立点で実装を差し替える方針の振る舞いは、方針の型への多態で表す。
 分岐を呼び出し側に露出させない。
 継承は、直和や方針の型を宣言する手段に限り、振る舞いの再利用には合成と委譲を使う。
@@ -104,6 +113,7 @@ Rust では先頭要素を型で保証する構造体、C# では要素数をコ
 網羅の検査が働かない裸の値の分岐は、種別が増えるたびに、すべての分岐を人が探して直すことになる。
 既存の分岐へ場合を追加する変更は、既定の分岐に流れていた既存の入力の挙動を静かに変えうる。
 型と多態で構造化された判断は、変更の差分が追加に寄り、修正が最小に留まる。
+新しい場合には新しい arm が要るが、既存の arm の本文を保てれば、既存の場合の振る舞いを変えずに拡張できる。
 仕様の変更の大きさと修正の費用が釣り合う構造が、費用の面で優れた構造である。
 実装の継承は基底の変更を派生へ暗黙に伝播させ、置換可能性を壊しやすい。
 状態によって振る舞いが変わり遷移を持つものは、[modeling](./modeling.md) の直和で状態の形を表し、状態ごとの型に振る舞いを移して、状態自身に遷移を持たせる。
@@ -117,49 +127,55 @@ Rust では先頭要素を型で保証する構造体、C# では要素数をコ
 同じ業務判断が、複数の箇所に重複して書かれていない。
 場合分けが網羅され、漏れを型検査が検出する。
 ネストが浅く、特殊な場合の検査が早期の return で分かれている。
-新しい場合の追加が、場合の定義の追加だけで完結し、既存の分岐本体の修正を要しない。
+新しい場合の追加が、場合の定義と新しい arm の追加で完結し、既存の arm の本文を書き換えていない。
 繰り返し現れる業務規則が、満たすかを判定する仕様として切り出されている。
 
 ### 禁止事項
 構造化されていない条件分岐やループに、業務条件・状態遷移・権限判断を重複して書くこと。
 条件式の羅列で、業務概念を隠すこと。
 網羅の検査が働かない、裸の値による種別の分岐を書くこと。
+新しい場合へ対応するために、既存の arm の本文を書き換えること。
 振る舞いの再利用を目的に、実装の継承を使うこと。
 
 ### 行動
 分岐が何の業務概念を表すかを確認する。
 複合した条件式は、意図を表す名前の判定へ抽出する。
 裸の値による種別の分岐は、判別子つきの直和と網羅した分岐に変える。
+新しい場合の定義と新しい arm を足し、既存の arm の本文が変わっていないことを確かめる。
 実装を差し替える振る舞いは、方針の型へ切り出し、具体は組立点で結び付ける。
 繰り返し現れる業務規則は、満たすかを判定する仕様へ切り出し、かつ・または・否定で合成する。
 状態をフラグでなく型で表し、深いネストは、特殊な場合を早期の return で弾いて平らにする。
 変更の差分で追加と修正の比率を確かめ、修正が多いなら判断の構造化を見直す。
 
 ### 例
+裸の値による分岐では、種別を足しても追加漏れを検出できない。
+
 ```ts
-// 網羅の検査が働かない裸の値の分岐。種別の追加漏れに気づけない
 function fee(account: { type: string }): Money {
   if (account.type === "gold") return goldFee();
   else if (account.type === "silver") return silverFee();
   else return basicFee();
 }
+```
 
-// 判別子つきの直和と網羅した分岐。分岐が複数の箇所にあっても、場合の追加漏れを型検査が全箇所で検出する
-type Account = { type: "gold" } | { type: "silver" } | { type: "basic" };
+判別子つきの直和と網羅した分岐なら、`trial` の追加時に新しい arm だけを追加し、既存の arm の本文を保てる。
+
+```ts
+type Account = { type: "gold" } | { type: "silver" } | { type: "basic" } | { type: "trial" };
 function fee(account: Account): Money {
   switch (account.type) {
     case "gold": return goldFee();
     case "silver": return silverFee();
     case "basic": return basicFee();
+    case "trial": return trialFee();
   }
 }
 ```
 
 Rust では enum と網羅 match、C# では閉じた sealed 階層と switch 式で、同じ網羅ができる。
-組立点で差し替える方針は、多態で表す。
+組立点で差し替える方針は多態で表し、実装を方針の型に閉じる。
 
 ```ts
-// 手数料の方針を差し替え可能にする。実装は方針の型に閉じ、組立点で注入する
 interface FeePolicy { fee(order: Order): Money }
 class StandardFeePolicy implements FeePolicy { fee(order: Order): Money { return standardFee(order); } }
 class CampaignFeePolicy implements FeePolicy { fee(order: Order): Money { return campaignFee(order); } }
@@ -199,12 +215,16 @@ class CampaignFeePolicy implements FeePolicy { fee(order: Order): Money { return
 業務的な意味を持つ集合は、操作を備えた型へ閉じ込める。
 
 ### 例
+裸のループで絞り込みと集計を混ぜると、何を計算するかを本体から復元することになる。
+
 ```ts
-// 裸のループ。絞り込みと集計が混ざり、何の計算か本体から読み取る必要がある
 let total = 0;
 for (const line of order.lines) { if (line.taxable) total += line.amount; }
+```
 
-// 名前のある操作の連なりで意図を表す
+名前のある操作を連ねれば、意図を操作の名前と順序で表せる。
+
+```ts
 const total = order.lines.filter(line => line.taxable).reduce((subtotal, line) => subtotal + line.amount, 0);
 ```
 
@@ -240,12 +260,16 @@ const total = order.lines.filter(line => line.taxable).reduce((subtotal, line) =
 差異があれば標準へ寄せ、標準自体を変える必要があれば、影響範囲の全体へ適用する。
 
 ### 例
+同じ走査と変換を場所ごとに異なる流儀で書くと、同種の処理ごとに読み直す必要がある。
+
 ```ts
-// 同じ「走査して変換」を場所ごとに違う流儀で書く
 const ys = []; for (let i = 0; i < xs.length; i++) ys.push(f(xs[i]));
 const zs = xs.reduce((a, x) => (a.push(g(x)), a), []);
+```
 
-// 同じ目的には同じ操作を一つ選び、局所の一貫性を保つ
+同じ目的に `map` を選べば、局所の一貫性を保てる。
+
+```ts
 const ys = xs.map(f);
 const zs = xs.map(g);
 ```

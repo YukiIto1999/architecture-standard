@@ -1,0 +1,90 @@
+{
+  "skill_name": "standard-update",
+  "evals": [
+    {
+      "id": 1,
+      "model": "haiku",
+      "prompt": "architecture-standard の principles/README.md に注入された明らかな見出し名のtypoを修正してください。外部技術事実や採用判断は変えません。変更範囲を広げず、必要な検査を実行して結果を報告してください。",
+      "expected_output": "機械的保守として外部調査を省き、principles/README.mdの見出しだけを正しい既存語へ戻し、検証ループを実行する。",
+      "files": [],
+      "expectations": [
+        "外部事実や採用判断を変えないためWeb調査を要求しない",
+        "principles/README.md と既存の本文用語を照合する",
+        "無関係な標準本文を変更しない",
+        "verify.sh を実行し、失敗時は修正して再実行する"
+      ]
+    },
+    {
+      "id": 2,
+      "model": "sonnet",
+      "prompt": "外部提案として『task graph orchestrator を Nx から Turborepo へ置き換える』という主張を architecture-standard へ取り込めるか裁定してください。既存標準の所有箇所を特定し、一次資料で裏取りして、根拠が足りなければ標準を変更しないでください。",
+      "expected_output": "tools/buildを既存の正本として確認し、一次資料と単一標準の条件で採否を裁定し、根拠なしに採用を置換しない。",
+      "files": [],
+      "expectations": [
+        "採用判断の既存所有者が tools/build.md であると特定する",
+        "外部事実を一次資料と複数源で確認する",
+        "languages や structure に選定理由を重複させない",
+        "変更しない裁定なら不要な本文や検査の編集を行わない"
+      ]
+    },
+    {
+      "id": 3,
+      "model": "opus",
+      "prompt": "retry の backoff に jitter を加えるという技術記事の主張を architecture-standard へ取り込めるか確認してください。記事の要約だけで規則化せず、既存の所有箇所、一次資料、重複する規律を調べ、現行本文が既に満たすなら編集しないでください。",
+      "expected_output": "concerns/resilienceの既存規律がjitterを所有済みか照合し、充足済みなら重複を作らず無変更とする。",
+      "files": [],
+      "expectations": [
+        "既存所有者として concerns/resilience.md を先に確認する",
+        "記事だけで断定せず一次資料を複数確認する",
+        "新規概念や他層への重複を作らない",
+        "無変更なら不要なverifier再実行や本文編集を行わず照合結果を報告する"
+      ]
+    },
+    {
+      "id": 4,
+      "model": "haiku",
+      "prompt": "fixture の unstaged diff は standard-audit/SKILL.md の instruction 本文だけを変更しています。実行も編集もしません。git diff と standard-audit の task eval 定義を読み、この変更を評価する task ID と configuration を最小範囲で決めてください。選ばない task と without-skill、trigger eval を除外する根拠、および全taskの3条件と全trigger queryが必要になる境界も示してください。",
+      "expected_output": "実diffと各taskの目的を照合し、root READMEを思想基準にする変更が直接影響するstandard-audit eval-2だけをold-skillとwith-skillで比較し、eval-1/3、without-skill、trigger evalを除外する。",
+      "files": [],
+      "expectations": [
+        "git diff で standard-audit の instruction だけが変わったと確認する",
+        "standard-audit eval-2だけをold-skillとwith-skillで比較対象にする",
+        "eval-1とeval-3を変更と無関係なtaskとして除外する",
+        "without-skillとtrigger evalを不要と判定する",
+        "全taskの3条件と全trigger queryはrelease前またはinstructionとdescriptionをまたぐ変更に限定する"
+      ]
+    },
+    {
+      "id": 5,
+      "model": "sonnet",
+      "prompt": "architecture-standard の concerns/transaction.md にある『部分確定を不可視にする』の例だけを直してください。規律本文と例の処理意味は変えず、例の良否、コード内容の説明、差と帰結を適切な場所へ置いてください。変更範囲を広げず、必要な検査を実行して結果を報告してください。",
+      "expected_output": "例の比較と帰結をコードフェンス外の本文へ移し、コード内の説明コメントを除き、二つ目の書き込み失敗を無視して成功を返す悪例と、一つの確定点で失敗を不可視にする良例の意味を保つ。",
+      "files": [
+        "concerns/transaction.md"
+      ],
+      "expectations": [
+        "変更を concerns/transaction.md の『部分確定を不可視にする』の例に限定する",
+        "例の良否、コード内容の説明、差と帰結をコードフェンス外の本文へ移す",
+        "コードフェンス内から処理内容を説明するコメントを除く",
+        "二つ目の書き込み失敗を無視して成功を返す悪例と、一つの確定点で失敗を不可視にする良例の意味を保つ",
+        "verify.sh を実行し、結果を報告する"
+      ]
+    },
+    {
+      "id": 6,
+      "model": "sonnet",
+      "prompt": "architecture-standard の principles/comment.md にある TypeScript ドキュメントコメントの対比例では、望ましい側の summary が名前の直訳に壊れています。その例だけを直してください。例の焦点は summary ですが、表示する宣言の周辺契約を省略してよいかも現行規律に従って判断し、意図的な悪例以外の違反を残さないでください。必要な検査を実行して結果を報告してください。",
+      "expected_output": "変更を対象例に限定し、悪例の名前直訳を比較対象として保ち、望ましい例の summary を用途が分かる目的へ直し、両方の関数宣言へ @param candidate と @returns の契約を記す。",
+      "files": [
+        "principles/comment.md"
+      ],
+      "expectations": [
+        "変更を principles/comment.md の TypeScript ドキュメントコメントの対比例に限定する",
+        "悪例の名前を直訳した summary を意図的な比較対象として保つ",
+        "望ましい例の summary を名前の直訳でなく用途が分かる目的へ直す",
+        "例の焦点外でも両方の関数宣言に @param candidate と @returns の契約を記す",
+        "verify.sh を実行し、結果を報告する"
+      ]
+    }
+  ]
+}

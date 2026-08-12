@@ -12,7 +12,7 @@ effect・concurrency・dependency・types・persistence・transaction・messagin
 
 概念に効く一次パターンと、領域に効く11名に照らす。
 effect は純粋核と効果の殻、types は King(parse don't validate)と kawasima(always-valid)とミノ駆動・増田の値オブジェクト、persistence は Codd の正規化と Date の真である命題と Helland の追記と そーだい、transaction は outbox(Richardson)と Vernon の集約境界と Helland、messaging は Hohpe の EIP と Helland と Kleppmann、authentication と authorization と security は Saltzer & Schroeder と OWASP と NIST と XACML、observability と resilience と lifecycle と concurrency の運用面は nwiizo(加えて OpenTelemetry・Nygard の Release It!・Google SRE・12-Factor・crash-only)、dependency は Martin の DIP と Cockburn と Seemann、experience は Nielsen・Norman・Tognazzini・Krug・Rams と WCAG のユーザビリティ/インタラクション原則(11名の外の領域固有の一次資料。`docs/research/2026-uiux-design-principles.md` に台帳あり)。
-書く前に web-researcher で裏取りし、最低2源、`docs/research/` に台帳化する。
+外部事実を追加または変更するときは、本 skill の調査手順に従って最低2源で裏取りし、`docs/research/` に台帳化する。
 
 ## 根拠の高度
 
@@ -22,7 +22,7 @@ languages の機構の話もしない。
 
 ## 書式
 
-`## 概要`(統べる規律と、具象化する principle への参照)、規律ごとの `## 規律名`、各6節、末尾に `## 参照`。
+`## 概要`(統べる規律と、具象化する principle への参照)、規律ごとの `## 規律名`、必須の5節、必要な場合だけ例、末尾に `## 参照`。
 規律名は概念固有・精密な名詞・単一意味軸にする。一つの規律に二つの主題を詰めない。
 例は言語非依存にする。擬似コード・標準的な SQL・構造で示し、特定言語の構文や方言を持ち込まない。
 

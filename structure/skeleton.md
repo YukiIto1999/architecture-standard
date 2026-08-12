@@ -83,6 +83,8 @@ surfaces に surface として置き、protocol の対話様式を表す名で�
 
 依存方向の規律は [concerns/dependency](../concerns/dependency.md) に従う。
 
+実行時の root またぎ依存は、次の表に従う。
+
 | 境界 | 依存してよい先 |
 |---|---|
 | core | libs |
@@ -99,8 +101,19 @@ surfaces に surface として置き、protocol の対話様式を表す名で�
 | deploy | 配備の対象となる成果物 |
 | tests | 検証のために全ての境界 |
 
-この表が root またぎ依存の機械検証の唯一の駆動元である。
-表に無い参照元から参照先への root またぎ依存は、すべて禁止とする。
+build と test にだけ存在してよい root またぎ依存は、次の表に従う。
+
+| 参照元 | 依存してよい先 |
+|---|---|
+| 全ての境界の build | libs の compile-time tool package |
+| root tests・各境界内の test package | libs の mechanism testing package |
+
+実行時依存表と build・test-only 依存表が、root またぎ依存の機械検証の唯一の駆動元である。
+両表に無い参照元から参照先への root またぎ依存は、すべて禁止とする。
+root の arch test は、runtime・build・test の phase ごとに依存 edge を区別する。
+root の arch test は、両表から phase ごとの許可 edge を生成する。
+phase ごとの edge を検査する言語別の実現は、各言語の inspection が定める。
+各言語の検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
 
 contracts 内部の層間の依存は [contracts](./contracts/layout.md) に従う。
 contracts/generated は、contracts/canonical と binding(http・protocol)から生成する。
@@ -118,9 +131,10 @@ contracts への依存を core で持てるのは composition だけであり、
 root は、言語ごとの package を集めた polyglot の monorepo である。
 各コード境界は、その言語の package として workspace に属する。
 package の境界は、依存方向の規律で守る。
-build は、言語ごとの package を横断する orchestrator で実行する。
-orchestrator は、package の依存境界を強制する。
-orchestrator の採用と選定の判断基準は、[tools/inspection](../tools/inspection.md) が定める。
+build は、言語ごとの package を横断する task graph を orchestrator で実行する。
+orchestrator は task graph の順序、affected の選択、cache だけを担い、package の依存境界を強制しない。
+orchestrator の採用と選定の判断基準は、[tools/build](../tools/build.md) が定める。
+package の依存境界は、依存方向の両表を入力にした言語別の root arch test で強制する。
 
 ## 加算
 

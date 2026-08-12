@@ -34,56 +34,72 @@ HTTP の応答と postMessage の受信が、同じ parse を通っている。
 型は schema から導出し、境界の到達点を formation の branded type にする。
 
 ### 例
-```typescript
-// 型アサーションで外部入力を信じる。検証なしで内側へ
-const user = (await response.json()) as User;
+型アサーションでは、検証していない外部入力がそのまま内側へ入る。
 
-// unknown で受け、formation で定義した schema を真実源に safeParse する
-const UserSchema = v.object({ email: EmailSchema }); // EmailSchema は formation の定義を再利用する
-type User = v.InferOutput<typeof UserSchema>;         // 到達点は branded type。email は Email
+```typescript
+const user = (await response.json()) as User;
+```
+
+`unknown` で受け、formation が定義した `EmailSchema` を再利用して `safeParse` する。検証成功時の `email` は `Email` になる。
+
+```typescript
+const UserSchema = v.object({ email: EmailSchema });
+type User = v.InferOutput<typeof UserSchema>;
 const raw: unknown = await response.json();
 const result = v.safeParse(UserSchema, raw);
-if (!result.success) return err(result.issues);   // 失敗は Result の err
-const user = result.output;                       // 検証済み型
+if (!result.success) return err(result.issues);
+const user = result.output;
 ```
 
 ## 受け取ったエラーを parse し、想定された失敗と欠陥を分ける
 
 ### 要求
 client は problem+json を schema で `safeParse` する。
-4xx は想定された失敗として Result で返し、5xx と problem+json 自体の parse 失敗は欠陥として上位へ投げる。
+HTTP status は、契約が定める公開表現として扱う。
+operation の契約に宣言された失敗は、Result で返す。
+契約に無い応答と problem+json の parse 失敗は、契約違反の欠陥として上位へ投げる。
+実装の throw は、想定された失敗へ変換せず欠陥として上位へ投げる。
 
 ### 根拠
 公開エラーを生の形で扱うと、失敗の種別が型に現れない。
 problem+json を schema で `safeParse` すれば、失敗が型で扱え、「unknown で受けて一度だけ parse する」の境界の parse を `safeParse` に一本化する規律とも揃う。
-4xx の想定された失敗と 5xx の欠陥を分ければ、回復できる失敗と回復できない欠陥を取り違えない。
-status の範囲を 4xx に絞らず 500 未満とだけ判定すると、2xx・3xx の応答まで想定された失敗の Result に落ちてしまう。
+HTTP status は wire 上の表現なので、数値の範囲だけでは業務が扱う失敗か契約違反かを判定できない。
+operation の契約が宣言した失敗だけを Result にすれば、呼び出し側が扱うべき場合が型に現れる。
+契約に無い status と body の組や parse できない problem+json は、公開契約を満たさないので契約違反の欠陥になる。
+実装の throw を Result に落とさなければ、宣言された失敗と実装欠陥を取り違えない。
 
 ### 完了条件
 problem+json が、`safeParse` で parse されている。
-4xx が Result で返され、5xx と parse 失敗が上位へ投げられている。
-2xx・3xx の応答が、想定された失敗の Result に落ちていない。
+HTTP status が、契約の公開表現として扱われている。
+operation の契約に宣言された失敗だけが、Result で返されている。
+契約に無い応答と parse 失敗が、契約違反の欠陥として上位へ投げられている。
+実装の throw が、欠陥として上位へ投げられている。
 
 ### 禁止事項
-4xx の想定された失敗と 5xx の欠陥を、同じ扱いにすること。
+HTTP status の範囲だけで、想定された失敗と欠陥を分類すること。
 problem+json を、検証せずに信頼すること。
-status の判定を、4xx の範囲でなく 500 未満のような緩い条件で行うこと。
+契約に無い応答や実装の throw を、想定された失敗の Result に変換すること。
 
 ### 行動
 problem+json を `safeParse` し、parse に失敗したら欠陥として投げる。
-status が 400 以上 500 未満のときだけ Result の err に、それ以外は欠陥として投げる。
+status と problem+json の組を operation の契約 schema で parse する。
+契約 schema が宣言する failure variant だけを Result の err にする。
+契約に無い応答と実装の throw は、欠陥として投げる。
 
 ### 例
-```typescript
-// v.parse は失敗で throw し、status も見ずに 500 未満を丸ごと err に落とす。2xx も err になりうる
-const problem = v.parse(ProblemSchema, await response.json());
-if (response.status < 500) return err(problem);
+応答 status の範囲だけで分類すると、契約に無い応答まで想定された失敗に変わる。
 
-// safeParse で受け、4xx の範囲だけを想定された失敗として返す
-const result = v.safeParse(ProblemSchema, await response.json());
-if (!result.success) throw new Defect(result.issues);                           // problem+json 自体が不正なら欠陥
-if (response.status >= 400 && response.status < 500) return err(result.output); // 4xx だけが想定された失敗
-throw new Defect(result.output);                                                // 5xx は欠陥
+```typescript
+if (response.status >= 400 && response.status < 500) return err(await response.json());
+```
+
+status と body の組を operation 契約で検証し、宣言された failure だけを返す。
+
+```typescript
+const raw: unknown = { status: response.status, body: await response.json() };
+const result = v.safeParse(PlaceOrderErrorResponseSchema, raw);
+if (!result.success) throw new ContractViolation(result.issues);
+return err(placeOrderFailureMapper(result.output));
 ```
 
 ## 契約の型を生成する

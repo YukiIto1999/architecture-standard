@@ -3,7 +3,7 @@
 ## 概要
 authorization は、アクセス制御の流れを全系で統べる規律である。
 principles の [separation](../principles/separation.md) が定める変更理由での分離・コンテキストの自己完結・副作用の境界隔離を、全系のアクセス制御として具象化する。
-authorization は確立された principal の権限評価を扱い、本人性の確立と資格情報の非流出は [authentication](./authentication.md) が扱う。
+authorization は認証境界による構築済みの actor の権限評価を扱い、資格情報の検証と actor の構築は [authentication](./authentication.md) が扱う。
 
 ## 業務規則と認可を分ける
 
@@ -31,11 +31,17 @@ authorization は確立された principal の権限評価を扱い、本人性�
 前者は業務の核へ、後者は認可の判定へ置く。
 
 ### 例
+
+役割の判定を業務の核へ入れると、認可と業務規則が混ざる。
+
 ```
-// 認可と業務規則が混ざる。役割の判定が業務の核に漏れる
 function cancel(order, user) { if (user.role !== "admin") throw; if (order.shipped) throw; }
-// 認可は入口で、業務の不変条件は核で。重複させない
-function cancel(order: Order): Result<Order, E> { /* 出荷済みは取り消せない、だけを判断 */ }
+```
+
+認可は入口に置き、核では「出荷済みの注文は取り消せない」という業務の不変条件だけを判断する。
+
+```
+function cancel(order: Order): Result<Order, E> { ... }
 ```
 
 ## 入口で評価し、通った要求だけ進める
@@ -65,41 +71,17 @@ function cancel(order: Order): Result<Order, E> { /* 出荷済みは取り消せ
 対象を取り出す境界を洗い出し、対象の単位の評価が抜けている取り出しを是正する。
 
 ### 例
+
+入口で操作だけを認可すると、識別子の差し替えによって他人の対象へ到達できる。
+
 ```
-// 入口の操作評価だけ。識別子を差し替えれば他人の対象に届く
 function handle(request) { authorize(actor, "orders:read"); return getOrder(request.id); }
-// 入口で操作を、対象を取り出す境界で対象の単位を評価する
+```
+
+入口では操作を認可し、対象を取り出す境界ではその対象へのアクセスを認可する。
+
+```
 function handle(request) { authorize(actor, "orders:read"); const order = getOrder(request.id); authorize(actor, order); return order; }
-```
-
-## principal を actor へ写す
-
-### 要求
-認証された principal は業務上の actor へ写し、actor を保護対象の処理へ引数として渡す。
-
-### 根拠
-認証の principal は認証方式の都合を含み、そのまま業務へ渡すと業務が認証に結合する。
-業務上の actor へ写せば、業務は誰が何の役割で操作するかだけを知る。
-actor を引数で渡せば、依存が明示される。
-
-### 完了条件
-認証された principal が、業務上の actor へ写されている。
-actor が、保護対象の処理へ引数として渡されている。
-
-### 禁止事項
-principal を、actor へ写さずに業務へ渡すこと。
-actor を認証 token のクレームの別名にして、認証方式の構造を業務へ持ち込むこと。
-
-### 行動
-認証 token のクレームを直接受け取る業務の処理を検索で洗い出す。
-認証の境界で principal を actor へ写し、actor を保護対象の処理へ引数として渡す。
-
-### 例
-```
-// 認証の principal をそのまま業務へ渡す。業務が認証方式に結合する
-usecase(request.jwtClaims)
-// 業務上の actor へ写してから渡す
-const actor = toActor(principal); usecase(command, actor)
 ```
 
 ## 認可の判定を port で委譲する
@@ -130,10 +112,16 @@ framework の既定の認可を、この概念の要求と照合せずに信頼�
 方針は役割・属性・関係で表し、判定不能のときは拒否へ倒す。
 
 ### 例
+
+判定条件を業務へ埋め込むと、認可方針の詳細が核へ漏れる。
+
 ```
-// 判定の詳細が業務に埋まる
 if (user.roles.includes("admin") || user.dept === order.dept) { ... }
-// 判定を port へ委譲し、結果だけを受け取る
+```
+
+判定は port へ委譲し、業務は結果だけを受け取る。
+
+```
 interface PolicyPort { decide(actor: Actor, action: Action, target: Target): Decision }
 ```
 
@@ -165,14 +153,20 @@ interface PolicyPort { decide(actor: Actor, action: Action, target: Target): Dec
 詳細はサーバ側のログへ残し、対象の存在が機微な文脈では未検出と未許可を同じ応答にする。
 
 ### 例
+
+内部情報やスタックトレースを応答へ載せると、対象の存在や実装の詳細が漏れる。
+
 ```
-// 内部やスタックトレースを露出し、存在の有無も漏らす
 if (!found) return "そのIDの注文は存在しません"; return error(stackTrace)
-// 汎用の応答をクライアントへ、詳細はログへ。機微な文脈では未検出と未許可を同一に
+```
+
+クライアントには汎用の応答を返し、詳細はログへ記録する。機微な文脈では未検出と未許可を区別しない。
+
+```
 log({ denied: true, actorId, target, reason }); return forbidden()
 ```
 
 ## 参照
-分離の原則は [separation](../principles/separation.md)、principal の伝播は [observability](./observability.md)、安全の姿勢は [security](./security.md) に従う。
+分離の原則は [separation](../principles/separation.md)、request context の伝播は [observability](./observability.md)、安全の姿勢は [security](./security.md) に従う。
 外部へ公開するエラーの形は [effect](./effect.md) に従う。
-principal の解決と actor の写像の構造は [structure/core/composition](../structure/core/composition.md)、言語別の実現は [languages](../languages/) が定める。
+資格情報の検証と actor の構築は [authentication](./authentication.md)、認証境界の surface ごとの構造は [surfaces](../structure/surfaces/)、言語別の実現は [languages](../languages/) が定める。

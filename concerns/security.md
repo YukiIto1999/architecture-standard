@@ -31,10 +31,16 @@ principles の [separation](../principles/separation.md) が定める境界と�
 検証は [types](./types.md)、認可は [authorization](./authorization.md) に従う。
 
 ### 例
+
+外部入力を検証せずに使うと、境界の外側から内部の処理を操作される。
+
 ```
-// 外部入力をそのまま信頼して使う
 database.query(request.body.filter)
-// 境界で検証して型へ通し、認可を経たものだけを内側へ
+```
+
+境界で入力を検証して型へ変換し、認可を通過した値だけを内側へ渡す。
+
+```
 const query = parseQuery(request.body); authorize(actor, query); search(query)
 ```
 
@@ -65,11 +71,17 @@ const query = parseQuery(request.body); authorize(actor, query); search(query)
 権限の膨張を定期的に見直し、不要になった権限を回収する。
 
 ### 例
+
+サービスへ広い権限を既定で与えない。
+
 ```
-// 広い権限を既定で与える
 grant(service, ALL)
-// 必要な操作だけを与え、既定は拒否
-grant(service, [readOrders])   // 他は既定で拒否
+```
+
+必要な操作だけを許可し、それ以外は既定で拒否する。
+
+```
+grant(service, [readOrders])
 ```
 
 ## 多層で防御する
@@ -96,10 +108,16 @@ project が重要と定めた資産が、複数の層で重ねて守られてい
 どれか一つに依存していないかを確かめる。
 
 ### 例
+
+入口の検証だけに依存すると、その検証を抜けた後は無防備になる。
+
 ```
-// 入口の検証だけに頼る。抜けると無防備
 validateAtGateway()
-// 入口の検証に加え、認可・最小権限・データ層の制約でも重ねて守る
+```
+
+入口の検証に加え、認可、最小権限、データ層の制約で防御を重ねる。
+
+```
 validateAtGateway(); authorize(); leastPrivilege(); dbConstraints()
 ```
 
@@ -126,11 +144,17 @@ validateAtGateway(); authorize(); leastPrivilege(); dbConstraints()
 新たに開く面ごとに、必要性を確かめる。
 
 ### 例
+
+使用しない管理用経路を公開したままにすると、攻撃できる面が増える。
+
 ```
-// 使わない管理用の経路を開いたまま残す
 expose(["/api", "/admin", "/debug"])
-// 必要な面だけを開く
-expose(["/api"])   // /admin /debug は閉じる
+```
+
+必要な経路だけを公開し、管理用経路とデバッグ用経路は閉じる。
+
+```
+expose(["/api"])
 ```
 
 ## 標準の暗号に任せる
@@ -159,10 +183,16 @@ secret の伝送も、この暗号化された経路の要求に含まれる。
 プロセスをまたぐ伝送を、暗号化された経路にする。
 
 ### 例
+
+独自の暗号処理やハッシュ処理を実装しない。
+
 ```
-// 自前の暗号やハッシュを書く
 const hash = myXor(password, key)
-// 検証された標準の実装に任せる
+```
+
+検証された標準の実装に委ねる。
+
+```
 const hash = argon2id(password)
 ```
 

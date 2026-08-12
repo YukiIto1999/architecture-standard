@@ -29,11 +29,15 @@ newtype は実行時の負荷なく、型に業務の意味を載せる。
 `#[derive(Debug, Clone, PartialEq, Eq, Hash)]` で付随する実装を得る。
 
 ### 例
-```rust
-// 任意の文字列が通り、検証が呼び出し側に散る
-fn send(to: String) { /* ... */ }
+プリミティブをそのまま受け取ると、任意の文字列が通り、検証が呼び出し側に散る。
 
-// newtype に封じ、構築を検証付き関連関数に一点化する
+```rust
+fn send(to: String) { /* ... */ }
+```
+
+newtype に封じ、構築を検証付き関連関数に一点化する。
+
+```rust
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Email(String);
 impl Email {
@@ -73,14 +77,21 @@ crate の外の列挙は契約の進化に備えて開き、下流は寛容な�
 不正な遷移を静的に禁じたい箇所は、状態を型引数に載せ遷移メソッドの戻り型を変える型状態で表す。
 
 ### 例
+状態を bool の組で表すと、active かつ deleted のような不正な組を作れる。
+
 ```rust
-// bool の組み合わせ。active かつ deleted のような不正な組を作れる
 struct User { active: bool, deleted: bool }
+```
 
-// enum で枚挙し、網羅の match で漏れをコンパイルエラーにする
+状態を enum で枚挙すれば、網羅の match によって分岐の漏れがコンパイルエラーになる。
+
+```rust
 enum UserStatus { Active, Suspended, Deleted }
+```
 
-// 型状態。状態を型引数に載せ、Deleted から reactivate するメソッドを持たせない
+静的に遷移を制限する箇所では、状態を型引数に載せ、許可する遷移だけをメソッドとして公開する。
+
+```rust
 struct Active;
 struct Suspended;
 struct Deleted;
@@ -90,33 +101,63 @@ impl User<Active> {
 }
 ```
 
-## 不変を既定にする
+## 不変の束縛と共有参照を既定にする
 
 ### 要求
-集約・値・イベントのフィールドを可変にせず、状態の遷移は新しい値を返すメソッドで表す。
+domain の集約、値、イベントと、境界を越えて共有する値は、不変に扱う。
+domain の状態遷移は既存の値を `&mut T` で変更せず、新しい値と発生したイベントを返す。
+束縛は immutable を既定とし、共有する読み出しは `&T` で受ける。
+`&mut T` による局所更新は、infrastructure が所有する状態または構築途中の値のうち、共有されず外部から観測されない所有範囲に限る。
 
 ### 根拠
-束縛と参照は既定で不変で、可変化は `mut` を明示する。
-フィールドを不変に保てば、共有された値が背後で変わらず、データ競合をコンパイルで防げる。
-遷移を新しい値の生成で表せば、変更の波及が型と所有に現れる。
+domain の値を不変にする理由は、[construction](../../principles/construction.md) に従う。
+発生したイベントを不変な事実として残す理由は、[data](../../principles/data.md) に従う。
+domain の既存値を `&mut T` で変更すると、遷移前の状態が失われ、状態の変更と発生したイベントの対応が戻り値に現れない。
+新しい値とイベントを一緒に返せば、遷移後の状態と発生した事実が呼び出し側へ明示される。
+Rust の排他借用は同じ値への参照の共存を防ぐが、それだけでは domain の値を不変に扱う規律を表さない。
+共有されず外部から観測されない所有範囲の局所更新は、他の読み手が見る値を背後で変えない。
 
 ### 完了条件
-値のフィールドが、可変でない。
-状態の遷移が、新しい値を返すメソッドで表されている。
+domain の集約、値、イベントと、境界を越えて共有する値が、不変に扱われている。
+domain の状態遷移が、既存値を変更せず、新しい値とイベントを返している。
+共有する読み出しが、`&T` で行われている。
+`&mut T` による局所更新が、infrastructure の所有状態または構築途中の値に限られている。
+`&mut T` で更新する値が、更新中に共有されず外部から観測されていない。
 
 ### 禁止事項
-値・イベントのフィールドを、可変にすること。
+domain の集約、値、イベントまたは境界を越えて共有する値を、`&mut T` で変更すること。
+domain の状態遷移で、既存値だけを変更して新しい値とイベントを返さないこと。
+共有される値または外部から観測できる値を、infrastructure の都合で局所更新すること。
 
 ### 行動
-フィールドを不変にし、遷移は self を消費するか参照から新しい値を返すメソッドで表す。
+domain の集約、値、イベントと境界を越えて共有する値を、immutable な束縛と `&T` で扱う。
+domain の状態遷移は既存値を読み、新しい値とイベントを組にして返す。
+infrastructure の所有状態と構築途中の値だけを、共有と外部観測の前に `&mut T` で局所更新する。
+局所更新を終えてから、完成した値を共有または境界へ公開する。
 
 ### 例
-```rust
-// 不変参照からは変更できない。可変化には &mut の明示が要る
-fn rename(order: &Order) { order.note.push_str("x"); } // E0596: cannot borrow as mutable
+domain の既存値を直接変更すると、遷移後の値と発生したイベントの対応が戻り値に現れない。
 
-// 遷移は新しい値を返す
-impl Order { fn with_note(self, note: Note) -> Order { Order { note, ..self } } }
+```rust
+fn approve(order: &mut Order) { order.status = Status::Approved; }
+```
+
+既存値を変えず、新しい値と発生したイベントを一緒に返す。
+
+```rust
+fn approve(order: &Order) -> Result<(Order, OrderApproved), ApprovalError> {
+    let approved = Order { status: Status::Approved, ..order.clone() };
+    let event = OrderApproved { order_id: order.id() };
+    Ok((approved, event))
+}
+```
+
+infrastructure の構築途中の値は、共有と外部観測の前に限って局所更新する。
+
+```rust
+let mut batch = Vec::with_capacity(rows.len());
+for row in rows { batch.push(to_record(row)?); }
+publish(batch);
 ```
 
 ## 意味と単位を型で区別する
@@ -139,14 +180,15 @@ impl Order { fn with_note(self, note: Note) -> Order { Order { note, ..self } } 
 単位ごと・識別子ごとに newtype を分け、値を取り出すときだけ内部に触れる。
 
 ### 例
+`Miles` を要求する関数に `Kilometers` を渡すと、型エラーになる。
+
 ```rust
 struct Miles(f64);
 struct Kilometers(f64);
-// Miles を要求する関数に Kilometers を渡すと型エラーになる
 fn is_marathon(distance: &Miles) -> bool { distance.0 >= 26.2 }
 ```
 
-## companion を libs の proc-macro crate に分ける
+## 生成と検証の macro を libs の proc-macro crate に分ける
 
 ### 要求
 値オブジェクトの定型実装を補う derive macro や、規律を compile 時に検査する属性 macro を使う場合、それらは libs の機構として core と別の proc-macro crate に置く。
@@ -167,22 +209,25 @@ proc-macro を、core の crate に同居させること。
 proc-macro crate から、通常の型や関数を公開すること。
 
 ### 行動
-companion を libs 配下の別の proc-macro crate にし、`[lib] proc-macro = true` を設定する。
-core の crate は companion を通常の依存として参照し、macro の展開だけを使う。
+生成と検証の macro を libs 配下の別の proc-macro crate にし、`[lib] proc-macro = true` を設定する。
+core の crate は proc-macro crate を通常の依存として参照し、macro の展開だけを使う。
 
 ### 例
+`Cargo.toml` で proc-macro crate を宣言する。
+
 ```toml
-# companion/Cargo.toml。proc-macro crate は手続き的 macro だけを export する
 [lib]
 proc-macro = true
 ```
+
+`lib.rs` は手続き的 macro だけを export し、core は展開だけを使う。
+
 ```rust
-// companion の lib.rs。手続き的 macro だけを export し、core は展開だけを使う
 #[proc_macro_derive(ValueObject)]
 pub fn derive_value_object(input: TokenStream) -> TokenStream { /* ... */ }
 ```
 
 ## 参照
-業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、companion の置き場は [structure/libs/layout](../../structure/libs/layout.md) に従う。
+業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、proc-macro crate の置き場は [structure/libs/layout](../../structure/libs/layout.md) に従う。
 命名と整形、ドキュメントコメントの体裁は [conventions](./conventions.md) に従う。
 境界での外部表現の変換は [translation](./translation.md) に従う。

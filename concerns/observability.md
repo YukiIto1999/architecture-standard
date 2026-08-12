@@ -37,11 +37,17 @@ request context を、破壊的に書き換えること。
 相関の識別子を文脈に載せ、下流と外部呼び出しへ引き継ぐ。
 
 ### 例
+
+trace、cancel、principal を別々に引き回すと、引数が増えて伝達漏れが起きる。
+
 ```
-// trace・cancel・principal を別々に引き回す。引数が増え、伝え漏れる
 f(trace, cancel, principal, arg)
-// 一つの context にまとめて伝える
-f(context, arg)   // context に trace・cancel・principal・相関 id を載せる
+```
+
+trace、cancel、principal、相関 ID を一つの context にまとめて伝える。
+
+```
+f(context, arg)
 ```
 
 ## 事実をイベントとして表し、構造化して出す
@@ -69,10 +75,16 @@ f(context, arg)   // context に trace・cancel・principal・相関 id を載�
 相関の識別子で、ログ・計測・トレースをつなぐ。
 
 ### 例
+
+構造のない文字列は機械で集計も検索もできない。
+
 ```
-// 構造のない文字列。機械で集計も検索もできない
 log("user " + id + " did " + action + " at " + time)
-// 構造化した形式。field の名前と型は出力ごとに一貫し、相関 id でつながる
+```
+
+field の名前と型が一貫した構造で出力し、相関 ID でイベントをつなぐ。
+
+```
 log({ event: "order_placed", orderId, actorId, traceId, at })
 ```
 
@@ -131,11 +143,28 @@ telemetry の出力が、単一の規格に統一されている。
 収集に個人情報が載る場合は、[privacy](./privacy.md) に従う。
 
 ### 例
+
+業務の核にログを入れると、判断のテストにも観測処理の足場が必要になる。
+
 ```
-// 業務の核にログが混ざる。判断のテストに観測の足場が要る
 function decide(x) { logger.info("deciding"); return x.ok ? a : b; }
-// 核は純粋。観測は殻で
-function decide(x) { return x.ok ? a : b; }     // 殻: log(...); decide(x); record(...)
+```
+
+判断は純粋なまま核へ置き、ログの記録は殻で行う。
+
+```
+function decide(x) { return x.ok ? a : b; }
+```
+
+殻は観測を記録し、核が返した判断をそのまま返す。
+
+```
+function observeDecision(x) {
+  log("decision.started")
+  const result = decide(x)
+  record("decision.completed", result)
+  return result
+}
 ```
 
 ## 観測は振る舞いを変えない
@@ -163,10 +192,16 @@ function decide(x) { return x.ok ? a : b; }     // 殻: log(...); decide(x); rec
 観測を業務の判断から切り離し、結果に影響しない位置で行う。
 
 ### 例
+
+観測値を業務判断に使うと、観測が振る舞いを変える。
+
 ```
-// 観測が副作用を持ち、業務の順序に影響する
-const count = counter.incrementAndGet(); if (count > limit) reject()   // 観測が判断を変える
-// 観測は記録するだけ。判断は業務の値で行う
+const count = counter.incrementAndGet(); if (count > limit) reject()
+```
+
+観測は記録だけに使い、業務の値から得た結果で判断する。
+
+```
 record(metric); if (decision.rejected) reject()
 ```
 

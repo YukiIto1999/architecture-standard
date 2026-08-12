@@ -26,7 +26,7 @@ concerns が定めた横断規律(認証認可・永続化・型・observability
 ## 書式
 
 各部の地図は、core・libs・contracts・deploy・tests では layout.md、surfaces・runtimes では一覧の README.md と各面・各 host の layout.md である。
-layout の固有規律は、principles/concerns/languages の6節(要求・根拠・完了条件・禁止事項・行動)を使わない。
+layout の固有規律は、principles/concerns/languages の必須5節(要求・根拠・完了条件・禁止事項・行動)を使わない。
 書式は、導入の参照文(横断規律と該当 concerns・principles への言及)、フォルダ構成の図(コードブロックに役割を一行添える)、単位表または依存方向表(参照元→参照可の対応)、単位ごとの固有規律を topical な見出しで並べる形にする。
 新しい部・面・host を足すときも、この形式に合わせる。
 
@@ -39,4 +39,4 @@ layout の固有規律は、principles/concerns/languages の6節(要求・根�
 - surfaces の直下に、技術カテゴリの箱(gui・hosts 等)を作っていないか。対話様式のアクターで境界を引いているか。
 - 複数の部にまたがる関心を structure の一部だけに書いていないか(またがっていれば concerns へ)。
 - 新しい面・host・部を足すとき、skeleton の固定7境界・surfaces の6 surface という既存の型に当たらないかを先に確かめたか。
-- layout の書式(フォルダ構成・依存表・topical 見出し)から外れて、principles/concerns/languages の6節を持ち込んでいないか。
+- layout の書式(フォルダ構成・依存表・topical 見出し)から外れて、principles/concerns/languages の必須5節を持ち込んでいないか。

@@ -53,19 +53,21 @@ separation は、分割と依存に関する原則を置く。
 使われない項目が null で埋まるモデルを見つけたら、アクターの混在を疑って分け、不正な状態の排除は [modeling](./modeling.md) に従う。
 
 ### 例
-処理の手順で割った分割と、変わりそうな決定を隠す分割を比べる。
+入力、変換、整列、出力の手順で分けると、行の格納形式をすべてのモジュールが知り、形式の変更が三つのモジュールへ波及する。
 
 ```ts
-// 入力→変換→整列→出力 の手順で割ると、行の格納形式をどのモジュールも知ってしまう
-class InputReader { /* 行を配列に読む。配列の形を知る */ }
-class Shifter     { /* 同じ配列の形を知る */ }
-class Sorter      { /* 同じ配列の形を知る */ }
-// 格納形式を変えると、3 モジュールすべてが書き換わる
+class InputReader { constructor(private lines: Line[]) {} }
+class Shifter { constructor(private lines: Line[]) {} }
+class Sorter { constructor(private lines: Line[]) {} }
+```
 
-// 行の格納という決定を 1 モジュールに隠すと、形式変更がそこに封じ込まれる
-class LineStore { add(line: Line): void; get(i: number): Line }  // 格納形式を隠す
-class Shifter   { constructor(private lines: LineStore) {} }     // 形式を知らない
-class Sorter    { constructor(private lines: LineStore) {} }     // 形式を知らない
+格納形式を `LineStore` に隠せば、三つのモジュールは形式を知らず、変更も `LineStore` に留まる。
+
+```ts
+interface LineStore { add(line: Line): void; get(i: number): Line }
+class InputReader { constructor(private lines: LineStore) {} }
+class Shifter { constructor(private lines: LineStore) {} }
+class Sorter { constructor(private lines: LineStore) {} }
 ```
 
 ## 関心を境界の内に隠す
@@ -101,11 +103,15 @@ class Sorter    { constructor(private lines: LineStore) {} }     // 形式を知
 外部システムと結ぶ箇所には変換の隔離層を置き、外部の都合を内部へ漏らさない。
 
 ### 例
-```ts
-// 内部の永続化型を公開すると、外部が列名や型まで知り、DB 変更が外へ波及する
-export interface UserRow { id: number; pw_hash: string; created_at: string }
+内部の永続化型を公開すると、外部が列名や型に依存し、DB の変更が外へ波及する。
 
-// 目的を表す最小の契約だけを公開し、永続化型は repository の内側に閉じる
+```ts
+export interface UserRow { id: number; pw_hash: string; created_at: string }
+```
+
+目的を表す最小の契約だけを公開し、永続化型を repository の内側に閉じる。
+
+```ts
 export interface UserProfile { id: UserId; displayName: string }
 ```
 
@@ -152,20 +158,28 @@ export interface UserProfile { id: UserId; displayName: string }
 結合の強さが読めないときは、意図的な破壊的変更で影響範囲を測り、計測の後に元へ戻す。
 
 ### 例
-```ts
-// フラグで呼び出し先の分岐を外から操作する。呼び出し先の中身が外に漏れている
-function save(order: Order, validate: boolean) { /* if (validate) ... */ }
+フラグで呼び出し先の分岐を操作すると、呼び出し先の内部が外に漏れる。
 
-// 目的ごとに分け、フラグによる結合をなくす
+```ts
+function save(order: Order, validate: boolean) { }
+```
+
+目的ごとに関数を分ければ、フラグによる結合がなくなる。
+
+```ts
 function save(order: Order) {}
 function saveDraft(order: Order) {}
 ```
 
-```ts
-// 特定値の意味に依存する。2 の意味を知らないと読めず、各所の 2 が一緒に変わる
-if (user.role === 2) { /* 管理者 */ }
+特定の値に意味を持たせると、その値の意味を各所が知り、変更時に一緒に書き換わる。
 
-// 名前へ下げる。意味が型に乗り、変更が定義の一箇所に収まる
+```ts
+if (user.role === 2) { }
+```
+
+名前のある値へ下げれば、意味が型に現れ、変更は定義の一箇所に収まる。
+
+```ts
 if (user.role === Role.Admin) {}
 ```
 
@@ -203,15 +217,18 @@ import・参照・組立点の構成・型共有・callback の向きを確認�
 逆向きがあれば、方針の側にインタフェースを定義し、詳細にそれを実装させ、具体は組立点で結び付ける。
 
 ### 例
+方針が具体の DB クライアントへ依存すると、永続化の変更が中心へ波及する。
+
 ```ts
-// 方針が具体の DB クライアントへ依存し、永続化の変更が中心へ波及する
 import { DatabaseClient } from "../infra/database";
 class PricingPolicy { constructor(private database: DatabaseClient) {} }
+```
 
-// 方針が port を所有し、詳細がそれを実装する。依存は内側へ向く
-interface RateRepository { find(id: SkuId): Promise<Rate> }   // domain が定義し所有
+方針の側が port を所有し、infra の実装を組立点で注入すれば、依存は内側へ向く。
+
+```ts
+interface RateRepository { find(id: SkuId): Promise<Rate> }
 class PricingPolicy { constructor(private rates: RateRepository) {} }
-// RateRepository の実装は infra に置き、組立点で注入する
 ```
 
 ## 副作用を境界に集める
@@ -244,18 +261,28 @@ class PricingPolicy { constructor(private rates: RateRepository) {} }
 時刻・乱数・外部依存は、引数かインタフェースで渡す。
 
 ### 例
+判断の途中で現在時刻を取得して書き込むと、実行ごとに結果が変わり、テストに実物の依存が要る。
+
 ```ts
-// 判断の途中で時刻を取得し書き込みもする。実行のたびに結果が変わり、テストに実物が要る
 function expireIfStale(token: Token): void {
   if (token.expiresAt < Date.now()) repository.markExpired(token.id);
 }
+```
 
-// 判断を純粋な核に、時刻と書き込みを殻に分ける
+時刻を殻側で取得し、値で受け取る純粋な核に判断を分ければ、核は判断結果だけを返す。殻はその結果に応じて書き込む。
+
+```ts
 function decideExpiry(token: Token, now: Instant): "expire" | "keep" {
-  return token.expiresAt < now ? "expire" : "keep";   // 純粋。値を返すだけ
+  return token.expiresAt < now ? "expire" : "keep";
 }
-// 殻側で時刻を取り、判断の結果に応じて書き込む
-// const now = clock.now(); if (decideExpiry(token, now) === "expire") repository.markExpired(token.id);
+```
+
+殻は時刻を取得して核を呼び、核の結果に応じて外部へ書き込む。
+
+```ts
+function expireIfStale(token: Token, clock: Clock, repository: TokenRepository): void {
+  if (decideExpiry(token, clock.now()) === "expire") repository.markExpired(token.id);
+}
 ```
 
 ## 正本を互換から独立させる
@@ -283,15 +310,18 @@ function decideExpiry(token: Token, now: Instant): "expire" | "keep" {
 互換要素が正本に混ざっていれば、独立した構造として境界へ分ける。
 
 ### 例
+互換専用の旧項目が正本に同居すると、現在の概念を読み取れない。
+
 ```ts
-// 互換のための旧項目が正本に同居し、現在の概念が読めなくなる
 interface Order {
   total: Money;
-  amount?: number;        // v1 互換、今は使わない
-  statusLegacy?: string;  // 旧状態の名残
+  amount?: number;
+  statusLegacy?: string;
 }
+```
 
-// 正本を現在の概念だけにし、互換は境界で吸収する
+正本は現在の概念だけにし、旧契約への写像は境界に置く。
+
+```ts
 interface Order { total: Money; status: OrderStatus }
-// 旧契約への写像 toV1Response(order): OrderV1 は境界に置く
 ```

@@ -37,11 +37,15 @@ factory の失敗を、throw で表すこと。
 factory は schema の `safeParse` を呼び、失敗を Result の err、成功を Result の ok で返す。
 
 ### 例
-```typescript
-// 検証なしの裸の cast。任意の文字列が Email を名乗れる
-const email = request.body.email as Email;
+検証しない裸の cast では、任意の文字列が `Email` を名乗れる。
 
-// schema を真実源にし、factory は safeParse を Result へ変換する
+```typescript
+const email = request.body.email as Email;
+```
+
+schema を真実源にし、factory が `safeParse` の結果を `Result` へ変換する。
+
+```typescript
 const EmailSchema = v.pipe(v.string(), v.email(), v.brand("Email"));
 type Email = v.InferOutput<typeof EmailSchema>;
 type EmailError = { kind: "invalidEmail" };
@@ -77,11 +81,15 @@ undefined の union と strict の型検査は、不在の扱いを呼び出し�
 default のアームで残りを never に代入し、形の追加を型エラーにする。
 
 ### 例
-```typescript
-// 省略可能なプロパティ。radius の不在を実行時に踏む
-interface Shape { kind: string; radius?: number; side?: number }
+省略可能な property の組み合わせでは、`circle` に `radius` が無い状態も表せてしまう。
 
-// 判別子つき union と never 網羅
+```typescript
+interface Shape { kind: string; radius?: number; side?: number }
+```
+
+判別子つき union と `never` で場合分けを閉じれば、形の追加が型エラーになる。
+
+```typescript
 type Shape =
   | { kind: "circle"; radius: number }
   | { kind: "square"; side: number };
@@ -89,7 +97,7 @@ function area(shape: Shape): number {
   switch (shape.kind) {
     case "circle": return Math.PI * shape.radius ** 2;
     case "square": return shape.side ** 2;
-    default: { const _exhaustive: never = shape; return _exhaustive; } // 形の追加で型エラー
+    default: { const _exhaustive: never = shape; return _exhaustive; }
   }
 }
 ```
@@ -117,11 +125,16 @@ property を readonly にし、オブジェクト全体は Readonly で包む。
 固定の値は as const で固定し、変更は新しいオブジェクトを作る形で表す。
 
 ### 例
+通常の object は property を書き換えられる。
+
 ```typescript
-// 再代入も書き換えもできる
 const settings = { mode: "fast" };
-// readonly と as const で固定する
-const config = { mode: "fast" } as const;          // mode は "fast" に固定
+```
+
+`as const` でリテラル型に固定し、`Readonly` で property の書き換えを禁じる。
+
+```typescript
+const config = { mode: "fast" } as const;
 type State = Readonly<{ items: readonly Item[] }>;
 ```
 
@@ -145,12 +158,13 @@ type State = Readonly<{ items: readonly Item[] }>;
 単位ごと・識別子ごとに brand を分け、factory を通して組み立てる。
 
 ### 例
+`UserId` と `OrderId` は同じ `string` から構築しても代入互換にならない。
+
 ```typescript
 const UserIdSchema = v.pipe(v.string(), v.brand("UserId"));
 const OrderIdSchema = v.pipe(v.string(), v.brand("OrderId"));
 type UserId = v.InferOutput<typeof UserIdSchema>;
 type OrderId = v.InferOutput<typeof OrderIdSchema>;
-// UserId を要求する関数に OrderId を渡すと型エラーになる
 function findUser(id: UserId): User { /* ... */ }
 ```
 

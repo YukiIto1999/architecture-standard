@@ -77,11 +77,9 @@ design token は `@theme` に一元化し、W3C Design Tokens Community Group �
 ## browser の telemetry 収集
 
 用途は、利用者の環境で動く viewer の trace と構造化 event を、境界の殻で収集する機構である。
-採用は、TypeScript は OpenTelemetry JS の modular な browser 構成である。
-構成には、trace と logs の各 API と SDK、OTLP/HTTP の exporter を使う。
-Rust と C# は、viewer を TypeScript に委ねるため採用を持たない。
-判断基準は、ui port の背後で trace と event を同じ文脈に相関させ、採用済みの collector へ出力できることである。
-撤回条件は、判断基準を満たさなくなることであり、browser と logs の SDK の互換性の破壊・保守の停止・bundle と実行負荷の実測が project の予算を超えることを再評価のトリガーとする。
+採用は、TypeScript は OpenTelemetry JS の WebTracerProvider と span event、OTLP/HTTP の trace exporter である。
+判断基準は、ui port の背後で trace と構造化 event を同じ active span に記録し、採用済みの collector へ出力できることである。
+撤回条件は、判断基準を満たさなくなることであり、browser 計装の experimental status の変更、logs の API と SDK の stable 到達、保守の停止、bundle と実行負荷の実測が project の予算を超えることを再評価のトリガーとする。
 
 ## web の host
 
@@ -95,15 +93,14 @@ Rust と C# は、viewer を TypeScript に委ねるため採用を持たない�
 用途は、被ホストの viewer と core を利用者の端末で動かす host である。
 採用は、core が Rust のときは desktop・mobile ともに Tauri、core が C# のときは desktop は Photino.NET、mobile は .NET MAUI の HybridWebView である。
 判断基準は、OS 内蔵の webview に同じ viewer を載せ、core を host の back-end に置けることである。
-core が C# のときの desktop は、core の言語と host の言語を合わせて構成の複雑さを避けるため Photino.NET を採り、Tauri に C# の sidecar を載せる形は採らない。
 撤回条件は、判断基準を満たさなくなることであり、webview と OS の対応状況の変化を再評価のトリガーとする。
 
 ## BFF の token 管理
 
 用途は、BFF が保持する token の交換と更新を担う機構である。
-採用は、C# は Duende.AccessTokenManagement である。Rust は project が単一の採用を ADR に明記する。
-判断基準は、Apache License 2.0 の OSS で token の保持と更新を server 側で担えることであり、Duende の商用製品(BFF・IdentityServer)は範囲に含めない。
-撤回条件は、判断基準を満たさなくなることであり、ライセンスとリリースポリシーの変化を再評価のトリガーとする。
+採用は、Rust は tower-sessions のサーバー側セッションと openidconnect のトークンエンドポイントクライアント、C# は Duende.AccessTokenManagement である。
+判断基準は、token set と expiry を server 側に保持し、期限前の更新で得た token set を同じ session へ置き換えられることである。
+撤回条件は、判断基準を満たさなくなることであり、ライセンス、リリースポリシー、session と token endpoint の互換性の変化を再評価のトリガーとする。
 
 ## BFF の session 管理
 
@@ -112,26 +109,19 @@ core が C# のときの desktop は、core の言語と host の言語を合わ
 判断基準は、Secure・HttpOnly・SameSite=Strict の cookie 属性を、既定または明示の設定で強制できることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
-## BFF の中継
-
-用途は、BFF が resource への要求を中継する機構である。
-採用は、C# は YARP である。Rust は project が単一の採用を ADR に明記する。
-判断基準は、同一オリジンの中継で内部の JWT を付与できることである。
-撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
-
 ## OIDC クライアント
 
 用途は、OIDC の code と PKCE のフローを終端し ID Token を検証するクライアントである。
 採用は、Rust は openidconnect である。C# は ASP.NET Core 標準の handler を使い、外部ライブラリを別に選ばない。
-判断基準は、ID Token を nonce と at_hash で検証できることである。
+判断基準は、authorization code と PKCE の flow を終端し、ID Token の署名、issuer、audience、nonce を検証できることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
-## 効果の表現(viewer・extension・host)
+## viewer・extension・host の効果の表現
 
 用途は、viewer・extension・host の軽い役割に見合う、副作用と想定内失敗を型で表す機構である。
 採用は、TypeScript は neverthrow である。
-Rust は言語機構(Future・Result)で表し、C# は libs の自作機構(Effect 型と Result 型)で表し、どちらも外部ライブラリを採らない。
-判断基準は、軽量な Result 型を提供することである。effect-ts のような要求チャネル・依存注入・fiber runtime を含む重い FW は、server 側の効果と永続化を持たない役割に対して過大である。
+Rust は言語機構(Future・Result)で表し、C# は libs の Effect 型と Result 型で表し、どちらも外部ライブラリを採らない。
+判断基準は、軽量な Result 型を提供し、要求チャネル・依存注入・fiber runtime を持ち込まないことである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## 境界の値検証
@@ -174,15 +164,15 @@ Rust は言語機構(Future・Result)で表し、C# は libs の自作機構(Eff
 用途は、schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である。
 採用は、Rust は sqlx-cli、C# は grate の up の one-time script である。
 TypeScript は、server 側の永続化の役割を持たないため採用を持たない。
-判断基準は、migration を言語の class に包まず素の SQL script のまま扱い、適用済みの履歴と script の改変を検出し、独立した CLI から非対話で実行できることである。
-撤回条件は、判断基準を満たさなくなることであり、保守の停止・PostgreSQL 対応の終了・改変検出の既定の変化を再評価のトリガーとする。
+判断基準は、migration を言語の class に包まず SQL script のまま扱い、適用済みの one-time script を再実行せず、独立した CLI から非対話で実行できることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止、PostgreSQL 対応の終了、one-time script の実行規則の変化を再評価のトリガーとする。
 
 ## 一時 store への接続
 
 用途は、Valkey へ接続する client である。
 採用は、Rust は fred、C# は StackExchange.Redis である。
-判断基準は、接続の pooling と再接続を備え、session・cache・一時データの読み書きを一つの client に集約できることである。
-撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
+判断基準は、接続を composition で共有して切断後に再接続し、session・cache・一時データの読み書きを一つの client interface に集約できることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止と、Valkey が推奨する Valkey GLIDE C# の preview 解除を再評価のトリガーとする。
 
 ## ide の host
 
@@ -202,6 +192,6 @@ TypeScript は、server 側の永続化の役割を持たないため採用を�
 ## extension が接続する core への JSON-RPC
 
 用途は、extension が接続する core のプロセスとの間で、JSON-RPC の小さい契約だけを外へ出す機構である。
-採用は、C# は StreamJsonRpc、TypeScript は vscode-jsonrpc である。Rust は project が JSON-RPC の framing の機構を単一の採用として ADR に明記する。
+採用は、Rust は tower-lsp-server の custom method、C# は StreamJsonRpc、TypeScript は vscode-jsonrpc である。
 判断基準は、protocol と transport を担い、自前で書くのを振る舞いだけにできることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。

@@ -10,12 +10,14 @@ concerns の [effect](../../concerns/effect.md) が定める効果システム�
 
 ### 要求
 副作用を伴う計算は、Rust が言語に持つ効果型で表し、自前の効果モナドや runtime を重ねない。
-非同期の副作用は `async fn` の返す Future で遅延し、実行を runtime の境界に限る。
+非同期の副作用は `async fn` の返す Future で表し、runtime の executor が境界で poll して進める。
 domain の純粋な判断は、非同期にせず同期の関数のまま保つ。
 
 ### 根拠
 Rust は async と Result と所有権を効果型として既に持つので、別の効果型を重ねると言語と二重になる。
-Future は await されるまで動かない遅延した値なので、合成し、取り消し、差し替えても、その時点では副作用が起きない。
+Future は `Context` を伴う poll を受けるたびに計算を進め、完了できなければ Pending を返す。
+待っていた資源が準備できて `Context` の Waker が起床されると、executor が Future を再び poll する。
+await は Future を自ら実行する命令ではなく、外側の Future が対象を poll する形へ組み込む。
 実行を境界の runtime に集めると、どこで副作用が起きるかが一箇所で読める。
 domain を `async fn` にすると、判断が非同期の足場に侵入し、純粋さとテストの容易さが失われる。
 
@@ -31,15 +33,19 @@ Future を、境界の外で勝手に駆動すること。
 domain の純粋な判断に、`async fn` や Future を持ち込むこと。
 
 ### 行動
-副作用を `async fn` の Future で遅延し、実行を runtime の境界に集める。
+副作用を `async fn` の Future で表し、runtime の executor が境界で poll する形に集める。
 domain は同期の関数に保ち、副作用の経路だけを `async fn` で表す。
 
 ### 例
-```rust
-// 自前の効果モナドを重ね、言語の Future と二重になる
-struct Effect<Env, Failure, Value> { /* ... */ }
+独自の効果モナドを重ねると、言語の `Future` と効果の表現が二重になる。
 
-// 言語の効果型で表す。Future は await まで動かない
+```rust
+struct Effect<Env, Failure, Value> { /* ... */ }
+```
+
+言語の効果型で表せば、runtime の executor が `Future` を poll して処理を進める。
+
+```rust
 async fn place_order<Env>(env: &Env, command: PlaceOrderCommand) -> Result<OrderId, PlaceOrderError>
 where Env: HasClock + HasOrders { /* ... */ }
 ```
@@ -74,11 +80,15 @@ domain と application で、型消去したエラーを返すこと。
 不変条件の違反は panic にし、型消去は最上位の報告に限る。
 
 ### 例
-```rust
-// 要求の経路で unwrap。想定された失敗がクラッシュになる。依存もシグネチャに現れていない
-fn handle(repository: &impl OrderRepository, id: OrderId) -> Order { repository.find(id).unwrap() }
+要求の経路で `unwrap` すると、想定された失敗がクラッシュになり、依存もシグネチャに現れない。
 
-// thiserror の enum を ? で伝播する。欠陥は panic、取り消しは Future の drop。依存は引数に現れる
+```rust
+fn handle(repository: &impl OrderRepository, id: OrderId) -> Order { repository.find(id).unwrap() }
+```
+
+`thiserror` の enum を `?` で伝播すれば、欠陥は panic、取り消しは `Future` の drop、依存は引数に現れる。
+
+```rust
 #[derive(thiserror::Error, Debug)]
 pub enum OrderError { #[error("not found")] NotFound }
 fn handle(repository: &impl OrderRepository, id: OrderId) -> Result<Order, OrderError> { repository.find(id) }
@@ -113,11 +123,12 @@ Rust では前者を関数の環境への trait bound が、後者を struct が
 本番とテストで、環境の実装を差し替える。
 
 ### 例
+必要な能力だけを trait bound にする。
+
 ```rust
 pub trait HasClock { fn now(&self) -> SystemTime; }
 pub trait HasOrders { fn orders(&self) -> &dyn OrderRepository; }
 
-// 要求する能力だけを bound にする
 async fn place_order<Env>(env: &Env, command: PlaceOrderCommand) -> Result<OrderId, PlaceOrderError>
 where Env: HasClock + HasOrders { /* ... */ }
 ```
@@ -147,15 +158,19 @@ port が trait で宣言され、核が trait だけに依存している。
 port を trait で宣言し、差し替えは `Arc<dyn>`、単一の実装は generics で渡す。
 
 ### 例
-```rust
-// 核が具象に依存する
-struct OrderService { repository: PostgresOrderRepository }
+具象の repository を field に持つと、核が技術の実装へ依存する。
 
-// port の trait にだけ依存する。dyn で差し替える非同期 port は async-trait
+```rust
+struct OrderService { repository: PostgresOrderRepository }
+```
+
+port の trait だけに依存させる。単一実装は generics で渡し、実行時に差し替える非同期 port は `async-trait` と `Arc<dyn>` で渡す。
+
+```rust
 #[async_trait]
 pub trait OrderRepository { async fn save(&self, order: &Order) -> Result<(), RepositoryError>; }
-struct OrderService<R: OrderRepository> { repository: R }   // 単一実装は generics。効果を持たない構成要素の配線は port を保持する field と構成子注入で行う
-struct Router { repository: Arc<dyn OrderRepository> }      // 差し替えは Arc<dyn>
+struct OrderService<R: OrderRepository> { repository: R }
+struct Router { repository: Arc<dyn OrderRepository> }
 ```
 
 ## 配線を組立点に置き、境界で実行する
@@ -185,18 +200,22 @@ constructor の引数で受ければ、依存がシグネチャに現れ、組�
 本番の環境を組立点で組み、Future の実行を境界に置く。
 
 ### 例
+核がグローバルから依存を取得すると、依存関係がシグネチャから消える。
+
 ```rust
-// 核がグローバルから依存を引く
 fn run() {
     let database = GLOBAL_POOL.get();
     use_database(database);
 }
+```
 
-// constructor で受け、組立点で環境を組み、境界で実行する
+依存は constructor で受け、具象の環境は組立点だけで構築し、境界で実行する。
+
+```rust
 #[tokio::main]
 async fn main() {
-    let environment = ProductionEnvironment::new(connection);   // 組立点だけが具象を知る
-    serve(environment).await;                                   // 境界で Future を駆動する
+    let environment = ProductionEnvironment::new(connection);
+    serve(environment).await;
 }
 ```
 
