@@ -8,7 +8,12 @@ principles の [data](../../principles/data.md) が定める真実の所在の�
 ## 状態の機構
 
 ### 要求
-remote の状態は createResource、URL の状態は router の params と search params、local の状態は createSignal、横断 の状態は createStore と Context で扱う。
+状態は、権威が server にある remote と、権威が実行中の surface または host にある local に分ける。
+remote の状態は、createResource で扱う。
+local の状態は寿命と共有範囲で URL、横断 UI、一時 UI に分ける。
+URL の状態は、router の params と search params で扱う。
+横断 UI の状態は、createStore と Context で扱う。
+一時 UI の状態は、createSignal で扱う。
 派生の値は createMemo で表す。
 
 ### 根拠
@@ -21,49 +26,75 @@ URL は遷移と共有で寿命が決まり、router が params と search param
 派生の値を createMemo にすれば、元の状態から一意に導かれ、二重に持たない。
 
 ### 完了条件
-remote が createResource、URL が router、local が createSignal、横断 が createStore と Context で扱われている。
+状態が、権威の所在で remote と local に分かれている。
+remote が、createResource で扱われている。
+local が、寿命と共有範囲で URL、横断 UI、一時 UI に分かれている。
+URL が、router で扱われている。
+横断 UI が、createStore と Context で扱われている。
+一時 UI が、createSignal で扱われている。
 派生の値が、createMemo で表されている。
 
 ### 禁止事項
-由来の違う状態を、同じ機構に混ぜること。
+remote と local を、寿命だけで分類すること。
+URL、横断 UI、一時 UI を、remote と並ぶ権威の分類として扱うこと。
 
 ### 行動
-状態を由来で4つに分け、それぞれの機構で扱い、派生は createMemo で表す。
+状態を権威の所在で remote と local に分ける。
+local を寿命と共有範囲で URL、横断 UI、一時 UI に分ける。
+remote は createResource、URL は router、横断 UI は createStore と Context、一時 UI は createSignal で扱う。
+派生は createMemo で表す。
 
 ### 例
+一時 UI は `createSignal` の範囲に閉じ、server が権威を持つ remote は `createResource` で取得する。`loadUser` は branded Effect を返す。派生値は `createMemo` で元の値から導く。
+
 ```typescript
-const [count, setCount] = createSignal(0);              // local はその場限り
-const [user] = createResource(userId, fetchUser);       // remote はサーバが権威
-const total = createMemo(() => items().reduce(sum, 0)); // 派生は元から導く
+const [count, setCount] = createSignal(0);
+const [user] = createResource(userId, (id) =>
+  withDeadlineEffect(
+    env,
+    loadUser(id),
+    deadlinePolicy.createAt(),
+    parentSignal,
+    resumeSource,
+  ));
+const total = createMemo(() => items().reduce(sum, 0));
 ```
 
 ## remote の規律
 
 ### 要求
-remote の状態は cache・再取得・無効化を createResource の単位で扱い、remote の値を 横断 の store へ複製しない。
+remote の状態は cache、再取得、無効化を createResource の単位で扱う。
+remote の値を、local の横断 UI store へ複製しない。
 
 ### 根拠
-remote の値を 横断 の store へ複製すると、再取得した値と複製がずれ、二重の真実ができる。
-createResource を唯一の真実として読めば、cache と再取得と無効化が一箇所で揃う。
+remote の値を local の横断 UI store へ複製すると、server から再取得した値と local の複製がずれる。
+remote の client-side の読み口を createResource に限れば、cache、再取得、無効化が一箇所で揃う。
 
 ### 完了条件
-remote の cache・再取得・無効化が、createResource の単位で扱われている。
-remote の値が、横断 の store へ複製されていない。
+remote の cache、再取得、無効化が、createResource の単位で扱われている。
+remote の値が、local の横断 UI store へ複製されていない。
 
 ### 禁止事項
-remote の値を、横断 の store へ複製すること。
+remote の値を、local の横断 UI store へ複製すること。
 
 ### 行動
-remote は createResource を唯一の真実として読み、無効化は refetch で行う。
+remote の client-side の読み口を createResource に限り、無効化は refetch で行う。
 
 ### 例
-```typescript
-// remote の値を store へ複製する。再取得とずれて二重の真実になる
-const [user] = createResource(userId, fetchUser);
-createEffect(() => setAppState("user", user()));
 
-// createResource を唯一の真実として読む
-const [user, { refetch }] = createResource(userId, fetchUser); // 無効化は refetch()
+remote の値を store へ複製すると、再取得した値とずれて二重の真実になる。
+
+```typescript
+const [user] = createResource(userId, (id) =>
+  withDeadlineEffect(env, loadUser(id), deadlinePolicy.createAt(), parentSignal, resumeSource));
+createEffect(() => setAppState("user", user()));
+```
+
+remote の client-side の読み口を `createResource` に限り、branded Effect を期限 wrapper から実行する。無効化には `refetch` を使う。
+
+```typescript
+const [user, { refetch }] = createResource(userId, (id) =>
+  withDeadlineEffect(env, loadUser(id), deadlinePolicy.createAt(), parentSignal, resumeSource));
 ```
 
 ## 保存の禁止
@@ -92,8 +123,9 @@ CSRF token を、localStorage・sessionStorage に置くこと。
 Web BFF の token・session・CSRF の規律は [structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) に従う。
 
 ### 例
+token を web storage に置くと、XSS から読み取れる。
+
 ```typescript
-// token を web ストレージに置く。XSS で抜かれる
 localStorage.setItem("access_token", response.accessToken);
 ```
 
@@ -154,13 +186,17 @@ surface から、host の状態 API を直接呼ぶこと。
 adapter が host 固有の Memento・secret storage の API を実装し、surface は port にだけ依存する。
 
 ### 例
-```typescript
-// surface が host の Memento を直接呼ぶ。host に縛られる
-context.globalState.update("draftCount", count);
+surface が host の Memento を直接呼ぶと、host に縛られる。
 
-// surface は port にだけ依存し、adapter が host の Memento と secret storage を使い分ける
+```typescript
+context.globalState.update("draftCount", count);
+```
+
+surface は port にだけ依存し、adapter が host の Memento と secret storage を使い分ける。
+
+```typescript
 interface StatePort { getDraftCount(): number; setDraftCount(count: number): Promise<void>; }
-interface SecretPort { getToken(): Promise<string | undefined>; } // 秘密は secret storage 側の adapter
+interface SecretPort { getToken(): Promise<string | undefined>; }
 ```
 
 ## 参照
