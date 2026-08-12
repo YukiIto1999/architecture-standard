@@ -3,7 +3,7 @@
 ## 概要
 connection は、TypeScript で副作用と依存の渡し方を扱う実現軸である。
 concerns の [effect](../../concerns/effect.md) が定める効果システムを、viewer・extension・host の軽い役割に合わせて満たす。
-副作用は、環境と AbortSignal を受け ResultAsync を返す遅延した関数で表す。
+副作用は、環境、AbortSignal、wall-clock の絶対期限を受け ResultAsync を返す遅延した関数で表す。
 [separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の単方向性に従う。
 
 ## 効果を遅延した関数で表す
@@ -17,6 +17,7 @@ concerns の [effect](../../concerns/effect.md) が定める効果システム�
 関数は呼ぶまで動かない遅延した値なので、合成し、取り消し、差し替えても、その時点では副作用が起きない。
 環境を引数に受けると、計算が要求する能力が型に出て、テストで差し替えられる。
 AbortSignal を通すと、取り消しを計算全体へ伝播できる。
+wall-clock の絶対期限を通すと、[coordination](./coordination.md) の Effect 専用 `withDeadlineEffect` が定める期限の正本を下流へ渡せる。
 実行を UI のイベント境界に集めると、どこで副作用が起きるかが一箇所で読める。
 viewer・extension・host は server の効果と永続化を持たないので、重い効果型を作らず、この軽い形で足りる。
 
@@ -37,9 +38,9 @@ viewer・extension・host に、server 側の重い効果型を持ち込むこ�
 // Promise は生成で即実行され、合成も取り消しもしにくい
 const user = fetchUser(id);           // すぐ走る
 
-// 遅延した効果。環境と signal を受け、ResultAsync を返す。実行は境界で
-type Effect<Env, E, A> = (env: Env, signal: AbortSignal) => ResultAsync<A, E>;
-const loadUser = (userId: UserId): Effect<HasUsers, LoadError, User> => (env, signal) => env.users.find(userId, signal);
+```typescript
+export const loadUser = (userId: UserId): Effect<HasUsers, LoadError, User> =>
+  deferEffect((env, signal, deadlineAt) => env.users.find(userId, signal, deadlineAt));
 ```
 
 ## 想定内失敗を Result で返す
@@ -63,60 +64,111 @@ error を、種別の判別できない単一の型で表すこと。
 想定された失敗を Result・ResultAsync にし、error を判別子つきの union で分類する。
 
 ### 例
-```typescript
-// 失敗を throw で表す。型に現れず、捕捉の漏れが起きる
-async function find(id: Id): Promise<User> { throw new Error("not found"); }
+想定内失敗を throw すると型に現れず、呼び出し側の捕捉も強制されない。
 
-// Result で返し、error を判別子つき union で分類する
+```typescript
+async function find(id: Id): Promise<User> { throw new Error("not found"); }
+```
+
+`Result` で返し、error を判別子つき union で分類する。
+
+```typescript
 type FindError = { kind: "notFound" } | { kind: "unavailable" };
 function find(id: Id): ResultAsync<User, FindError> { /* ... */ }
 ```
 
-## throw を欠陥として境界で分ける
+## 非同期 API の送出を ResultAsync へ変換する
 
 ### 要求
-fetch・DOM・postMessage など throw を前提とする API は、`ResultAsync.fromPromise` で受けて Result へ変換する。
-想定された失敗は Result に、回復できない欠陥は throw のまま残し、両者を混ぜない。
-取り消し(AbortError)は想定内の失敗の型へ写さず、`errorFn` で識別して再 throw し、境界の殻が取り消しとして扱う。
-変換の境界は薄く保ち、呼び出しの近くの一箇所に置く。
+Promise を返し、Promise を返す前にも同期で throw し得る API は、呼出式を関数リテラルに入れて `ResultAsync.fromThrowable` で受ける。
+`ResultAsync.fromThrowable` が返す関数を呼び、同期の throw と Promise の rejection を同じ一箇所で変換する。
+想定された失敗だけを error mapper で判別子つきの error へ写し、回復できない欠陥は再 throw する。
+取り消しの AbortError は error へ写さず再 throw し、境界の殻が取り消しとして扱う。
 
 ### 根拠
-throw を前提とする API をそのまま使うと、失敗が型に現れず、捕捉の漏れが起きる。
-`ResultAsync.fromPromise` の `errorFn` で境界に一度だけ通せば、以後は失敗が型で扱える。
-回復できない欠陥は Result に混ぜず throw のまま残すと、想定された失敗と取り違えない。
-AbortError は取り消しであって想定内の失敗でも回復不能な欠陥でもないので、Result の err に落とすと [effect](../../concerns/effect.md) が定める取り消しの終了と区別がつかなくなる。
-`errorFn` で AbortError を検出して再 throw すれば、呼び出し元の catch や境界の殻が取り消しとして扱える。
-変換の境界を薄く呼び出しの近くに置けば、変換の責務が一箇所に集まる。
+`ResultAsync.fromPromise(operation(), mapper)` は `operation()` を先に評価するため、Promise を返す前の同期の throw を捕捉しない。
+`ResultAsync.fromThrowable` は関数の呼出しを内側で行い、同期の throw と返された Promise の rejection の両方を ResultAsync の error mapper へ渡す。
+想定された失敗だけを error にすれば、欠陥と取り消しを業務上の失敗として回復しない。
 
 ### 完了条件
-throw を前提とする API の想定された失敗が、Result へ変換されている。
-回復できない欠陥が、Result に混ざらず throw のまま残っている。
-AbortError が、Result の err へ変換されず、`errorFn` で再 throw されている。
-変換の境界が薄く、呼び出しの近くの一箇所に置かれている。
+Promise を返す境界 API の呼出式が、`ResultAsync.fromThrowable` に渡す関数リテラルの内側にある。
+同期の throw と Promise の rejection が、同じ error mapper で想定された失敗へ変換されている。
+`ResultAsync.fromThrowable` が返した関数が呼ばれ、ResultAsync が返されている。
+回復できない欠陥と AbortError が、ResultAsync の error に混ざらず再 throw されている。
 
 ### 禁止事項
-回復できない欠陥を、想定された失敗の Result に混ぜること。
-AbortError を、想定された失敗の Result の err に変換すること。
-変換の境界を、各所に散らすこと。
+同期で throw し得る関数の呼出結果を、`ResultAsync.fromPromise` の第一引数へ直接渡すこと。
+`ResultAsync.fromThrowable` が返す関数を呼ばず、関数自体を ResultAsync とみなすこと。
+回復できない欠陥または AbortError を、想定された失敗の error へ変換すること。
 
 ### 行動
-fetch・DOM・postMessage を `ResultAsync.fromPromise` で受け、想定された失敗を Result へ変換し、欠陥は throw のまま残す。
-`errorFn` で AbortError を識別し、Result の err にせず再 throw する。
+Promise を返す API 呼出しを、`ResultAsync.fromThrowable(() => operation(), mapper)()` の形で ResultAsync へ変換する。
+mapper は想定された失敗だけを変換し、欠陥と AbortError を再 throw する。
+
+### 例
+呼出式を `ResultAsync.fromPromise` の引数に直接置くと、同期の throw が変換境界を抜ける。
+
+```typescript
+const unsafe = ResultAsync.fromPromise(operation(), mapper);
+```
+
+error mapper は想定内失敗だけを変換する。
+
+```typescript
+const toRequestError = (error: unknown): RequestError => {
+  if (error instanceof DOMException && error.name === "AbortError") throw error;
+  if (error instanceof TransportUnavailable) {
+    return { kind: "transportUnavailable", cause: error };
+  }
+  throw error;
+};
+```
+
+関数リテラルの呼出しと `Promise` の完了を同じ境界で受ける。
+
+```typescript
+const result = await ResultAsync.fromThrowable(
+  () => operation(),
+  toRequestError,
+)();
+```
+
+## 同期 API の送出を Result へ変換する
+
+### 要求
+同期で完了し throw し得る DOM API と postMessage は、呼出式を関数リテラルに入れて `Result.fromThrowable` で受ける。
+想定された失敗だけを error mapper で判別子つきの error へ写し、回復できない欠陥は再 throw する。
+
+### 根拠
+同期 API は Promise を返さないので、ResultAsync で非同期の形へ変える必要がない。
+`Result.fromThrowable` が返す関数を呼べば、同期の戻り値と throw を Result の二経路へ変換できる。
+同期と非同期の境界を分けると、戻り値の実体と検査する送出経路が一致する。
+
+### 完了条件
+throw し得る同期 DOM API と postMessage の呼出式が、`Result.fromThrowable` に渡す関数リテラルの内側にある。
+`Result.fromThrowable` が返した関数が呼ばれ、Result が返されている。
+想定された失敗だけが Result の error へ変換され、回復できない欠陥が再 throw されている。
+
+### 禁止事項
+同期 DOM API または postMessage を、`ResultAsync.fromPromise` で受けること。
+同期 API を Promise で包み、同期の throw の変換を非同期境界へ先送りすること。
+回復できない欠陥を、想定された失敗の error へ変換すること。
+
+### 行動
+同期 API 呼出しを、`Result.fromThrowable(() => operation(), mapper)()` の形で Result へ変換する。
+DOM API と postMessage の mapper は想定された DOMException だけを変換し、それ以外を再 throw する。
 
 ### 例
 ```typescript
-// fetch の throw をそのまま素通しする
-const response = await fetch(url);
+const element = Result.fromThrowable(
+  () => document.querySelector(selector),
+  toSelectorError,
+)();
 
-// AbortError も他の失敗と同じく err へ落としてしまう
-const naive = await ResultAsync.fromPromise(fetch(url, { signal }), (error) => ({ kind: "fetchFailed" as const, error }));
-
-// errorFn で AbortError を識別し、Result の err にせず再 throw する。境界の殻が取り消しとして扱う
-const toFetchError = (error: unknown): FetchError => {
-  if (error instanceof DOMException && error.name === "AbortError") throw error; // 取り消しは Result に落とさない
-  return { kind: "fetchFailed", error };
-};
-const result = await ResultAsync.fromPromise(fetch(url, { signal }), toFetchError);
+const posted = Result.fromThrowable(
+  () => targetWindow.postMessage(message, targetOrigin),
+  toPostMessageError,
+)();
 ```
 
 ## 依存を環境で受け、host の能力を port で宣言する
@@ -146,13 +198,17 @@ module の最上位に、可変な singleton を作ること。
 本番とテストで、環境の実装を差し替える。
 
 ### 例
-```typescript
-// module 最上位の可変 singleton と、核での生成
-export const userGateway = new UserGateway();
+モジュール最上位の可変 singleton は、隠れた共有状態になる。
 
-// 環境で受け、host の能力は ui port で宣言する
+```typescript
+export const userGateway = new UserGateway();
+```
+
+依存を環境で受け、host の能力を ui port で宣言する。
+
+```typescript
 interface HasUsers { users: UserGateway }
-interface UiPort { notify(message: Message): void } // 実装は host の composition が注入
+interface UiPort { notify(message: Message): void }
 ```
 
 ## 参照
