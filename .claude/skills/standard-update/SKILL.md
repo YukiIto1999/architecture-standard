@@ -14,7 +14,7 @@ description: architecture-standard(principles/concerns/languages/structure/tools
 - `concerns/` — 言語非依存の概念ごとの規律(17概念)。effect・concurrency・dependency・types・persistence・transaction・messaging・authentication・authorization・observability・privacy・security・configuration・resilience・performance・lifecycle・experience。
 - `languages/` — 言語ごとの実現。rust・csharp・typescript × 7 locus(formation・translation・connection・retention・coordination・publication・inspection)+ 1 全域規律(conventions。命名・整形・ドキュメントコメント・型名接尾辞)。
 - `structure/` — ターゲットプロジェクトの root の境界・依存方向・各部の内部構成を、言語非依存に定める。skeleton が root 構成の正本、各部の layout が内部の正本。
-- `tools/` — 何を使うか・どう選ぶかの採用の正本。language・stack・inspection・services・platforms の5分割。principles・concerns・structure・languages の上位規律に従属し、性質の要求は再定義しない。
+- `tools/` — language・stack・build・inspection・services・platforms の6分割で、採用と判断基準を所有する。
 - `process/` — どの順で作り、どこで確かめるか。作業の種別ごとの順序と確認点。7単位(bootstrap・design・implementation・refactoring・review・audit・migration)。順序と確認点だけを所有し、性質の規範を再定義しない。
 - `docs/` — 作業の材料であり、標準には含めない。
 

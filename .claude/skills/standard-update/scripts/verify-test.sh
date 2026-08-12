@@ -123,9 +123,33 @@ fixture=$(make_fixture process-table-scope)
 printf '\n## 補助表\n\n| ファイル | 用途 |\n|---|---|\n| [audit](./audit.md) | 既存単位への補助参照 |\n' >> "$fixture/process/README.md"
 expect_pass "process の単位台帳以外のファイル表を数えない" "$fixture"
 
-fixture=$(make_fixture tools-count)
+fixture=$(make_fixture tools-count-valid)
+expect_pass "tools がREADMEを除いて6分割であることを受理する" "$fixture"
+
+fixture=$(make_fixture tools-count-extra)
 printf '# extra\n' > "$fixture/tools/extra.md"
-expect_fail "tools がREADMEを除いて5分割であることを検査する" "$fixture" "tools の分割数が不一致"
+expect_fail "tools がREADMEを除いて6分割であることを検査する" "$fixture" "tools の分割数が不一致(実ファイル=7, 期待=6)"
+
+fixture=$(make_fixture tools-count-missing)
+rm -- "$fixture/tools/build.md"
+expect_fail "tools の build 単位の欠落を検査する" "$fixture" "tools の分割数が不一致(実ファイル=5, 期待=6)"
+
+fixture=$(make_fixture tools-readme-build-row-missing)
+sed -i '/^| \[build\](\.\/build\.md)/d' "$fixture/tools/README.md"
+expect_fail "tools README の構成表から build 行が欠落した場合を検査する" "$fixture" "tools/README.md の構成表と実ファイルが不一致"
+
+fixture=$(make_fixture tools-root-catalog-mismatch)
+sed -i 's/language・stack・build・inspection・services・platforms の6分割/language・stack・inspection・services・platforms の5分割/' "$fixture/README.md"
+expect_fail "root README の tools 6分類を構成表と照合する" "$fixture" "root README.md の tools 6分類が不一致"
+
+fixture=$(make_fixture tools-skill-catalog-mismatch)
+sed -i 's/language・stack・build・inspection・services・platforms の6分割/language・stack・inspection・services・platforms の5分割/' \
+  "$fixture/.claude/skills/standard-update/SKILL.md"
+expect_fail "standard-update skill の tools 6分類を構成表と照合する" "$fixture" "standard-update/SKILL.md の tools 6分類が不一致"
+
+fixture=$(make_fixture tools-reference-catalog-mismatch)
+sed -i 's/^6分割に置く。/5分割に置く。/' "$fixture/.claude/skills/standard-update/references/tools.md"
+expect_fail "standard-update tools reference の tools 6分類を構成表と照合する" "$fixture" "references/tools.md の tools 6分類が不一致"
 
 fixture=$(make_fixture languages-count)
 cp "$fixture/languages/rust/retention.md" "$fixture/languages/rust/extra.md"
@@ -142,6 +166,10 @@ expect_pass "製品名の部分文字列だけでは違反にしない" "$fixtur
 fixture=$(make_fixture product-at-prefix)
 printf '\n@typespec/openapi3 を原則本文で名指しする。\n' >> "$fixture/principles/comment.md"
 expect_fail "@ で始まる製品名を正規名の境界で検出する" "$fixture" "台帳由来の製品名: @typespec/openapi3"
+
+fixture=$(make_fixture product-build-registry)
+printf '\nNx は、task graph の orchestrator である。\n' >> "$fixture/structure/tests/layout.md"
+expect_pass "build の採用名を tools registry に含める" "$fixture"
 
 printf '\nテスト: %d passed, %d failed\n' "$passed" "$failed"
 if [ "$failed" -eq 0 ]; then
