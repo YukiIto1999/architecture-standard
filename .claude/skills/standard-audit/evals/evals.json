@@ -1,0 +1,47 @@
+{
+  "skill_name": "standard-audit",
+  "evals": [
+    {
+      "id": 1,
+      "model": "haiku",
+      "prompt": "architecture-standard の standard-update/SKILL.md と、そこから直接参照される resource だけを、層別書式と実行可能性の観点で読み取り専用監査してください。今回は変更ファイルに限定した scoped audit です。修正せず、重大度・file・該当箇所・根拠を返してください。",
+      "expected_output": "変更対象と直接参照に限定した監査を選び、内部矛盾と実行不能な指示を証拠付きで報告する。",
+      "files": [],
+      "expectations": [
+        "標準自体の監査として standard-audit を選ぶ",
+        "scoped audit として指定ファイルと直接参照に限定する",
+        "ファイルを編集しない",
+        "重大度・file・該当箇所・根拠を示す",
+        "SKILL.md の総称的な resource routing を反証として考慮し、個別fileへの重複参照を欠落としない"
+      ]
+    },
+    {
+      "id": 2,
+      "model": "sonnet",
+      "prompt": "現在の作業directoryをrootとして、README.md、principles/README.md、concerns/README.md、languages/README.md、structure/README.md、tools/README.md、process/README.md の7ファイルだけを読み取り専用で監査してください。pathは既知です。repository名をpathへ足さず、Bash、Glob、path未指定のGrepを使わないでください。配下fileの存在、数、命名は調べず、この7ファイル内の宣言だけから層の所有範囲と書式の重複・抜けを照合してください。個別の規律本文、skill、reference、検査scriptへ範囲を広げないでください。機械検査と意味監査は区別してください。",
+      "expected_output": "指定された7 READMEだけの scoped audit を選び、六領域の所有範囲と書式宣言を照合し、機械検査と意味監査を区別する。",
+      "files": [],
+      "expectations": [
+        "scoped audit として指定された7 READMEだけを対象にする",
+        "思想と領域分割の基準を tracked な root README.md から読み、git管理外の docs を規範として参照しない",
+        "六領域の所有範囲と書式宣言を相互に照合する",
+        "verify.sh の機械結果を意味監査の代用にしない",
+        "個別の規律本文を未監査範囲として明記する"
+      ]
+    },
+    {
+      "id": 3,
+      "model": "opus",
+      "prompt": "architecture-standard の tools/build.md と、その直接の参照先だけを読み取り専用で監査してください。採用の正本、層間MECE、事実の正確さ、toolsの4行書式を確認し、修正せず指摘だけ返してください。",
+      "expected_output": "指定fileのscoped auditとしてtoolsの責務と直接参照の整合を重点確認する。",
+      "files": [],
+      "expectations": [
+        "指定fileと直接の参照先だけを監査範囲にする",
+        "tools は採用と判断基準の正本であることへ照合する",
+        "外部事実は一次資料で確認したものと未確認を分ける",
+        "未解決issueや過去版の報告だけで現行版の挙動を確定しない",
+        "修正を実行せず提案に留める"
+      ]
+    }
+  ]
+}

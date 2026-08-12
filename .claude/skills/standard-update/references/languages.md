@@ -8,14 +8,14 @@ languages は、principles・concerns・structure の上位規律に従属する
 ## 構成と役割
 
 3つの言語に、7つの実現軸と1つの全域規律を置く。
-rust(edition 2024)・csharp(.NET 10・C# 14)・typescript(TypeScript 6.0)。
+rust・csharp・typescript。基盤の版は tools/language.md を正本とする。
 実現軸は formation・translation・connection・retention・coordination・publication・inspection。
 全域規律の conventions(命名・整形・ドキュメントコメント・型名接尾辞)は、コード上の置き場を持たず、全ての実現軸に一様に適用する。
 役割の非対称を保つ。rust と csharp はサーバ側(永続化を持ち、problem+json を出す)、typescript はクライアント・viewer 側(永続化を持たず状態を管理し、problem+json を受けて 4xx と 5xx を分ける)。
 
 ## 拠り所
 
-公式ドキュメント(context7 を先に使う)と、各言語のイディオムに照らす。
+外部仕様や版依存の事実を変更するときは、公式ドキュメントと各言語のイディオムに照らす。context7 を利用できる場合は先に使う。
 外部の実践者や書籍を根拠に使うときは、本文に一次資料の URL または書誌を添える。
 型・依存・組立の判断は、名前だけで根拠にしない。
 版に依存する事実(言語・ライブラリのバージョン)を必ず確かめる。

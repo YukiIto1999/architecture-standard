@@ -1,0 +1,22 @@
+[
+    {"query": "この記事の retry jitter の知見を architecture-standard に取り込んでください。", "should_trigger": true},
+    {"query": "標準の concerns/types.md に新しい型の規律を追加してください。", "should_trigger": true},
+    {"query": "architecture-standard の層間矛盾を解消し、本文を修正してください。", "should_trigger": true},
+    {"query": "project の docs/revision にある標準改訂提案を回収してください。", "should_trigger": true},
+    {"query": "tools/build.md に新しいtask runnerの採用を追加してください。", "should_trigger": true},
+    {"query": "standard-audit の指摘に従って標準本文と検査を直してください。", "should_trigger": true},
+    {"query": "外部スライドの設計原則をprinciplesへ反映できるか裁定してください。", "should_trigger": true},
+    {"query": "languages/rust のコード例が古いので現行版へ改訂してください。", "should_trigger": true},
+    {"query": "標準のstructureに新しいsurfaceを追加し、配線も更新してください。", "should_trigger": true},
+    {"query": "process/migration.md の手順矛盾を修正して検証してください。", "should_trigger": true},
+    {"query": "architecture-standard 全体を読み取り専用で監査してください。", "should_trigger": false, "expected_skill": "standard-audit"},
+    {"query": "標準に従って対象 project の worker を実装してください。", "should_trigger": false, "expected_skill": "standard-apply"},
+    {"query": "concerns/resilience.md の内容を要約して説明してください。", "should_trigger": false},
+    {"query": "この一般的な技術記事の日本語を読みやすく直してください。", "should_trigger": false},
+    {"query": "architecture-standard を対象 project に適用する計画を作ってください。", "should_trigger": false, "expected_skill": "standard-apply"},
+    {"query": "標準の staged diff に問題がないか指摘だけ返してください。", "should_trigger": false, "expected_skill": "standard-audit"},
+    {"query": "このRustコードのコンパイルエラーを修正してください。標準は変更しません。", "should_trigger": false},
+    {"query": "Anthropic Agent Skills の公式ガイドを調査してください。", "should_trigger": false},
+    {"query": "git logからこの標準の変更履歴を要約してください。", "should_trigger": false},
+    {"query": "対象projectのADRに標準からの逸脱理由を書いてください。", "should_trigger": false, "expected_skill": "standard-apply"}
+]
