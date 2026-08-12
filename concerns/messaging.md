@@ -29,11 +29,17 @@ domain event を、そのまま外部へ公開すること。
 イベント名を、起きた事実を表す過去の形にする。
 
 ### 例
+
+内部の domain event をそのまま公開すると、外部契約へ内部都合が漏れる。
+
 ```
-// 内部の domain event をそのまま外部へ公開し、内部都合が漏れる
 publish(order.domainEvents)
-// 公開用の integration event へ写し、必要な分だけ出す
-publish(OrderPlaced.from(order))   // 過去の事実を表す
+```
+
+公開用の integration event へ変換し、過去の事実を表す情報だけを公開する。
+
+```
+publish(OrderPlaced.from(order))
 ```
 
 ## 同期で済む連携はイベントにしない
@@ -82,61 +88,157 @@ integration event の記録が、transaction の outbox に従っている。
 
 ### 要求
 配送経路は少なくとも一度の配送として扱い、消費側は同じイベントの再配送で重複した結果を生まないようにする。
+durable receipt は、payload を durable inbox へ commit してから upstream delivery ack を返すまでの受領段階とする。
+consumer は、durable receipt を終えてから処理を始める。
+durable receipt と、処理結果および処理済み記録の確定は、別の段階として扱う。
+同じ datastore に書く結果は、consumer contract または subscription の scope とイベントの識別子の組で処理権を取得する。
+consumer contract または subscription の scope は、配備上の consumer の改名、再作成、移行で変えない。
+処理権は、共有 inbox の複合一意制約か、scope ごとの inbox にあるイベント識別子の一意制約で排他する。
+処理権の取得に成功した場合だけ結果を書き、処理済み記録と同じ transaction で確定する。
+外部効果には、安定した effect operation の識別子とイベントの識別子から作る冪等キーを渡す。
+effect operation の識別子は、配備上の consumer の名前を含めず、改名、再作成、移行で変えない。
+外部効果の成功後に、consumer contract または subscription の scope へ処理済みを記録する。
 
 ### 根拠
 一度きりの配送は、分散した経路では保証できない。
 配送そのものを一度きりにはできないが、消費を冪等にすれば結果は一度分になる。
+durable receipt を処理の確定から分ければ、前段の停止は source の再配送で、後段の停止は inbox item の再処理で回復できる。
 冪等そのものの理由は [resilience](./resilience.md) に従う。
-イベントの識別子をそのまま冪等の鍵に使えば、消費側は配送経路の重複をイベント単位で排除できる。
+consumer contract または subscription の scope を含めれば、同じイベントに独立して反応する別の契約を重複として扱わずに済む。
+consumer contract または subscription の scope とイベントの識別子の組を一意にすれば、同じ契約への再配送だけを排除できる。
+scope ごとに inbox を分ける場合は、その inbox の中でイベントの識別子を一意にすれば同じ排他になる。
+配備上の名前と処理権の scope を分ければ、consumer の置き換えで同じイベントを未処理と誤認しない。
+処理権の取得、同じ datastore の結果、処理済み記録を一つの transaction で確定すれば、結果だけ、または記録だけが残る停止点を作らない。
+外部効果と処理済み記録は一つの transaction にできないため、効果境界が effect operation の識別子とイベントの識別子から作った冪等キーで重複を吸収する。
+effect operation の識別子を配備上の名前から分離すれば、consumer の置き換え後も効果境界へ同じ冪等キーを渡せる。
+外部効果の成功後に停止しても、再配送時の効果境界が同じ結果を返し、その後に処理済みを記録できる。
 
 ### 完了条件
 消費が、再配送を前提にしている。
-イベントの識別子が、消費の冪等の鍵として使われている。
+payload の durable inbox への commit 後に upstream delivery ack が返され、その後に consumer が処理を始めている。
+durable receipt と、処理結果および処理済み記録の確定が、別の段階になっている。
+consumer contract または subscription の scope とイベントの識別子の組が、inbox の冪等キーとして使われている。
+consumer contract または subscription の scope が、配備上の consumer の改名、再作成、移行で変わっていない。
+同じ datastore では、共有 inbox の複合一意制約か scope ごとの inbox の一意制約で処理権を取得した消費だけが結果を書いている。
+処理権の取得、結果、処理済み記録が、一つの transaction で確定している。
+外部効果に、安定した effect operation の識別子とイベントの識別子から作った冪等キーが渡されている。
+effect operation の識別子が、配備上の consumer の改名、再作成、移行で変わっていない。
+外部効果の成功後に、consumer contract または subscription の scope へ処理済みが記録されている。
+各確定点で停止して再配送しても、結果が一度分である。
 
 ### 禁止事項
 一度きりの配送を、約束すること。
 broker の一度きりの表示を理由に、外部への副作用の冪等な消費を省くこと。
 再配送で重複した結果を生む消費を書くこと。
+payload の durable inbox への commit 前に upstream delivery ack を返すこと。
+durable receipt の前に consumer の処理を始めること。
+upstream delivery ack を、処理結果と処理済み記録の確定として扱うこと。
+同じ datastore の結果と処理済み記録を、別の transaction で確定すること。
+処理済み記録の参照だけで判定し、consumer contract または subscription の scope とイベントの識別子による処理権の排他を持たないこと。
+共有 inbox で、イベントの識別子だけを一意にすること。
+配備上の consumer の名前を、inbox の scope または外部効果の冪等キーに使うこと。
+外部効果へ effect operation の識別子とイベントの識別子から作った冪等キーを渡さず、効果境界の外だけで重複を排除すること。
+外部効果の成功前に、処理済みを記録すること。
 
 ### 行動
-イベントの識別子を冪等の鍵にし、処理済みを記録して重複を排除する。
-再配送しても安全なことを、テストで確かめる。
+consumer contract または subscription に、配備上の consumer の改名、再作成、移行で変わらない scope を定める。
+payload を durable inbox へ commit し、upstream delivery ack を返してから consumer の処理を始める。
+同じ datastore に書く結果は、共有 inbox の scope とイベントの識別子に複合一意制約を置くか、scope ごとの inbox でイベントの識別子を一意にする。
+一意な処理済み記録の挿入で処理権を取得し、取得に成功した場合だけ結果を書いて、一つの transaction で確定する。
+外部効果ごとに、配備上の consumer の名前から独立した effect operation の識別子を定める。
+外部効果には effect operation の識別子とイベントの識別子から作る冪等キーを渡し、成功を確認してから scope へ処理済みを記録する。
+payload commit と upstream delivery ack の各直前と直後、同じ datastore の transaction commit、外部効果の成功、成功後の処理済み記録の各直前と直後で処理を停止し、前段では source から、後段では inbox item から再配送して結果が一度分であることをテストする。
 
 ### 例
+
+共有 inbox は、consumer contract または subscription の安定した scope と event ID の組を一意にする。
+
 ```
-// 再配送で二重に課金する
-onPaid(event) { charge(event.amount) }
-// 処理済みの識別子を記録し、重複を排除する
-onPaid(event) { if (markProcessed(event.id)) charge(event.amount) }
+processed_events(consumer_scope, event_id, UNIQUE(consumer_scope, event_id))
+onProjected(event) {
+  transaction {
+    if (!tryInsertProcessed(consumerScope, event.id)) return
+    updateProjection(event)
+  }
+}
+```
+
+外部効果は、配備名ではなく安定した operation と event ID の組で冪等化する。
+
+```
+onPaid(event) {
+  if (isProcessed(consumerScope, event.id)) return
+  charge(event.amount, idempotencyKey: [effectOperation("capture-payment"), event.id])
+  recordProcessed(consumerScope, event.id)
+}
 ```
 
 ## 順序・再試行・行き止まりを扱う
 
 ### 要求
 順序は同じ集約の中の版の並びとしてのみ保証し、全体の順序を約束しない。
-再配送の順序の入れ替えは、集約の版を比べて古い更新を捨てる形で吸収する。
+新しいイベントが完全な現在状態を含む snapshot 型の現在状態 projection は、集約の版を比べて古い snapshot を捨ててよい。
+正本から再構築できる現在状態 projection は、再構築を確実に起動する場合に限り、古い版を捨ててよい。
+差分イベントを適用する projection は、版の欠落を検出し、順序待ち、replay、rebuild のいずれかで回復する。
+差分イベントを、古い版または欠落した版であることだけを理由に黙って捨てない。
+事実を蓄積する consumer は、イベントの識別子で重複排除し、到着した版が現在より古いことだけを理由に事実を捨てない。
+事実の保持と消去は、[privacy](./privacy.md) などの別の保持・消去規律に従う。
+snapshot event を監査または集計の事実として扱う consumer にも、同じ版と保持・消去の規則を適用する。
 失敗したイベントの再試行と行き止まりは [resilience](./resilience.md) に従い、行き止まりへ送ったイベントで後続の消費を止めない。
 
 ### 根拠
 全体の順序を保証すると、並行性と規模を失う。
 順序が要るのは同じ集約の中だけなので、その範囲で保証する。
-再配送は順序を入れ替えうるので、集約の版を比べて古い更新を捨て、新しい状態を古いイベントで上書きしない。
+完全な現在状態を含む snapshot は古い版を無視しても、新しい版だけで現在状態が決まる。
+正本から再構築できる projection は、古い版を捨てても rebuild で正しい状態へ戻せる。
+差分イベントは前の版を前提にするため、欠落した版を捨てると projection が正しい状態へ到達できない。
+事実を蓄積する consumer は到着した各事実を意味として持つため、現在より古い版を捨てると履歴が欠ける。
+版の順序を扱う規則と保持期間を扱う規則を分ければ、古い版を捨てずに扱う要求が privacy に基づく期限消去を妨げない。
+snapshot event でも監査または集計の入力にする場合は、現在状態 projection の上書き規則を適用すると必要な事実を失う。
 イベントの消費は列を共有するので、一つのイベントの滞留が後続の消費を塞ぐ。
 行き止まりへ退ければ、後続が流れ続ける。
 
 ### 完了条件
 順序の保証が、同じ集約の中の版の並びに限られている。
-古い集約の版のイベントが、新しい集約の版を上書きしないようになっている。
+古い版を捨てる現在状態 projection が、完全な現在状態を含む snapshot 型か、正本から再構築できる形に限られている。
+再構築できる現在状態 projection が古い版を捨てた場合、rebuild が起動している。
+差分イベントを適用する projection が、版の欠落を検出して順序待ち、replay、rebuild のいずれかで回復している。
+事実を蓄積する consumer が、到着した版が現在より古いことだけを理由に事実を捨てていない。
+事実を蓄積する consumer の保持と消去が、privacy などの別の規律に従っている。
+snapshot event を監査または集計する consumer にも、同じ版と保持・消去の規則が適用されている。
 行き止まりへ送られたイベントの後続が、消費され続けている。
 
 ### 禁止事項
 全体の順序を、約束すること。
+完全な現在状態を持たず再構築もできない projection で、古い版を捨てること。
+差分イベントの欠落を検出せず、または検出後に黙って捨てること。
+事実を蓄積する consumer で、到着した版が現在より古いことだけを理由に事実を捨てること。
+snapshot event を監査または集計する consumer に、現在状態 projection の古い版を捨てる規則を適用すること。
+privacy などの保持・消去規律に反して、事実を保持し続けること。
 処理できないイベントで、後続の消費を止め続けること。
 
 ### 行動
 順序が要る範囲を、同じ集約に限る。
-再順序に備え、集約の版を比べて古い更新を捨てる。
+consumer が現在状態 projection か、事実を蓄積する consumer かを分類する。
+現在状態 projection が完全な現在状態を含む snapshot 型か、正本から再構築できるかを判定する。
+現在状態 projection がどちらかを満たす場合だけ、古い版を捨てる。
+差分イベントの版が欠落したら、順序待ち、replay、rebuild から回復方法を選ぶ。
+事実を蓄積する consumer は、イベントの識別子で重複排除し、到着した版が現在より古いことだけでは捨てない。
+事実を蓄積する consumer の保持期間と消去方法を、privacy などの別の規律から定める。
+snapshot event を監査または集計する場合にも、同じ版と保持・消去の規則を使う。
 再試行の上限と行き止まりの手順は [resilience](./resilience.md) に従い、行き止まりへ送って後続を流す。
+
+### 例
+
+privacy が定める保存期限を過ぎた event は破棄する。現在より古い version であることだけを理由には破棄しない。
+
+```
+onAccumulatedFact(event) {
+  if (seen(event.id)) return
+  if (privacyRetention.expired(event)) return
+  appendFact(event)
+}
+```
 
 ## イベント契約を版で進化させ、寛容に読む
 
@@ -165,24 +267,30 @@ onPaid(event) { if (markProcessed(event.id)) charge(event.amount) }
 ## 連携の手順の所有を決める
 
 ### 要求
-複数の処理にまたがる連携は、各々が事実に反応して進む形か、一つの調整役が手順を統べる形かを、結合の向きを見て選ぶ。
+先行 step の結果が次の branch を決める連携は、一つの調整役が手順を統べる orchestration にする。
+段をまたぐ順序、期限、補償を横断して統括する必要がある連携は、orchestration にする。
+共有する順序を持たない独立した事実への反応は、各参加者が事実に反応する choreography にする。
 
 ### 根拠
-各々が事実に反応する形は、結合が弱く各処理が独立に動くが、全体の手順がどこにも書かれず追いにくい。
-一つの調整役が手順を統べる形は、手順が一箇所に現れて追いやすいが、調整役に依存が集まり、参加する処理が受け身になりやすい。
-連携の複雑さと、手順を一箇所で見たい度合いに応じて、結合の向きで選ぶ。
+choreography は各参加者が事実へ独立に反応するため、全体の手順を共有しない連携の結合を弱く保てる。
+先行 step の結果で branch が変わる手順を参加者へ分散すると、次の判断を一箇所で追えない。
+段をまたぐ順序、期限、補償を orchestration の調整役へ集めれば、連鎖全体の進行と回復を一箇所で管理できる。
 
 ### 完了条件
-連携の手順の所有が、事実への反応か調整役かのどちらかとして定まっている。
-込み入った手順が、追える形で表されている。
+先行 step の結果が次の branch を決める連携が、orchestration になっている。
+段をまたぐ順序、期限、補償を横断して統括する連携が、orchestration になっている。
+共有する順序を持たない独立した事実への反応が、choreography になっている。
 
 ### 禁止事項
-全体の手順がどこにも現れない形で、込み入った連携を組むこと。
-調整役に手順を集めて、参加する処理から判断を奪い貧血にすること。
+先行 step の結果が次の branch を決める連携を、choreography へ分散すること。
+段をまたぐ順序、期限、補償の統括が必要な連携を、choreography へ分散すること。
+共有する順序を持たない独立した事実への反応を、orchestration の調整役へ結合すること。
 
 ### 行動
-参加する処理が少なく手順の分岐がないなら、事実に反応する形にする。
-参加する処理が多いか手順に分岐があるなら、調整役が手順を統べる形にする。
+先行 step の結果が次の branch を決めるかを確認する。
+段をまたぐ順序、期限、補償を横断して統括する必要があるかを確認する。
+いずれかを満たせば orchestration で調整役に手順を集める。
+どちらもなく共有する順序もなければ、choreography で各参加者を独立した事実へ反応させる。
 
 ## 連鎖の失敗を、逆順の補償で打ち消す
 
@@ -216,12 +324,13 @@ onPaid(event) { if (markProcessed(event.id)) charge(event.amount) }
 打ち消しが完了しない段は、resilience の行き止まりへ送る。
 
 ### 例
+
+注文の確定、与信の確保、出荷の依頼と進んだ連鎖で出荷依頼に失敗した場合は、完了済みの段を逆順に打ち消す。
+
 ```
-// 連鎖: 注文の確定 → 与信の確保 → 出荷の依頼
-// 出荷の依頼が失敗したら、完了済みの段を逆順に打ち消す
 function compensate(saga) {
-  if (saga.creditReserved) publish(CreditReleased.from(saga))  // 与信の確保を打ち消す
-  if (saga.orderPlaced)    publish(OrderCancelled.from(saga))  // 注文の確定を打ち消す
+  if (saga.creditReserved) publish(CreditReleased.from(saga))
+  if (saga.orderPlaced)    publish(OrderCancelled.from(saga))
 }
 ```
 

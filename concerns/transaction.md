@@ -32,12 +32,17 @@ transaction は書き込みパスの動的な確定を扱い、静止した関�
 同じ集約の同時の更新は、次の版を事実として追記し、版の一意制約の違反を衝突として検出する。
 
 ### 例
+
+一度の書き込みで複数の集約を変更すると、競合と結合が増える。
+
 ```
-// 一度の書き込みで複数の集約を変える。競合と結合が増える
 transaction { order.place(); inventory.reserve(); }
-// 一つの集約だけを変え、他集約への波及はイベントで結果整合性にする
-transaction { order.place() }   // OrderPlaced を outbox に記録
-// 在庫は別の集約の別トランザクションがイベントを受けて引き当てる
+```
+
+一つの集約だけを変更し、`OrderPlaced` を outbox へ記録する。在庫は別集約のトランザクションでイベントを受け、結果整合的に引き当てる。
+
+```
+transaction { order.place() }
 ```
 
 ## 一つの確定点を持つ
@@ -62,11 +67,17 @@ transaction { order.place() }   // OrderPlaced を outbox に記録
 外部への効果は確定の後に起こし、巻き戻せない効果や取りこぼせない効果は outbox 経由で確実にする。
 
 ### 例
+
+確定前にメールを送ると、その後にロールバックしても送信を取り消せない。
+
 ```
-// 確定前にメールを送る。後でロールバックしても送信は取り消せない
 send(mail); transaction.commit()
-// 確定の後に、または outbox 経由で効果を起こす
-transaction { record(order); outbox.add(MailRequested) }   // 配送は確定後に outbox から
+```
+
+外部効果は確定後に起こす。メールの配送要求を状態と同じトランザクションで outbox へ記録し、確定後に配送する。
+
+```
+transaction { record(order); outbox.add(MailRequested) }
 ```
 
 ## 状態とイベントを同一パスで記録する
@@ -74,35 +85,43 @@ transaction { record(order); outbox.add(MailRequested) }   // 配送は確定後
 ### 要求
 状態の変更と、その結果として公開する integration event の記録を、同一の書き込みパスにまとめる。
 integration event は outbox に記録し、配送は別途行う。
+異なる datastore への移行では、現在の正本への write と migration event の outbox への記録を、現在の正本と同じ transaction で確定する。
 
 ### 根拠
 状態の保存とイベントの発行を別々の経路で行うと、片方だけ成功して食い違う。
 同一トランザクションで状態と outbox に記録すれば、状態とイベントは必ず一致する。
+異なる datastore へ同期に dual write せず、現在の正本と outbox だけを同じ transaction で確定すれば、destination の停止を再配送で回復できる。
 配送を記録の後に別途行えば、確実な記録と配送の責務を分けられる。
 domain event と integration event の区別は [messaging](./messaging.md) に従う。
 
 ### 完了条件
 状態の変更・参照の更新と、公開する integration event の outbox への記録が、同一の書き込みパスにある。
 integration event が、outbox を経て配送されている。
+異なる datastore への migration event が、現在の正本への write と同じ transaction で outbox に記録されている。
 
 ### 禁止事項
 状態の変更とイベントの記録を、別々の書き込みパスへ分けること。
 outbox の記録を経ずに、イベントを配送すること。
+異なる datastore の新旧へ、調整なしに同期 dual write すること。
 
 ### 行動
 状態の変更と outbox への記録を、一つのトランザクションにまとめる。
 配送は outbox から読み出して行う。
+異なる datastore への移行では、現在の正本への write と migration event の outbox 記録だけを同じ transaction へ置き、destination へ冪等に再配送する。
 配送は [messaging](./messaging.md) に従う。
 
 ### 例
+
+状態とイベントを同じトランザクションで記録し、二重書き込みを避ける。
+
 ```sql
--- 状態とイベントを同一トランザクションで記録する(二重書き込みを避ける)
 BEGIN;
   INSERT INTO orders ...;
   INSERT INTO outbox (event_type, payload, occurred_at) VALUES ('OrderPlaced', ...);
 COMMIT;
--- 別のプロセスが outbox を読み、配送して印を付ける
 ```
+
+別のプロセスが outbox を読み、配送済みの印を付ける。
 
 ## 冪等にして再実行できるようにする
 
@@ -186,6 +205,9 @@ scope を持たない匿名の要求の保存応答は、発行時の proof を�
 一致すれば初回の応答を返し、不一致なら conflict を返す。
 
 ### 例
+
+`scope` に使う列はすべて `NOT NULL` とする。同じ fingerprint なら初回の応答を返し、異なる fingerprint なら conflict を返す。
+
 ```sql
 applied_requests(operation NOT NULL, actor_scope NOT NULL,
                  tenant_id NOT NULL, idempotency_key NOT NULL,
@@ -236,11 +258,19 @@ retry(key, responseProof)
 失敗後の状態を観測できるようにし、再実行か調査の判断に使う。
 
 ### 例
+
+複数の書き込みを個別に実行し、二つ目の失敗を無視すると、不完全な状態を成功として返す。
+
 ```
-// 途中まで書いて失敗し、不完全な状態を成功として返す
-write(a); write(b) /* ここで失敗 */; return ok
-// 一つの確定点までで止め、失敗なら何も公開しない
-transaction { write(a); write(b) }   // 失敗時はどちらも未確定。再実行で回復できる
+write(a)
+ignoreFailure(write(b))
+return ok
+```
+
+一つの確定点までで止め、失敗時はどちらの書き込みも公開しない。未確定のままなら再実行で回復できる。
+
+```
+transaction { write(a); write(b) }
 ```
 
 ## 書き込みパスの所有を組立点に置く
@@ -264,12 +294,18 @@ transaction { write(a); write(b) }   // 失敗時はどちらも未確定。再�
 業務の処理には、確定済みの値か、確定する意図を表す結果を渡す。
 
 ### 例
+
+業務処理がトランザクションを直接操作すると、判断と確定が混ざる。
+
 ```
-// 業務の処理がトランザクションを握る。判断と確定が混ざる
 function place(order) { transaction.begin(); ...; transaction.commit(); }
-// 組立点が境界を持ち、業務は純粋な判断を返す
-function place(order): Result<Events, E> { /* 純粋。確定はしない */ }
-// 組立点: transaction { const events = place(order); record(events) }
+```
+
+業務処理は純粋な判断を返し、組立点がトランザクション境界を所有する。
+
+```
+function place(order): Result<Events, E> { ... }
+transaction { const events = place(order); record(events) }
 ```
 
 ## 参照
