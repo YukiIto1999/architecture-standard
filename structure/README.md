@@ -9,7 +9,7 @@ structure は、ターゲットプロジェクトの各部の、言語非依存�
 | 対象 | 内容 |
 |---|---|
 | [skeleton](./skeleton.md) | root の境界・命名・依存方向・workspace |
-| [core](./core/layout.md) | 業務の核。コンテキストごとの domain・application・infrastructure の層と composition の単位 |
+| [core](./core/layout.md) | 業務の核。コンテキストごとの domain・application・infrastructure の層と、配線に限定した composition の単位 |
 | [libs](./libs/layout.md) | 言語拡張と技術基盤の機構。機構は業務を参照しない |
 | [contracts](./contracts/layout.md) | 契約。layout と canonical・http・protocol・generated の層 |
 | [surfaces](./surfaces/) | 対話様式ごとの入口。server・console・worker・viewer・extension・embedded |

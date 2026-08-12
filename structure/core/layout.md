@@ -18,6 +18,7 @@ core/
 │  │  └─ events/
 │  ├─ application/
 │  │  ├─ <use-case>
+│  │  ├─ workflows/<workflow>
 │  │  └─ ports/<port>
 │  └─ infrastructure/
 │     ├─ persistence/<aggregate>-store
@@ -26,7 +27,6 @@ core/
 │  └─ <shared-kernel>
 └─ composition/
    ├─ build_core
-   ├─ config
    └─ operations/<operation>
 ```
 
@@ -61,9 +61,10 @@ core 直下の単位の役割を示す。
 |---|---|
 | `<context>/` | 境界付けられたコンテキストを境界ごとに置く。コンテキストは互いに参照しない |
 | `shared/` | 複数のコンテキストが共有する値・エラー・イベントの型を置く |
-| `composition/` | コンテキストを配線し、コンテキストをまたぐ流れを担い、外部への入口を公開する |
+| `composition/` | コンテキストと adapter を配線し、canonical の写像と外部への入口を公開する |
 
-コンテキストをまたぐ流れは composition が担う。
+同じコンテキストの複数の use-case にまたがる流れは、そのコンテキストの application workflow が担う。
+コンテキストをまたぐ状態変更は、integration event で非同期に連携する。
 
 ## 依存方向
 
@@ -80,8 +81,9 @@ core 直下の単位の役割を示す。
 | コンテキスト | shared | 他のコンテキスト、composition |
 | shared | なし | コンテキスト、composition |
 
-コンテキストの公開面は、use-case の公開入口、公開の command・result・outcome 型、ports である。
-コンテキストの domain は公開面に含まれず、domain の event は use-case が outcome として返す形でのみ外へ出る。
+コンテキストの公開面は、use-case と workflow の公開入口、公開の command・result・outcome 型、ports である。
+コンテキストの domain は公開面に含まれず、domain event はコンテキストの内部に閉じる。
+外部へ公開する event は、application が integration event へ写像し、公開 outcome に含める。
 shared の公開面は shared-kernel である。
 infrastructure は公開面に含まれない。
 ただし composition は、配線のためにコンテキストの adapter の constructor を参照できる。
@@ -102,7 +104,7 @@ core の内部では composition だけが canonical に触れ、canonical と�
 ## 1 ファイル 1 概念
 
 ファイル一つを変更単位一つに対応させる。
-変更単位は、集約・use-case・store・operation などの末端要素である。
+変更単位は、集約・use-case・workflow・store・operation などの末端要素である。
 下位の型は変更単位のファイル内に記述する。
 下位の型のうち、複数の変更単位で共有するもの、または肥大したもののみを別ファイルへ分離する。
 values・events・ports などの集合フォルダは、要素が二つ以上の場合に置く。

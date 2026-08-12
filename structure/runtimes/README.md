@@ -20,6 +20,9 @@ core を埋め込むかは、host ごとに layout が定める。
 adapters が、surface の定義する port を platform の API で実装する。
 1 port を、1ファイルとして実装する。
 composition が、port を注入し、surface を起動する。
-runtime は、surface の公開する port と起動の入口だけに依存し、内部へ踏み込まない。
+runtime は、surface の公開する port と起動の入口に依存し、surface の内部へ踏み込まない。
+[skeleton](../skeleton.md) の実行時依存表が host に core の埋め込みを許す場合に限り、runtime は core と contracts/canonical に直接依存してよい。
+core を埋め込まない runtime は、core と contracts/canonical に直接依存しない。
+core を埋め込む runtime は、core の公開 API を port の実装として surface へ注入する。
 runtime どうしは、互いを参照しない。
 同じ surface をホストする別の runtime は、surface への依存として並列に表す。

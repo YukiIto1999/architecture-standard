@@ -54,8 +54,10 @@ property-based testing は CsCheck で書き、状態の遷移は CsCheck の st
 // 一つの例しか踏まない
 [Test] public async Task Rev() => await Assert.That(Reverse(Reverse([1, 2, 3]))).IsEqualTo([1, 2, 3]);
 
-// 性質を多くの入力で突く
-Gen.Int.Array.Sample(values => values.Reverse().Reverse().SequenceEqual(values));
+```csharp
+[Test]
+public void ReversingTwiceReturnsOriginal() =>
+    Gen.Int.Array.Sample(values => values.Reverse().Reverse().SequenceEqual(values));
 ```
 
 ## 仕様
@@ -230,11 +232,21 @@ companion に体裁と網羅の analyzer を実装し、CI で検査する。
 
 ## 規則と検証機構の対応
 
-formation・translation・connection・retention・coordination・publication・conventions の各規律を、検証手段へ写像する。
+formation・translation・connection・retention・coordination・publication・conventions・inspection の8実現軸の各規律を、検証手段へ写像する。
+inspection 軸は、この文書の規律を定める H2 見出しを対応表へ全て列挙する。
+標準 repository の verifier は、各実現軸の規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 
 | 実現軸 | 規律 | 検証手段 |
 |---|---|---|
+| inspection | 実行 | 実行テスト(TUnit の単体・性質・結合を検証入口で実行し、発見件数0を失敗にする) |
+| inspection | 性質 | 実行テスト(CsCheck の生成・縮小・stateful property と回帰 seed の再実行) |
+| inspection | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(Reqnroll.TUnit を実装と同じ検証入口で実行) |
+| inspection | 実依存 | 実行テスト(Testcontainers for .NET の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(TUnit `--list-tests` の tree node ID を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。Reqnroll scenario は同じ TUnit discovery の ID を使う) |
+| inspection | 有効性 | mutation(Stryker.NET の未検出 mutant 0件 gate と発見件数0の失敗) |
+| inspection | 構造 | 構造検査(ArchUnitNET が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
+| inspection | 予防 | analyzer/lint(SonarAnalyzer.CSharp・BannedApiAnalyzers・Roslyn analyzer の設定と診断を検証入口でエラー化) |
+| inspection | ドキュメントコメントの検査 | analyzer/lint(CS1591 と Roslyn analyzer)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | formation | 業務の値を型に封じる | 型(record・非公開 constructor・static factory) |
 | formation | 不正な状態を構築できなくする | 型(sealed record 階層)+analyzer(companion の suppressor・網羅の警告のエラー化)+構造検査(ArchUnitNET。階層外派生の検出) |
 | formation | 継承を判別共用体に限る | レビュー(継承の目的の判断) |
@@ -253,7 +265,7 @@ formation・translation・connection・retention・coordination・publication・
 | connection | 要求する依存を型に出す | 型(IEffectRequirements・generic constraints)+analyzer(Roslyn analyzer。NoRequirements への迂回の検出) |
 | connection | 効果を境界で実行し analyzer と generator で縛る | analyzer と source generator(internal の EffectRuntime.Run に実行境界を限定し、Deadline と CancellationToken の伝播、ValueTask の戻り値、R の合成環境の生成、Bind 連鎖の要求包含、原始効果の閉じ込め、NoRequirements への迂回を検査)+実行テスト(`UninitializedEffectException` を Defected へ写すこと) |
 | connection | port を interface で宣言する | 型(interface) |
-| connection | 配線を composition root に限る | 構造検査(自作。IServiceProvider の直接解決の検出)+レビュー |
+| connection | 配線を composition root に限る | 構造検査(IServiceProvider の直接解決の検出)+レビュー |
 | retention | 型付き SQL | analyzer(DapperAOT の DAP214・DAP236)+実行テスト(型・nullable の照合テスト) |
 | retention | 並行更新の表面 | 実行テスト(結合テストでの競合検出) |
 | retention | 書き込みパス | 構造検査(store が transaction の begin・commit を持たないことの検査) |

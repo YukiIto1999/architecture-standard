@@ -222,9 +222,12 @@ import・参照・組立点の構成・型共有・callback の向きを確認�
 ```ts
 import { DatabaseClient } from "../infra/database";
 class PricingPolicy { constructor(private database: DatabaseClient) {} }
+```
 
-// 方針が port を所有し、詳細がそれを実装する。依存は内側へ向く
-interface RateRepository { find(id: SkuId): Promise<Rate> }   // domain が定義し所有
+方針の側が port を所有し、infra の実装を組立点で注入すれば、依存は内側へ向く。
+
+```ts
+interface RateRepository { find(id: SkuId): Promise<Rate> }
 class PricingPolicy { constructor(private rates: RateRepository) {} }
 ```
 

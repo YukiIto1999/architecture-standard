@@ -10,7 +10,7 @@ server を持たないローカル優先の構成で、被ホストの surface �
 ```
 <embedded>/
 ├─ endpoints/
-│  └─ <operation>   protocol の要求を core の use-case へ写像する。
+│  └─ <operation>   protocol の要求を core API の operation へ写像する。
 └─ composition      core の埋め込み・protocol の公開・起動の入口。
 ```
 
@@ -28,8 +28,8 @@ endpoints は composition を参照しない。
 
 ## 入口と protocol
 
-endpoint は、protocol の要求を use-case へ写像する。
-endpoint は、業務判断を持たず、入力の解析と use-case の呼び出しだけを行う。
+endpoint は、protocol の要求を core API の operation へ写像する。
+endpoint は、業務判断を持たず、入力の解析と operation の呼び出しだけを行う。
 protocol の要求から operation を識別して endpoint へ振り分ける dispatch は、composition が持つ。
 認証境界は、要求に含まれる資格情報の発行元、対象、完全性、有効性を検証して actor を一度だけ構築する。
 endpoint は、振り分け済みの単一 operation と actor を受け取る。

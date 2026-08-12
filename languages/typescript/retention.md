@@ -12,12 +12,12 @@ remote の状態は createResource、URL の状態は router の params と sear
 派生の値は createMemo で表す。
 
 ### 根拠
-状態は由来によって寿命と権威が違う。
-remote はサーバが権威で、createResource が取得と loading と error と再取得をまとめる。
-URL は遷移で共有される状態で、router が params と search params で持つ。
-local はその場限りの状態で、createSignal で足りる。
-横断 は複数の場所が読む状態で、createStore と Context が細かい反応性で配る。
-横断は状態の由来による分類の一つであり、[structure/surfaces/viewer/layout](../../structure/surfaces/viewer/layout.md) が定める shared 層(host 非依存の primitive と ui port を置く層)とは別の概念である。
+権威の所在を先に分けると、server が正本の値を local の正本として複製しない。
+remote は server が権威で、createResource が取得、loading、error、再取得をまとめる。
+URL は遷移と共有で寿命が決まり、router が params と search params で持つ。
+横断 UI は複数の UI 範囲が共有し、createStore と Context が細かい反応性で配る。
+一時 UI は一つの UI 範囲の寿命に閉じるので、createSignal で足りる。
+横断 UI は local 状態の共有範囲による下位分類であり、[structure/surfaces/viewer/layout](../../structure/surfaces/viewer/layout.md) が定める shared 層(host 非依存の primitive と ui port を置く層)とは別の概念である。
 派生の値を createMemo にすれば、元の状態から一意に導かれ、二重に持たない。
 
 ### 完了条件

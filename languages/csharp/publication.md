@@ -31,6 +31,7 @@ endpoint の登録が、コンテキストごとの登録に分かれている�
 
 ### 禁止事項
 認可を、認証の前に置くこと。
+`ClaimsPrincipal`、token、claim を core の公開 API または業務へ渡すこと。
 endpoint を、一箇所にまとめてベタ書きすること。
 
 ### 行動
@@ -210,9 +211,19 @@ handler で、実行時に IoC から依存を解決すること。
 ```csharp
 // 永続化は PostgreSQL のみ、依存は constructor injection
 builder.UseWolverine(options => options.PersistMessagesWithPostgresql(connectionString));
-public sealed class ShipOrderHandler(IOrderRepository repository)
+public sealed class ShipOrderHandler(IOrderRepository repository, IMessageBus bus)
 {
-    public async Task HandleAsync(ShipOrder message, IMessageBus bus)
+    public async Task HandleAsync(ShipOrder message, CancellationToken cancellationToken)
+    {
+        await repository.MarkShippedAsync(message.OrderId, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        await bus.ScheduleAsync(new ConfirmDelivery(message.OrderId), 3.Days());
+    }
+}
+
+public sealed class ProjectionHandler(IDurableInbox inbox, IEventSource source, IPaymentPort payment)
+{
+    public async Task HandleAsync(ProjectOrder message, CancellationToken cancellationToken)
     {
         await repository.MarkShippedAsync(message.OrderId);
         await bus.ScheduleAsync(new ConfirmDelivery(message.OrderId), 3.Days()); // durable scheduled

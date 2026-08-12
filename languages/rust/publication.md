@@ -38,6 +38,7 @@ router が、コンテキストごとに合成されている。
 
 ### 禁止事項
 認証を、route の一致に関わらず走る層に置き、404 を 401 に化けさせること。
+principal、token、claim を core の公開 API または業務へ渡すこと。
 依存を、handler の中で直接生成すること。
 
 ### 行動
@@ -321,8 +322,8 @@ JSON-RPC の framing の機構は、project が単一の採用を ADR に明記�
 serde は値の直列化と逆直列化を担うだけで、JSON-RPC のメッセージの区切りや相関を扱う framing までは担わない。
 framing の機構を project の ADR に固定すれば、実装ごとに框組みが割れない。
 core を JSON-RPC の小さい契約で公開すれば、外へ出すのは契約だけになる。
-tower-lsp-server は protocol と transport を担うので、自前で書くのは振る舞いだけになる。
-フル LSP を自作すると、framing の手書きが関心を境界の外へ漏らす。
+tower-lsp-server の custom method は protocol と transport を担うので、自前で書くのは小さい契約の振る舞いと serde の値だけになる。
+LSP の framing と protocol を再実装すると、手書きの処理が関心を境界の外へ漏らす。
 
 ### 完了条件
 core のプロセスが JSON-RPC で公開され、直列化に serde が使われている。
