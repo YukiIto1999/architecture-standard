@@ -17,11 +17,7 @@ CSharpier は、設定項目を少数に絞った opinionated な formatter で�
 
 用途は、規則の違反をビルドで止める linter である。
 採用は、Rust は clippy、C# は SonarAnalyzer.CSharp、TypeScript は oxlint と tsgolint の type-aware 実行である。
-判断基準は、規則を全体に一律に強制でき、警告を CI でエラーとして扱えることである。
-SonarAnalyzer.CSharp は、大きさとネストのしきい値(S104・S138・S134)を規則として持ち、保守も活発である。
-認知的複雑さ(S3776)の規則の割り当ては、二重計測を避けるため languages の inspection が定める。
-oxlint は、既に採用した Vite・Vitest と同じ基盤の単一の linter で、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
-oxlint は Rust 実装であり、ファイル数の増加に対して実行の費用が延びにくい。
+判断基準は、[languages の inspection](../languages/) が割り当てる規則を全体に一律に強制し、警告をリポジトリの検証入口でエラーとして扱えることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止と、Vite Plus の統合 CLI(vp)の 1.0 到達を再評価のトリガーとする。
 
 ## API の禁止
@@ -29,7 +25,7 @@ oxlint は Rust 実装であり、ファイル数の増加に対して実行の�
 用途は、禁止した API の呼び出しを、ビルドで検出する検査である。
 採用は、C# は Microsoft.CodeAnalysis.BannedApiAnalyzers である。
 Rust は clippy の disallowed_methods で満たし、TypeScript は oxlint の no-restricted-imports・no-restricted-properties で満たし、専用の道具を置かない。
-判断基準は、禁止の一覧を設定として宣言でき、違反を CI でエラーとして扱えることである。
+判断基準は、禁止の一覧を設定として宣言でき、違反をリポジトリの検証入口でエラーとして扱えることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## テストの実行
@@ -68,7 +64,7 @@ Reqnroll は自前のテスト実行系を持たないため、実行基盤は R
 
 用途は、UI をブラウザ越しに操作し見た目と疎通を確かめる道具である。
 採用は、TypeScript は playwright-bdd と Playwright である。
-判断基準は、Gherkin の記法で smoke を書きながら実行を Playwright の runner に委ねられることである。
+判断基準は、Gherkin の記法で smoke を書け、baseline 画像ごとか同じ実行環境を使う画像集合ごとに実行 image digest、OS、arch、hardware rendering class、Playwright と browser の version、headless mode、font manifest digest、viewport の metadata を画像とともに版管理し、metadata の canonical serialization から environment fingerprint を生成し、検証時の現在値から生成した fingerprint と一致しなければ screenshot の比較前に失敗し、画像と metadata を一つの更新単位として明示的にレビューできることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## UI の accessibility 検査
@@ -76,17 +72,15 @@ Reqnroll は自前のテスト実行系を持たないため、実行基盤は R
 用途は、UI の E2E で、自動判定できる accessibility の違反を検出する道具である。
 採用は、TypeScript は @axe-core/playwright である。
 Rust と C# は、viewer を TypeScript に委ねるため採用を持たない。
-判断基準は、採用済みの Playwright の runner と page に対して、操作後の各状態で対比・ラベル・focus の機械判定できる違反を検査し、CI で止められることである。
+判断基準は、採用済みの Playwright の runner と page に対して、操作後の各状態で対比・ラベル・focus の機械判定できる違反を検査し、リポジトリの検証入口で止められることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止と Playwright との互換性の喪失を再評価のトリガーとする。
 
 ## mutation
 
 用途は、テストが振る舞いを固定しているかを測る mutation 検査である。
-採用は、Rust は cargo-mutants、C# は Stryker.NET、TypeScript は StrykerJS である。
-判断基準は、生存した mutant を exit code で報告し、CI を失敗で止められることである。
-cargo-mutants は、生存した mutant の有無を exit code で報告するので、しきい値は検出されない mutant が無いという二値の床になる。
-Stryker.NET は、preview の mtp test-runner を設定すれば、Microsoft.Testing.Platform 専用の TUnit のテストを発見して mutation を実行できる。
-撤回条件は、判断基準を満たさなくなることであり、test runner の対応状況の変化と Stryker.NET の mtp test-runner の正式化を再評価のトリガーとする。
+採用は、Rust は cargo-mutants、C# は Stryker.NET の MTP runner(preview)、TypeScript は StrykerJS である。
+判断基準は、テストが検出しなかった mutant を機械可読な結果で報告し、リポジトリの検証入口を失敗で止められることである。
+撤回条件は、判断基準を満たさなくなることであり、Stryker.NET の MTP test runner の preview status、TUnit との互換性、StrykerJS の report 形式の変化を再評価のトリガーとする。
 
 ## 未実行箇所の発見
 
@@ -97,9 +91,10 @@ Stryker.NET は、preview の mtp test-runner を設定すれば、Microsoft.Tes
 
 ## 構造検査
 
-用途は、依存方向と境界の禁止を実行できる検査として検証する道具である。
-採用は、Rust は自作(root の tests/ に置く構造検査)、C# は ArchUnitNET、TypeScript は dependency-cruiser である。
-判断基準は、層の参照禁止・公開面・副作用の参照禁止を規則として書け、違反を CI で止められることである。
+用途は、依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である。
+採用は、Rust は root の tests/ に置く構造検査、C# は ArchUnitNET、TypeScript は依存方向に dependency-cruiser、構文の形に TypeScript compiler API を使う AST 構造検査である。
+判断基準は、層の参照禁止・公開面・副作用の参照禁止を規則として書け、違反をリポジトリの検証入口で止められることである。
+TypeScript compiler API が、call expression の symbol、callee expression の型、parameter の initializer、destructuring の binding element を取得できることを判断基準にする。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## 未使用コードの検出
@@ -127,17 +122,16 @@ Rust と C# は、コンパイラと lint の到達可能性に基づく検出�
 
 ## ドキュメントコメントの体裁検査
 
-用途は、ドキュメントコメントの最初の一行の体裁と節の網羅を検査する道具である。
-採用は、C# は companion の自作 analyzer である。
-判断基準は、既製の analyzer(StyleCop.Analyzers・Meziantou.Analyzer・SonarAnalyzer.CSharp)がいずれも保守停止か、この標準の体裁要求を実装していないことである。
-撤回条件は、判断基準を満たさなくなることであり、既製 analyzer の対応状況の変化を再評価のトリガーとする。
+用途は、ドキュメントコメントの存在、構文、宣言と tag の機械判定できる対応、最初の一行と句読点を検査する道具である。
+採用は、C# は Roslyn の documentation-comment analyzer、TypeScript は TypeScript compiler API と `@microsoft/tsdoc` を使う構造検査である。
+判断基準は、comment の存在と構文、宣言と tag の対応、最初の一行と句読点を一律に検査し、違反をリポジトリの検証入口で止められることである。
+撤回条件は、判断基準を満たさなくなることであり、Roslyn、TypeScript compiler API、`@microsoft/tsdoc` の互換性の変化を再評価のトリガーとする。
 
 ## SQL の parameter 対応検査
 
-用途は、SQL 中の変数と parameter の対応を DB を起動せずに検査する道具である。
+用途は、SQL 中の placeholder と parameter member の対応を DB を起動せずに補助検査する道具である。
 採用は、C# は DapperAOT である。
-判断基準は、ソース生成に基づくビルド時解析で、DB へ接続せずに対応を検査できることである。
-DapperAOT は DB のスキーマを参照しないため、列の型と nullable の対応は対象外であり、[languages の csharp/retention](../languages/csharp/retention.md) が定める SQL と DTO の照合テストで別に埋める。
+判断基準は、PostgreSQL では補助検査として basic match の診断を使い、列の型と nullable を含む最終判定を [languages の csharp/retention](../languages/csharp/retention.md) が定める SQL と DTO の照合テストで行うことである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## SBOM の既知脆弱性検査
