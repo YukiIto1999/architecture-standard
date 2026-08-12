@@ -9,19 +9,19 @@ principles の [data](../../principles/data.md) が定める事実の追記と�
 
 ### 要求
 永続化は sqlx で書き、`query!`・`query_as!` のコンパイル時検証を使う。
-CI は offline の検証データで検証し、フル ORM を使わない。
+リポジトリの検証入口は offline の検証データで検証し、フル ORM を使わない。
 schema の変更は sqlx-cli の `sqlx migrate` で、forward-only の migration として適用する。
 
 ### 根拠
 sqlx はコンパイル時に開発の DB へ接続し、SQL を DB 自身に検証させる。
 SQL を隠す抽象を入れないので、事実の形がそのまま型に写る。
-offline の検証データを CI で照合すれば、スキーマと SQL のずれがビルドで止まる。
+offline の検証データをリポジトリの検証入口で照合すれば、スキーマと SQL のずれがビルドで止まる。
 sqlx-cli の `sqlx migrate add` は既定で forward-only の migration ファイルを生成し、`sqlx migrate run` が適用済みの履歴を DB 側で追跡する。
 forward-only の規律そのものは [structure/core/infrastructure](../../structure/core/infrastructure.md) に従う。
 
 ### 完了条件
 永続化が sqlx で書かれ、`query!`・`query_as!` のコンパイル時検証が効いている。
-CI が、offline の検証データで検証している。
+リポジトリの検証入口が、offline の検証データで検証している。
 フル ORM を使っていない。
 schema の変更が、sqlx-cli の `sqlx migrate` で forward-only の migration として適用されている。
 
@@ -30,15 +30,19 @@ schema の変更が、sqlx-cli の `sqlx migrate` で forward-only の migration
 SQL の値を、文字列の連結で組み立てること。
 
 ### 行動
-SQL を `query!`・`query_as!` で書き、`cargo sqlx prepare` の検証データを CI で照合する。
+SQL を `query!`・`query_as!` で書き、`cargo sqlx prepare` の検証データをリポジトリの検証入口で照合する。
 schema の変更は `sqlx migrate add` で migration ファイルを作り、`sqlx migrate run` で適用する。
 
 ### 例
-```rust
-// SQL を文字列で組み立てる。型もスキーマも検査されず、連結は injection を招く
-let sql = format!("SELECT * FROM orders WHERE id = '{id}'");
+SQL を文字列で組み立てると型と schema が検査されず、値の連結は injection を招く。
 
-// query_as! のコンパイル時検証。DB がスキーマと型を検証し、値は parameter で渡る
+```rust
+let sql = format!("SELECT * FROM orders WHERE id = '{id}'");
+```
+
+`query_as!` なら schema と型をコンパイル時に検証し、値を parameter で渡せる。
+
+```rust
 let order = sqlx::query_as!(Order, "SELECT id, status, version FROM orders WHERE id = $1", id)
     .fetch_one(&pool).await?;
 ```
@@ -68,12 +72,12 @@ version の一意制約違反を、検出せずに上書きすること。
 挿入が一意制約違反で失敗したら、競合の Result に写す。
 
 ### 例
+競合を型付きの失敗にし、状態の遷移を event として追記する。`(order_id, version)` の一意制約違反を競合へ写す。
+
 ```rust
-// 競合を型付きの失敗として表す
 #[derive(thiserror::Error, Debug)]
 pub enum WriteError { #[error("conflict")] Conflict }
 
-// 遷移をイベントとして追記し、(order_id, version) の UNIQUE 制約で衝突を検出する
 let result = sqlx::query!(
     "INSERT INTO order_events (order_id, version, payload) VALUES ($1, $2, $3)",
     order_id, expected_version + 1, payload,
@@ -107,14 +111,14 @@ store が、Transaction の begin・commit を所有すること。
 composition で Transaction を begin し、store に渡して書かせ、composition で commit する。
 
 ### 例
+組立点が transaction を所有し、状態と event を同じ書き込みパスで確定する。store は受け取った transaction の中でだけ書く。
+
 ```rust
-// 組立点が Transaction を所有する。確定点は一つ
 let mut transaction = pool.begin().await?;
 order_store.insert(&mut transaction, &order).await?;
-outbox.add(&mut transaction, OrderPlaced::from(&order)).await?; // 状態とイベントを同一パスで
-transaction.commit().await?;                            // 唯一の確定点
+outbox.add(&mut transaction, OrderPlaced::from(&order)).await?;
+transaction.commit().await?;
 
-// store は受け取った transaction の中で書くだけ
 impl OrderStore {
     async fn insert(&self, transaction: &mut Transaction<'_, Postgres>, order: &Order) -> Result<()> {
         sqlx::query!(/* ... */).execute(&mut **transaction).await?; Ok(())

@@ -22,7 +22,7 @@ DapperAOT はソース生成に基づくビルド時解析で、DB へ接続せ�
 PostgreSQL は DapperAOT の既定の照合にとどまり、SQL Server 向けの高精度な構文解析を持たないため、名前対応の検査が部分的にとどまる。
 DapperAOT は DB のスキーマを参照しないため、列の型と nullable の対応は対象外であり、SQL と DTO を突き合わせる照合テストで別に埋める必要がある。
 単一のツールで名前・型・nullable の対応すべてを検証できないため、二つの手段を組み合わせて観測可能にする。
-grate は素の SQL を専用の CLI で適用し、up の script を一度だけ実行して、適用済み script の改変を既定で失敗にする。
+grate は素の SQL を CLI で適用し、履歴に記録された one-time script を再実行せず、適用後の改変を既定で失敗にする。
 migration を言語の class に包まないので、schema の変更が SQL のまま履歴に残る。
 forward-only の規律そのものは [structure/core/infrastructure](../../structure/core/infrastructure.md) に従う。
 
@@ -33,26 +33,33 @@ SQL の値が parameter で渡され、文字列の連結で組み立てられ�
 DapperAOT が有効になっており、SQL 中の変数と parameter の対応が検査されている。
 列の型と nullable の対応が、DB を起動しない照合テストで検証されている。
 schema の変更が、grate の up の one-time script として forward-only に適用されている。
+適用済み one-time script の改変が、grate の既定設定で失敗する。
 
 ### 禁止事項
 SQL の値を、文字列の連結や補間で組み立てること。
 変更追跡で、確定の時点を暗黙にすること。
 parameter の対応検証を、単一のツールで完結すると称すること。
 列の型と nullable の対応を、DB 起動を要する検証だけに委ねること。
+適用済み one-time script の改変を、警告または無視へ弱めること。
 
 ### 行動
 SQL を Dapper で書き、値を parameter で渡す。
 DapperAOT を導入し、名前対応の診断をエラーへ昇格する。
-schema の変更は up の one-time script として書き、grate の CLI を CI から非対話で実行する。
-SQL から抽出した列挙と DTO のプロパティを突き合わせる照合テストを書き、CI で実行する。
+schema の変更は up の one-time script として書き、grate の CLI をリポジトリの検証入口から非対話で実行する。
+適用済み one-time script の改変を失敗にする既定設定を維持する。
+SQL から抽出した列挙と DTO のプロパティを突き合わせる照合テストを書き、リポジトリの検証入口で実行する。
 
 ### 例
+値を SQL 文字列へ連結すると、値が SQL として解釈される。
+
 ```csharp
-// 文字列の連結。値が SQL として解釈され injection を招く
 var sql = $"SELECT * FROM users WHERE email = '{email}'";
 var user = connection.QueryFirstOrDefault<User>(sql);
+```
 
-// parameter で渡す。値は SQL として解釈されない
+parameter で渡せば、値は SQL として解釈されない。
+
+```csharp
 var user = connection.QueryFirstOrDefault<User>(
     "SELECT * FROM users WHERE email = @Email", new { Email = email });
 ```
@@ -83,11 +90,13 @@ version の一意制約違反を、検出せずに上書きすること。
 挿入が一意制約違反で失敗したら、競合の Result に写す。
 
 ### 例
-```csharp
-// 競合を型付きの失敗として表す閉じた階層
-public abstract record WriteError { private WriteError() { } public sealed record Conflict : WriteError; }
+競合は閉じた型付き失敗で表す。遷移をイベントとして追記し、`(OrderId, Version)` の一意制約違反を競合へ写す。
 
-// 遷移をイベントとして追記し、(OrderId, Version) の一意制約で衝突を検出する
+```csharp
+public abstract record WriteError { private WriteError() { } public sealed record Conflict : WriteError; }
+```
+
+```csharp
 try
 {
     await connection.ExecuteAsync(
@@ -97,7 +106,7 @@ try
 }
 catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.UniqueViolation)
 {
-    return Result.Failure<Order, WriteError>(new WriteError.Conflict()); // UNIQUE(order_id, version) 違反を競合に写す
+    return Result.Failure<Order, WriteError>(new WriteError.Conflict());
 }
 ```
 
@@ -123,13 +132,14 @@ store が、transaction の begin・commit を所有すること。
 composition で transaction を begin し、store に渡して書かせ、composition で commit する。
 
 ### 例
+組立点が transaction を所有し、状態とイベントを同じ経路で書いた後に一度だけ確定する。
+
 ```csharp
-// composition が transaction を所有する。確定点は一つ
 await using var connection = await _dataSource.OpenConnectionAsync();
 await using var transaction = await connection.BeginTransactionAsync();
 await orderStore.InsertAsync(connection, transaction, order);
-await outbox.AddAsync(connection, transaction, new OrderPlaced(order.Id)); // 状態とイベントを同一パスで
-await transaction.CommitAsync();                                       // 唯一の確定点
+await outbox.AddAsync(connection, transaction, new OrderPlaced(order.Id));
+await transaction.CommitAsync();
 ```
 
 ## 冪等な要求の記録
