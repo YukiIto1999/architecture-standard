@@ -31,11 +31,15 @@ constructor が非公開で、構築が検証付きの static factory に限ら�
 `Create` は検証の成否を Result で返し、不正なら成功を返さない。
 
 ### 例
-```csharp
-// 公開 ctor で、検証を経ない値オブジェクトを直接生成できる
-public record Address(string Street, string ZipCode);
+公開 constructor では未検証の値を直接生成できる。
 
-// 非公開 ctor と検証付き factory に一点化する
+```csharp
+public record Address(string Street, string ZipCode);
+```
+
+constructor を非公開にし、生成を検証付き factory へ一点化する。
+
+```csharp
 public sealed record Address
 {
     public string Street { get; init; }
@@ -70,7 +74,7 @@ nullable reference types は、不在を型に現し、null の取り違えを�
 record は、通常の constructor を private にしても外部 assembly からの派生を型だけでは防げない。
 非 sealed な record が explicit な copy constructor を宣言する場合、その accessibility は public または protected でなければならず、private や private protected は CS8878 で拒否される。
 コンパイラが合成する copy constructor も常に protected になり、他の assembly の派生型がそれを `base(original)` で呼べば、閉じたはずの階層の外に新しいバリアントを作れてしまう。
-この経路は型では塞げないので、階層の外にある派生型の有無を ArchUnitNET の構造検査で検出し、CI で気づけるようにする。
+この経路は型では塞げないので、階層の外にある派生型の有無を ArchUnitNET の構造検査で検出し、リポジトリの検証入口で気づけるようにする。
 
 ### 完了条件
 場合分けが、外部の派生を封じた sealed record の階層で表されている。
@@ -90,18 +94,24 @@ protected な copy constructor を経由した階層の外からの派生の防�
 階層の外からの派生の有無を、ArchUnitNET の構造検査で確かめる。
 
 ### 例
-```csharp
-// discard アームで実行時に投げる。バリアントの追加を忘れても実行時まで気づけない
-var label = account switch { Account.Iban iban => iban.Value, _ => throw new ArgumentOutOfRangeException() };
+破棄アームで送出する形では、バリアントの追加漏れを実行時まで検出できない。
 
-// 派生を内部に閉じ、default も discard も無い網羅 switch
+```csharp
+var label = account switch { Account.Iban iban => iban.Value, _ => throw new ArgumentOutOfRangeException() };
+```
+
+派生を内部に閉じ、default も破棄アームもない switch にする。suppressor は閉じた階層の CS8509 だけを抑止するため、バリアントを足すと未処理を検出できる。
+
+```csharp
 public abstract record Account
 {
     private Account() { }
     public sealed record Iban(string Value) : Account;
     public sealed record Swift(string Value) : Account;
 }
-// suppressor が閉じた階層の CS8509 を抑止する。バリアントを足すと未処理が警告される
+```
+
+```csharp
 var label = account switch { Account.Iban iban => iban.Value, Account.Swift swift => swift.Value };
 ```
 
@@ -135,11 +145,15 @@ Template Method で派生に隙間を残すと、型の集合が外から開き�
 共有したい振る舞いは、型を部品として持ち、委譲で呼ぶ。
 
 ### 例
-```csharp
-// 振る舞いの再利用のための継承。基底の変更が全派生へ波及する
-public abstract class ReportBase { protected abstract void Render(); public void Run() => Render(); }
+振る舞いの再利用に継承を使うと、基底の変更がすべての派生へ波及する。
 
-// 継承は判別共用体に限り、振る舞いは合成で持つ。型は sealed
+```csharp
+public abstract class ReportBase { protected abstract void Render(); public void Run() => Render(); }
+```
+
+振る舞いは合成し、型を `sealed` にする。
+
+```csharp
 public sealed class MonthlyReport(IReportRenderer renderer) { public void Run() => renderer.Render(); }
 ```
 
@@ -167,12 +181,16 @@ with 式は元を複製して指定したプロパティだけ変えた新しい
 プロパティを init に限り、単純な値の変更は with 式で、不変条件のある値オブジェクトの変更は検証付きの factory で新しい値を作る。
 
 ### 例
-```csharp
-// with は浅い複製で検証を経ない。値オブジェクトの不変条件を迂回しうる
-var moved = address with { ZipCode = "00000" };
+値オブジェクトへの `with` は浅い複製であり、不変条件の検証を迂回できる。
 
-// 値オブジェクトの変更は検証付き factory を通す
-Result<Address, AddressFailure> moved = address.WithZipCode("00000"); // 内部で Create を呼び検証する
+```csharp
+var moved = address with { ZipCode = "00000" };
+```
+
+変更も検証付き factory を通す。
+
+```csharp
+Result<Address, AddressFailure> moved = address.WithZipCode("00000");
 ```
 
 ## 意味と単位を型で区別する
@@ -196,15 +214,20 @@ Result<Address, AddressFailure> moved = address.WithZipCode("00000"); // 内部�
 等価の比較は record が持つプロパティ単位の値等価で足り、別の基底を持ち出さない。
 
 ### 例
+重さと金額をどちらも `decimal` で表すと、取り違えを検出できない。
+
 ```csharp
-// 重さと金額が同じ decimal。取り違えても気づけない
 decimal weight; decimal price;
-// 別の値オブジェクトに分け、取り違えをコンパイルで弾く
-public sealed record Weight { /* Create で検証 */ }
-public sealed record Money { /* Create で検証 */ }
 ```
 
-## companion を libs の機構として netstandard2.0 プロジェクトに分ける
+別の値オブジェクトに分けて型エラーにする。
+
+```csharp
+public sealed record Weight(decimal Value);
+public sealed record Money(decimal Value);
+```
+
+## 検証と生成を libs の analyzer project に分ける
 
 ### 要求
 値オブジェクトの生成、閉じた階層の網羅の suppressor、効果の規律の analyzer は、libs の機構として core と別の netstandard2.0 のプロジェクトに置く。
@@ -224,10 +247,10 @@ Roslyn は analyzer と source generator に netstandard2.0 を課し、生成�
 ツールの dll を、実行時の参照に含めること。
 
 ### 行動
-companion を libs 配下の別の netstandard2.0 プロジェクトにし、各プロジェクトから `OutputItemType="Analyzer"`・`ReferenceOutputAssembly="false"` で参照する。
+検証と生成を libs 配下の別の netstandard2.0 analyzer project にし、各プロジェクトから `OutputItemType="Analyzer"`・`ReferenceOutputAssembly="false"` で参照する。
 配布するときは `analyzers/dotnet/cs` に詰め、`IncludeBuildOutput=false` で実行時の出力に含めない。
 
 ## 参照
-業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md)、合成と継承の境界は [separation](../../principles/separation.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、companion の置き場は [structure/libs/layout](../../structure/libs/layout.md) に従う。
+業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md)、合成と継承の境界は [separation](../../principles/separation.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、analyzer project の置き場は [structure/libs/layout](../../structure/libs/layout.md) に従う。
 命名と整形、ドキュメントコメントの体裁は [conventions](./conventions.md) に従う。
 エラーモデルと結果の型は [connection](./connection.md)、境界での外部表現の変換は [translation](./translation.md) に従う。

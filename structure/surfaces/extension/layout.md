@@ -2,7 +2,7 @@
 
 extension は、拡張の surface である。
 host は、runtimes の ide が担う。
-host の機能を core の操作へ写像する。
+host の機能を remote API または埋め込み protocol の operation へ写像する。
 host に求める能力を port として定義する。
 host 非依存で、host の分岐を持たない。
 UI の体験は [concerns/experience](../../../concerns/experience.md) に従う。
@@ -13,7 +13,7 @@ extension は [skeleton](../../skeleton.md) の依存と命名に従う。
 ```
 extension/
 ├─ features/
-│  └─ <feature>     core の操作を呼ぶ拡張の機能。
+│  └─ <feature>     remote API または埋め込み protocol を呼ぶ拡張の機能。
 ├─ shared/          host 非依存の primitive と host port。
 └─ composition      core への接続・host port の注入・機能の登録。
 ```
@@ -50,7 +50,7 @@ extension 自身は、[contracts/generated](../../contracts/generated.md) の型
 local の関心は、core を埋め込んだ埋め込み surface へ、[contracts/protocol](../../contracts/protocol.md) の言語非依存の protocol で接続する。
 local の接続は、host が要求する場合に限って使う。
 server の API を、この接続で置き換えない。
-extension は、core の操作を呼び、業務判断を持たない。
+extension は、注入された client または protocol の operation を呼び、業務判断を持たない。
 接続の依存は [skeleton](../../skeleton.md) に従う。
 接続の機構は [languages](../../../languages/) が定める。
 

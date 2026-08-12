@@ -47,15 +47,19 @@ ID・金額・数量・日付範囲・状態・権限・単位付きの値が、
 プリミティブに見える値が、複数の要素や判断を伴い始めたら、専用の型へ昇格させる合図として扱う。
 
 ### 例
-```ts
-// 裸の string は取り違えても型検査を通る。検証は使う各所に散る
-function register(email: string, zip: string, country: string) { /* ... */ }
-register(zip, email, country);   // 引数を入れ替えてもコンパイルが通る
+裸の `string` は取り違えても型検査を通り、検証も使う各所に散る。
 
-// 専用の型に封じ、生成時に一度だけ検証し、等価性は値で定める
+```ts
+function register(email: string, zip: string, country: string) { /* ... */ }
+register(zip, email, country);
+```
+
+業務の意味を専用の型に封じ、構築子を隠して生成時に一度だけ検証する。等価性は値で定める。
+
+```ts
 class EmailAddress {
-  private constructor(readonly value: string) {}         // 構築子を隠す
-  static parse(value: string): EmailAddress | Error {     // 検証を生成時に寄せる
+  private constructor(readonly value: string) {}
+  static parse(value: string): EmailAddress | Error {
     return /^\S+@\S+\.\S+$/.test(value) ? new EmailAddress(value) : new Error("invalid email");
   }
   equals(other: EmailAddress): boolean { return this.value === other.value; }
@@ -63,11 +67,15 @@ class EmailAddress {
 function register(email: EmailAddress, zip: ZipCode, country: CountryCode) { /* ... */ }
 ```
 
-```ts
-// 列挙に名前は付いたが、キャンセル可否の判断が使う側に散らばる
-if (order.status === OrderStatus.Paid || order.status === OrderStatus.Preparing) { /* ... */ }
+列挙に名前を付けるだけでは、キャンセル可否の判断が使う側に散る。
 
-// 判断を型の操作に封じる。可否の規則の変更が型の一箇所に収まる
+```ts
+if (order.status === OrderStatus.Paid || order.status === OrderStatus.Preparing) { /* ... */ }
+```
+
+判断を型の操作に封じれば、可否の規則の変更が型の一箇所に収まる。
+
+```ts
 if (order.canCancel()) { /* ... */ }
 ```
 
@@ -111,28 +119,31 @@ Rust では newtype と非公開フィールド、C# では record と検証付�
 場合を扱う処理を全場合の網羅で書き、既定の分岐に逃がさない。
 
 ### 例
+すべての状態の項目を一つの型に任意で持たせると、接続中の `sessionId` や切断済みの `lastPing` のような不正な組み合わせを作れる。
+
 ```ts
-// 接続中なのに sessionId がある、切断済みなのに lastPing がある、といった不正状態を作れる
 interface Connection {
   state: "connecting" | "connected" | "disconnected";
   sessionId?: string; lastPing?: [Date, number]; whenDisconnected?: Date;
 }
+```
 
-// 各状態にその状態固有のデータだけを束ねる。ありえない組み合わせは型として存在しない
+各状態にその状態固有のデータだけを束ねれば、ありえない組み合わせは型として存在しない。
+
+```ts
 type Connection =
   | { state: "connecting"; whenInitiated: Date }
   | { state: "connected"; sessionId: string; lastPing?: [Date, number] }
   | { state: "disconnected"; whenDisconnected: Date };
 ```
 
-「連絡先は email か住所のいずれかを持つ」規則は、両方任意でなく、取りうる場合を列挙する。
+「連絡先は email か住所のいずれかを持つ」規則は、両方を任意にせず、取りうる場合を列挙する。どちらも無い状態は型として作れない。
 
 ```ts
 type ContactInfo =
   | { kind: "emailOnly"; email: EmailAddress }
   | { kind: "postalOnly"; postal: Address }
   | { kind: "emailAndPostal"; email: EmailAddress; postal: Address };
-// 「どちらも無い」は型として作れない
 ```
 
 Rust ではデータを持つ enum、C# では sealed な階層型とパターンマッチで、同じ排他表現ができる。
@@ -168,19 +179,23 @@ Rust ではデータを持つ enum、C# では sealed な階層型とパター�
 内側の関数の引数を、検証済みの型に変える。
 
 ### 例
-```ts
-// 真偽を返す検証。型は string のまま残り、内側で何度も検査し直す
-function isValidEmail(value: string): boolean { /* ... */ }
-if (isValidEmail(input)) { send(input); }   // input は依然 string
+真偽値を返す検証では型が `string` のまま残り、内側で何度も検査し直すことになる。
 
-// 検証済みの型へ変換する。以後 EmailAddress は妥当だと型が保証する
+```ts
+function isValidEmail(value: string): boolean { /* ... */ }
+if (isValidEmail(input)) { send(input); }
+```
+
+検証済みの `EmailAddress` へ変換すれば、以後の処理は妥当性を型によって前提にできる。
+
+```ts
 function parseEmail(value: string): EmailAddress | Error { /* ... */ }
 const email = parseEmail(input);
 if (email instanceof Error) return reject(email);
-send(email);   // send(email: EmailAddress)
+send(email);
 ```
 
-Rust では Result 型、C# では例外か検証結果を表す型で、同じ失敗の表現ができる。
+Rust と C# では Result 型で、検証の失敗を値として返す。
 失敗しうる変換の連なりの形は、concerns の [effect](../concerns/effect.md) が具象化する。
 
 ## 論理設計と物理設計を分ける
@@ -188,11 +203,13 @@ Rust では Result 型、C# では例外か検証結果を表す型で、同じ�
 ### 要求
 業務の意味を表す論理モデルと、性能・格納・通信のための物理表現を、別の構造として扱う。
 両者の間に変換の境界を置き、依存は物理から論理への一方向に保つ。
+境界のデータ変換は、読み書きに必要な双方向を持てるようにする。
 
 ### 根拠
 論理と物理を混同すると、格納形式や転送形式の都合が業務概念を歪める。
 ドメインモデルは振る舞いと不変条件を表し、永続化モデルは格納構造を表す。
 両者を分ければ、業務の意味と性能の都合を独立に変えられる。
+一方向に保つ対象は依存であり、書き込み時に論理データを物理表現へ変換しても、論理モデルが物理表現を参照しなければ依存は逆転しない。
 データは、メモリ上の表現と、バイト列としての符号化を、別の関心事として扱う。
 同じ論理データでも、符号化形式が変われば全く違うバイト表現になる。
 データはコードより長く生きるため、表現の進化は符号化の層の責務にする。
@@ -204,31 +221,37 @@ Rust では Result 型、C# では例外か検証結果を表す型で、同じ�
 物理モデルが、性能・格納・通信の制約への最適化として説明できる。
 ドメインモデルが、永続化方式・wire 形式・キャッシュ構造を知らない。
 両者の変換が、両者の間の境界に置かれている。
+物理側が論理側へ依存し、論理側が物理側を参照していない。
+境界が、読み書きに必要な向きへデータを変換している。
 
 ### 禁止事項
 DB の物理構造・索引・wire 形式・キャッシュ構造を、そのまま業務モデルとして扱うこと。
 性能最適化を理由に、論理概念を曖昧にすること。
 ドメインモデルに、永続化や転送の都合を持ち込むこと。
+データ変換の向きと依存の向きを同一視し、書き込みに必要な変換を禁じること。
 
 ### 行動
 対象の構造が、論理概念か物理表現かを判定する。
 混同していれば、論理のモデルと物理の表現を分け、変換境界を明示する。
-変換は物理から論理への一方向にし、論理が物理を参照しないようにする。
+物理側だけが論理側を参照するよう依存を揃える。
+読み込みでは物理表現を論理モデルへ、書き込みでは論理モデルを物理表現へ、境界で変換する。
 
 ### 例
-```ts
-// 避けたい形: DB の列がそのままドメインに現れる
-class Order { id: string; created_at: string; status_code: number }
+DB の列がそのままドメインに現れると、業務の意味と格納の都合が混ざる。
 
-// ドメイン(論理): 業務の意味と不変条件だけ。永続化を知らない
+```ts
+class Order { id: string; created_at: string; status_code: number }
+```
+
+論理側の `Order` は業務の意味と不変条件だけを持ち、物理側の `OrderRow` がテーブルとカラムに対応する。物理側から論理側に依存し、境界で読み書きの両方向へ変換するため、`Order` は `OrderRow` を知らない。
+
+```ts
 class Order {
   constructor(readonly id: OrderId, readonly lines: NonEmpty<OrderLine>) {}
 }
 
-// 永続化(物理): テーブルとカラムに対応する。格納と性能の都合
 interface OrderRow { id: string; created_at: string; status_code: number }
 
-// 変換境界: 物理から論理への一方向。Order は OrderRow を知らない
 class OrderRepository {
   private toDomain(row: OrderRow): Order { /* ... */ }
   private toRow(order: Order): OrderRow { /* ... */ }

@@ -41,10 +41,13 @@ principles の [construction](../principles/construction.md) が定める不変�
 判断を純粋な関数へ切り出し、決定を値で返させ、入出力は殻へ移す。
 
 ### 例
+
+読み取りと書き込みを殻へ置き、核は受け取った値から判断だけを返す。
+
 ```
-// 殻(Read)      existing = read(input)
-// 核(Calculate)  decision = decide(existing, input)   // 純粋。値を返すだけ。効果で包まない
-// 殻(Write)      write(decision)
+existing = read(input)
+decision = decide(existing, input)
+write(decision)
 ```
 
 ## 効果を遅延した記述にして端で実行する
@@ -72,12 +75,18 @@ principles の [construction](../principles/construction.md) が定める不変�
 記述の実行を、入口の組立点に集める。
 
 ### 例
+
+値を生成した時点で処理を実行すると、処理の合成も差し替えもできない。
+
 ```
-// 生成で実行され、合成も差し替えもできない
-const user = fetchUser(id)            // すぐ走る
-// 遅延した記述。実行は境界の run でだけ
-const program = fetchUser(id)         // まだ走らない。記述
-run(program)                          // 境界でだけ実行する
+const user = fetchUser(id)
+```
+
+処理を遅延した記述として構築し、境界の `run` でだけ実行する。
+
+```
+const program = fetchUser(id)
+run(program)
 ```
 
 ## 要求と想定内失敗を型に現す
@@ -109,10 +118,16 @@ run(program)                          // 境界でだけ実行する
 本番とテストで、要求する依存の実装を差し替える。
 
 ### 例
+
+依存と失敗を型に出さないと、処理が何を要求するのかシグネチャから読めない。
+
 ```
-// 依存も失敗も型に出ない。何を要求するか読めない
-register(command): UserId                    // 隠れて時刻と保存に触れ、失敗で送出する
-// 要求する依存と失敗と値が型に出る
+register(command): UserId
+```
+
+要求する依存、失敗、成功値を型へ現す。
+
+```
 register(command): Effect<requires {Clock, Users}, RegisterFailure, UserId>
 ```
 
@@ -148,11 +163,17 @@ register(command): Effect<requires {Clock, Users}, RegisterFailure, UserId>
 境界で、内部のエラーを標準の形へ写し、内部の詳細を落とす。
 
 ### 例
+
+終了は、成功、型で網羅した想定内の失敗、回復不能な欠陥、取り消しに分ける。欠陥と取り消しを想定内の失敗へ混ぜない。
+
 ```
-// 終了を4つに分ける。欠陥と取り消しは失敗に混ぜない
-// 成功 | 想定内の失敗(網羅した直和) | 欠陥(回復不能) | 取り消し
-// 境界で外部公開の形へ写す。内部の詳細は含めない
-toProblemDetails(failure)   // 境界の標準形へ写す。形式は contracts の binding が定める
+成功 | 想定内の失敗(網羅した直和) | 欠陥(回復不能) | 取り消し
+```
+
+外部へ公開する形式への変換は境界で行い、内部の詳細を含めない。形式は contracts の binding が定める。
+
+```
+toProblemDetails(failure)
 ```
 
 ## 失敗と欠陥を値の出所で判別する
@@ -186,12 +207,17 @@ toProblemDetails(failure)   // 境界の標準形へ写す。形式は contracts
 境界を通った後に見つかった値の破損や、自ら直列化し自ら復元する処理の不一致は、欠陥として速やかに終了させる。
 
 ### 例
-```
-// 境界の外: 外部入力の不正 → 想定内の失敗
-parseOrder(input: unknown): Result<Order, ValidationFailure>
 
-// 境界の内: 検証済みで保存した値の破損 → 欠陥
-loadOrder(id: OrderId): Order   // 読めなければ型の保証が破れた欠陥として終了する
+境界の外から届いた不正な入力は、想定内の失敗として扱う。
+
+```
+parseOrder(input: unknown): Result<Order, ValidationFailure>
+```
+
+境界の内側で検証済みの値を読み出せない場合は、型の保証が破れた欠陥として終了する。
+
+```
+loadOrder(id: OrderId): Order
 ```
 
 ## 取り消しと資源を言語の機構に委ねる
@@ -220,10 +246,11 @@ loadOrder(id: OrderId): Order   // 読めなければ型の保証が破れた欠
 資源を、取得と使用と解放を閉じた一つの効果として扱う。
 
 ### 例
+
+取得、使用、解放を一つの効果に閉じ、失敗や取り消しでも解放する。取り消しは計算全体へ伝え、処理は言語の機構に委ねる。
+
 ```
-// 取得・使用・解放を一つの効果に閉じる。失敗や取り消しでも解放する
 withResource(acquire, use, release)
-// 取り消しは計算全体へ通し、言語の機構へ委ねる
 ```
 
 ## 合成して部分代替できるようにする
@@ -253,8 +280,10 @@ withResource(acquire, use, release)
 途中の失敗・欠陥・取り消しは後段へ短絡させ、起点の読みと終点の書きを殻に置く。
 
 ### 例
+
+各段を純粋な `Result` の連なりとして構成する。失敗は後段を短絡して伝播し、読み取りと書き込みの効果は殻へ置く。
+
 ```
-// 各段は純粋な Result の連なり。失敗は後段を短絡して伝播し、読みと書きの効果は殻に置く
 validate(input) |> flatMap(decide) |> map(toEvents)
 ```
 

@@ -41,20 +41,24 @@ DTO に `[JsonExtensionData]` の捕捉プロパティを持たせ、非空な�
 値オブジェクトの factory で詰め替え、`required` で境界を締める。
 
 ### 例
-```csharp
-// ドメインのエンティティに直接デシリアライズ。検証なしの値が内側へ
-var user = JsonSerializer.Deserialize<User>(json);
+外部入力をドメインエンティティへ直接デシリアライズすると、未検証の値が内側へ入る。
 
-// 境界の DTO record に受け、factory でドメイン型へ詰め替える。未知は弾かず捕捉する
-public sealed record CreateUserDto
+```csharp
+var user = JsonSerializer.Deserialize<User>(json);
+```
+
+境界の DTO record で受け、factory が検証したドメイン型へ写す。欠落は拒否し、未知のキーは捨てずに捕捉する。
+
+```csharp
+public sealed record CreateUserRequest
 {
-    [JsonPropertyName("email")] public required string Email { get; init; }  // 欠落を弾く
-    [JsonExtensionData] public IDictionary<string, JsonElement>? Extra { get; init; } // 未知のキーを捕捉する
+    [JsonPropertyName("email")] public required string Email { get; init; }
+    [JsonExtensionData] public IDictionary<string, JsonElement>? Extra { get; init; }
 }
-Result<User> ToDomain(CreateUserDto dto)
+Result<User> ToDomain(CreateUserRequest request)
 {
-    if (dto.Extra is { Count: > 0 }) logger.LogWarning("未知のフィールドを検知した: {Keys}", dto.Extra.Keys);
-    return Email.Create(dto.Email).Map(email => new User(email));        // factory が検証
+    if (request.Extra is { Count: > 0 }) logger.LogWarning("未知のフィールドを検知した: {Keys}", request.Extra.Keys);
+    return Email.Create(request.Email).Map(email => new User(email));
 }
 ```
 

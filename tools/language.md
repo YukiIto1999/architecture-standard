@@ -1,22 +1,13 @@
 # language
 
-language は、言語の選定を定める。
+language は、標準が実現を定める言語と基盤の版を定める。
 [README](./README.md) の選定の共通基準に従う。
 
-## 対象言語の集合
+## 対象言語
 
-用途は、標準が languages 層で実現を定める言語の集合である。
-採用は、Rust・C#・TypeScript である。
-各言語の役割と基盤の版は、[languages/README](../languages/README.md) の言語と役割の表を正本とする。
-判断基準は、core・surface・host の全役割を、この集合で単一に覆えることである。
-撤回条件は、判断基準を満たさなくなることであり、役割の追加と基盤の版の停滞を再評価のトリガーとする。
+用途は、標準が languages 層で実現を定める言語と基盤版を固定することである。
+採用は、Rust edition 2024、.NET 10 と C# 14、TypeScript 6.0 である。
+判断基準は、言語ごとの実現規律と検証方法を標準本文で完結して定められることである。
+撤回条件は、判断基準を満たさなくなることであり、基盤版の保守終了または実現規律の欠落を再評価のトリガーとする。
 
-## core 言語の選定観点
-
-project は、core の言語を一つ選び、選定の理由と単一採用を project の ADR に記録する。
-選定の基準は、[languages/README](../languages/README.md) の言語と役割の表の役割の差である。
-extension が言語サービスを要する構成では、Rust を選ぶ。
-
-## 対象外言語の縮退経路
-
-対象に無い言語を使う project は、principles・concerns・structure に従い、languages 相当の定めを project の ADR で定める。
+この標準は、project が使う言語を選定しない。実装単位と言語の対応は適用時の入力として扱い、使用する各言語の規律を適用する。

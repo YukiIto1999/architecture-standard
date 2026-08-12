@@ -8,17 +8,18 @@
 ## 順序
 
 1. project の関心を列挙し、[structure/skeleton](../structure/skeleton.md) の条件で root と surface の境界集合を決める。
-2. core の言語を一つ選ぶ([tools/language](../tools/language.md) の選定と ADR への記録に従う)。
+2. project の実装単位と言語の対応を入力として確定し、[tools/language](../tools/language.md) の対象言語に照合する。
 3. [languages](../languages/) の7つの実現軸と全域規律 conventions で、言語の機構を固定する。
-4. [structure/tests](../structure/tests/layout.md) の機械検証を、skeleton の依存方向表を駆動元にして設置する。
-5. 骨格だけの最薄の一線を、タスク実行の正本と段階実行で CI の緑にする([tools/README](../tools/README.md) のタスク実行と [structure/tests](../structure/tests/layout.md) の段階実行に従う)。
+4. 必要な共有ライブラリを、[tools/build](../tools/build.md) が定める取得機構で target の `libs/<mechanism>` へ初期化し、target が記録した exact commit のコードと `spec.md` を materialize する。
+5. 骨格だけの最薄の一線を、タスク実行の正本と段階実行で検証入口の合格状態にする([tools/README](../tools/README.md) のタスク実行と [structure/tests](../structure/tests/layout.md) の段階実行に従う)。
 6. 置いた境界ごとに、対応する layout に従って内部を組む。
 7. 各境界の実装は、[implementation](./implementation.md) の順序で進める。
 
 ## 確認点
 
-内部を組む前に、[structure/skeleton](../structure/skeleton.md) の依存方向表を駆動元とする機械検証が動いていることを確かめる。
+project の実装単位と言語の対応が入力として明示され、共通の skeleton と使用する各言語の規律が適用されていることを確かめる。
 機構の固定の時点で、採用する道具が [tools](../tools/) の採用と一致していることを確かめる。
+共有ライブラリの初期化後に、target が記録した origin、path、exact commit と、`libs/<mechanism>` に materialize された commit および `spec.md` が一致していることを確かめる。
 
 ## 範囲外
 

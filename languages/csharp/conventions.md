@@ -8,52 +8,80 @@ principles の [comment](../../principles/comment.md) が定めるドキュメ�
 ## 命名と整形を道具に委ねる
 
 ### 要求
-命名と整形は .NET の命名規約と CSharpier の既定に従い、手で揃えない。
+production project の命名は、.NET の命名規約に従う。
+test project では、test attribute が付いた entry method だけを .NET の命名規約の例外とし、検証する仕様を文で表す英語の snake_case にする。
+test project の test entry method 以外の命名は、.NET の命名規約に従う。
 ファイル名は、そのファイルの変更単位の型の名前に PascalCase で一致させる。
+整形は、CSharpier の既定に従う。
 
 ### 根拠
 [verification](../../principles/verification.md) が定める、コードスタイルの細則は人の合意でなく単一の formatter と linter に委ねるという要求に、CSharpier で応える。
 ファイル名を変更単位の型に PascalCase で一致させると、型を名前で探すときにファイルが一意に定まる。
+test entry の名前は API でなく仕様の見出しなので、文として読める snake_case が失敗一覧の走査を速くする。
+test helper まで snake_case にすると、同じ役割の method の命名が production と test で分かれる。
 
 ### 完了条件
-命名が、.NET の命名規約に従っている。
+production project の命名が、.NET の命名規約に従っている。
+test project で test attribute が付いた entry method の名前が、仕様を表す英語の snake_case の文になっている。
+test project の test entry method 以外の命名が、.NET の命名規約に従っている。
 ファイル名が、変更単位の型の名前に PascalCase で一致している。
 整形が、CSharpier の既定で一意に決まっている。
 
 ### 禁止事項
 整形を、手で揃えること。
 ファイル名を、変更単位の型と違う名前や、kebab-case などの別の表記にすること。
+test entry に、production project と同じ method 命名規則を適用すること。
+test project の entry 以外の method を、snake_case にすること。
 
 ### 行動
-.NET の命名規約に従い、CSharpier を既定の設定で適用する。
+production project では、SonarAnalyzer.CSharp の命名規則を適用する。
+test project では、SonarAnalyzer.CSharp の命名規則を適用し、test entry と競合する method 命名規則だけを抑止する。
+test project では、命名 analyzer で test attribute が付いた entry method を snake_case として検査する。
+test project では、命名 analyzer で entry 以外の method を .NET の命名規約として検査する。
+CSharpier を、既定の設定で適用する。
 ファイル名を、変更単位の型の PascalCase の名前に一致させる。
 
 ## ドキュメントコメントを書く
 
 ### 要求
 宣言した型とメンバに XML ドキュメントコメントを付ける。
-対象が持つ param・typeparam・returns・value・exception を省かない。
+実効的な可視境界を基準に、境界外の利用側へ公開される宣言は外部契約を、同一境界内だけで利用できる宣言は内部契約を述べる。
+対象が持つ param・typeparam・returns・value を省かない。
+当該宣言内の直接の throw など、構文と semantic model で判定できる欠陥を exception に記す。
+呼び出し先から伝播して当該宣言の契約になる欠陥を、公開範囲を問わずレビューで特定し、exception に記す。
 想定された失敗は returns の Result の型に現し、exception は欠陥に限る。
 summary の最初の一行は、名前の直訳でなく利用者が用途を判断できる目的を、体言止めで一行に書き、句読点を使わない。
 
 ### 根拠
 XML ドキュメントコメントは、利用者が実装を読まずに、IntelliSense と生成文書から用途と契約を読めるようにする。
+可視性に応じて外部契約と内部契約を分ければ、呼び出し側が依存してよい保証の範囲が明らかになる。
 param は、コンパイラが引数との対応を検証し、記述漏れを警告する。
+直接の throw などは構文と semantic model で対応する exception を検査できる。
+呼び出し先から伝播する欠陥が当該宣言の契約に含まれるかは意味の判断を要するため、analyzer だけでは網羅できない。
 exception は、戻り値に現れない欠陥としての送出を宣言し、想定された失敗は returns の Result の型に現す。
 最初の一行は検索や一覧で要素の目的を示す要約として再利用されるので、体言止めと句読点の排除は短い断片を一覧で走査しやすくする。
 
 ### 完了条件
 宣言した型とメンバに、用途と契約を述べる XML ドキュメントコメントがある。
-対象が持つ param・typeparam・returns・value・exception が、網羅されている。
+境界外の利用側へ公開される宣言が外部契約を、同一境界内だけで利用できる宣言が内部契約を述べている。
+対象が持つ param・typeparam・returns・value が、網羅されている。
+当該宣言内で機械判定できる欠陥が、exception に記されている。
+呼び出し先から伝播して当該宣言の契約になる欠陥が、公開範囲を問わずレビューで特定され exception に記されている。
 summary の最初の一行が、名前の直訳でなく利用者が用途を判断できる目的を、句読点なしの体言止めで一行に示している。
 
 ### 禁止事項
 宣言した型やメンバの契約を、未記述で放置すること。
-対象が持つ param・typeparam・returns・value・exception を、省くこと。
+境界外の利用側へ公開される宣言の契約を、同一境界内だけに通用する内部契約として書くこと。
+対象が持つ param・typeparam・returns・value を、省くこと。
+当該宣言内で機械判定できる欠陥を、exception から省くこと。
+呼び出し先から伝播する欠陥まで、analyzer で網羅できるとみなすこと。
 summary の最初の一行を、句読点や動詞終わりの完結した文で書くこと。
 
 ### 行動
-宣言ごとに目的の summary を一行で書き、引数・型引数・戻り値・プロパティ値・送出する例外のうち該当するものをすべて記す。
+宣言ごとに目的の summary を一行で書き、引数・型引数・戻り値・プロパティ値を記す。
+実効的な可視境界を確かめ、境界外へ公開される宣言は外部の利用側が、同一境界内だけの宣言は内部の呼び出し側が依存してよい保証を書く。
+当該宣言内で機械判定できる欠陥を、exception に記す。
+全ての宣言で呼び出し先から伝播する欠陥をレビューし、当該宣言の契約に含まれる欠陥を exception に記す。
 summary の最初の一行は、名前の直訳でなく利用者が用途を判断できる目的を、句読点のない体言止めで書く。
 
 ### 例
@@ -89,16 +117,20 @@ public Result<Order, OrderError> Place(ValidCart cart) { /* ... */ }
 変換を担う型は `<対象>Mapper` の静的クラスにする。
 
 ### 例
-```csharp
-// 役割が名前から読み取れない
-public sealed record Order { /* DB の行 */ }
-public sealed record OrderIn { /* wire */ }
+汎用的な名前では、永続化、境界入力、境界出力の役割を判別できない。
 
-// 接尾辞で役割を揃える
-public sealed record OrderRecord { /* 永続化の行 */ }
-public sealed record CreateOrderRequest { /* 境界の入力 */ }
-public sealed record OrderResponse { /* 境界の出力 */ }
-public static class OrderMapper { public static OrderResponse ToResponse(OrderRecord record) => new(/* ... */); }
+```text
+Order
+OrderIn
+```
+
+接尾辞で役割を揃える。
+
+```text
+OrderRecord
+CreateOrderRequest
+OrderResponse
+OrderMapper
 ```
 
 ## 参照

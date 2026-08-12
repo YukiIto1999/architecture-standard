@@ -5,13 +5,13 @@ tools は、principles・concerns・structure・languages の上位規律に従�
 
 ## 構成と役割
 
-5分割に置く。language(言語の選定)・stack(制御の反転を伴う骨格)・inspection(検証の道具)・services(外部 Web サービスの方針)・platforms(セルフホストする基盤)。
+6分割に置く。language(対象言語と基盤版)・stack(制御の反転を伴う骨格)・build(task の編成・共有ライブラリの取得・生成・署名)・inspection(検証の道具)・services(外部 Web サービスの方針)・platforms(セルフホストする基盤)。
 新しい採用は、このどれかに当たる。当たらなければ抜けであり、[tools/README](../../../../tools/README.md) の構成表と本 skill の両方を更新する。
 
 ## 拠り所(書く前に本体を読む)
 
 tools を触るときは、[tools/README](../../../../tools/README.md) のエントリ書式・選定の共通基準・判定の枠を確かめる。
-採用は市場・ライセンス・保守・実測の変化で変わるため、書く前に web-researcher で裏取りし、`docs/research/` に台帳化する。
+採用または判断基準を変更するときは、市場・ライセンス・保守・実測を本 skill の調査手順で裏取りし、`docs/research/` に台帳化する。
 版に依存する事実(ライセンス・リリースポリシー・保守状況)を必ず確かめる。
 
 ## 根拠の高度
@@ -24,6 +24,7 @@ principles・concerns・structure・languages が定めた性質の要求を再�
 
 エントリは、用途・採用・判断基準・撤回条件の4行を基本にする([tools/README](../../../../tools/README.md) の書式に従う)。
 未採用の候補と比較の経緯は、標準に含めない。却下理由を書くときは、判断基準の一部として簡潔に留める。
+採用行は機構を安定した識別子で直接名指しし、実装主体や成立の経緯を修飾語として添えない。
 
 ## 移設の型(上位層からの取り込み)
 
@@ -38,4 +39,4 @@ principles・concerns・structure・languages の本文に、採用(製品名・
 - 採用でなく性質の要求を書いていないか(要求は principles/concerns/structure/languages が持ち、tools は採用と判断基準だけを持つ)。
 - 未採用の候補・比較の経緯を書き込んでいないか(書いていれば判断基準へ圧縮するか削除する)。
 - 撤回条件と再評価のトリガーを欠いていないか。
-- 新しい採用が5分割のどれにも当たらないとき、tools/README の構成表を更新したか。
+- 新しい採用が6分割のどれにも当たらないとき、tools/README の構成表を更新したか。

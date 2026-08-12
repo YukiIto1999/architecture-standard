@@ -9,7 +9,7 @@ concerns は、システム全体を通す、概念ごとの規律をまとめ�
 その下に規律ごとの `## 規律名` を置き、各規律を必須の5節で書く。
 末尾に `## 参照` を置く。
 
-- 要求は、その概念で守る規則を命令の一文で書く。
+- 要求では、概念ごとに守る規則を一文単位に分け、命令形で記す。
 - 根拠は、原則の再導出でなく、全系でどう具象化し何が得られるかを概念の高度で述べる。
 - 完了条件は、規律を満たした状態を観測できる述語で書く。
 - 禁止事項は、その概念の下でしてはならないことを書く。
@@ -31,7 +31,7 @@ concerns は、システム全体を通す、概念ごとの規律をまとめ�
 | [persistence](./persistence.md) | 永続データの設計。分類・追記・正規化・制約 |
 | [transaction](./transaction.md) | 書き込みパスの一貫性と確定点 |
 | [messaging](./messaging.md) | イベントによる連携 |
-| [authentication](./authentication.md) | 本人性の確立と資格情報の非流出 |
+| [authentication](./authentication.md) | 資格情報の検証と actor の構築 |
 | [authorization](./authorization.md) | アクセス制御の流れ |
 | [observability](./observability.md) | 外部出力から内部状態を推し量る。文脈の伝播と探索可能性 |
 | [privacy](./privacy.md) | 個人情報の最小化と期限の消去 |

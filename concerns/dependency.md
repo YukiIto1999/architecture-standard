@@ -30,12 +30,18 @@ import・参照・型共有の向きを確認し、内向きでない依存を�
 外側の名前が内側に現れていれば、抽象を挟んで向きを戻す。
 
 ### 例
+
+中心が具体的な詳細を参照すると、方針が外側の実装へ依存する。
+
 ```
-// 中心が具体の詳細を参照する
 PricingPolicy ── import ──> PostgresClient
-// 依存は内へ。中心は抽象だけを知る
-PricingPolicy ── uses ──> RateRepository           // 内側が定義し所有
-PostgresRateRepository ── implements ──> RateRepository  // 外側が実装
+```
+
+抽象は内側が所有し、外側が実装する。中心は抽象だけを参照する。
+
+```
+PricingPolicy ── uses ──> RateRepository
+PostgresRateRepository ── implements ──> RateRepository
 ```
 
 ## 抽象を方針側が所有する
@@ -67,11 +73,14 @@ PostgresRateRepository ── implements ──> RateRepository  // 外側が実
 詳細にその抽象を実装させ、方針が詳細の名前を知らない状態を保つ。
 
 ### 例
+
+方針側は、その方針に必要な操作だけを持つ抽象を所有する。
+
 ```
-// 方針が必要な分だけの抽象を所有する
-interface RateRepository { find(id: SkuId): Rate }   // domain が定義する
-// 全 CRUD を露出する汎用 Repository<T> を内側に置かない
+interface RateRepository { find(id: SkuId): Rate }
 ```
+
+全 CRUD を公開する汎用の `Repository<T>` は内側へ置かない。
 
 ## port を目的で宣言する
 
@@ -101,11 +110,14 @@ port を、技術ごとに割ること。
 駆動する側はテストのドライバで、駆動される側はインメモリの代役で差し替える。
 
 ### 例
+
+port は技術から独立した目的で設計し、技術別のアダプタを差し替えられる形にする。
+
 ```
-// 目的で設計したport(技術非依存)。技術別アダプタが差し替わる
 interface NotificationPort { notify(to: Recipient, message: Message): Result<Sent, NotifyError> }
-// 利用側で実装ごとに分岐したら抽象の破綻。if (provider === "vendorA") のような分岐を書かない
 ```
+
+利用側で実装ごとに分岐すると抽象が破綻する。`if (provider === "vendorA")` のような分岐は置かない。
 
 ## 配線を組立点に集める
 
@@ -134,11 +146,13 @@ interface NotificationPort { notify(to: Recipient, message: Message): Result<Sen
 DI コンテナを使う場合も、その参照を組立点に限る。
 
 ### 例
+
+具体型を知る場所は、エントリ点の組立点に限定する。方針は構成子から port を受け取る。
+
 ```
-// エントリ点の組立点だけが具体型を知る
 main() {
   const repository = new PostgresRateRepository(connection);
-  const policy = new PricingPolicy(repository);    // 方針は port を受け取る
+  const policy = new PricingPolicy(repository);
   serve(new HttpController(policy));
 }
 ```
@@ -178,11 +192,14 @@ main() {
 動的生成は、目的の型に絞った注入ファクトリにする。
 
 ### 例
+
+依存はシグネチャに現す。
+
 ```
-// 依存をシグネチャに現す
 class PricingPolicy { constructor(private rates: RateRepository) {} }
-// その場で探す解決やグローバルで依存を取らない
 ```
+
+実行箇所で依存を探索したり、グローバルな状態から取得したりしない。
 
 ## 循環を作らず、安定へ依存し、詳細を先送りする
 
@@ -214,4 +231,4 @@ framework・DB の選択は組立点まで遅らせ、内側は port だけを�
 ## 参照
 依存と境界の原則は [separation](../principles/separation.md)、効果の合成は [effect](./effect.md) に従う。
 投機の排除は principles の [construction](../principles/construction.md) の要求に従う。
-組立点の構造は [structure/core/composition](../structure/core/composition.md)、言語別の依存注入は [languages](../languages/) が定める。
+プロセス全体の組立点は [structure/surfaces](../structure/surfaces/) と [structure/runtimes](../structure/runtimes/) が、core の module factory は [structure/core/composition](../structure/core/composition.md) が定める。言語別の依存注入は [languages](../languages/) が定める。
