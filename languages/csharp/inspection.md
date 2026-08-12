@@ -131,6 +131,14 @@ Stryker.NET の test-runner を mtp に設定し、TUnit のテストを発見�
 
 ### 要求
 依存方向と境界の禁止は ArchUnitNET で検証し、namespace を層と単位に対応させて、層の参照禁止・公開面・副作用の参照禁止を規則として書く。
+root の ArchUnitNET 検査は、skeleton の実行時表と build・test-only 表から runtime・build・test phase の許可 edge を生成する。
+root の ArchUnitNET 検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
+Roslyn analyzer は、surface と host の公開非同期 API が Task または Task<T> を返し、Effect 内部の Run、Try body、AcquireRelease release が ValueTask または ValueTask<T> を返すことを semantic model で検査する。
+Roslyn analyzer は、request、message、job の境界より内側の非同期 API が、非取消の後始末である `AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` を除き、Deadline と CancellationToken を必須引数に持つことを検査する。
+Roslyn analyzer は、release が同じ Deadline を受けて CancellationToken を受け取らず、`DisposeAsync` が引数なしで非取消の後始末を行うことを検査する。
+`IAsyncDisposable.DisposeAsync` の呼出側が、同じ Deadline を後始末の scope に保持することを検査する。
+Deadline の生成が request、message、job の境界に限られることを検査する。
+Roslyn analyzer は、各 hop の CancellationTokenSource が `deadline.Remaining(timeProvider)` から作られ、下流へ remaining でなく同じ Deadline が渡ることを検査する。
 
 ### 根拠
 [verification](../../principles/verification.md) が定める、依存の向きやレイヤー越境は実行できるテストとして強制するという要求に、ArchUnitNET で応える。
