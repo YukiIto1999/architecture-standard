@@ -13,6 +13,7 @@
 5. 制御の混乱した箇所は、入出力の契約だけを固定し、内部を書き直す([principles/evolution](../principles/evolution.md) の触れた範囲を構造改善するに従う)。
 6. 各段でテストの緑と参照の静的な追跡を保つ。
 7. 契機になった重複と痛みが解消したら、触れた範囲の改善で止める([principles/evolution](../principles/evolution.md) の触れた範囲を構造改善するに従う)。
+8. 変更したコードとコメントを [principles/legibility](../principles/legibility.md) と [principles/comment](../principles/comment.md) に照合する。
 
 ## 確認点
 
@@ -21,6 +22,8 @@
 新しい場合の追加が既存の分岐本体の修正を要したなら、[principles/construction](../principles/construction.md) の業務判断を型と多態で構造化するに照合する。
 想定内の失敗が型に出ていれば、失敗の追加は全ての呼び出し側を型検査が指すので、拡張の圧は臭いの知覚でなくコンパイラが運ぶ([concerns/effect](../concerns/effect.md) の要求と想定内失敗を型に現すに照合する)。圧が来ないなら、失敗が型から漏れているか、呼び出し側が取りこぼしを黙らせる腕を持っている。
 結合の診断は、[principles/separation](../principles/separation.md) の結合を距離に見合う強さにするに従う。
+変更した範囲を、[principles/legibility](../principles/legibility.md) の「コードを第一級の文書として明瞭に書く」の完了条件と禁止事項に照合する。
+コメントを、[principles/comment](../principles/comment.md) の各規律の完了条件と禁止事項に照合する。
 テストの有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
 
 ## 範囲外

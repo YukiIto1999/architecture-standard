@@ -1,6 +1,7 @@
 # structure
 
 structure は、ターゲットプロジェクトの各部の、言語非依存の構造と、その部に固有の規律を定める。
+設計原則は [principles](../principles/) に従う。
 横断的な規律は [concerns](../concerns/) を参照し、再定義しない。
 言語別の実現は [languages](../languages/) に置く。
 
@@ -19,7 +20,7 @@ structure は、ターゲットプロジェクトの各部の、言語非依存�
 
 skeleton が root の構成の正本である。
 root をまたぐ依存の規則は skeleton が持ち、各部は自身の内部だけを定める。
-遵守は、skeleton の構成と依存方向表への一致と、各 layout の構成・固有規律への一致で判定し、依存方向は機械検証の実測で確かめる。
+遵守は、skeleton の構成と依存方向表への一致と、各 layout の構成・固有規律への一致で判定する。
 
 ## 読み方
 

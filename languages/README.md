@@ -25,28 +25,26 @@ principles・concerns・structure の上位規律に従属し、上位規律を�
 
 ## 言語と役割
 
-| 言語 | 役割 | 基盤の版 |
-|---|---|---|
-| [rust](./rust/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセスと言語サービス | edition 2024 |
-| [csharp](./csharp/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセス | .NET 10・C# 14 |
-| [typescript](./typescript/) | viewer・extension・web と ide の host | TypeScript 6.0 |
+| 言語 | 役割 |
+|---|---|
+| [rust](./rust/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセスと言語サービス |
+| [csharp](./csharp/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセス |
+| [typescript](./typescript/) | viewer・extension・web と ide の host |
 
-core の言語の選定は、[tools/language](../tools/language.md) が定める。
+標準は project の実装言語を選定しない。
+実装単位と言語の対応を適用時の入力とし、[tools/language](../tools/language.md) が定める対象言語のうち使用する各言語の規律を適用する。
 自己ホストの surface と、desktop・mobile の host は、core の言語に従う。
 web の host の platform は browser であり、言語を持たない。
 その bundler と entry は typescript が担う。
-基盤の版の改訂は、standard-update で行う。
-遵守は、各実現軸の規律の完了条件と禁止事項で照合して判定する。
-
-rust と csharp は、[structure/libs/layout](../structure/libs/layout.md) が定める libs の機構として、companion のビルド時ツール crate・project を持つ。
-typescript は、型が compile 時にのみ存在し実行時には消えるので、companion に相当する別のビルド時ツールを持たない。
+基盤の版は [tools/language](../tools/language.md) が定め、改訂は standard-update で行う。
+遵守は、各実現軸の採用機構と規律の完了条件・禁止事項で照合して判定する。
 
 ## 単一性
 
 同じ目的の機構は、一つの言語の中で一つに固定する。
 languages が機構を定めていない目的では、project が単一の採用を ADR に明記する。
 逸脱は、root の [README](../README.md) が定める要件に従う。
-機構は、無償の部品を土台にし、残った不足分だけを自作する。
+機構の採用は、[tools](../tools/) の選定の共通基準に従う。
 
 ## 読み方
 
@@ -55,7 +53,7 @@ languages が機構を定めていない目的では、project が単一の採�
 conventions.md も同じ書式に従うが、置き場を持たず全ての実現軸に一様に適用する規律である点だけが異なる。
 inspection.md は、`## 参照` の直前に `## 規則と検証機構の対応` の付表を置き、規律ごとの検証手段を一覧にする。
 
-- 要求は、その言語でどの機構をどう使うかを命令の一文で書く。
+- 要求では、言語機構ごとに守る規則を一文単位に分け、命令形で記す。
 - 根拠は、上位規律の再導出でなく、その言語の機構で上位規律をどう満たすかを述べる。
 - 完了条件は、満たされた状態を観測できる形で示す。
 - 禁止事項は、してはならないことを書く。
