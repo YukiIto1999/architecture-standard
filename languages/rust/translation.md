@@ -112,12 +112,12 @@ match run(input).await {
 ## 生成した契約を使い、drift を検査の gate にする
 
 ### 要求
-contracts/generated の Rust の client と型は、TypeSpec から `@typespec/openapi3` で出力した OpenAPI を、openapi-generator の rust generator(library=reqwest)に渡して生成する。
+contracts/generated の Rust の client と型は、[tools/build](../../tools/build.md) が採用した経路で生成する。
 
 ### 根拠
 契約を手で書き写すと、契約と実装がずれる。
 契約から生成すれば、client と型が契約に従う。
-`@typespec/openapi3` は OpenAPI を安定した出力として持ち、openapi-generator の rust generator は任意の OpenAPI から生成でき、生成元を特定の emitter に縛らない。
+生成経路を tools の採用へ一本化すれば、言語文書は生成物の使い方だけを所有できる。
 
 ### 完了条件
 client と型が、TypeSpec から `@typespec/openapi3` を経て openapi-generator の rust generator で生成されている。
