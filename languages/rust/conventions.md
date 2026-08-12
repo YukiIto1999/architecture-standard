@@ -95,19 +95,20 @@ pub fn place(cart: ValidCart) -> Result<Order, OrderError> { /* ... */ }
 `From`・`TryFrom` の実装でなく専用の変換関数やモジュールを置くときは、名前に mapper を含める。
 
 ### 例
-```rust
-// 役割が名前から読み取れない
-struct Order { /* DB の行 */ }
-struct OrderIn { /* wire */ }
+役割を判別できない接尾辞では、同じ業務概念の型を取り違える。
 
-// 接尾辞で役割を揃える
-struct OrderRecord { /* 永続化の行 */ }
-struct CreateOrderRequest { /* 境界の入力 */ }
-struct OrderResponse { /* 境界の出力 */ }
-mod order_mapper { // 変換を担うモジュールの名前に mapper を含める
-    use super::*;
-    pub fn to_response(record: OrderRecord) -> OrderResponse { /* ... */ }
-}
+```text
+Order
+OrderIn
+```
+
+永続化の行、境界の入出力、変換の役割を、接尾辞と module 名で区別する。
+
+```text
+OrderRecord
+CreateOrderRequest
+OrderResponse
+order_mapper
 ```
 
 ## 参照
