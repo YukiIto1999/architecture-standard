@@ -5,7 +5,7 @@ tools は、principles・concerns・structure・languages の上位規律に従�
 
 ## 構成と役割
 
-5分割に置く。language(言語の選定)・stack(制御の反転を伴う骨格)・inspection(検証の道具)・services(外部 Web サービスの方針)・platforms(セルフホストする基盤)。
+6分割に置く。language(対象言語と基盤版)・stack(制御の反転を伴う骨格)・build(task の編成・共有ライブラリの取得・生成・署名)・inspection(検証の道具)・services(外部 Web サービスの方針)・platforms(セルフホストする基盤)。
 新しい採用は、このどれかに当たる。当たらなければ抜けであり、[tools/README](../../../../tools/README.md) の構成表と本 skill の両方を更新する。
 
 ## 拠り所(書く前に本体を読む)
@@ -38,4 +38,4 @@ principles・concerns・structure・languages の本文に、採用(製品名・
 - 採用でなく性質の要求を書いていないか(要求は principles/concerns/structure/languages が持ち、tools は採用と判断基準だけを持つ)。
 - 未採用の候補・比較の経緯を書き込んでいないか(書いていれば判断基準へ圧縮するか削除する)。
 - 撤回条件と再評価のトリガーを欠いていないか。
-- 新しい採用が5分割のどれにも当たらないとき、tools/README の構成表を更新したか。
+- 新しい採用が6分割のどれにも当たらないとき、tools/README の構成表を更新したか。

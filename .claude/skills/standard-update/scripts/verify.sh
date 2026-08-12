@@ -122,11 +122,49 @@ if [ "$process_readme_rows" != "$process_expected" ] || [ "$process_actual" != "
   numeric_ok=0
 fi
 
-tools_expected=5
+tools_expected=6
+tools_readme_rows=$(
+  awk '
+    $0 == "## 構成" { in_section = 1; next }
+    in_section && /^##[[:space:]]+/ { in_section = 0 }
+    in_section { print }
+  ' tools/README.md \
+    | sed -n 's#^| \[\([^]]*\)\](\./\([^)]*\.md\)) |.*#\1\t\2#p'
+)
+tools_readme_names=$(printf '%s\n' "$tools_readme_rows" | cut -f1)
+tools_readme_files=$(printf '%s\n' "$tools_readme_rows" | cut -f2)
+tools_readme_count=$(printf '%s\n' "$tools_readme_files" | sed '/^$/d' | wc -l | tr -d ' ')
+tools_readme_set=$(printf '%s\n' "$tools_readme_files" | sed '/^$/d' | sort)
+tools_catalog=$(printf '%s\n' "$tools_readme_names" | sed '/^$/d' | paste -sd '・' -)
+tools_actual_files=$(find tools -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -exec basename {} \; | sort)
 tools_actual=$(find tools -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
-echo "tools: 実ファイル=$tools_actual 期待=$tools_expected"
-if [ "$tools_actual" != "$tools_expected" ]; then
+echo "tools: 台帳=$tools_readme_count 実ファイル=$tools_actual 期待=$tools_expected"
+if [ "$tools_actual" != "$tools_expected" ] || [ "$tools_readme_count" != "$tools_expected" ]; then
   fail "tools の分割数が不一致(実ファイル=$tools_actual, 期待=$tools_expected)"
+  numeric_ok=0
+fi
+if [ "$tools_readme_set" != "$tools_actual_files" ]; then
+  echo "  tools/README.md の構成表:"
+  printf '%s\n' "$tools_readme_set" | sed 's/^/    /'
+  echo "  tools/ の実ファイル:"
+  printf '%s\n' "$tools_actual_files" | sed 's/^/    /'
+  fail "tools/README.md の構成表と実ファイルが不一致"
+  numeric_ok=0
+fi
+
+if ! rg -qF "$tools_catalog の${tools_expected}分割" README.md; then
+  fail "root README.md の tools 6分類が不一致"
+  numeric_ok=0
+fi
+if ! rg -qF "$tools_catalog の${tools_expected}分割" .claude/skills/standard-update/SKILL.md; then
+  fail "standard-update/SKILL.md の tools 6分類が不一致"
+  numeric_ok=0
+fi
+tools_reference_line=$(rg -m1 '^[0-9]+分割に置く。' .claude/skills/standard-update/references/tools.md 2>/dev/null || true)
+tools_reference_count=$(printf '%s\n' "$tools_reference_line" | sed -n 's/^\([0-9][0-9]*\)分割に置く。.*/\1/p')
+tools_reference_catalog=$(printf '%s\n' "$tools_reference_line" | sed -E 's/^[0-9]+分割に置く。//; s/。$//; s/\([^)]*\)//g')
+if [ "$tools_reference_count" != "$tools_expected" ] || [ "$tools_reference_catalog" != "$tools_catalog" ]; then
+  fail "references/tools.md の tools 6分類が不一致"
   numeric_ok=0
 fi
 
@@ -149,7 +187,7 @@ if [ "$language_dirs_actual" != "$language_dirs_expected" ] || [ "$languages_ok"
   fail "languages の単位数が不一致(言語数=$language_dirs_actual, $language_counts期待=各$language_files_expected)"
   numeric_ok=0
 fi
-if [ "$numeric_ok" = 1 ]; then pass "process=7、tools=5、languages=3×8 で一致"; fi
+if [ "$numeric_ok" = 1 ]; then pass "process=7、tools=6、languages=3×8 で一致"; fi
 
 echo
 echo "=== 7. skill の概念列挙と concerns/ 実ファイルの突合 ==="

@@ -118,9 +118,10 @@ contracts への依存を core で持てるのは composition だけであり、
 root は、言語ごとの package を集めた polyglot の monorepo である。
 各コード境界は、その言語の package として workspace に属する。
 package の境界は、依存方向の規律で守る。
-build は、言語ごとの package を横断する orchestrator で実行する。
-orchestrator は、package の依存境界を強制する。
-orchestrator の採用と選定の判断基準は、[tools/inspection](../tools/inspection.md) が定める。
+build は、言語ごとの package を横断する task graph を orchestrator で実行する。
+orchestrator は task graph の順序、affected の選択、cache だけを担い、package の依存境界を強制しない。
+orchestrator の採用と選定の判断基準は、[tools/build](../tools/build.md) が定める。
+package の依存境界は、依存方向の両表を入力にした言語別の root arch test で強制する。
 
 ## 加算
 

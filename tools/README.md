@@ -14,6 +14,7 @@ tools は、採用だけを書く。
 |---|---|
 | [language](./language.md) | 言語の選定。対象言語の集合と、対象外言語の縮退経路 |
 | [stack](./stack.md) | 骨格を握る採用と、骨格から呼ばれる部品の採用 |
+| [build](./build.md) | task の編成、共有ライブラリの取得、契約と release metadata の生成、成果物の署名に使う道具の採用 |
 | [inspection](./inspection.md) | 検証の道具の採用 |
 | [services](./services.md) | 外部 Web サービスの採用方針 |
 | [platforms](./platforms.md) | セルフホストする基盤の採用 |
