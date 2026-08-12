@@ -24,3 +24,10 @@ build は、task の編成、共有ライブラリの取得、契約と release 
 判断基準は、`@typespec/openapi3` が各 variant を `oneOf` と OpenAPI discriminator へ出力し、各 generator が生成した表現で判別子と payload を失わずに serialize と deserialize を往復し、[tests の方法](../structure/tests/methods.md) が定める generated-contract round-trip を通ることである。
 撤回条件は、判断基準を満たさなくなることであり、採用済みの emitter または generator が判別付き直和を互換に生成できなくなることを再評価のトリガーとする。
 
+## SBOM の生成
+
+用途は、release する成果物の部品を、言語横断の機械可読な一覧へ生成する道具である。
+採用は、Syft であり、出力は SPDX JSON とする。
+判断基準は、filesystem・archive・container image の完成した成果物を走査し、対象言語と OS package を署名と脆弱性検査の共通入力へ出力できることである。
+撤回条件は、判断基準を満たさなくなることであり、対象 ecosystem の対応終了と保守の停止を再評価のトリガーとする。
+
