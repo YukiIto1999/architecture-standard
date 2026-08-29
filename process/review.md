@@ -18,7 +18,8 @@
 5. 対象言語の該当する実現軸と conventions([languages](../languages/))で、使う機構と全域規律を確かめる。
 6. 変更で使う道具を、[tools](../tools/) の採用と判断基準に照合する。
 7. 逸脱の ADR を、root の [README](../README.md) が要求する採用理由、撤回条件、単一採用、置き換える標準規律の file、逸脱の前提となる技術的制約の実証に照合する。
-8. 判定の枠で照合し、指摘は [audit](./audit.md) の列挙の形で、該当規律の本文の引用と file を添えて返す。
+8. 追加された型・関数・ファイル・抽象・設定・依存を変更の要求へ対応付け、[principles/construction](../principles/construction.md) の新しい要素を最後に選ぶで先行する段が十分でなかったかを照合する。
+9. 判定の枠で照合し、指摘は [audit](./audit.md) の列挙の形で、該当規律の本文の引用と file を添えて返す。
 
 ## 確認点
 
@@ -34,6 +35,7 @@ source の変更では、[principles/legibility](../principles/legibility.md) �
 変更を書いた実行者の自己照合は、レビューの照合を代替しない。
 機械で検証できる指摘は、人手の指摘で終えず、検証の追加として返す([principles/verification](../principles/verification.md) の重要な制約を機械検証に固定するに従う)。
 標準本文の矛盾と改訂提案の扱いは、[audit](./audit.md) の確認点に従う。
+現在の要求に対応しない将来用の抽象・設定・依存を、改善案として要求していないことを確かめる。
 
 ## 範囲外
 

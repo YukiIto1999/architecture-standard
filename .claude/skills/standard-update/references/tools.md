@@ -8,12 +8,6 @@ tools は、principles・concerns・structure・languages の上位規律に従�
 6分割に置く。language(対象言語と基盤版)・stack(制御の反転を伴う骨格)・build(task の編成・共有ライブラリの取得・生成・署名)・inspection(検証の道具)・services(外部 Web サービスの方針)・platforms(セルフホストする基盤)。
 新しい採用は、このどれかに当たる。当たらなければ抜けであり、[tools/README](../../../../tools/README.md) の構成表と本 skill の両方を更新する。
 
-## 拠り所(書く前に本体を読む)
-
-tools を触るときは、[tools/README](../../../../tools/README.md) のエントリ書式・選定の共通基準・判定の枠を確かめる。
-採用または判断基準を変更するときは、市場・ライセンス・保守・実測を本 skill の調査手順で裏取りし、`docs/research/` に台帳化する。
-版に依存する事実(ライセンス・リリースポリシー・保守状況)を必ず確かめる。
-
 ## 根拠の高度
 
 tools は「何を使うか、どう選ぶか」に答える。
