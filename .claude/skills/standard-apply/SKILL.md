@@ -8,11 +8,42 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 標準を project へ適用する入口である。
 手順と判定基準の正本は標準本文に置き、この skill へ転写しない。
 
+## 開始ゲート
+
+対象 project へ最初の tool call を行う前に、次の入口を一つだけ選ぶ。
+
+| 入力の入口 | 最初の対象 project 操作 | この作業で使わない探索 |
+|---|---|---|
+| exact file path がある | その file を Read で直接読む | 対象 project への Glob、fd、directory 一覧、`git ls-files` |
+| symbol だけがある | その exact symbol の Grep で一つの定義候補へ絞り、一致 file を読む | 対象 project への Glob、directory 一覧 |
+| project root だけで system-wide recovery または audit | 後述の条件を満たす場合だけ `<target-project-root>/**/*` を一回 Glob する | 二回目の Glob、別の列挙手段 |
+
+選択直後の最初の対象 project 読取または探索は、表の操作でなければならない。標準 repository の既存 context として root `README.md` や process を先に読む場合も、対象 project の入口を再発見する `README.md` や `target-project/*` の Glob、`pwd`、directory 一覧は使わない。記録 commit の確定前に読んだ標準本文は暫定 context にすぎず、後述の commit object 読取または exact file の一括差分照合が閉じるまで判断の根拠にしない。
+exact file path を与えられた作業では、準拠 ADR、caller、state、test の確認にも Glob を使わない。path 未指定の Glob は標準と対象 project の双方へ一致しうるため、標準側だけの探索としても使わない。先に Glob してから exact path へ戻っても、この開始ゲートを満たしたことにならず、調査または設計を完了と報告しない。
+project root だけを与えられた system-wide recovery または audit では、最初の対象 project 探索を文字どおり `<target-project-root>/**/*` の一回にする。`README.md` や `<target-project-root>/*` を先に試してはならない。二回目を実行した場合は後の結果を正当化に使わず、調査を完了と報告しない。
+
+### 閉じた対象調査経路
+
+exact source path を与えられ、受入条件に completion、state、success または failure がある設計は、次の対象 project 操作だけを記載順に行う。
+
+1. exact source file を読む。
+2. target project root の `README.md` を exact path で読み、source root と test root の記載を確認する。存在しない場合は別名の manifest を探さず、source root は exact source の親 directory、test root は Unknown とする。
+3. `standard_commit:` の一回の Grep を `docs/decisions/` に限定し、一致した準拠 ADR を読む。
+4. 対象 source の公開 symbol を source root で exact token の一回の Grep にかけ、一段上の公開 caller を読む。内部で呼ぶ未定義 symbol は、一つを選んだ exact token の Grep 一回だけで定義を探す。同じ token を別の root で再検索しない。
+5. 対象 source の公開 symbol と同じ exact token を `docs/decisions/` で一回 Grep し、一致した Accepted ADR を読む。`Job`、`State`、`Status`、`completion` のような一般候補を順に試さない。ADR が authority 型を名指しする場合だけ、その exact 型名を source root で一回 Grep し、一致した authority source を読む。
+6. 手順2で test root を確認できた場合だけ、公開 caller の exact symbol をその root で一回 Grep し、一致 test を読む。確認できなければ test 契約を Unknown にする。
+
+この経路で対象 project に使える探索は、各手順に明記した単一 token の限定 Grep だけである。`|` を含む OR pattern、project root 全域の Grep、Glob、別名 manifest の試行を使わない。外部 cancellation、deadline、writer、依存、設定の明示的な起点が読んだ経路になければ、不在と検索せず Unknown にする。手順外の探索で得た結果は設計根拠にせず、経路を完了と報告しない。
+対象 project の手順を閉じた後、標準本文は skill file の所在から固定した `<standard-root>` を明示して `git -C <standard-root> show <recorded-commit>:<exact-file>` で読む。skill path が repository root からの `.claude/skills/standard-apply/SKILL.md` なら `<standard-root>` は `.` であり、`git -C . show ...` とする。`pwd` や `git rev-parse` で standard root を再発見せず、`git show` を current directory 任せで実行しない。
+設計の最終応答は、変更不要から選んだ実現段まで、または必須条件が Unknown なら最初に成立しうる暫定段までの判定だけを列挙する。それより後の候補、抽象、依存、新規実装には、未検討・不要・不採用という言及もしない。「新しい依存は不要」「独自実装は不要」「後続の段は検討しない」のような否定文も、後段への言及なので書かない。暫定段を「選択」「成立」「十分」「この段で止める」と表現せず、確定に必要な未確認契約だけを示す。依頼が設計だけなら、将来の ADR、file 作成、cleanup、別変更の指示も削除する。必須参照の途中で変更契約外の配置違反や別件を見つけても、最終応答へ付記せず、この設計の候補、risk、今後の作業へ広げない。
+
+project root だけを与えられた recovery は、最初の一回の Glob 後に、返った非 hidden の source、test、configuration だけを候補集合として読む。`standard_commit:` の準拠 ADR 探索もこの Glob より後に行う。ユーザー仮説と回収語の検証は候補集合の読取と `docs/decisions/` に限定した一語の Grep で行い、候補集合外を探す二回目の Glob、root 全域の Grep、別 pattern の再試行へ広げない。
+
 ## 前提
 
 - この skill がある repository を標準、依頼で示された repository を対象 project とする。
 - この skill の所在から標準 repository root を特定し、`<standard-root>` として固定する。対象 project を current directory にした Git 操作と混ぜない。
-- 対象 project の ADR から、準拠基準として記録された標準 commit を特定し、その commit の本文を使う。OID を特定した後は root `README.md`、選んだ process、参照規律を記録した commit object から読む。作業 tree の本文を使えるのは、対象 blob が記録 commit と byte-identical だと確認した場合だけであり、OID の表示だけで基準にしたとは扱わない。既存 project に記録がなければ現行標準へ代替せず、準拠基準の欠落として報告し、監査、移行、設計、実装、構造改善、レビューを止める。新規構築は採用する現行 commit を ADR に記録してから進める。
+- 対象 project の ADR から、準拠基準として記録された標準 commit を特定し、その commit の本文を使う。OID を特定した後は、根拠にする標準 file を全て記録した commit object から読む。作業 tree の本文を使えるのは各対象 blob が記録 commit と byte-identical だと確認した場合だけであり、OID の表示や directory 単位の diff だけで基準にしたとは扱わない。作業 tree から読んだ標準 file の exact path を内部台帳へ追加し、設計または最終判断の前に `git -C <standard-root> diff <recorded-commit> -- <exact-file-1> <exact-file-2> ...` の一回で全件を照合する。directory は引数にせず、最終応答で根拠として列挙する標準 file を一つでも引数から省かない。差分がある file または照合引数にない file に基づく判断は報告から除き、準拠照合を完了としない。既存 project に記録がなければ現行標準へ代替せず、準拠基準の欠落として報告し、監査、移行、設計、実装、構造改善、レビューを止める。新規構築は採用する現行 commit を ADR に記録してから進める。
 - 標準本文は編集しない。標準側の不備は file と該当箇所を報告し、修正は standard-update へ渡す。
 
 ## 参照経路
@@ -73,7 +104,7 @@ persisted state を completion authority とする Accepted な契約を読ん�
    並行処理を設計する場合は、子処理の失敗伝播と cancellation を、依頼の受入条件に列挙がなくても標準の必須条件として変更契約へ残す。現行契約が不明なら具体的な継続・停止・戻り値を決めず、未確定の必須条件にする。受入条件外の別件として落とさない。
 3. process の順序と確認点を内部チェックリストとして管理し、変更契約を固定する。応答へ全文を転写せず、依頼に関係する進捗、見送り、未確認事項だけを報告する。
 4. 標準が決めている事項と project 固有の決定を分ける。標準が沈黙する事項や逸脱は、一般則で埋めず、採用理由、撤回条件、単一採用、置き換える規律、技術的制約の実証を project ADR に残す。
-5. 依頼が許可する作業と focused check を実行する。読み取り専用の監査やレビューでは、報告を応答で返し、依頼されていない報告 file を作らない。判定や変更ごとに、根拠とした標準の file と該当規律を記録する。標準内の矛盾は root README の裁定規則に従い、黙って読み替えない。
+5. 変更契約が許可する作業と focused check を実行する。読み取り専用の監査やレビューでは、報告を応答で返し、依頼されていない報告 file を作らない。判定や変更ごとに、根拠とした標準の file と該当規律を記録する。標準内の矛盾は root README の裁定規則に従い、黙って読み替えない。
 6. 実装または構造改善では、完了前に変更の経緯を持たない独立した reviewer context で照合する。subagent が利用できなければ新しい独立 session を使う。どちらも利用できない場合は自己照合を行うが、独立レビュー済みとは主張せず、その制約を報告する。
 
 ### 意味回収
@@ -121,3 +152,4 @@ Executive Diagnosis、要約、結論にも回収表と同じ観測境界を適�
 
 - `standard-update` — 標準本文の更新。
 - `standard-audit` — 標準そのものの読み取り専用監査。
+- `references/provenance.md` — 外部知見の出典記録。実行時には読まない。

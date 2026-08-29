@@ -10,12 +10,6 @@ root は core・libs・contracts・surfaces・runtimes・deploy・tests の固�
 surfaces は対話様式というアクターの軸で server・console・worker・viewer・extension・embedded の6 surface を直下に束ね、gui・hosts のような技術カテゴリの箱を作らない。
 各部の layout は、この表が許す依存だけを内部の依存方向表として具体化する。skeleton の表と矛盾する依存を書かない。
 
-## 拠り所(書く前に本体を読む)
-
-structure を触るときは、skeleton.md 本体で境界表・依存方向表・入口の命名・自己ホストと被ホストの区別を確かめる。
-各部の内部構成は、対応する layout.md(core・libs・contracts・deploy・tests)または README.md(surfaces・runtimes)と、各面・各 host の layout.md で確かめる。
-憶測で依存関係や命名を書かず、現行本文を根拠にする。
-
 ## 根拠の高度
 
 structure は「各部をどう組むか」に答える。
