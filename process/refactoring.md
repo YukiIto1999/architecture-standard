@@ -27,6 +27,7 @@
 変更した範囲を、[principles/legibility](../principles/legibility.md) の「コードを第一級の文書として明瞭に書く」の完了条件と禁止事項に照合する。
 コメントを、[principles/comment](../principles/comment.md) の各規律の完了条件と禁止事項に照合する。
 テストの有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
+置き換えた旧構造が残らず、一つの目的に一つの経路だけがあることを確かめる。
 
 ## 範囲外
 
