@@ -54,6 +54,48 @@ expect_line() {
 }
 
 printf '=== 1. skill の指示整合 ===\n'
+expect_text \
+  "recovery eval はGlob回数とpatternを採点する" \
+  'Glob は target-project/\*\*/\* の一回だけ' \
+  .claude/skills/standard-apply/evals/evals.json
+expect_text \
+  "recovery eval はADRをGlob由来の読取候補にしない" \
+  'docs/decisions.*Glob 由来の読取候補から除く' \
+  .claude/skills/standard-apply/evals/evals.json
+expect_text \
+  "methods は一致した適用集合と双方向含意で同じ性質を判定する" \
+  '同じ規範命題へ割り当てられ、そこから導いた非空の適用対象・入力集合が一致し、その集合の全要素で一方の合格が他方の合格を含意し、かつ逆方向も成り立つ' \
+  structure/tests/methods.md
+expect_text \
+  "methods は自己申告の空集合を同じ性質にしない" \
+  '各検証の自己申告から採らず、割り当て先である標準の要求と禁止事項が要求する全範囲から導く.*非空の集合を標準本文から定められなければ、同じ性質とは判定しない' \
+  structure/tests/methods.md
+expect_text \
+  "methods は比較不能な検証を別の性質として残す" \
+  '適用対象・入力集合が一致しない、一方が適用不能になる.*別の性質として両方を残す' \
+  structure/tests/methods.md
+expect_text \
+  "methods は反例未発見だけで同じ性質にしない" \
+  '反例をまだ見つけていないことだけを、同じ性質の根拠にしない' \
+  structure/tests/methods.md
+expect_text \
+  "typescript は別metricを重複として無効化しない" \
+  'cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない.*必須の検証へ割り当てていないため' \
+  languages/typescript/inspection.md
+expect_eval_prompt_no_text \
+  "無変更evalは不要な一次資料調査を指示しない" \
+  3 \
+  '一次資料' \
+  .claude/skills/standard-update/evals/evals.json
+expect_eval_prompt_no_text \
+  "意味拡張evalは裁定名をpromptで与えない" \
+  8 \
+  '意味の拡張|意味を拡張|充足済みとせず' \
+  .claude/skills/standard-update/evals/evals.json
+expect_text \
+  "文章refactor evalは同一性条件の自己充足を問う" \
+  '二つの判定を同じ性質とみなす条件を標準本文だけから一意に導けるか' \
+  .claude/skills/standard-update/evals/evals.json
 
 printf '\n=== 2. task eval と trigger eval の schema ===\n'
 eval_output=$(node <<'NODE' 2>&1
@@ -162,8 +204,41 @@ expect_text \
   'task が file を変更し.*skill が検証を要求する場合' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_line \
-  "task evaluator は exact path の再発見を要求しない" \
-  '      "task の path は現在の作業directoryからの相対pathです。task が exact file path を示した場合は Read で直接読み、repository名を足したり、path の再発見に Glob や path 未指定の Grep を使ったりしないでください。task が探索を必要とし、使用する skill が許す場合だけ Glob と Grep を使います。外部事実の確認が task に必要なら WebSearch と WebFetch を使えます。Bash は許可済みの検証 script と git status/diff だけに使ってください。",' \
+  "task evaluator は全skillのfixtureからmutation sourceを除く" \
+  '    scrubFixtureMutationSource(fixtureRoot);' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "recovery eval はcallerをfixtureへ持つ" \
+  'writeFileSync\(path.join\(targetRoot, "app", "api.rs"\)' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "recovery eval はstateをfixtureへ持つ" \
+  'writeFileSync\(path.join\(targetRoot, "app", "state.rs"\)' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "recovery fixture はtest rootをmanifestで明示する" \
+  'source root は `app/`、test root は `tests/`' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_eval_prompt_text \
+  "recovery eval はユーザー仮説をKnownから分離して測る" \
+  5 \
+  'worker\.rs.*JobStatus.*writer.*仮説.*確認済みの仕様ではありません' \
+  .claude/skills/standard-apply/evals/evals.json
+expect_text \
+  "recovery eval はユーザー仮説をAssumedとして採点する" \
+  '根拠付き仮説を Assumed とし、Known、Observed、Intended のいずれにも読み替えない' \
+  .claude/skills/standard-apply/evals/evals.json
+expect_text \
+  "task evaluator は履歴をsanitizeしてから準拠commitを作る" \
+  'const standardCommit = initializeSanitizedRepository\(fixtureRoot\);' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はclone元のGit objectを破棄する" \
+  'rmSync\(path.join\(fixtureRoot, "\.git"\).*maxRetries:' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はsanitize済みcommitをADRへ記録する" \
+  '`standard_commit: \$\{standardCommit\}`' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_line \
   "task evaluator は代替探索も task と skill の許可へ従わせる" \

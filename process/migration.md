@@ -6,7 +6,7 @@
 
 ## 順序
 
-1. 目標の形との差分を出す(標準との差分は [audit](./audit.md) の順序で出し、基盤と契約の入れ替えは現行と目標の形を並べて定める)。
+1. 現行の意味、state の authority、実行経路が確立していなければ [recovery](./recovery.md) を実行し、目標の形が確立していなければ [design](./design.md) を実行する。その後、現行と目標の差分を出す(標準との差分は [audit](./audit.md) の順序で出す)。
 2. 既存の違反を一度に解消できない場合は、準拠との差分を検査の失敗 baseline として全件固定し、各差分に所有者・解消条件・検出する root check を割り当てる。新しい違反は baseline に加えない。
 3. 変える前に安全網を張る([principles/verification](../principles/verification.md) のテストを振る舞いの安全網にするに従い、回帰テスト・本番の観測・新旧の整合検査を備える)。
 4. 変更を小さく可逆な段に分け、各段に達成条件・撤退条件・不可逆点を定める([principles/evolution](../principles/evolution.md) の変更は段階的で可逆にするに従う)。

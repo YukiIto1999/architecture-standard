@@ -20,7 +20,7 @@ architecture-standard は、ソフトウェアアーキテクチャの標準そ�
 | [structure](./structure/) | 各部をどう組むか | ターゲットプロジェクトの骨格と各部の構造 |
 | [languages](./languages/) | 言語でどう実現するか | 言語ごとの採用機構とイディオム |
 | [tools](./tools/) | 何を使うか、どう選ぶか | 用途ごとの採用と判断基準。language・stack・build・inspection・services・platforms の6分割 |
-| [process](./process/) | どの順で作り、どこで確かめるか | 作業の種別ごとの順序と確認点。7単位 |
+| [process](./process/) | どの順で作り、どこで確かめるか | 作業の種別ごとの順序と確認点。8単位 |
 
 参照は、具象から抽象への一方向に保つ。
 tools は languages・structure・concerns・principles に、languages は structure・concerns・principles に、structure は concerns・principles に、concerns は principles に従う。
@@ -105,7 +105,7 @@ project の入口の文書は、次の3点だけを書き、標準の内容を�
 ### 適用の手順
 
 手順の正本は [process](./process/) にある。
-新規構築は [process/bootstrap](./process/bootstrap.md)、監査は [process/audit](./process/audit.md)、移行は [process/migration](./process/migration.md) に従う。
+新規構築は [process/bootstrap](./process/bootstrap.md)、既存システムの意味回収は [process/recovery](./process/recovery.md)、監査は [process/audit](./process/audit.md)、移行は [process/migration](./process/migration.md) に従う。
 日常の作業は、設計が [process/design](./process/design.md)、実装が [process/implementation](./process/implementation.md)、構造改善が [process/refactoring](./process/refactoring.md)、レビューが [process/review](./process/review.md) に従う。
 
 ## 判定の枠
