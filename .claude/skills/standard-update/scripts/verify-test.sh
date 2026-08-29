@@ -145,7 +145,7 @@ expect_fail "非単位節の除外を該当する領域だけに限定する" "$
 fixture=$(make_fixture process-count)
 printf '# extra\n' > "$fixture/process/extra.md"
 sed -i '/^| \[migration\]/a | [extra](./extra.md) | 検査用の追加単位 |' "$fixture/process/README.md"
-expect_fail "process の台帳と実ファイルが7単位であることを検査する" "$fixture" "process の単位数が不一致"
+expect_fail "process の台帳と実ファイルが8単位であることを検査する" "$fixture" "process の単位数が不一致"
 
 fixture=$(make_fixture process-table-scope)
 printf '\n## 補助表\n\n| ファイル | 用途 |\n|---|---|\n| [audit](./audit.md) | 既存単位への補助参照 |\n' >> "$fixture/process/README.md"

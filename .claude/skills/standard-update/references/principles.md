@@ -3,14 +3,6 @@
 principles は、言語にも特定の関心にも依存しない設計原則を置く。
 ここに書くのは「なぜそう設計するか」の根本であり、テーブル設計や型の実装のような詳細は concerns、言語の機構は languages に置く。
 
-## 拠り所(書く前に深く読む)
-
-参考にする11名の思想に照らす。
-ミノ駆動・増田亨・nwiizo・mizchi・そーだい(曽根壮大)・t-wada(和田卓人)・kawasima・Alexis King・Robert C Martin・Martin Fowler・farstep。
-外部の発言・スライド・講演・ブログ・著作を根拠に追加するときは、要約で済ませず一次本文まで読む。
-領域の目安は、モデリングと型と命名がミノ駆動と増田と King と kawasima、データと状態が そーだい と増田、検証とテストが t-wada、依存と境界が Martin と Fowler。
-古典(Parnas の情報隠蔽、connascence、Date の真である命題、Kleppmann の data outlives code など)も裏取りに使う。
-
 ## 根拠の高度
 
 根本のなぜを述べる。

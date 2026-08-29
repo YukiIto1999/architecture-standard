@@ -30,12 +30,14 @@
     {
       "id": 3,
       "model": "opus",
-      "prompt": "retry の backoff に jitter を加えるという技術記事の主張を architecture-standard へ取り込めるか確認してください。記事の要約だけで規則化せず、既存の所有箇所、一次資料、重複する規律を調べ、現行本文が既に満たすなら編集しないでください。",
+      "prompt": "retry の backoff に jitter を加えるという技術記事の主張を architecture-standard へ取り込めるか確認してください。記事の要約だけで規則化せず、既存の所有箇所と重複する規律を調べ、現行本文が既に満たすなら編集しないでください。記事本文は与えられていないため、既存規律から導けない追加事実が必要なら未確認事項として残してください。",
       "expected_output": "concerns/resilienceの既存規律がjitterを所有済みか照合し、充足済みなら重複を作らず無変更とする。",
       "files": [],
       "expectations": [
         "既存所有者として concerns/resilience.md を先に確認する",
-        "記事だけで断定せず一次資料を複数確認する",
+        "記事側の追加事実を採用する場合だけ一次資料を複数確認し、現行本文の内部照合で無変更なら不要な外部調査を行わない",
+        "要求・完了条件・禁止事項・行動から jitter の対象と違反を一意に判定できるか確認する",
+        "遵守判定を変える合理的な別解釈がないことを確認してから無変更とする",
         "新規概念や他層への重複を作らない",
         "無変更なら不要なverifier再実行や本文編集を行わず照合結果を報告する"
       ]
@@ -84,6 +86,72 @@
         "望ましい例の summary を名前の直訳でなく用途が分かる目的へ直す",
         "例の焦点外でも両方の関数宣言に @param candidate と @returns の契約を記す",
         "verify.sh を実行し、結果を報告する"
+      ]
+    },
+    {
+      "id": 7,
+      "model": "sonnet",
+      "prompt": "『同じ制約を型・静的検査・実行テストで重複して判定せず、最も内側の一手段だけで判定する』という知見を architecture-standard に取り込めるか確認し、必要なら標準を更新してください。同じ趣旨が採用済みに見えても、書き方が悪くないか、遵守判定を変える別の読み方ができないか、適用範囲が曖昧でないか、周辺の必須項目を弱めないか、強制力があるかまで確認してください。特に『同じ性質』について、二つの判定を同じ性質とみなす条件を標準本文だけから一意に導けるか確認してください。既存規律と所有者を確認し、同じ意味を複数箇所へ追加しないでください。",
+      "expected_output": "root README.md の配置規則、structure/tests/layout.md の責務、既存の参照方向から structure/tests/methods.md を正本として確認する。『同じ性質』を、割り当て先の要求と禁止事項から導いた非空の全対象・入力集合で合否が双方向に含意される観測可能な一述語として定め、空または要求範囲を欠く集合、比較不能または片方が適用不能な検証、反例をまだ発見していないだけの検証を重複とみなす読み方を最小差分で排除する。",
+      "files": [
+        "structure/tests/methods.md",
+        "languages/typescript/inspection.md"
+      ],
+      "expectations": [
+        "語や主張の存在だけで採用済みと判定しない",
+        "入力の知見を未採用の候補として扱い、既存規律との照合前に上位原則へ昇格させない",
+        "ほぼ同じ主張を既に持つ structure/tests/methods.md を最初の所有者候補にし、root README.md の配置規則、tests の責務、知識の変更理由に照らして principles へ移す根拠がないことを確認する",
+        "README.md、structure/tests/methods.md、structure/tests/layout.md は exact path を Read で直接読み、存在確認または再発見の Glob を行わない",
+        "三fileで所有者を確定した後は repository 全域や principles、concerns、languages、tools へ重複確認の Grep を広げない",
+        "意図した読み方と遵守判定を変える合理的な別解釈を比較する",
+        "structure/tests/methods.md の同じ節にある表と周辺要件を一つの判断単位として読む",
+        "structure の必須記述、表、検証入口の対応を照合し、principles・concerns・languages の必須5節を持ち込まない",
+        "正本を structure/tests/methods.md に保ち、principles、tools、languages に同じ方法論を複製しない",
+        "意味の追加と意味を保った文章のリファクタリングを区別する",
+      "二つの検証を同じ性質とみなすには、比較集合を検証の自己申告でなく割り当て先の要求と禁止事項が要求する全範囲から導き、その集合が非空であること、集合の一致と全要素における合否述語の双方向の含意を要求する。空集合、要求範囲を欠く同じ部分集合、交差部分だけを共通集合として選ばない",
+        "適用集合が一致しない、一方が適用不能になる、または一方だけが不合格となる場合は別の性質として両方を残し、反例をまだ発見していないことだけでは同じと判定しない",
+        "同じ規範命題を実装する検証の片方だけが実装欠陥または更新漏れで誤判定することを、別の性質として両方を残す根拠にしない",
+        "現行文の削除・置換または既存の判定要素の接続で足りるかを先に判定し、十分な最初の段で止める",
+        "既存の正本内の文章修正で足りる場合は、新しい H2、file、reference、script、eval を作らない",
+        "段4を選んだ場合は新しい規範上の意味を追加したと報告し、編集後に意味を変えていないと読み替えない",
+      "段4の下位実現は languages/README.md と rust・csharp・typescript の inspection.md を exact path で直接読み、Glob、Grep、principles/verification.md へ広げず、本文変更の要否を報告する",
+        "TypeScript が cyclomatic complexity と cognitive complexity を別性質と明記しながら二重測定として前者を無効化する矛盾を見つけ、cyclomatic complexity は別性質だが標準の必須検証へ割り当てていないという非採用理由へ同期する。別性質であるだけで両方を必須化しない",
+        "TypeScript の同じ規律に残る『複雑度は SonarQube に一本化』という総称も、認知的複雑さを cognitive complexity(S3776)で測る行動へ限定する",
+      "変更した場合は verify.sh を実行し、結果を報告する"
+      ]
+    },
+    {
+      "id": 8,
+      "model": "sonnet",
+      "prompt": "実行時 flag の更新を型と許容範囲で検証し、不正な更新を拒否して直前の有効値を維持する、という候補を architecture-standard へ取り込めるか確認し、必要なら更新してください。concerns/configuration.md にある起動時設定と runtime flag の既存規律を確認し、同じ意味を別領域へ重複させないでください。",
+      "expected_output": "concerns/configuration.md を正本に保ち、起動時設定の既存保証を文章の言い換えだけで済ませず、実行時 flag の更新境界に型・範囲検証、不正更新の拒否、直前の有効値の維持という新しい遵守結果を追加して、意味の拡張と裁定する。起動失敗時の停止とは入力境界と失敗時処理が異なるため、起動時検証の規律へ混ぜず、flag 更新の焦点を持つ規律へ分ける。",
+      "files": [
+        "concerns/configuration.md"
+      ],
+      "expectations": [
+        "入力を未採用の候補として扱い、既存の起動時設定と実行時 flag の規律を一つの判断単位として読む",
+        "所有者を concerns/configuration.md に保ち、別領域へ同じ規律を複製しない",
+        "既存の起動時検証からは導けない実行時更新の遵守結果を、文章のリファクタリングでなく意味の拡張と裁定する",
+        "起動時検証の見出しを広げず、入力境界と失敗時処理が異なる flag 更新を焦点の分かれた規律にする",
+        "実行時 flag の更新時に型と許容範囲を検証する",
+        "不正な更新を拒否し、直前の有効値を維持する",
+        "verify.sh を実行し、結果を報告する"
+      ]
+    },
+    {
+      "id": 9,
+      "model": "sonnet",
+      "prompt": "『retry は回復の見込みがある一時的な失敗だけを、上限つきの後退する間隔で行い、その間隔に jitter を加える』という候補を architecture-standard に取り込めるか裁定してください。concerns/resilience.md の既存規律を確認し、現行本文が既に満たすなら編集しないでください。",
+      "expected_output": "明示された concerns/resilience.md を最初に読み、既存規律の充足裁定に必要な normative-quality reference だけを追加で読んで無変更を報告する。",
+      "files": [],
+      "expectations": [
+        "配置や所有者を変える候補ではないため root README.md を先回りして読まず、concerns/resilience.md を最初の所有者候補として確認する",
+        "配置や領域書式を変えないため references/concerns.md は読まず、既存規律の充足裁定に references/normative-quality.md だけを使う",
+        "references/principles.md、languages.md、structure.md、tools.md、process.md を先回りして読まない",
+        "reference directory の列挙や、判断に使わない reference の一括読みを行わない",
+        "充足済みで意味を変えず下位実現も変更しないため、repository 全域の Grep や Glob で一致箇所を探さない",
+        "現行規律が候補を自己充足的に要求していると確認できた場合は本文を変更しない",
+        "無変更なら本文用 verifier を実行せず、参照した本文、裁定、別解釈、未確認事項を報告する"
       ]
     }
   ]

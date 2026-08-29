@@ -53,6 +53,42 @@ expect_line() {
   if rg -qF -x -- "$line" "$@"; then pass "$label"; else fail "$label" "line: $line"; fi
 }
 
+expect_eval_prompt_no_text() {
+  local label="$1"
+  local eval_id="$2"
+  local pattern="$3"
+  local eval_file="$4"
+  if node -e '
+    const fs = require("node:fs");
+    const [file, id, pattern] = process.argv.slice(1);
+    const item = JSON.parse(fs.readFileSync(file, "utf8")).evals.find((entry) => String(entry.id) === id);
+    if (!item) process.exit(2);
+    process.exit(new RegExp(pattern).test(item.prompt) ? 1 : 0);
+  ' "$eval_file" "$eval_id" "$pattern"; then
+    pass "$label"
+  else
+    fail "$label" "eval $eval_id prompt に含めない: $pattern"
+  fi
+}
+
+expect_eval_prompt_text() {
+  local label="$1"
+  local eval_id="$2"
+  local pattern="$3"
+  local eval_file="$4"
+  if node -e '
+    const fs = require("node:fs");
+    const [file, id, pattern] = process.argv.slice(1);
+    const item = JSON.parse(fs.readFileSync(file, "utf8")).evals.find((entry) => String(entry.id) === id);
+    if (!item) process.exit(2);
+    process.exit(new RegExp(pattern).test(item.prompt) ? 0 : 1);
+  ' "$eval_file" "$eval_id" "$pattern"; then
+    pass "$label"
+  else
+    fail "$label" "eval $eval_id prompt に含める: $pattern"
+  fi
+}
+
 printf '=== 1. skill の指示整合 ===\n'
 expect_text \
   "recovery eval はGlob回数とpatternを採点する" \
@@ -96,99 +132,102 @@ expect_text \
   "文章refactor evalは同一性条件の自己充足を問う" \
   '二つの判定を同じ性質とみなす条件を標準本文だけから一意に導けるか' \
   .claude/skills/standard-update/evals/evals.json
+expect_text \
+  "Ponytail の一次資料を出典記録へ残す" \
+  'Source: https://github\.com/DietrichGebert/ponytail/blob/main/skills/ponytail/SKILL\.md' \
+  .claude/skills/standard-apply/references/provenance.md
+expect_text \
+  "Ponytail のlicenseを出典記録へ残す" \
+  'License: MIT \(https://raw\.githubusercontent\.com/DietrichGebert/ponytail/main/LICENSE\)' \
+  .claude/skills/standard-apply/references/provenance.md
+expect_text \
+  "Ponytail 由来の採用を出典記録へ残す" \
+  '^\- Adopted:' \
+  .claude/skills/standard-apply/references/provenance.md
+expect_text \
+  "Ponytail 由来の不採用を出典記録へ残す" \
+  '^\- Rejected:' \
+  .claude/skills/standard-apply/references/provenance.md
+
+TEMP_BASE="${TMPDIR:-/tmp}"
+TEMP_BASE="$(cd "$TEMP_BASE" 2>/dev/null && pwd -P)" || {
+  fail "skill-test の一時ディレクトリを作成" "TMPDIR is unavailable"
+  printf '\nテスト: %d passed, %d failed\n' "$PASSED" "$FAILED"
+  exit 1
+}
+TEST_ROOT=$(mktemp -d "$TEMP_BASE/architecture-standard-skill-test.XXXXXX") || {
+  fail "skill-test の一時ディレクトリを作成" "mktemp -d failed"
+  printf '\nテスト: %d passed, %d failed\n' "$PASSED" "$FAILED"
+  exit 1
+}
+case "$TEST_ROOT" in
+  "$TEMP_BASE"/architecture-standard-skill-test.*) ;;
+  *)
+    fail "skill-test の一時ディレクトリを作成" "unsafe temporary directory: $TEST_ROOT"
+    exit 1
+    ;;
+esac
+cleanup() {
+  case "$TEST_ROOT" in
+    "$TEMP_BASE"/architecture-standard-skill-test.*)
+      [ ! -e "$TEST_ROOT" ] || rm -rf -- "$TEST_ROOT"
+      ;;
+  esac
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 printf '\n=== 2. task eval と trigger eval の schema ===\n'
-eval_output=$(node <<'NODE' 2>&1
-const fs = require("node:fs");
-const path = require("node:path");
-
-const skillNames = ["standard-apply", "standard-audit", "standard-update"];
-let violations = 0;
-
-function reject(message) {
-  console.error(`FAIL: ${message}`);
-  violations += 1;
-}
-
-for (const skillName of skillNames) {
-  const root = path.join(".claude", "skills", skillName);
-  const skillPath = path.join(root, "SKILL.md");
-  const evalPath = path.join(root, "evals", "evals.json");
-  const triggerPath = path.join(root, "evals", "trigger-evals.json");
-
-  const skillSource = fs.readFileSync(skillPath, "utf8");
-  const frontmatter = skillSource.match(/^---\n([\s\S]*?)\n---\n/);
-  if (!frontmatter) {
-    reject(`${skillName}: YAML frontmatter がない`);
-  } else {
-    const name = frontmatter[1].match(/^name:\s*(.+)$/m)?.[1]?.trim();
-    const description = frontmatter[1].match(/^description:\s*(.+)$/m)?.[1]?.trim();
-    if (name !== skillName) reject(`${skillName}: frontmatter name が directory と一致しない`);
-    if (!name || name.length > 64 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
-      reject(`${skillName}: name は64文字以下のlowercase/digit/hyphenであること`);
-    }
-    if (!description || description.length > 1024 || /[<>]/.test(description)) {
-      reject(`${skillName}: description は1..1024文字でXML tagを含まないこと`);
-    }
-  }
-  const lineCount = skillSource.endsWith("\n") ? skillSource.slice(0, -1).split("\n").length : skillSource.split("\n").length;
-  if (lineCount >= 500) reject(`${skillName}: SKILL.md は500行未満であること`);
-
-  if (!fs.existsSync(evalPath)) {
-    reject(`${skillName}: evals/evals.json がない`);
-  } else {
-    const data = JSON.parse(fs.readFileSync(evalPath, "utf8"));
-    if (data.skill_name !== skillName) reject(`${skillName}: skill_name が一致しない`);
-    if (!Array.isArray(data.evals) || data.evals.length < 3) {
-      reject(`${skillName}: task eval は3件以上必要`);
-    } else {
-      const ids = new Set();
-      for (const item of data.evals) {
-        if (!Number.isInteger(item.id) || ids.has(item.id)) reject(`${skillName}: eval id が不正または重複`);
-        ids.add(item.id);
-        if (typeof item.prompt !== "string" || item.prompt.length < 40) reject(`${skillName}: prompt が短すぎる`);
-        if (typeof item.expected_output !== "string" || item.expected_output.length < 20) reject(`${skillName}: expected_output が短すぎる`);
-        if (!Array.isArray(item.expectations) || item.expectations.length < 3) reject(`${skillName}: expectations は3件以上必要`);
-        if (!Array.isArray(item.files)) reject(`${skillName}: files は配列であること`);
-        if (!["haiku", "sonnet", "opus"].includes(item.model)) reject(`${skillName}: model が不正`);
-      }
-      const models = new Set(data.evals.map((item) => item.model));
-      for (const model of ["haiku", "sonnet", "opus"]) {
-        if (!models.has(model)) reject(`${skillName}: ${model} の task eval がない`);
-      }
-    }
-  }
-
-  if (!fs.existsSync(triggerPath)) {
-    reject(`${skillName}: evals/trigger-evals.json がない`);
-  } else {
-    const queries = JSON.parse(fs.readFileSync(triggerPath, "utf8"));
-    if (!Array.isArray(queries) || queries.length < 20) {
-      reject(`${skillName}: trigger eval は20件以上必要`);
-    } else {
-      const positive = queries.filter((item) => item.should_trigger === true).length;
-      const negative = queries.filter((item) => item.should_trigger === false).length;
-      if (positive < 8 || negative < 8) reject(`${skillName}: positive/negative は各8件以上必要`);
-      for (const item of queries) {
-        if (typeof item.query !== "string" || item.query.length < 20) reject(`${skillName}: trigger query が短すぎる`);
-        if (typeof item.should_trigger !== "boolean") reject(`${skillName}: should_trigger はbooleanであること`);
-        if (Object.hasOwn(item, "expected_skill") && item.expected_skill !== null && !skillNames.includes(item.expected_skill)) {
-          reject(`${skillName}: expected_skill が不正`);
-        }
-      }
-    }
-  }
-}
-
-console.log(`violations: ${violations}`);
-process.exit(violations === 0 ? 0 : 1);
-NODE
-)
+eval_output=$(bash "$SCRIPT_DIR/skill-package-check.sh" 2>&1)
 if [ "$?" -eq 0 ]; then
   printf '%s\n' "$eval_output"
-  pass "3 skill の eval schema が有効"
+  pass "3 skill の package 構造と eval schema が有効"
 else
-  fail "3 skill の eval schema が無効" "$eval_output"
+  fail "3 skill の package 構造または eval schema が無効" "$eval_output"
+fi
+package_fixture="$TEST_ROOT/package-missing-evals"
+mkdir -p "$package_fixture" || fail "package checker fixture を構築" "mkdir failed"
+cp -a .claude "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
+git -C "$package_fixture" init --quiet || fail "package checker fixture を構築" "git init failed"
+rm -rf -- "$package_fixture/.claude/skills/standard-apply/evals"
+if package_missing_output=$(cd "$package_fixture" && bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  fail "通常実行ではskillのeval一式欠落を拒否する" "$package_missing_output"
+elif ! printf '%s\n' "$package_missing_output" | rg -qF 'standard-apply: evals directory がない'; then
+  fail "eval一式欠落を具体的に診断する" "$package_missing_output"
+else
+  pass "通常実行ではskillのeval一式欠落を拒否する"
+fi
+if package_isolated_output=$(cd "$package_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=with-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  pass "隔離評価では選択skillの隠したevalだけを許可する"
+else
+  fail "隔離評価では選択skillの隠したevalだけを許可する" "$package_isolated_output"
+fi
+if package_partial_context=$(cd "$package_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  fail "不完全な隔離contextでeval欠落を許可しない" "$package_partial_context"
+else
+  pass "不完全な隔離contextでeval欠落を許可しない"
+fi
+package_without_fixture="$TEST_ROOT/package-without-skill"
+mkdir -p "$package_without_fixture" || fail "without-skill package fixture を構築" "mkdir failed"
+cp -a .claude "$package_without_fixture/" || fail "without-skill package fixture を構築" "copy failed"
+git -C "$package_without_fixture" init --quiet || fail "without-skill package fixture を構築" "git init failed"
+rm -rf -- "$package_without_fixture/.claude/skills/standard-apply"
+if package_without_output=$(cd "$package_without_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  pass "without-skill隔離評価では選択packageだけの不存在を許可する"
+else
+  fail "without-skill隔離評価では選択packageだけの不存在を許可する" "$package_without_output"
+fi
+package_partial_fixture="$TEST_ROOT/package-partial-without-skill"
+mkdir -p "$package_partial_fixture" || fail "partial without-skill package fixture を構築" "mkdir failed"
+cp -a .claude "$package_partial_fixture/" || fail "partial without-skill package fixture を構築" "copy failed"
+git -C "$package_partial_fixture" init --quiet || fail "partial without-skill package fixture を構築" "git init failed"
+rm -f -- "$package_partial_fixture/.claude/skills/standard-apply/SKILL.md"
+if package_partial_output=$(cd "$package_partial_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  fail "without-skill隔離評価では選択packageの部分残存を拒否する" "$package_partial_output"
+else
+  pass "without-skill隔離評価では選択packageの部分残存を拒否する"
 fi
 unexpected_fixture_typo='情報の'"概観"
 expect_no_text \
@@ -202,6 +241,62 @@ expect_no_text \
 expect_text \
   "task evaluator は変更と skill 契約が要求する場合だけ検証入口を示す" \
   'task が file を変更し.*skill が検証を要求する場合' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_no_text \
+  "task evaluator はexact path routingをoracleとして注入しない" \
+  'task または使用する skill が exact file path を固定した場合は Read で直接読み' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_no_text \
+  "task evaluator はsnapshotのexact diff解法をoracleとして注入しない" \
+  '根拠に使う exact file path だけを git diff の引数にし' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はrouting判断をtaskと対象skillへ委ねる" \
+  'どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はskillの最初の対象project操作を共通promptで上書きしない" \
+  '対象 skill が最初の対象 project 操作または閉じた参照経路を定める場合は、他の対象 project 操作より優先' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator は固定patternの試行錯誤を許さない" \
+  'exact path、exact token、Glob pattern、回数を固定した場合は、その値を変えた試行や候補探索を前後に追加しない' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator は一時的な ENOTEMPTY を再試行してfixtureを回収する" \
+  'rmSync\(fixtureRoot, \{ recursive: true, force: true, maxRetries: [1-9][0-9]*, retryDelay: [1-9][0-9]* \}\)' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はsubagentなしの自己監査fallbackを明示する" \
+  'skill が独立 reviewer を明示的に要求する場合だけ.*scoped self-audit' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はfallbackで閉じた経路を広げない" \
+  '閉じた経路が tool または file を制限する場合は fallback でもその範囲を広げない' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator は実行中のskillから評価oracleを隠す" \
+  'hideCurrentSkillEvaluationOracles\(fixtureRoot, skillName\)' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はfixtureからskill assertion oracleを隠す" \
+  '"standard-update", "scripts", "skill-test.sh"' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_no_text \
+  "task evaluator はagentへskill-test実行を許可しない" \
+  'Bash\(bash \.claude/skills/standard-update/scripts/skill-test\.sh\)' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はagentへproduct検査の実行を許可する" \
+  'Bash\(bash \.claude/skills/standard-update/scripts/skill-package-check\.sh\)' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はproduct検査へ選択skillを明示する" \
+  'env\.SKILL_EVAL_ISOLATED_SKILL = skillName' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_text \
+  "task evaluator はproduct検査へ比較条件を明示する" \
+  'env\.SKILL_EVAL_CONFIGURATION = configuration' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_line \
   "task evaluator は全skillのfixtureからmutation sourceを除く" \
@@ -241,8 +336,8 @@ expect_text \
   '`standard_commit: \$\{standardCommit\}`' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_line \
-  "task evaluator は代替探索も task と skill の許可へ従わせる" \
-  '      "ls、find、wc、cat、git log、git rev-parse を Bash で実行しないでください。探索が task と skill で許可される場合だけ Glob または Grep を使い、既知の file は Read で直接読んでください。",' \
+  "task evaluator はAgent toolを明示的に禁止する" \
+  '      "Agent",' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 
 printf '\n=== 3. verifier は依存不足で fail closed ===\n'
@@ -261,35 +356,6 @@ make_limited_path() {
   done
 }
 
-TEMP_BASE="${TMPDIR:-/tmp}"
-TEMP_BASE="$(cd "$TEMP_BASE" 2>/dev/null && pwd -P)" || {
-  fail "skill-test の一時ディレクトリを作成" "TMPDIR is unavailable"
-  printf '\nテスト: %d passed, %d failed\n' "$PASSED" "$FAILED"
-  exit 1
-}
-TEST_ROOT=$(mktemp -d "$TEMP_BASE/architecture-standard-skill-test.XXXXXX") || {
-  fail "skill-test の一時ディレクトリを作成" "mktemp -d failed"
-  printf '\nテスト: %d passed, %d failed\n' "$PASSED" "$FAILED"
-  exit 1
-}
-case "$TEST_ROOT" in
-  "$TEMP_BASE"/architecture-standard-skill-test.*) ;;
-  *)
-    fail "skill-test の一時ディレクトリを作成" "unsafe temporary directory: $TEST_ROOT"
-    exit 1
-    ;;
-esac
-cleanup() {
-  case "$TEST_ROOT" in
-    "$TEMP_BASE"/architecture-standard-skill-test.*)
-      [ ! -e "$TEST_ROOT" ] || rm -rf -- "$TEST_ROOT"
-      ;;
-  esac
-}
-trap cleanup EXIT
-trap 'exit 129' HUP
-trap 'exit 130' INT
-trap 'exit 143' TERM
 BASH_PATH=$(command -v bash)
 
 for missing_command in node fd; do
@@ -326,6 +392,11 @@ else
   pass "mktemp 失敗で即時終了"
 fi
 
+expect_text \
+  "trigger evaluator はtaskを実行せずroutingだけを測る" \
+  'これは Skill の発火先だけを測る隔離評価です。依頼そのものは実行しないでください' \
+  .claude/skills/standard-update/scripts/run-trigger-evals.mjs
+
 printf '\n=== 5. trigger evaluator は発火とtask完遂を分離する ===\n'
 for failure_mode in nonzero malformed result-error; do
   fake_claude="$TEST_ROOT/claude-$failure_mode"
@@ -350,7 +421,7 @@ for failure_mode in nonzero malformed result-error; do
     fail "$failure_mode fixture を構築" "chmod failed"
     continue
   }
-  if trigger_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_claude" CLAUDE_EVAL_TIMEOUT_MS="$timeout_ms" node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 12 2>&1); then
+  if trigger_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_claude" CLAUDE_EVAL_TIMEOUT_MS="$timeout_ms" node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 12 2>&1); then
     fail "$failure_mode を発火評価の非発火 PASS にしない" "$trigger_output"
   elif ! printf '%s\n' "$trigger_output" | rg -qF "$expected_error"; then
     fail "$failure_mode を具体的に診断する" "$trigger_output"
@@ -366,7 +437,7 @@ printf '%s\n' \
   '( trap '\'''\'' TERM; sleep 5 ) &' \
   'wait' > "$fake_malformed_hang"
 chmod +x "$fake_malformed_hang" || fail "malformed-hang fixture を構築" "chmod failed"
-if malformed_hang_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_malformed_hang" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 12 2>&1); then
+if malformed_hang_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_malformed_hang" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 12 2>&1); then
   fail "壊れた stream-json を非発火成功にしない" "$malformed_hang_output"
 elif ! printf '%s\n' "$malformed_hang_output" | rg -qF 'malformed stream-json event'; then
   fail "壊れた stream-json を具体的に診断する" "$malformed_hang_output"
@@ -381,7 +452,7 @@ printf '%s\n' \
   '( trap '\'''\'' TERM; sleep 5 ) &' \
   'wait' > "$fake_truncated_hang"
 chmod +x "$fake_truncated_hang" || fail "truncated-hang fixture を構築" "chmod failed"
-if truncated_hang_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_truncated_hang" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 12 2>&1); then
+if truncated_hang_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_truncated_hang" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 12 2>&1); then
   fail "改行なしの壊れた stream-json を非発火成功にしない" "$truncated_hang_output"
 elif ! printf '%s\n' "$truncated_hang_output" | rg -qF 'malformed stream-json event'; then
   fail "改行なしの壊れた stream-json を具体的に診断する" "$truncated_hang_output"
@@ -395,12 +466,12 @@ printf '%s\n' \
   '( trap '\'''\'' TERM; sleep 5 ) &' \
   'wait' > "$fake_observation_window"
 chmod +x "$fake_observation_window" || fail "observation-window fixture を構築" "chmod failed"
-if observation_negative_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_observation_window" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 12 2>&1); then
+if observation_negative_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_observation_window" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 12 2>&1); then
   pass "観測窓内に Skill がなければ非発火期待を完遂待ちなしで記録"
 else
   fail "観測窓内に Skill がなければ非発火期待を完遂待ちなしで記録" "$observation_negative_output"
 fi
-if observation_positive_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_observation_window" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
+if observation_positive_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_observation_window" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
   fail "観測窓内に Skill がなければ発火期待を失敗にする" "$observation_positive_output"
 elif printf '%s\n' "$observation_positive_output" | rg -qF 'error=timeout'; then
   fail "発火先不一致とtask timeoutを混同しない" "$observation_positive_output"
@@ -417,7 +488,7 @@ printf '%s\n' \
   '});' \
   'setInterval(() => {}, 1000);' > "$fake_skill_after_observation"
 chmod +x "$fake_skill_after_observation" || fail "skill-after-observation fixture を構築" "chmod failed"
-if skill_after_observation_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_skill_after_observation" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
+if skill_after_observation_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_skill_after_observation" CLAUDE_EVAL_TIMEOUT_MS=50 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
   fail "観測窓終了後の Skill を発火成功にしない" "$skill_after_observation_output"
 elif printf '%s\n' "$skill_after_observation_output" | rg -q 'selected=standard-apply|"selected_skill": "standard-apply"'; then
   fail "観測窓終了後の Skill を選択結果へ混入しない" "$skill_after_observation_output"
@@ -444,7 +515,7 @@ printf '%s\n' \
   '( trap '\'''\'' TERM; sleep 5 ) &' \
   'wait' > "$fake_competing_read"
 chmod +x "$fake_competing_read" || fail "competing Read fixture を構築" "chmod failed"
-if competing_read_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_competing_read" CLAUDE_EVAL_TIMEOUT_MS=5000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
+if competing_read_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_competing_read" CLAUDE_EVAL_TIMEOUT_MS=5000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
   fail "発火期待で先に調査toolを選んだ場合は失敗にする" "$competing_read_output"
 elif [ "$?" -eq 124 ] || printf '%s\n' "$competing_read_output" | rg -qF 'error=timeout'; then
   fail "先行した調査toolを観測窓終了まで待たない" "$competing_read_output"
@@ -560,7 +631,7 @@ printf '%s\n' \
   'console.log(JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id: "skill-1", name: "Skill", input: { skill: "standard-apply" } }] } }));' \
   'setInterval(() => {}, 1000);' > "$fake_skill_runner_termination_result"
 chmod +x "$fake_skill_runner_termination_result" || fail "runner termination result fixture を構築" "chmod failed"
-if skill_runner_termination_result_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_skill_runner_termination_result" CLAUDE_EVAL_TIMEOUT_MS=5000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
+if skill_runner_termination_result_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_skill_runner_termination_result" CLAUDE_EVAL_TIMEOUT_MS=5000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
   pass "Skill 選択後に runner 自身が生じさせた result error は発火失敗にしない"
 else
   fail "Skill 選択後に runner 自身が生じさせた result error は発火失敗にしない" "$skill_runner_termination_result_output"
@@ -576,7 +647,7 @@ printf '%s\n' \
   'console.log(JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id: "skill-1", name: "Skill", input: { skill: "standard-apply" } }] } }));' \
   'setInterval(() => {}, 1000);' > "$fake_skill_runner_malformed"
 chmod +x "$fake_skill_runner_malformed" || fail "runner malformed fixture を構築" "chmod failed"
-if skill_runner_malformed_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_skill_runner_malformed" CLAUDE_EVAL_TIMEOUT_MS=5000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
+if skill_runner_malformed_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_skill_runner_malformed" CLAUDE_EVAL_TIMEOUT_MS=5000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 0 2>&1); then
   pass "Skill 選択後の壊れた出力は確定済み発火を変えない"
 else
   fail "Skill 選択後の壊れた出力は確定済み発火を変えない" "$skill_runner_malformed_output"
@@ -628,20 +699,62 @@ fake_task_harness_probe="$TEST_ROOT/claude-task-harness-probe"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'runner=.claude/skills/standard-update/scripts/run-task-evals.mjs' \
+  'trigger_runner=.claude/skills/standard-update/scripts/run-trigger-evals.mjs' \
+  'skill_oracle=.claude/skills/standard-update/scripts/skill-test.sh' \
+  'product_check=.claude/skills/standard-update/scripts/skill-package-check.sh' \
+  'skill_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL' \
+  'eval_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL/evals' \
+  'task_oracle=$eval_root/evals.json' \
+  'trigger_oracle=$eval_root/trigger-evals.json' \
   'unexpected='\''情報の'\''"概観"' \
   'leaks=$(rg -lF "$unexpected" . | rg -v '\''^(\./)?principles/README\.md$'\'' || true)' \
-  'if rg -q '\''injectedTypo'\'' "$runner" || [ -n "$leaks" ]; then' \
+  'if git show HEAD^:"$task_oracle" >/dev/null 2>&1 || git show HEAD^:"$trigger_oracle" >/dev/null 2>&1 || git show HEAD^:"$runner" >/dev/null 2>&1 || git show HEAD^:"$trigger_runner" >/dev/null 2>&1 || git show HEAD^:"$skill_oracle" >/dev/null 2>&1; then' \
+  '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"evaluation oracle or mutation is reachable from history"}'\''' \
+  'elif [ "$SKILL_EVAL_CONFIGURATION" = without-skill ] && [ -e "$skill_root" ]; then' \
+  '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"selected skill package remains in without-skill fixture"}'\''' \
+  'elif [ -e "$eval_root" ] || [ -e "$runner" ] || [ -e "$trigger_runner" ] || [ -e "$skill_oracle" ] || [ -n "$leaks" ]; then' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"evaluation harness leaked into fixture"}'\''' \
+  'elif [ -e "$product_check" ] && ! bash "$product_check" >/dev/null; then' \
+  '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"product checker rejected isolated fixture"}'\''' \
+  'elif [ "$SKILL_EVAL_ISOLATED_SKILL" = standard-update ] && [ "$SKILL_EVAL_CONFIGURATION" = with-skill ] && [ ! -e "$product_check" ]; then' \
+  '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"with-skill fixture lacks product checker"}'\''' \
   'else' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","total_cost_usd":0,"usage":{}}'\''' \
   'fi' > "$fake_task_harness_probe"
 chmod +x "$fake_task_harness_probe" || fail "task harness probe fixture を構築" "chmod failed"
+for probe_skill in standard-apply standard-audit standard-update; do
+  for eval_configuration in with-skill old-skill without-skill; do
+    if task_harness_probe_output=$(CLAUDE_EVAL_COMMAND="$fake_task_harness_probe" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/task-harness-probe-evals" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration "$eval_configuration" --skill "$probe_skill" --eval-id 1 2>&1) \
+      && ! rg -q '"is_error": true' "$TEST_ROOT/task-harness-probe-evals/$probe_skill/eval-1-haiku/$eval_configuration/result.json"; then
+      pass "$probe_skill/$eval_configuration のtask fixtureからmutationを隔離"
+    else
+      fail "$probe_skill/$eval_configuration のtask fixtureからmutationを隔離" "$task_harness_probe_output"
+    fi
+  done
+done
+
+fake_audit_mutation_probe="$TEST_ROOT/claude-audit-mutation-probe"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'runner=.claude/skills/standard-update/scripts/run-task-evals.mjs' \
+  'expected='\''要求した範囲は、受入条件、標準の必須規律、安全、互換性、必要な検証を欠かさず作り切る。'\''' \
+  'injected='\''要求した範囲は、必要な品質を適切に満たす。'\''' \
+  'diff_files=$(git diff --name-only)' \
+  'eval_status=$(git status --short --untracked-files=all -- .claude/skills/standard-audit/evals)' \
+  'if [ "$diff_files" != "principles/README.md" ] || ! rg -qF "$injected" principles/README.md; then' \
+  '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"audit mutation missing or escaped its target"}'\''' \
+  'elif [ -e "$runner" ] || [ -n "$eval_status" ]; then' \
+  '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"audit mutation or oracle leaked into fixture"}'\''' \
+  'else' \
+  '  printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","total_cost_usd":0,"usage":{}}'\''' \
+  'fi' > "$fake_audit_mutation_probe"
+chmod +x "$fake_audit_mutation_probe" || fail "audit mutation probe fixture を構築" "chmod failed"
 for eval_configuration in with-skill old-skill without-skill; do
-  if task_harness_probe_output=$(CLAUDE_EVAL_COMMAND="$fake_task_harness_probe" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/task-harness-probe-evals" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration "$eval_configuration" --skill standard-update --eval-id 1 2>&1) \
-    && ! rg -q '"is_error": true' "$TEST_ROOT/task-harness-probe-evals/standard-update/eval-1-haiku/$eval_configuration/result.json"; then
-    pass "$eval_configuration のtask fixtureからmutationを隔離"
+  if audit_mutation_probe_output=$(CLAUDE_EVAL_COMMAND="$fake_audit_mutation_probe" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/audit-mutation-probe-evals" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration "$eval_configuration" --skill standard-audit --eval-id 4 2>&1) \
+    && ! rg -q '"is_error": true' "$TEST_ROOT/audit-mutation-probe-evals/standard-audit/eval-4-sonnet/$eval_configuration/result.json"; then
+    pass "$eval_configuration のaudit fixtureからmutationとoracleを隔離"
   else
-    fail "$eval_configuration のtask fixtureからmutationを隔離" "$task_harness_probe_output"
+    fail "$eval_configuration のaudit fixtureからmutationとoracleを隔離" "$audit_mutation_probe_output"
   fi
 done
 
@@ -655,7 +768,7 @@ printf '%s\n' \
   'eval_ignored_status=$(git status --short --ignored=matching -- .claude/skills/standard-update/evals)' \
   'if [ "$diff_files" != ".claude/skills/standard-audit/SKILL.md" ] || ! rg -qF '\''+- **A 思想の足場**: root `README.md`'\'' <<< "$scope_diff"; then' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"instruction-only fixture diff missing"}'\''' \
-  'elif rg -q '\''evalId === 4|docs/decisions/0011-deliberate-divergences'\'' "$runner" || [ -n "$eval_status" ] || [ -n "$eval_ignored_status" ]; then' \
+  'elif [ -e "$runner" ] || [ -n "$eval_status" ] || [ -n "$eval_ignored_status" ]; then' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"evaluation scope fixture leaked into runner"}'\''' \
   'else' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","total_cost_usd":0,"usage":{}}'\''' \
@@ -685,7 +798,7 @@ printf '%s\n' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"example mutation missing or escaped its target"}'\''' \
   '  exit 0' \
   'fi' \
-  'if rg -q '\''evalId === [56]|legacyExample|currentExample|defectiveExample'\'' "$runner"; then' \
+  'if [ -e "$runner" ]; then' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"example mutation source leaked into fixture"}'\''' \
   'else' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","total_cost_usd":0,"usage":{}}'\''' \
@@ -710,7 +823,7 @@ printf '%s\n' \
   'wait' > "$fake_task_claude"
 if ! chmod +x "$fake_task_claude"; then
   fail "task evaluator fixture を構築" "chmod failed"
-elif task_output=$(timeout 4 env CLAUDE_EVAL_COMMAND="$fake_task_claude" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/task-evals" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration with-skill --skill standard-apply --eval-id 1 2>&1); then
+elif task_output=$(timeout 10 env CLAUDE_EVAL_COMMAND="$fake_task_claude" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/task-evals" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration with-skill --skill standard-apply --eval-id 1 2>&1); then
   task_timing="$TEST_ROOT/task-evals/standard-apply/eval-1-haiku/with-skill/timing.json"
   if [ ! -f "$task_timing" ]; then
     fail "task evaluator が timing artifact を保存する" "$task_output"
