@@ -6,14 +6,16 @@
 
 ## 順序
 
-1. 対象の規模を、安全を確かめるのに要る検証の水準で見積もる([principles/verification](../principles/verification.md) のテストを振る舞いの安全網にするに従う)。
-2. 振る舞いの安全網を確かめ、足りない範囲は現在の振る舞いを観測して固定するテストで埋める([principles/verification](../principles/verification.md) のテストを振る舞いの安全網にするに従う)。
-3. 変更を小さく可逆な段に分け、境界を跨ぐ変更は境界ごとにチェックポイントを置く([principles/evolution](../principles/evolution.md) の変更は段階的で可逆にするに従う)。
-4. 目的が混在した要素は、目的ごとに分けてから、同じ知識を表す部分だけを抽出する([principles/separation](../principles/separation.md) の変更理由で分けるに従う)。
-5. 制御の混乱した箇所は、入出力の契約だけを固定し、内部を書き直す([principles/evolution](../principles/evolution.md) の触れた範囲を構造改善するに従う)。
-6. 各段でテストの緑と参照の静的な追跡を保つ。
-7. 契機になった重複と痛みが解消したら、触れた範囲の改善で止める([principles/evolution](../principles/evolution.md) の触れた範囲を構造改善するに従う)。
-8. 変更したコードとコメントを [principles/legibility](../principles/legibility.md) と [principles/comment](../principles/comment.md) に照合する。
+1. 対象の意味、外から見た契約、重要な state の authority と invariant が確立していなければ、修正せずに [recovery](./recovery.md) へ戻る。
+2. 対象の規模を、安全を確かめるのに要る検証の水準で見積もる([principles/verification](../principles/verification.md) のテストを振る舞いの安全網にするに従う)。
+3. 振る舞いの安全網を確かめ、足りない範囲は現在の振る舞いを観測して固定するテストで埋める([principles/verification](../principles/verification.md) のテストを振る舞いの安全網にするに従う)。固定した挙動を `Intended` とみなさない。
+4. 一つの use case・pipeline・state transition のように意味が閉じた単位へ変更を分け、境界を跨ぐ変更は境界ごとにチェックポイントを置く([principles/evolution](../principles/evolution.md) の変更は段階的で可逆にするに従う)。
+5. 目的が混在した要素は、目的ごとに分けてから、同じ知識を表す部分だけを抽出する([principles/separation](../principles/separation.md) の変更理由で分けるに従う)。
+6. 制御の混乱した箇所は、入出力の契約だけを固定し、内部を書き直す([principles/evolution](../principles/evolution.md) の触れた範囲を構造改善するに従う)。
+7. 各段でテストの緑と参照の静的な追跡を保つ。
+8. 置き換えた旧経路、重複した state、不要になった adapter・fallback・抽象を、その段の中で削除する。
+9. 契機になった重複と痛みが解消したら、触れた範囲の改善で止める([principles/evolution](../principles/evolution.md) の触れた範囲を構造改善するに従う)。
+10. 変更したコードとコメントを [principles/legibility](../principles/legibility.md) と [principles/comment](../principles/comment.md) に照合する。
 
 ## 確認点
 
@@ -25,6 +27,7 @@
 変更した範囲を、[principles/legibility](../principles/legibility.md) の「コードを第一級の文書として明瞭に書く」の完了条件と禁止事項に照合する。
 コメントを、[principles/comment](../principles/comment.md) の各規律の完了条件と禁止事項に照合する。
 テストの有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
+置き換えた旧構造が残らず、一つの目的に一つの経路だけがあることを確かめる。
 
 ## 範囲外
 

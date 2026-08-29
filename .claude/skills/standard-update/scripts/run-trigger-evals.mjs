@@ -53,8 +53,14 @@ try {
 
 function evaluateQuery(query) {
   return new Promise((resolve) => {
+    const routingPrompt = [
+      "これは Skill の発火先だけを測る隔離評価です。依頼そのものは実行しないでください。",
+      "installed Skill の name と description だけから、依頼に一致する Skill があれば最初かつ唯一の tool call として選んでください。対象 path の探索、確認質問、作業計画、他の tool call を先に行わないでください。",
+      "一致する Skill がなければ tool を呼ばず、該当なしとだけ応答してください。",
+      `依頼: ${query}`,
+    ].join("\n\n");
     const args = [
-      "-p", query,
+      "-p", routingPrompt,
       "--output-format", "stream-json",
       "--verbose",
       "--include-partial-messages",

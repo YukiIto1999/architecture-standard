@@ -51,17 +51,22 @@ async function runEval(skillName, item) {
     execFileSync("git", ["clone", "--quiet", "--no-hardlinks", repoRoot, fixtureRoot]);
     if (configuration === "with-skill") overlayWorkingFiles(fixtureRoot, skillName);
     if (configuration === "without-skill") removeSkill(fixtureRoot, skillName);
-    prepareFixture(fixtureRoot);
-    if (skillName === "standard-update") scrubFixtureMutationSource(fixtureRoot);
+    scrubFixtureMutationSource(fixtureRoot);
+    hideCurrentSkillEvaluationOracles(fixtureRoot, skillName);
+    const standardCommit = initializeSanitizedRepository(fixtureRoot);
+    prepareFixture(fixtureRoot, standardCommit);
     initializeFixtureCommit(fixtureRoot);
     prepareEvaluationChange(fixtureRoot, skillName, item.id);
 
     const prompt = [
       "これは実タスク評価です。確認質問で止まらず、与えられた範囲を最後まで実行してください。",
       "作業対象は現在の一時fixtureだけです。元のrepositoryへは書き込まないでください。",
-      "task の path は現在の作業directoryからの相対pathです。task が exact file path を示した場合は Read で直接読み、repository名を足したり、path の再発見に Glob や path 未指定の Grep を使ったりしないでください。task が探索を必要とし、使用する skill が許す場合だけ Glob と Grep を使います。外部事実の確認が task に必要なら WebSearch と WebFetch を使えます。Bash は許可済みの検証 script と git status/diff だけに使ってください。",
-      "ls、find、wc、cat、git log、git rev-parse を Bash で実行しないでください。探索が task と skill で許可される場合だけ Glob または Grep を使い、既知の file は Read で直接読んでください。",
+      "task の path は現在の作業directoryからの相対pathです。外部事実の確認が task に必要なら WebSearch と WebFetch を使えます。Bash は許可済みの検証 script と git show/status/diff だけに使ってください。",
+      "ls、find、wc、cat、git log、git rev-parse を Bash で実行しないでください。file の読取と探索には Read、Glob、Grep を使えます。どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断してください。",
+      "対象 skill が最初の対象 project 操作または閉じた参照経路を定める場合は、他の対象 project 操作より優先してください。この共通 prompt はその順序や禁止 tool の例外を作りません。",
+      "skill が exact path、exact token、Glob pattern、回数を固定した場合は、その値を変えた試行や候補探索を前後に追加しないでください。禁止操作を後から自己申告しても経路遵守には戻らないため、最初の一回から固定値を使ってください。",
       "task が file を変更し、使用する skill が検証を要求する場合は、repository root から `bash .claude/skills/standard-update/scripts/verify.sh` の形で実行してください。読み取り専用 task へ検証を強制しないでください。",
+      "この隔離評価では subagent は利用できません。skill が独立 reviewer を明示的に要求する場合だけ、その fallback として同じ session で scoped self-audit を行い、Agent や background task を起動して待たないでください。skill が要求しない self-audit は追加せず、閉じた経路が tool または file を制限する場合は fallback でもその範囲を広げないでください。",
       configuration === "without-skill"
         ? "この評価では project skill を使わずに実行してください。"
         : `これは発火評価ではありません。最初に Read tool で .claude/skills/${skillName}/SKILL.md を全文読み、その指示に従ってください。Skill(...) のような呼出し文字列を応答するだけで終えないでください。参照 resource は SKILL.md が必要としたものだけを読んでください。`,
@@ -88,11 +93,15 @@ async function runEval(skillName, item) {
       "Bash(bash .claude/skills/standard-update/scripts/verify.sh)",
       "Bash(*.claude/skills/standard-update/scripts/verify.sh*)",
       "Bash(bash .claude/skills/standard-update/scripts/verify-test.sh)",
-      "Bash(bash .claude/skills/standard-update/scripts/skill-test.sh)",
+      "Bash(bash .claude/skills/standard-update/scripts/skill-package-check.sh)",
+      "Bash(git show *)",
       "Bash(git status *)",
       "Bash(git diff *)",
-      "Bash(rg *)",
-      "Bash(fd *)",
+      "Bash(git -C * show *)",
+      "Bash(git -C * status *)",
+      "Bash(git -C * diff *)",
+      "--disallowedTools",
+      "Agent",
       "--setting-sources",
       "project",
       "--model",
@@ -102,6 +111,8 @@ async function runEval(skillName, item) {
     ];
     const env = { ...process.env };
     delete env.CLAUDECODE;
+    env.SKILL_EVAL_ISOLATED_SKILL = skillName;
+    env.SKILL_EVAL_CONFIGURATION = configuration;
     const result = await executeClaude(commandArgs, fixtureRoot, env, timeoutFor(item.model));
     const endedAt = new Date();
     const parsed = parseClaudeResult(result.stdout);
@@ -145,7 +156,7 @@ async function runEval(skillName, item) {
     process.stdout.write(`${outcome}: ${skillName} eval-${item.id} ${item.model} ${configuration}${diagnostic}\n`);
   } finally {
     assertOwnedFixture(fixtureRoot);
-    rmSync(fixtureRoot, { recursive: true, force: true });
+    rmSync(fixtureRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   }
 }
 
@@ -292,15 +303,45 @@ function removeSkill(fixtureRoot, skillName) {
   rmSync(target, { recursive: true, force: true });
 }
 
-function prepareFixture(fixtureRoot) {
+function hideCurrentSkillEvaluationOracles(fixtureRoot, skillName) {
+  const prefix = path.resolve(fixtureRoot) + path.sep;
+  const targets = [
+    path.join(fixtureRoot, ".claude", "skills", skillName, "evals"),
+    path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "run-task-evals.mjs"),
+    path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "run-trigger-evals.mjs"),
+    path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "skill-test.sh"),
+  ];
+  for (const target of targets) {
+    if (!path.resolve(target).startsWith(prefix)) throw new Error(`evaluation oracle outside fixture: ${target}`);
+    rmSync(target, { recursive: true, force: true });
+  }
+}
+
+function prepareFixture(fixtureRoot, standardCommit) {
   const targetRoot = path.join(fixtureRoot, "target-project");
   mkdirSync(path.join(targetRoot, "docs", "decisions"), { recursive: true });
   mkdirSync(path.join(targetRoot, "app"), { recursive: true });
-  writeFileSync(path.join(targetRoot, "README.md"), "# evaluation target\n\nRust API と durable worker を持つ想定の検査用 project。\n");
+  mkdirSync(path.join(targetRoot, "tests"), { recursive: true });
+  writeFileSync(path.join(targetRoot, "README.md"), [
+    "# evaluation target",
+    "",
+    "Rust API と durable worker を持つ想定の検査用 project。",
+    "source root は `app/`、test root は `tests/` とする。",
+    "",
+  ].join("\n"));
   writeFileSync(path.join(targetRoot, "docs", "decisions", "0001-standard.md"), [
     "# architecture standard",
     "",
-    "standard_commit: 62befcd7c44d7f8ad36e34e2c5b0814d15cbf2ca",
+    `standard_commit: ${standardCommit}`,
+    "",
+  ].join("\n"));
+  writeFileSync(path.join(targetRoot, "docs", "decisions", "0002-worker-contract.md"), [
+    "# worker completion contract",
+    "",
+    "Status: Accepted",
+    "",
+    "`run` returns only after every submitted job has reached a terminal state.",
+    "The persisted `JobStatus` is the authority for job completion.",
     "",
   ].join("\n"));
   writeFileSync(path.join(targetRoot, "app", "worker.rs"), [
@@ -311,9 +352,49 @@ function prepareFixture(fixtureRoot) {
     "}",
     "",
   ].join("\n"));
+  writeFileSync(path.join(targetRoot, "app", "api.rs"), [
+    "pub async fn submit(jobs: Vec<Job>) -> &'static str {",
+    "    crate::worker::run(jobs).await;",
+    "    \"completed\"",
+    "}",
+    "",
+  ].join("\n"));
+  writeFileSync(path.join(targetRoot, "app", "state.rs"), [
+    "pub enum JobStatus {",
+    "    Pending,",
+    "    Running,",
+    "    Completed,",
+    "    Failed,",
+    "}",
+    "",
+    "pub struct JobRecord {",
+    "    pub id: String,",
+    "    pub status: JobStatus,",
+    "}",
+    "",
+  ].join("\n"));
+  writeFileSync(path.join(targetRoot, "tests", "worker.rs"), [
+    "#[tokio::test]",
+    "async fn submit_reports_completed() {",
+    "    let response = submit(vec![slow_job()]).await;",
+    "    assert_eq!(response, \"completed\");",
+    "}",
+    "",
+  ].join("\n"));
 }
 
 function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
+  // fixture-mutation:start
+  if (skillName === "standard-audit" && evalId === 4) {
+    const principlesReadme = path.join(fixtureRoot, "principles", "README.md");
+    replaceKnownStateOnce(principlesReadme, [
+      "要求した範囲は、受入条件、標準の必須規律、安全、互換性、必要な検証を欠かさず作り切る。",
+    ],
+      "要求した範囲は、必要な品質を適切に満たす。",
+    );
+  }
+  // fixture-mutation:end
+
   // fixture-mutation:start
   if (skillName === "standard-update" && evalId === 1) {
     const principlesReadme = path.join(fixtureRoot, "principles", "README.md");
@@ -418,6 +499,7 @@ function isPrime(candidate: number): boolean { /* ... */ }
     replaceKnownStateOnce(commentPrinciple, [legacyExample, currentExample], defectiveExample);
   }
   // fixture-mutation:end
+
 }
 
 function replaceKnownStateOnce(filePath, knownStates, replacement) {
@@ -458,11 +540,25 @@ function scrubFixtureMutationSource(fixtureRoot) {
   writeFileSync(runnerPath, sanitized);
 }
 
-function initializeFixtureCommit(fixtureRoot) {
+function configureFixtureGit(fixtureRoot) {
   execFileSync("git", ["config", "user.name", "Skill Eval"], { cwd: fixtureRoot });
   execFileSync("git", ["config", "user.email", "skill-eval@example.invalid"], { cwd: fixtureRoot });
   execFileSync("git", ["config", "commit.gpgSign", "false"], { cwd: fixtureRoot });
   execFileSync("git", ["config", "core.hooksPath", "/dev/null"], { cwd: fixtureRoot });
+}
+
+function initializeSanitizedRepository(fixtureRoot) {
+  assertOwnedFixture(fixtureRoot);
+  rmSync(path.join(fixtureRoot, ".git"), { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+  execFileSync("git", ["init", "--quiet"], { cwd: fixtureRoot });
+  configureFixtureGit(fixtureRoot);
+  execFileSync("git", ["add", "-A"], { cwd: fixtureRoot });
+  execFileSync("git", ["commit", "--quiet", "-m", "test: create sanitized standard snapshot"], { cwd: fixtureRoot });
+  return execFileSync("git", ["rev-parse", "HEAD"], { cwd: fixtureRoot, encoding: "utf8" }).trim();
+}
+
+function initializeFixtureCommit(fixtureRoot) {
+  configureFixtureGit(fixtureRoot);
   execFileSync("git", ["add", "-A"], { cwd: fixtureRoot });
   execFileSync("git", ["commit", "--quiet", "-m", "test: prepare skill evaluation fixture"], { cwd: fixtureRoot });
 }

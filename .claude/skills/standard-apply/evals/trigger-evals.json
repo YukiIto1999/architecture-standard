@@ -19,5 +19,6 @@
     {"query": "Anthropic の Agent Skills ベストプラクティスをWebで調査してください。", "should_trigger": false},
     {"query": "この repository の git status と直近コミットを教えてください。", "should_trigger": false},
     {"query": "architecture-standard の監査報告を要約するだけで、project へは適用しません。", "should_trigger": false},
-    {"query": "別 repository の社内コーディング標準に従って、この Java project を整形してください。", "should_trigger": false}
+    {"query": "別 repository の社内コーディング標準に従って、この Java project を整形してください。", "should_trigger": false},
+    {"query": "バイブコーディングで崩れた既存システムを architecture-standard で意味回収して構造再生してください。", "should_trigger": true}
 ]

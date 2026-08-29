@@ -18,6 +18,7 @@ process は、順序と確認点だけを所有し、性質の規範を再定義
 | ファイル | 作業 |
 |---|---|
 | [bootstrap](./bootstrap.md) | 新規構築 |
+| [recovery](./recovery.md) | 既存システムの意味回収 |
 | [design](./design.md) | 設計 |
 | [implementation](./implementation.md) | 実装 |
 | [refactoring](./refactoring.md) | 構造改善 |

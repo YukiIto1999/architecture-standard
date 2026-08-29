@@ -281,7 +281,7 @@ fi
 echo
 echo "=== 6. process/tools/languages の単位数 ==="
 numeric_ok=1
-process_expected=7
+process_expected=8
 process_readme_rows=$(markdown_section_file_table_rows process/README.md 単位)
 process_actual=$(find process -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
 echo "process: 台帳=$process_readme_rows 実ファイル=$process_actual 期待=$process_expected"
@@ -355,7 +355,7 @@ if [ "$language_dirs_actual" != "$language_dirs_expected" ] || [ "$languages_ok"
   fail "languages の単位数が不一致(言語数=$language_dirs_actual, $language_counts期待=各$language_files_expected)"
   numeric_ok=0
 fi
-if [ "$numeric_ok" = 1 ]; then pass "process=7、tools=6、languages=3×8 で一致"; fi
+if [ "$numeric_ok" = 1 ]; then pass "process=8、tools=6、languages=3×8 で一致"; fi
 
 echo
 echo "=== 7. languages 本文の規律と inspection 対応表の一対一照合 ==="
