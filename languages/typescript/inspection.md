@@ -376,7 +376,7 @@ noUncheckedIndexedAccess は配列・索引アクセスの結果に `undefined` 
 型検査と lint の警告をエラーにすれば、規則の違反がビルドで止まる。
 oxlint は、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
 max-lines・max-lines-per-function・max-depth は、ファイル・関数の大きさとネストの深さを早く気づかせる。
-oxlint の complexity 規則は cyclomatic complexity であり cognitive complexity と同一でないため、複雑度は SonarQube の S3776 に一本化し二重に測らない。
+oxlint の complexity 規則が測る cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない。標準が必須の検証へ割り当てる複雑度は cognitive complexity であり、cyclomatic complexity は必須の検証へ割り当てていないため、oxlint の complexity 規則は有効にしない。
 SonarQube の cognitive complexity は switch の構造化を一度だけ加点し case の数に比例しないので、判別子つき union の網羅的な switch を罰しない。
 SonarQube の profile を cognitive complexity だけに絞れば、oxlint が既に検査する未使用変数などの規則を SonarQube 側で重ねて測ることがない。
 既定から緩める判断を ADR に残せば、緩和の理由が追える。
@@ -404,7 +404,7 @@ tsc を、JS への変換に使うこと。
 strict を有効にし、型検査と lint の警告を検証入口でエラーにする。
 noUncheckedIndexedAccess と exactOptionalPropertyTypes を strict と併記して有効にする。
 oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max-lines-per-function・max-depth のしきい値を定める。
-複雑度は SonarQube の quality gate に一本化し、緩和は ADR に明記する。
+認知的複雑さは SonarQube の cognitive complexity(S3776)を quality gate で測り、緩和は ADR に明記する。
 SonarQube の profile は cognitive complexity だけに絞る。
 
 ## ドキュメントコメントの検査
