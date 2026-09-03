@@ -71,7 +71,7 @@ log({ event: "order_placed", orderId, actorId, traceId, at })
 
 ### 要求
 純粋核と効果の殻の分離は [separation](../principles/separation.md) の「副作用を境界に集める」に従い、観測の仕込みは業務の核の外側、境界の殻で行う。
-telemetry の出力は、単一の規格に統一し、規格と collector の採用と収集の分離は [tools/platforms](../tools/platforms.md) が定める。
+telemetry の出力は、単一の規格に統一し、規格と collector の採用と収集の分離は [tools/platforms/opentelemetry](../tools/platforms/opentelemetry.md) が定める。
 利用者の環境で動く surface も観測の対象であり、そこでの収集も境界の殻で行う。
 利用者の環境から届く観測は、境界の外から来る値として検証してから使う。
 
@@ -166,4 +166,4 @@ record(metric); if (decision.rejected) reject()
 carrier の正本は [context-propagation](./context-propagation.md) であり、trace と観測 event への付与は observability が正本である。
 観測に載せる個人情報の最小化と期限の消去は [privacy](./privacy.md) に従う。
 利用者の環境で動く surface の観測の配線は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md) が定める。
-観測の機構の置き場は [structure](../structure/)、言語別の実現は [languages](../languages/) が定める。
+観測の機構の置き場は [structure](../structure/)、言語別の実現は [tools](../tools/) が定める。

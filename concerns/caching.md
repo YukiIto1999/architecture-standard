@@ -42,4 +42,4 @@ CDN と edge cache は HTTP 応答の配送だけに限定する。
 事実の正本の datastore と一時データの store の単一採用は [persistence](./persistence.md) の「datastore と一時データの store を単一に採用する」に従う。
 cold cache の負荷は [performance](./performance.md) の「計測を定めてから比べる」に従う。
 HTTP cache の protocol 適用は [structure/contracts/http](../structure/contracts/http.md) の「cache 可能性」が定める。
-cache と一時データの store の採用は [tools/platforms](../tools/platforms.md) が定める。
+cache と一時データの store の採用は [tools/platforms/valkey](../tools/platforms/valkey.md) が定める。

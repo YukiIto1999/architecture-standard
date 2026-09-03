@@ -21,7 +21,7 @@
       "expected_output": "tools/buildを既存の正本として確認し、一次資料と単一標準の条件で採否を裁定し、根拠なしに採用を置換しない。",
       "files": [],
       "expectations": [
-        "採用判断の既存所有者が tools/build.md であると特定する",
+        "採用判断の既存所有者が tools/build/nx.md であると特定する",
         "外部事実を一次資料と複数源で確認する",
         "languages や structure に選定理由を重複させない",
         "変更しない裁定なら不要な本文や検査の編集を行わない"

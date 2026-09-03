@@ -2,7 +2,7 @@
 
 process は、どの順で作り、どこで確かめるかを置く。
 順序と確認点だけを所有し、性質の規範(何が良いか)は各層の正本に従う。
-性質の規範に見える文を書きそうになったら、それは principles・concerns・structure・languages のどれかの持ち物である。
+性質の規範に見える文を書きそうになったら、それは principles・concerns・structure・tools の言語 ecosystem のどれかの持ち物である。
 
 ## 根拠の高度
 

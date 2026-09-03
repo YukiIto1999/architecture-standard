@@ -3,7 +3,7 @@
     {"query": "標準そのものに矛盾や重複がないか、コミット前に見直してください。", "should_trigger": true},
     {"query": "principles と concerns の足場が薄い箇所を読み取り専用で指摘してください。", "should_trigger": true},
     {"query": "architecture-standard の層の役割が各規範文と合っているか監査してください。", "should_trigger": true},
-    {"query": "変更した tools/build.md だけを standard-audit で確認してください。", "should_trigger": true},
+    {"query": "変更した tools/build/nx.md だけを standard-audit で確認してください。", "should_trigger": true},
     {"query": "標準の必須5節と任意の例、structure の layout 書式が守られているか調べてください。", "should_trigger": true},
     {"query": "この標準の技術的な事実誤りとコンパイル不能な例を洗い出してください。", "should_trigger": true},
     {"query": "architecture-standard の自己充足性と作り切りを重大度つきで評価してください。", "should_trigger": true},
@@ -17,6 +17,6 @@
     {"query": "architecture-standard の概要を三段落で説明してください。", "should_trigger": false},
     {"query": "標準の audit.md の日本語だけを推敲してください。", "should_trigger": false},
     {"query": "この pull request にセキュリティ脆弱性があるかスキャンしてください。", "should_trigger": false},
-    {"query": "tools/build.md の採用製品を最新版へ変更してください。", "should_trigger": false, "expected_skill": "standard-update"},
+    {"query": "tools/build/nx.md の採用製品を最新版へ変更してください。", "should_trigger": false, "expected_skill": "standard-update"},
     {"query": "Anthropic のSkill仕様とこのrepoを比較する調査計画を作ってください。", "should_trigger": false}
 ]

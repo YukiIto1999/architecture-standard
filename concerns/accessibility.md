@@ -128,4 +128,4 @@ Success Criterion 2.5.8 の例外: 無し
 
 ## 参照
 明瞭さは [legibility](../principles/legibility.md)、利用者に向けた画面の体験は [experience](./experience.md) に従う。
-viewer の構造は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md)、検証の技法と検証手段の割り当ては [structure/tests/methods](../structure/tests/methods.md)、見た目と機構は [languages](../languages/) が定める。
+viewer の構造は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md)、検証の技法と検証手段の割り当ては [structure/tests/methods](../structure/tests/methods.md)、見た目と機構は [tools](../tools/) が定める。

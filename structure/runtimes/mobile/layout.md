@@ -21,7 +21,7 @@ mobile/
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
 composition が adapters を組み立て、viewer へ注入する。
 adapters は、viewer の ui port を実装し、composition を参照しない。
 mobile の外との依存は [skeleton](../../skeleton.md) に従う。
@@ -38,7 +38,7 @@ composition は、viewer が公開する起動の入口に依存する。
 mobile は、viewer の内部へ踏み込まない。
 mobile 固有の処理は、adapters と composition に置く。
 viewer の中に、mobile や platform の分岐を置かない。
-具体の API の機構は [languages](../../../languages/) が定める。
+具体の API の機構は [tools](../../../tools/) が定める。
 
 ## 組み立てと起動
 
@@ -49,7 +49,7 @@ offline で動かす project は、host がプロセス内に core を抱ける�
 host がプロセス内に core を抱けるなら、composition が core を埋め込み、その操作を remote の ui port の実装として渡す。
 別プロセスや別言語で抱けないなら、embedded surface を同梱起動し、protocol で繋ぐ。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
-shell と bundler の機構は [languages](../../../languages/) が定める。
+shell と bundler の機構は [tools](../../../tools/) が定める。
 
 ## 配布
 

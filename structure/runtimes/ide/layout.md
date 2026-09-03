@@ -21,7 +21,7 @@ ide/
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
 composition が adapters を組み立て、extension へ注入する。
 adapters は、extension の host port を実装し、composition を参照しない。
 ide の外との依存は [skeleton](../../skeleton.md) に従う。
@@ -38,7 +38,7 @@ composition は、extension が公開する起動の入口に依存する。
 ide は、extension の内部へ踏み込まない。
 ide 固有の処理は、adapters と composition に置く。
 extension の中に、IDE の分岐を置かない。
-具体の API の機構は [languages](../../../languages/) が定める。
+具体の API の機構は [tools](../../../tools/) が定める。
 
 ## UI の host
 
@@ -52,4 +52,4 @@ composition は、adapters を extension へ注入する。
 composition は、extension を IDE へ登録して起動する。
 extension が local で接続する埋め込み surface は、composition が同梱して起動する。
 extension の core への接続は [extension](../../surfaces/extension/layout.md) に従う。
-登録の機構は [languages](../../../languages/) が定める。
+登録の機構は [tools](../../../tools/) が定める。

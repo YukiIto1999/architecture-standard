@@ -21,7 +21,7 @@ web/
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
 composition が adapters を組み立て、viewer へ注入する。
 adapters は、viewer の ui port を実装し、composition を参照しない。
 web の外との依存は [skeleton](../../skeleton.md) に従う。
@@ -38,10 +38,10 @@ composition は、viewer が公開する起動の入口に依存する。
 web は、viewer の内部へ踏み込まない。
 web 固有の処理は、adapters と composition に置く。
 viewer の中に、browser や web の分岐を置かない。
-具体の API の機構は [languages](../../../languages/) が定める。
+具体の API の機構は [tools](../../../tools/) が定める。
 
 ## 組み立てと起動
 
 composition は、adapters を viewer へ注入する。
 composition は、viewer を DOM に mount して起動する。
-entry と bundler の機構は [languages](../../../languages/) が定める。
+entry と bundler の機構は [tools](../../../tools/) が定める。

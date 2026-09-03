@@ -22,7 +22,7 @@ use-case は、別の use-case を参照しない。
 use-case の強整合な書き込みは、一つの集約に閉じる。
 use-case の名前は、単一の動作を表す動詞と名詞の組とする。
 命名は [principles/naming](../../principles/naming.md) に従う。
-表記の規約は [languages](../../languages/) が定める。
+表記の規約は [tools](../../tools/) が定める。
 
 ## workflow
 

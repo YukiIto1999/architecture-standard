@@ -168,4 +168,4 @@ log({ denied: true, actorId, target, reason }); return forbidden()
 ## 参照
 分離の原則は [separation](../principles/separation.md)、request context の伝播は [context-propagation](./context-propagation.md)、安全の姿勢は [security](./security.md) に従う。
 外部へ公開するエラーの形は [effect](./effect.md) に従う。
-資格情報の検証と actor の構築は [authentication](./authentication.md)、認証境界の surface ごとの構造は [surfaces](../structure/surfaces/)、言語別の実現は [languages](../languages/) が定める。
+資格情報の検証と actor の構築は [authentication](./authentication.md)、認証境界の surface ごとの構造は [surfaces](../structure/surfaces/)、言語別の実現は [tools](../tools/) が定める。

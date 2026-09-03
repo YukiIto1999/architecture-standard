@@ -133,7 +133,7 @@ root は、言語ごとの package を集めた polyglot の monorepo である�
 package の境界は、依存方向の規律で守る。
 build は、言語ごとの package を横断する task graph を orchestrator で実行する。
 orchestrator は task graph の順序、affected の選択、cache だけを担い、package の依存境界を強制しない。
-orchestrator の採用と選定の判断基準は、[tools/build](../tools/build.md) が定める。
+orchestrator の採用と選定の判断基準は、[tools/build/nx](../tools/build/nx.md) が定める。
 package の依存境界は、依存方向の両表を入力にした言語別の root arch test で強制する。
 
 ## 加算

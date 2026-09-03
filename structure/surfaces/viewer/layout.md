@@ -30,7 +30,7 @@ viewer/
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
 app が composition root であり、各層を組み立てる。
 参照は、app・pages・widgets・features・entities・shared の順に下る。
 下位の層は、上位の層を参照しない。
@@ -65,5 +65,5 @@ viewer は、host の分岐を持たない。
 収集は ui port として定義し、host が実装を注入する。
 viewer 自体は、収集の機構を持たない。
 観測に個人情報が載る場合は、[concerns/privacy](../../../concerns/privacy.md) に従う。
-収集の機構は [languages](../../../languages/) が定める。
+収集の機構は [tools](../../../tools/) が定める。
 host の実装は [runtimes](../../runtimes/) に従う。
