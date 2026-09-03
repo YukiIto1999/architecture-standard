@@ -12,7 +12,7 @@ domain は [layout](./layout.md) の単位と依存に従う。
 集約は、別の集約の内部を参照しない。
 集約をまたぐ一貫性は domain では保証しない。
 application の workflow が、各 use-case の型付き outcome を用いて集約をまたぐ一貫性を最終的に保つ。
-整合性と集約境界の原則は [principles/data](../../principles/data.md) に従う。
+整合性と集約境界の原則は [principles/data](../../principles/data/README.md) に従う。
 
 ## 常に正しい構築
 
@@ -25,23 +25,23 @@ application の workflow が、各 use-case の型付き outcome を用いて集
 ## 純粋性
 
 domain は純粋な値と関数のみで構成する。
-domain が参照しない対象は [concerns/effect](../../concerns/effect.md) の禁止事項に従う。
+domain が参照しない対象は [concerns/effect](../../concerns/effect/README.md) の禁止事項に従う。
 domain は、加えてログ、外部 SDK、非同期実行も参照しない。
 副作用と非同期は application と infrastructure が担う。
-効果の規律と、状態の遷移を副作用のない判断として書く方法は [concerns/effect](../../concerns/effect.md) に従う。
+効果の規律と、状態の遷移を副作用のない判断として書く方法は [concerns/effect](../../concerns/effect/README.md) に従う。
 
 ## ドメイン型と語彙
 
 業務上の意味をもつ値は、値オブジェクトで表し、domain に置く。
-どの値を値オブジェクトで表すかは [principles/modeling](../../principles/modeling.md) に従う。
+どの値を値オブジェクトで表すかは [principles/modeling](../../principles/modeling/README.md) に従う。
 裸の string、number、boolean を業務上の意味に用いない。
 domain が用いてよいのは、ドメイン型と shared である。
 domain は、persistence の record、wire 型、DTO、contracts の型を参照しない。
-許可される依存は [layout](./layout.md) の依存方向に、型の設計は [concerns/types](../../concerns/types.md) に、命名は [principles/naming](../../principles/naming.md) に従う。
+許可される依存は [layout](./layout.md) の依存方向に、型の設計は [concerns/types](../../concerns/types/README.md) に、命名は [principles/naming](../../principles/naming/README.md) に従う。
 
 ## イベント
 
 集約は、履歴として残すべき状態変更を domain イベントとして表す。
-ログではなくイベントで残すかの判断は [principles/data](../../principles/data.md) の「事実は追記し、現在状態は導出する」に従う。
+ログではなくイベントで残すかの判断は [principles/data](../../principles/data/append-facts-derive-state.md) の「事実は追記し、現在状態は導出する」に従う。
 integration event への写像は application が担い、配送経路の配線は composition が担う。
-配送の規律は [concerns/messaging](../../concerns/messaging.md) に従う。
+配送の規律は [concerns/messaging](../../concerns/messaging/README.md) に従う。

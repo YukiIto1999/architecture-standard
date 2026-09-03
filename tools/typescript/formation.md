@@ -2,7 +2,7 @@
 
 ## 概要
 formation は、TypeScript で値・型・不変条件をモデリングする実現軸である。
-principles の [modeling](../../principles/modeling.md) が定める業務意味の型封入と、concerns の [types](../../concerns/types.md) が定める型の規律を、TypeScript の機構で満たす。
+principles の [modeling](../../principles/modeling/README.md) が定める業務意味の型封入と、concerns の [types](../../concerns/types/README.md) が定める型の規律を、TypeScript の機構で満たす。
 業務の値の型封入の規律は [valibot](./valibot.md) が持つ。
 
 ## 不正な状態を構築できなくする
@@ -119,6 +119,6 @@ function findUser(id: UserId): User { /* ... */ }
 ```
 
 ## 参照
-業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md) に従う。
+業務意味の型封入は [modeling](../../principles/modeling/README.md)、型の規律は [types](../../concerns/types/README.md) に従う。
 命名と整形、ドキュメントコメントの体裁は [conventions](./conventions.md) に従う。
 境界での外部表現の変換は [translation](./translation.md)、Result の機構は [neverthrow](./neverthrow.md) に従う。

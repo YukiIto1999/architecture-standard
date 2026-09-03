@@ -99,9 +99,9 @@ request fingerprint と初回 response は、冪等 key と業務の書き込み
 同じ scope と key の再実行は、fingerprint が一致する場合だけ保存済み response を返し、不一致なら conflict を返す。
 
 ### 根拠
-[transaction](../../concerns/transaction.md) が定める複合 scope と同じ確定点を PostgreSQL の制約と sqlx の Transaction に写せば、同時要求の競合と部分確定を DB で止められる。
+[transaction](../../concerns/transaction/README.md) が定める複合 scope と同じ確定点を PostgreSQL の制約と sqlx の Transaction に写せば、同時要求の競合と部分確定を DB で止められる。
 actor scope を検索条件へ含めれば、別の主体へ保存済み response を返さない。
-actor の種別ごとに [transaction](../../concerns/transaction.md) の scope を写せば、匿名や system を汎用 sentinel へ潰さない。
+actor の種別ごとに [transaction](../../concerns/transaction/README.md) の scope を写せば、匿名や system を汎用 sentinel へ潰さない。
 tenant の出所を認証、認可、host、route、logical actor の検証済み context に限れば、要求者が指定した未検証 tenant へ scope を切り替えられない。
 
 ### 完了条件

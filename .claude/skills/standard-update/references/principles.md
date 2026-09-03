@@ -14,12 +14,12 @@ principles は、言語にも特定の関心にも依存しない設計原則を
 ## 構成(置き場)
 
 3群のどれかに置く。
-構成は separation・modeling・data・construction、規律は verification・evolution、表現は legibility・naming・comment・documentation。
-新しい原則は、まず既存の原則の補強で足りないかを問い、足りるなら足す。独立した原則のときだけ新ファイルを立てる。
+構成は separation・modeling・data・construction、規律は requirements・verification・evolution、表現は legibility・naming・comment・documentation。
+新しい原則は、まず既存の原則の補強で足りないかを問い、足りるなら足す。独立した原則のときだけ新しいフォルダを立てる。
 
 ## 書式
 
-`# name`、H1 直下のリード(相互参照をここへ埋める。principles は `## 概要` と `## 参照` を使わない)、原則ごとの `## 名`、各 `### 要求/根拠/完了条件/禁止事項/行動`、必要なら `### 例`。
+原則フォルダの README は `# name`、H1 直下のリード(相互参照をここへ埋める。README に `## 概要` と `## 参照` を使わない)、`## 規律` の台帳。規律ファイルは `## 名`、各 `### 要求/根拠/完了条件/禁止事項/行動`、必要なら `### 例`。README と一組で読む。
 遵守は要求・完了条件・禁止事項で照合し、根拠は理解のための記述として判定に使わない。
 
 ## この層の MECE 点検

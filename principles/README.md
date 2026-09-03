@@ -4,7 +4,7 @@ principles は、ソフトウェア設計の判断の土台となる原則を置
 concerns・structure・tools は、この原則の上に立つ。
 原則は言語に依存しない。
 言語ごとの実現は tools が、概念ごとの規律は concerns が担う。
-原則の file を分ける単位は、下位の層の file が名指して参照する単位である。
+原則のフォルダを分ける単位は、下位の層の file が名指して参照する単位である。
 
 ## 目的
 
@@ -14,9 +14,11 @@ concerns・structure・tools は、この原則の上に立つ。
 
 ## 読み方
 
-各原則は、H1 直下のリードに相互参照を置き、`## 原則名` の下に必須の5節と任意の例で書く。
-`## 概要` と `## 参照` は置かない。
+各原則はフォルダを単位とし、その README は H1 直下のリードに相互参照と `## 規律` の台帳を持つ。
+個々の規律は専用のファイルへ `## 原則名` と必須の5節と任意の例で書く。
+README に `## 概要` と `## 参照` は置かない。
 節の順序は全原則で同じにする。
+規律ファイルは、原則の README と一組で読む。
 
 - 要求は、一つの規則を一文ずつ命令形で書く。
 - 根拠は、なぜ守るかを述べ、判定の対象には含めない。
@@ -37,7 +39,7 @@ concerns・structure・tools は、この原則の上に立つ。
 
 要求した範囲は、受入条件、標準の必須規律、安全、互換性、必要な検証を欠かさず作り切る。
 未要求の投機的な要素は作らない。
-投機的な要素を作らない原則は [construction](./construction.md) に従う。
+投機的な要素を作らない原則は [construction](./construction/README.md) に従う。
 粒度は、全体と局所、具象と抽象を往復して決める。
 類推を入り口に使い、判断は具体で下す。
 
@@ -48,12 +50,12 @@ concerns・structure・tools は、この原則の上に立つ。
 
 | 情報 | 正本 | 規律 |
 |---|---|---|
-| 現在の責務、境界、処理の流れ | フォルダ、ファイル、型、関数の構造と命名、コード本体 | [legibility](./legibility.md)、[naming](./naming.md) |
-| 外から観測できる振る舞い | テスト本体とテスト名 | [verification](./verification.md)、[naming](./naming.md) |
-| 公開宣言の外部契約、非公開宣言の内部契約 | ドキュメントコメント | [comment](./comment.md) |
-| 自然に見える実装を採らなかった理由 | 実装コメント | [comment](./comment.md) |
-| 変更を行う直接の目的 | commit log | [documentation](./documentation.md) |
-| 構造に影響する判断の文脈、代替案、帰結 | 決定の記録 | [documentation](./documentation.md) |
+| 現在の責務、境界、処理の流れ | フォルダ、ファイル、型、関数の構造と命名、コード本体 | [legibility](./legibility/README.md)、[naming](./naming/README.md) |
+| 外から観測できる振る舞い | テスト本体とテスト名 | [verification](./verification/README.md)、[naming](./naming/README.md) |
+| 公開宣言の外部契約、非公開宣言の内部契約 | ドキュメントコメント | [comment](./comment/README.md) |
+| 自然に見える実装を採らなかった理由 | 実装コメント | [comment](./comment/README.md) |
+| 変更を行う直接の目的 | commit log | [documentation](./documentation/README.md) |
+| 構造に影響する判断の文脈、代替案、帰結 | 決定の記録 | [documentation](./documentation/README.md) |
 
 変更履歴と古いコードは現在の source に残さず、版管理の履歴に置く。
 
@@ -72,14 +74,14 @@ concerns・structure・tools は、この原則の上に立つ。
 
 | 群 | ファイル | 扱う関心 |
 |---|---|---|
-| 構成 | [separation](./separation.md) | 分割と依存。変更理由での分割・サブドメインと設計投資・コンテキスト間の関係・分類軸と粒度・関心の隠蔽・結合の強さ・依存方向・副作用の隔離・正本の独立 |
-| 構成 | [modeling](./modeling.md) | 型と意味。業務意味の型封入・不正状態の排除・論理と物理の分離 |
-| 構成 | [data](./data.md) | データと状態。整合性と集約・事実と状態の分類・履歴 |
-| 構成 | [construction](./construction.md) | 実装の構成。不変・構造化・パターンの統一 |
-| 規律 | [requirements](./requirements.md) | 要件の確定。目的からの導出・根拠と決定状態・検証可能な定義 |
-| 規律 | [verification](./verification.md) | 検証。機械検証と実行可能な仕様・テストの設計と安全網・信頼性 |
-| 規律 | [evolution](./evolution.md) | 変更の作法。段階的な変更・影響の波及・構造改善・決定の先送り |
-| 表現 | [legibility](./legibility.md) | コードによる意図表現。可読性と視認性 |
-| 表現 | [naming](./naming.md) | 命名と語彙。テスト名を含む |
-| 表現 | [comment](./comment.md) | コメント |
-| 表現 | [documentation](./documentation.md) | README・設計文書・決定の記録 |
+| 構成 | [separation](./separation/README.md) | 分割と依存。変更理由での分割・サブドメインと設計投資・コンテキスト間の関係・分類軸と粒度・関心の隠蔽・結合の強さ・依存方向・副作用の隔離・正本の独立 |
+| 構成 | [modeling](./modeling/README.md) | 型と意味。業務意味の型封入・不正状態の排除・論理と物理の分離 |
+| 構成 | [data](./data/README.md) | データと状態。整合性と集約・事実と状態の分類・履歴 |
+| 構成 | [construction](./construction/README.md) | 実装の構成。不変・構造化・パターンの統一 |
+| 規律 | [requirements](./requirements/README.md) | 要件の確定。目的からの導出・根拠と決定状態・検証可能な定義 |
+| 規律 | [verification](./verification/README.md) | 検証。機械検証と実行可能な仕様・テストの設計と安全網・信頼性 |
+| 規律 | [evolution](./evolution/README.md) | 変更の作法。段階的な変更・影響の波及・構造改善・決定の先送り |
+| 表現 | [legibility](./legibility/README.md) | コードによる意図表現。可読性と視認性 |
+| 表現 | [naming](./naming/README.md) | 命名と語彙。テスト名を含む |
+| 表現 | [comment](./comment/README.md) | コメント |
+| 表現 | [documentation](./documentation/README.md) | README・設計文書・決定の記録 |

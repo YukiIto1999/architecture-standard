@@ -24,11 +24,11 @@ worker/
 
 ## 依存方向
 
-依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存の向きは [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 composition が jobs・queue・schedule を組み立て、core を埋め込む。
 jobs・queue・schedule は、composition を参照しない。
 worker の外との依存は [skeleton](../../skeleton.md) に従う。
-依存方向の規律は [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## job と application
 
@@ -44,7 +44,7 @@ queue runner は、queue から実行可能な job を取り出して起動す�
 schedule runner は、定期実行の時点に達した job を起動する。
 長期にわたる stateful な workflow は、標準の対象外とする。
 queue と schedule の engine は、project の選択の対象でなく、[tools](../../../tools/) が固定する。
-並行度、順序、排他、背圧、durable receipt、ack、processing completion、冪等な確定、再配送、失敗の隔離は、[concerns/concurrency](../../../concerns/concurrency.md)、[concerns/messaging](../../../concerns/messaging.md)、[concerns/resilience](../../../concerns/resilience.md)、[concerns/transaction](../../../concerns/transaction.md) に従う。
+並行度、順序、排他、背圧、durable receipt、ack、processing completion、冪等な確定、再配送、失敗の隔離は、[concerns/concurrency](../../../concerns/concurrency/README.md)、[concerns/messaging](../../../concerns/messaging/README.md)、[concerns/resilience](../../../concerns/resilience/README.md)、[concerns/transaction](../../../concerns/transaction/README.md) に従う。
 
 ## 組み立てと起動
 
@@ -53,8 +53,8 @@ queue と schedule の runner は、job context の発行元、対象、完全�
 job は actor または資格情報を payload から受け取らず、認証境界が構築した actor と検証済み入力だけを core の公開 API へ渡す。
 資格情報、job context に含まれる認証素材、queue と schedule の認証方式の型を、core の公開 API へ渡さない。
 worker は、生存と準備の面を公開する。
-lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
-観測の規律は [concerns/observability](../../../concerns/observability.md) に従う。
+lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle/README.md) に従う。
+観測の規律は [concerns/observability](../../../concerns/observability/README.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
-設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。
+設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration/README.md) に従う。
 queue と schedule の機構は [tools](../../../tools/) が定める。

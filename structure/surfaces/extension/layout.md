@@ -5,7 +5,7 @@ host は、runtimes の ide が担う。
 host の機能を remote API または埋め込み protocol の operation へ写像する。
 host に求める能力を port として定義する。
 host 非依存で、host の分岐を持たない。
-UI の体験は [concerns/experience](../../../concerns/experience.md)、可達性と識別性の規律は [concerns/accessibility](../../../concerns/accessibility.md) に従う。
+UI の体験は [concerns/experience](../../../concerns/experience/README.md)、可達性と識別性の規律は [concerns/accessibility](../../../concerns/accessibility/README.md) に従う。
 extension は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成
@@ -24,13 +24,13 @@ extension/
 
 ## 依存方向
 
-依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存の向きは [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 composition が features を組み立て、host port を注入する。
 core への接続も composition が持つ。
 features は shared を参照できる。
 features と shared は、composition を参照しない。
 extension の外との依存は [skeleton](../../skeleton.md) に従う。
-依存方向の規律は [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## host 非依存
 
@@ -57,4 +57,3 @@ extension は、注入された client または protocol の operation を呼�
 ## 配布
 
 extension は、marketplace を経て配布する。
-配布と更新は [deploy](../../deploy/layout.md) に従う。

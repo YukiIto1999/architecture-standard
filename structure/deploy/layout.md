@@ -36,14 +36,14 @@ deploy は、特定の配備先に縛られない。
 利用者の端末で動く成果物(desktop・extension・console など)を store や marketplace で配布する経路は、deploy の配備先に含めない。
 配布は、release の成果物を、配布 channel の提出手順へ渡す形で行う。
 配布と更新は、配布 channel や store などの配布機構に任せ、自前の更新機構を作らない。
-release する成果物の供給網の保証は [concerns/security](../../concerns/security.md) に従う。
+release する成果物の供給網の保証は [concerns/security](../../concerns/security/README.md) に従う。
 
 ## infrastructure
 
 infrastructure は、配備先を宣言的に定義する。
 手で変えた snowflake な構成を作らない。
 同じ定義から、同じ配備先を再現する。
-secret を含む state の暗号化は、[concerns/secrets](../../concerns/secrets.md) の規律に従う。
+secret を含む state の暗号化は、[concerns/secrets](../../concerns/secrets/README.md) の規律に従う。
 infrastructure の内部は、配備先の単位ごとに分ける。
 一つの配備先の宣言を一つの単位にまとめ、複数の配備先の定義を一つの単位に混ぜない。
 
@@ -51,14 +51,14 @@ infrastructure の内部は、配備先の単位ごとに分ける。
 
 delivery は、immutable な成果物を配備先へ反映する。
 成果物の標準の形は、container artifact とする。
-成果物の semantic versioning による版づけと不変性は [concerns/security](../../concerns/security.md) に、generated の drift 検査は [contracts/generated](../contracts/generated.md) に従う。
+成果物の semantic versioning による版づけと不変性は [concerns/security](../../concerns/security/README.md) に、generated の drift 検査は [contracts/generated](../contracts/generated.md) に従う。
 配備先の desired state を、宣言として版で管理する。
 running な配備先を、手続きで直接書き換えない。
 反映の振り分け、回帰の戻し方、migration を適用する時点は、[process/release](../../process/release.md) が定める。
-反映時の生存と準備の規律は [concerns/lifecycle](../../concerns/lifecycle.md) に従う。
+反映時の生存と準備の規律は [concerns/lifecycle](../../concerns/lifecycle/README.md) に従う。
 delivery の内部は、反映する配備先の単位に対応させて分ける。
 一つの配備先への反映定義を一つの単位にまとめる。
-migration が満たす拡張・移行・収縮の段の区切りは [concerns/migration](../../concerns/migration.md) に従う。
+migration が満たす拡張・移行・収縮の段の区切りは [concerns/migration](../../concerns/migration/README.md) に従う。
 
 ## provenance
 
@@ -71,4 +71,4 @@ attestation は、署名と内容を検証するまで、安全の証明にな�
 
 secrets は、secret を at-rest 暗号化して保つ。
 暗号化の機構の採用は、[tools/platforms/sops](../../tools/platforms/sops.md) が定める。
-secret の型・読み込み・回転・失効・監査は、[concerns/secrets](../../concerns/secrets.md) に従う。
+secret の型・読み込み・回転・失効・監査は、[concerns/secrets](../../concerns/secrets/README.md) に従う。

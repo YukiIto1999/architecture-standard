@@ -2,9 +2,9 @@
 
 ## 概要
 connection は、Rust で副作用と依存の渡し方を扱う実現軸である。
-concerns の [effect](../../concerns/effect.md) が定める効果システムを、Rust が言語に持つ効果型で満たす。
+concerns の [effect](../../concerns/effect/README.md) が定める効果システムを、Rust が言語に持つ効果型で満たす。
 自前の効果モナドを作らず、async の Future と Result と所有権を効果として使い、要求する依存は能力の trait bound で型に出す。
-[separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の「依存を内側へ一方向に向ける」の規律に従う。
+[separation](../../principles/separation/README.md) の依存の向きと [dependency](../../concerns/dependency/inward-dependencies.md) の「依存を内側へ一方向に向ける」の規律に従う。
 
 ## 効果を言語の効果型で表す
 
@@ -61,7 +61,7 @@ where Env: HasClock + HasOrders { /* ... */ }
 能力の trait bound を環境に課すと、計算が何を要求するかが型に出て、不足が型検査に出る。
 計算ごとに必要な能力だけを bound にすると、全部入りの単一の環境にならない。
 環境を差し替えると、時刻と乱数と外部依存をテストで制御できる。
-dependency の規律([dependency](../../concerns/dependency.md))は、要求を型に宣言する効果の記述には環境の提供を組立点で行わせ、効果を持たない構成要素の配線には構成子注入を用いさせる。
+dependency の規律([dependency](../../concerns/dependency/README.md))は、要求を型に宣言する効果の記述には環境の提供を組立点で行わせ、効果を持たない構成要素の配線には構成子注入を用いさせる。
 Rust では前者を関数の環境への trait bound が、後者を struct が保持する port のフィールドが担い、二つの機構が対象で住み分ける。
 
 ### 完了条件
@@ -135,6 +135,90 @@ async fn main() {
 }
 ```
 
+## 失敗を Result に、欠陥を panic にする
+
+### 要求
+想定された失敗は Result で返し、エラーは thiserror の enum で責務の単位に定義して `?` で伝播する。
+不変条件の違反は panic で表し、要求の経路で unwrap・expect を使わない。
+domain と application は型消去したエラーを返さず、型消去は binary の最上位の報告にだけ使う。
+
+### 根拠
+想定された失敗を Result にすれば、失敗が型に現れ、呼び出し側が扱いを強制される。
+thiserror は表示と変換を生成し、責務の単位のエラー型を `?` でつなげる。
+不変条件の違反は回復できない欠陥なので、Result に混ぜず panic で表す。
+取り消しは失敗でも欠陥でもなく、Future の drop で表すので、Result には入れない。
+型消去したエラーは種別が型から消えるので、domain と application では使わず、最上位の報告にだけ使う。
+
+### 完了条件
+想定された失敗が、Result で返されている。
+エラーが、thiserror の enum で責務の単位に定義されている。
+不変条件の違反が panic で表され、要求の経路に unwrap・expect がない。
+domain と application が、型消去したエラーを返していない。
+
+### 禁止事項
+要求の経路で、unwrap・expect を使うこと。
+欠陥や取り消しを、想定された失敗の Result に混ぜること。
+domain と application で、型消去したエラーを返すこと。
+
+### 行動
+想定された失敗を thiserror の enum にし、`?` で伝播する。
+不変条件の違反は panic にし、型消去は最上位の報告に限る。
+
+### 例
+要求の経路で `unwrap` すると、想定された失敗がクラッシュになり、依存もシグネチャに現れない。
+
+```rust
+fn handle(repository: &impl OrderRepository, id: OrderId) -> Order { repository.find(id).unwrap() }
+```
+
+`thiserror` の enum を `?` で伝播すれば、欠陥は panic、取り消しは `Future` の drop、依存は引数に現れる。
+
+```rust
+#[derive(thiserror::Error, Debug)]
+pub enum OrderError { #[error("not found")] NotFound }
+fn handle(repository: &impl OrderRepository, id: OrderId) -> Result<Order, OrderError> { repository.find(id) }
+```
+
+## port を trait で宣言する
+
+### 要求
+port は trait で宣言し、業務の核はその trait だけに依存する。
+実装を実行時に差し替える port は `Arc<dyn Port>` で渡し、単一の実装で静的に解決できる所は generics で渡す。
+dyn で差し替える非同期の port は、async-trait で書く。
+
+### 根拠
+trait は技術に依存しない契約で、核はそれだけに依存すれば実装から切れる。
+実行時に差し替える port は `Arc<dyn>` の動的ディスパッチで、一つの変数に複数の具象を保持できる。
+単一の実装で静的に解ける所は generics の単態化で、呼び出しの最適化が効く。
+edition 2024 の native な async trait は dyn に乗らないので、dyn で差し替える非同期の port は async-trait でボックス化する。
+
+### 完了条件
+port が trait で宣言され、核が trait だけに依存している。
+差し替える port が `Arc<dyn>` で、単一の実装が generics で渡されている。
+非同期の port が、dyn で渡せる形になっている。
+
+### 禁止事項
+業務の核を、具象の実装に依存させること。
+
+### 行動
+port を trait で宣言し、差し替えは `Arc<dyn>`、単一の実装は generics で渡す。
+
+### 例
+具象の repository を field に持つと、核が技術の実装へ依存する。
+
+```rust
+struct OrderService { repository: PostgresOrderRepository }
+```
+
+port の trait だけに依存させる。単一実装は generics で渡し、実行時に差し替える非同期 port は `async-trait` と `Arc<dyn>` で渡す。
+
+```rust
+#[async_trait]
+pub trait OrderRepository { async fn save(&self, order: &Order) -> Result<(), RepositoryError>; }
+struct OrderService<R: OrderRepository> { repository: R }
+struct Router { repository: Arc<dyn OrderRepository> }
+```
+
 ## 参照
-効果システムは [effect](../../concerns/effect.md)、依存の向きは [dependency](../../concerns/dependency.md) に従う。
+効果システムは [effect](../../concerns/effect/README.md)、依存の向きは [dependency](../../concerns/dependency/README.md) に従う。
 取り消しは [coordination](./coordination.md)、資源は [sqlx](./sqlx.md)、組立点の構造は [structure/core/composition](../../structure/core/composition.md) に従う。

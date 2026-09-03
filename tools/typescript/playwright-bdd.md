@@ -1,18 +1,18 @@
 # playwright-bdd
 
-用途は、UI をブラウザ越しに操作し見た目と疎通を確かめる道具である。
+用途は、Gherkin の feature を Playwright Test のテストファイルへ変換し、UI smoke を Gherkin で書けるようにする変換器である。
 採用は、TypeScript は playwright-bdd である。
-判断基準は、Gherkin の記法で smoke を書け、baseline 画像ごとか同じ実行環境を使う画像集合ごとに実行 image digest、OS、arch、hardware rendering class、Playwright と browser の version、headless mode、font manifest digest、viewport の metadata を画像とともに版管理し、metadata の canonical serialization から environment fingerprint を生成し、検証時の現在値から生成した fingerprint と一致しなければ screenshot の比較前に失敗し、画像と metadata を一つの更新単位として明示的にレビューできることである。
+判断基準は、Gherkin の記法で UI smoke を書け、変換した test の実行を [playwright](./playwright.md) の runner に委ねられることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## 仕様
 
 ### 要求
-業務語彙の executable spec は、[verification](../../principles/verification.md) が定める同じ検査経路で、cucumber-js として実行する。
+業務語彙の executable spec は、[verification](../../principles/verification/README.md) が定める同じ検査経路で、cucumber-js として実行する。
 feature の各 step は、一つの step binding と、その binding が呼ぶ公開 interface の operation に対応させる。
 feature、step binding、公開 interface の対応は、各一覧を実体から導く drift 検査と executable spec の実行で検証する。
 UI の E2E smoke と visual は playwright-bdd と Playwright で書き、両者は目的が別なので代替として並べない。
-[experience](../../concerns/experience.md) が定める状態または feedback の100ms、1秒を超える operation の progress 開始までの1秒と完了までの継続は、Playwright の E2E で表示時刻を測定する。
+[experience](../../concerns/experience/README.md) が定める状態または feedback の100ms、1秒を超える operation の progress 開始までの1秒と完了までの継続は、Playwright の E2E で表示時刻を測定する。
 visual の baseline 画像は、画像ごとか同じ実行環境を使う画像集合ごとに対応する metadata と組にし、レビューを通して版管理する。
 metadata は、実行 image digest、OS、arch、hardware rendering class、Playwright と browser の version、headless mode、font manifest digest、viewport を持つ。
 metadata の各値は、形式を固定した canonical serialization から environment fingerprint を生成できる形で記録する。
@@ -21,7 +21,7 @@ fingerprint が一致しないときは、visual を失敗させ、旧い baseli
 baseline を更新するときは、画像と metadata を一つの更新単位として生成し、同じ変更で明示的にレビューする。
 
 ### 根拠
-[verification](../../principles/verification.md) が定める、実行可能な仕様と実装を同じ検査経路に載せ、別成果物なら対応を検証する要求に、cucumber-js で応える。
+[verification](../../principles/verification/README.md) が定める、実行可能な仕様と実装を同じ検査経路に載せ、別成果物なら対応を検証する要求に、cucumber-js で応える。
 feature、step binding、公開 interface は別の成果物なので、対応の drift 検査がなければ一方だけ古くなりうる。
 executable spec は、業務の振る舞いを公開の interface 越しに確かめる。
 UI の E2E smoke と visual は、ブラウザ越しの見た目と疎通を確かめる。

@@ -2,9 +2,9 @@
 
 ## 概要
 connection は、C# で副作用と依存の渡し方を扱う実現軸である。
-concerns の [effect](../../concerns/effect.md) が定める効果システムを、C# の型と機構で満たす。
+concerns の [effect](../../concerns/effect/README.md) が定める効果システムを、C# の型と機構で満たす。
 効果は `Effect<TRequirements, TFailure, TValue>` の遅延した値で表し、要求する依存を型に出し、境界でだけ実行する。
-[separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の「依存を内側へ一方向に向ける」の規律に従う。
+[separation](../../principles/separation/README.md) の依存の向きと [dependency](../../concerns/dependency/inward-dependencies.md) の「依存を内側へ一方向に向ける」の規律に従う。
 
 ## 効果を Effect 型で組む
 
@@ -537,5 +537,5 @@ var runtime = new EffectRuntime<ProductionRequirements>(requirements);
 ```
 
 ## 参照
-効果システムは [effect](../../concerns/effect.md)、依存の向きは [dependency](../../concerns/dependency.md)、判別共用体の宣言は [formation](./formation.md) に従う。
+効果システムは [effect](../../concerns/effect/README.md)、依存の向きは [dependency](../../concerns/dependency/README.md)、判別共用体の宣言は [formation](./formation.md) に従う。
 取り消しは [coordination](./coordination.md)、資源は [npgsql](./npgsql.md)、組立点の構造は [structure/core/composition](../../structure/core/composition.md) に従う。

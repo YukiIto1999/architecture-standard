@@ -2,7 +2,7 @@
 
 ## 概要
 inspection は、TypeScript で検証を扱う実現軸である。
-principles の [verification](../../principles/verification.md) が定める検証の機械化を、TypeScript の機構で満たす。
+principles の [verification](../../principles/verification/README.md) が定める検証の機械化を、TypeScript の機構で満たす。
 
 ## 構造
 
@@ -24,7 +24,7 @@ Effect の callable な型は `unique symbol` の nominal brand を持ち、`def
 公開 Effect factory の本体は、実行用の関数リテラルを `deferEffect` へ渡す形だけを許す。
 
 ### 根拠
-[verification](../../principles/verification.md) が定める、依存の向きやレイヤー越境は実行できるテストとして強制するという要求に、dependency-cruiser で応える。
+[verification](../../principles/verification/README.md) が定める、依存の向きやレイヤー越境は実行できるテストとして強制するという要求に、dependency-cruiser で応える。
 層の参照禁止と exports の外への到達の禁止を規則にすれば、層の越境と公開面の迂回が違反として出る。
 規則を検証入口で回せば、違反でビルドが止まる。
 import を介さない呼び出し(グローバル API 等)は、import の走査に現れない。
@@ -102,8 +102,8 @@ tsc は型検査の専用に使い、JS への変換は build 基盤に委ねる
 tsconfig は strict に加え、noUncheckedIndexedAccess と exactOptionalPropertyTypes も有効にする。
 linter は oxlint を使い、型認識の検査は tsgolint による oxlint の type-aware 実行で行う。
 ファイル・関数の大きさとネストの深さのしきい値は oxlint の max-lines(ファイル)・max-lines-per-function(関数)・max-depth(ネスト)の規則として定め、既定値から緩める変更は project の ADR に明記する。
-認知的複雑さは SonarQube の cognitive complexity(S3776)で測り、oxlint 側の複雑度の規則(complexity)は有効にしない。
-SonarQube の profile は cognitive complexity(S3776)に絞り、ローカル lint と同目的の規則を重ねない。
+環境変数の直読は、TypeScript compiler API による構造検査で process.env と import.meta.env の参照を設定の parse を持つ組立点だけに限る。
+認知的複雑さの測り方は、[sonarqube](../platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、oxlint 側の複雑度の規則(complexity)は有効にしない。
 
 ### 根拠
 strict を有効にすれば、不在や暗黙の any が型検査で止まる。
@@ -112,8 +112,7 @@ noUncheckedIndexedAccess は配列・索引アクセスの結果に `undefined` 
 oxlint は、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
 max-lines・max-lines-per-function・max-depth は、ファイル・関数の大きさとネストの深さを早く気づかせる。
 oxlint の complexity 規則が測る cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない。標準が必須の検証へ割り当てる複雑度は cognitive complexity であり、cyclomatic complexity は必須の検証へ割り当てていないため、oxlint の complexity 規則は有効にしない。
-SonarQube の cognitive complexity は switch の構造化を一度だけ加点し case の数に比例しないので、判別子つき union の網羅的な switch を罰しない。
-SonarQube の profile を cognitive complexity だけに絞れば、oxlint が既に検査する未使用変数などの規則を SonarQube 側で重ねて測ることがない。
+採用済みの oxlint に環境変数の直読を禁止する native の規則がないため、compiler API の構造検査で補い、[single-config-source](../../concerns/configuration/single-config-source.md) の「定めた源からまとめて読む」を機械の gate にする。
 既定から緩める判断を ADR に残せば、緩和の理由が追える。
 tsc の emit は build 基盤の変換と重複し、二重の変換経路を生む。
 
@@ -123,24 +122,20 @@ tsconfig の noUncheckedIndexedAccess と exactOptionalPropertyTypes が、stric
 型検査と lint の警告が、検証入口でエラーとして扱われている。
 oxlint が linter として使われ、型認識の検査が tsgolint で行われている。
 ファイル・関数の大きさとネストの深さのしきい値が、max-lines・max-lines-per-function・max-depth の規則として定められている。
+process.env と import.meta.env の参照が、設定の parse を持つ組立点に限られている。
 緩和が、project の ADR に明記されている。
 oxlint の complexity 規則が、有効になっていない。
-SonarQube の profile が、cognitive complexity に絞られている。
 tsc が型検査の専用に設定され、JS への変換が build 基盤に委ねられている。
 
 ### 禁止事項
 大きさと複雑さのしきい値を、既定から黙って緩めること。
-判別子つき union の網羅的な switch を、複雑度の加点対象にする指標を採ること。
 cognitive complexity を、oxlint の complexity 規則で測ること。
-SonarQube の profile に、ローカル lint と同目的の規則を重ねて有効にすること。
 tsc を、JS への変換に使うこと。
 
 ### 行動
 strict を有効にし、型検査と lint の警告を検証入口でエラーにする。
 noUncheckedIndexedAccess と exactOptionalPropertyTypes を strict と併記して有効にする。
 oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max-lines-per-function・max-depth のしきい値を定める。
-認知的複雑さは SonarQube の cognitive complexity(S3776)を quality gate で測り、緩和は ADR に明記する。
-SonarQube の profile は cognitive complexity だけに絞る。
 
 ## 規則と検証機構の対応
 
@@ -165,7 +160,7 @@ SonarQube の profile は cognitive complexity だけに絞る。
 | formation | 不正な状態を構築できなくする | 型(判別子つき union・never 網羅) |
 | formation | 不変を既定にする | 型(readonly・as const) |
 | formation | 意味と単位を型で区別する | 型(branded type) |
-| oxfmt | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+構造検査(TypeScript compiler API による型・値の PascalCase・camelCase の命名照合) |
+| conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+構造検査(TypeScript compiler API による型・値の PascalCase・camelCase の命名照合) |
 | conventions | ドキュメントコメントを書く | 構造検査(TypeScript compiler API と @microsoft/tsdoc。存在・構文・宣言と tag の対応・`@throws {@link ErrorType} 条件`・外へ伝播する直接の throw の型と link・try/catch で吸収される throw の除外・先頭行の一行と句読点)+レビュー(実効的な可視境界に応じた外部契約または内部契約、call/rejected Promise から伝播する欠陥と @throws、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(TypeScript compiler API による命名照合) |
 | 全域 | branch coverage と safety-critical decision | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定)+構造検査・実行テスト([structure/tests の methods](../../structure/tests/methods.md) が定める safety analysis と MC/DC case の一対一照合) |
@@ -197,6 +192,9 @@ SonarQube の profile は cognitive complexity だけに絞る。
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |
 | publication | 可視性 | 構造検査(package.json の exports フィールドの検査) |
 
+| oxlint | 汎用名と裸ループと自由文出力を lint で止める | analyzer/lint(id-denylist・unicorn/no-for-loop・no-console をエラー化) |
+
+| playwright | baseline 画像と環境指紋を一つの更新単位で版管理する | 構造検査(fingerprint 照合を比較前に実行)+レビュー(画像と metadata の一組更新) |
 ## 参照
-検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification.md) に従う。
+検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification/README.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

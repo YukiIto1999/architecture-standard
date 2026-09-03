@@ -2,9 +2,8 @@
 
 ## 概要
 conventions は、TypeScript で実現軸を横断する全域規律を扱う。
-principles の [comment](../../principles/comment.md) が定めるドキュメントコメントの契約を、TypeScript の機構で満たす。
+principles の [comment](../../principles/comment/README.md) が定めるドキュメントコメントの契約を、TypeScript の機構で満たす。
 実現軸に紐づく置き場を持たず、formation・translation・connection・coordination・publication・inspection の全てに一様に適用する。
-命名と整形の規律は [oxfmt](./oxfmt.md) が持つ。
 
 ## ドキュメントコメントを書く
 
@@ -114,6 +113,42 @@ OrderResponse
 orderMapper
 ```
 
+## 命名と整形を道具に委ねる
+
+### 要求
+命名は標準的な TypeScript の規約に従い、型は PascalCase、値と関数は camelCase にする。
+整形は oxfmt の既定に従い、手で揃えない。
+ファイル名は kebab-case で統一し、oxlint の `unicorn/filename-case` で揃える。
+ファイル名の規則は、コードの識別子の規則とは独立に定める。
+ファイルの種別の標識は、名前の末尾に第二拡張子として付ける。
+
+### 根拠
+[verification](../../principles/verification/README.md) が定める、コードスタイルの細則は人の合意でなく単一の formatter と linter に委ねるという要求に、oxfmt で応える。
+TypeScript はファイル名の標準の規約を持たないため、一つの表記に固定しないと表記が揺れる。
+kebab-case に固定して `unicorn/filename-case` で揃えれば、ファイル名が一意に決まる。
+型と値の命名規約(PascalCase・camelCase)自体を検査する規則は oxlint に無いため、TypeScript compiler API による命名照合をリポジトリの検証入口で実行する。
+ファイル名はモジュールを指す名前であり、コードの識別子である値や型の名前とは指す対象が異なる。
+指す対象が異なるファイル名とコードの識別子を、同じ命名規約に揃える理由はない。
+種別を第二拡張子に置けば、内容を開かずに名前の走査だけで種別を判定できる。
+
+### 完了条件
+命名が、型は PascalCase、値と関数は camelCase になっている。
+ファイル名が、kebab-case で統一され `unicorn/filename-case` で検査されている。
+整形が、oxfmt の既定で一意に決まっている。
+ファイル名の規則が、コードの識別子の規則と独立に定められている。
+ファイルの種別の標識が、名前の末尾の第二拡張子として付けられている。
+
+### 禁止事項
+整形を、手で揃えること。
+ファイル名の表記を、混在させること。
+ファイル名の規則を、コードの識別子の規則に合わせること。
+ファイルの種別の標識を、第二拡張子以外の位置に書くこと。
+
+### 行動
+型を PascalCase、値と関数を camelCase で名付ける。
+ファイル名を kebab-case にし、oxfmt と oxlint を既定で適用する。
+ファイルの種別は、`.test.ts`・`.spec.ts` のように名前の末尾に第二拡張子として付ける。
+
 ## 参照
-ドキュメントコメントの契約は [comment](../../principles/comment.md)、型の規律は [types](../../concerns/types.md) に従う。
+ドキュメントコメントの契約は [comment](../../principles/comment/README.md)、型の規律は [types](../../concerns/types/README.md) に従う。
 境界の wire の型は [translation](./translation.md) に従う。

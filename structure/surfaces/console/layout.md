@@ -3,7 +3,7 @@
 console は、CLI の surface である。
 core を埋め込み、コマンドの引数を build_core が返す API の operation へ写像する。
 自己ホストであり、自身でプロセスを起動する。
-対話の体験は [concerns/experience](../../../concerns/experience.md)、keyboard 操作の可達性は [concerns/accessibility](../../../concerns/accessibility.md) に従う。
+対話の体験は [concerns/experience](../../../concerns/experience/README.md)、keyboard 操作の可達性は [concerns/accessibility](../../../concerns/accessibility/README.md) に従う。
 console は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成
@@ -20,11 +20,12 @@ console/
 
 ## 依存方向
 
-依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存の向きは [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 composition が commands を組み立て、core を埋め込む。
 commands は composition を参照しない。
+起動の流れは main → composition → command の一方向であり、command は組み立て済みの core API と検証済み入力を composition から受け取って実行する。
 console の外との依存は [skeleton](../../skeleton.md) に従う。
-依存方向の規律は [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## 入口とコマンド
 
@@ -37,7 +38,6 @@ console は、派生読みモデルの臨時・手動の再構築 workflow を c
 ## 配布
 
 console は、単一の配布 channel で配布する。
-配布と更新は [deploy](../../deploy/layout.md) に従う。
 
 ## 組み立てと起動
 
@@ -45,6 +45,6 @@ composition は、build_core で core を埋め込み、自身でプロセスを
 composition は、実行環境が渡す起動主体の資格情報を認証境界で検証し、actor を一度だけ構築する。
 command は actor または資格情報を引数から受け取らず、composition が構築した actor と検証済み入力だけを core の公開 API へ渡す。
 資格情報と認証方式の型を、core の公開 API へ渡さない。
-終了の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
+終了の規律は [concerns/lifecycle](../../../concerns/lifecycle/README.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
-設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。
+設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration/README.md) に従う。

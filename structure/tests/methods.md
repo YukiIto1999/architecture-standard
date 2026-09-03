@@ -24,22 +24,22 @@ symbolic と concolic の実行を、標準の検証に組み込まない。
 並列実行への耐性は、テストごとに独立した資源(接続・スキーマ・一時領域)を割り当てて確かめる。
 繰り返し実行して結果が変わる不安定なテストは、隔離の区分へ移し、通常のゲートから外す。
 隔離の区分に残せる期間は期限で区切り、期限の値は project が定める。
-不安定さを断つ原因の分類と対処は [principles/verification](../../principles/verification.md) に従う。
+不安定さを断つ原因の分類と対処は [principles/verification](../../principles/verification/README.md) に従う。
 
 ## 権限
 
 権限は、主体・操作・資源・条件と、期待する許可と拒否の組み合わせの matrix で検証する。
 matrix は、公開された interface を越して検証する。
 権限の matrix は、業務の振る舞いの検証として対象に含める。
-権限の規律は [concerns/authorization](../../concerns/authorization.md) に従う。
+権限の規律は [concerns/authorization](../../concerns/authorization/README.md) に従う。
 
 ## 実依存
 
 adapter は、実の依存をコンテナで起動して検証する。
-採用された store([concerns/persistence](../../concerns/persistence.md) に従う)を実コンテナで起動する。
+採用された store([concerns/persistence](../../concerns/persistence/README.md) に従う)を実コンテナで起動する。
 生存と準備の面は、プロセスをコンテナで起動し、面の観測で確かめる。
 故障は、effect を型付きで注入して再現する。
-副作用の境界の規律は [concerns/effect](../../concerns/effect.md) に従う。
+副作用の境界の規律は [concerns/effect](../../concerns/effect/README.md) に従う。
 
 ## 性質別の技法
 
@@ -85,10 +85,10 @@ canonical operation から core API、surface の binding、公開 interface の
 依存方向と参照の禁止は、構造の検査で機械検証する。
 公開面は、言語の可視性の機構と構造の検査で守る。
 循環・規模・複雑さなどのアーキテクチャ特性は、客観の尺度の適応度関数として測り、閾値を超えたら不合格とする。
-互いを読まずに独立して理解できる要素を統合または削除して数を減らす変更では、変更が触れた要素の複雑さの指標を変更前の同じ集合と比較し、変更前の値を上回ったら不合格とする。独立して読めていたかの判別と、この比較を求める規律は [principles/construction](../../principles/construction.md) に従う。
+互いを読まずに独立して理解できる要素を統合または削除して数を減らす変更では、変更が触れた要素の複雑さの指標を変更前の同じ集合と比較し、変更前の値を上回ったら不合格とする。独立して読めていたかの判別と、この比較を求める規律は [principles/construction](../../principles/construction/README.md) に従う。
 結合は、境界を越える依存の距離の記録と、遠い境界を越えて内部へ到達する依存の不在で判定する。知識の段の記録は、記録の有無を機械で確かめ、内容の正しさはレビューで確かめる。
-結合と凝集の指標へ閾値を置く扱いは [principles/separation](../../principles/separation.md) に従う。
-特性を客観の尺度で測る規律は [principles/verification](../../principles/verification.md) に従う。
+結合と凝集の指標へ閾値を置く扱いは [principles/separation](../../principles/separation/README.md) に従う。
+特性を客観の尺度で測る規律は [principles/verification](../../principles/verification/README.md) に従う。
 全単位(コンテキスト・機構・surface・runtime)が検査対象として列挙されていることを、実フォルダとの照合で機械確認する。
 単位を追加したときに検査の対象へ自動で追従しない構成を、置かない。
 構造で検証できない規則は、型と lint・実行テスト・人手レビューのいずれかに割り当てる。
@@ -127,6 +127,6 @@ AI が生成したテストを、有効性の検査なしに受け入れない�
 ## 実行範囲
 
 検証の実行の順序と、変更からの範囲の広げ方は、[process/verification](../../process/verification.md) が定める。
-性能の目標は [concerns/performance](../../concerns/performance.md)、耐障害性は [concerns/resilience](../../concerns/resilience.md) と [concerns/lifecycle](../../concerns/lifecycle.md)、security と privacy は [concerns/security](../../concerns/security.md) と [concerns/privacy](../../concerns/privacy.md) に従う。
-利用者面の体験は [concerns/experience](../../concerns/experience.md)、可達性と識別性は [concerns/accessibility](../../concerns/accessibility.md) に従う。
+性能の目標は [concerns/performance](../../concerns/performance/README.md)、耐障害性は [concerns/resilience](../../concerns/resilience/README.md) と [concerns/lifecycle](../../concerns/lifecycle/README.md)、security と privacy は [concerns/security](../../concerns/security/README.md) と [concerns/privacy](../../concerns/privacy/README.md) に従う。
+利用者面の体験は [concerns/experience](../../concerns/experience/README.md)、可達性と識別性は [concerns/accessibility](../../concerns/accessibility/README.md) に従う。
 言語ごとの具体の機構と道具の採用は [tools](../../tools/) の各 ecosystem が定める。

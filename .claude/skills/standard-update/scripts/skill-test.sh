@@ -1546,9 +1546,9 @@ printf '%s\n' \
   '#!/usr/bin/env bash' \
   'runner=.claude/skills/standard-update/scripts/run-task-evals.mjs' \
   'diff_files=$(git diff --name-only)' \
-  'if [ "$diff_files" = "concerns/transaction.md" ] && rg -qF "// 二つ目の失敗を無視して成功を返す" concerns/transaction.md; then' \
+  'if [ "$diff_files" = "concerns/transaction/invisible-partial-commits.md" ] && rg -qF "// 二つ目の失敗を無視して成功を返す" concerns/transaction/invisible-partial-commits.md; then' \
   '  : ' \
-  'elif [ "$diff_files" = "principles/comment.md" ] && [ "$(rg -cF "/** 素数かどうかを判定する。 */" principles/comment.md)" -eq 2 ] && ! rg -qF "@param candidate" principles/comment.md; then' \
+  'elif [ "$diff_files" = "principles/comment/declaration-contracts.md" ] && [ "$(rg -cF "/** 素数かどうかを判定する。 */" principles/comment/declaration-contracts.md)" -eq 2 ] && ! rg -qF "@param candidate" principles/comment/declaration-contracts.md; then' \
   '  : ' \
   'else' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"example mutation missing or escaped its target"}'\''' \

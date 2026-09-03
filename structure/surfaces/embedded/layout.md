@@ -20,11 +20,11 @@ surface の名は、公開する protocol の対話様式で付ける。
 
 ## 依存方向
 
-依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存の向きは [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 composition が endpoints を組み立て、core を埋め込む。
 endpoints は composition を参照しない。
 埋め込み surface の外との依存は [skeleton](../../skeleton.md) に従う。
-依存方向の規律は [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## 入口と protocol
 
@@ -43,8 +43,8 @@ composition は、build_core で core を埋め込み、protocol の listener �
 自身では起動せず、同梱する host の runtime が起動する。
 生存と準備の面は、protocol の予約した operation で公開する。
 host は準備を確認してから要求を振り分ける。
-lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
+lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle/README.md) に従う。
 認証境界が構築した actor を、core の公開 API へ渡す。
 要求側が指定した actor を受け入れず、actor と検証済み入力だけを core の公開 API へ渡す。
-設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。
+設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration/README.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。

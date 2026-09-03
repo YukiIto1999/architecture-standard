@@ -11,7 +11,7 @@
 property-based testing は proptest で書き、状態の遷移は proptest の stateful な形で書く。
 
 ### 根拠
-[verification](../../principles/verification.md) が定める、例だけを並べるより性質を書いて入力を多数生成すると見落とした場合が見つかるという要求に、proptest の入力生成で応える。
+[verification](../../principles/verification/README.md) が定める、例だけを並べるより性質を書いて入力を多数生成すると見落とした場合が見つかるという要求に、proptest の入力生成で応える。
 失敗した入力は最小化され、小さな反例で原因を追える。
 状態の遷移は、操作の列を生成して不変量を確かめる stateful な形で突ける。
 

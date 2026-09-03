@@ -2,7 +2,7 @@
 
 ## 概要
 formation は、C# で値・型・不変条件をモデリングする実現軸である。
-principles の [modeling](../../principles/modeling.md) が定める業務意味の型封入と、concerns の [types](../../concerns/types.md) が定める型の規律を、C# の機構で満たす。
+principles の [modeling](../../principles/modeling/README.md) が定める業務意味の型封入と、concerns の [types](../../concerns/types/README.md) が定める型の規律を、C# の機構で満たす。
 
 ## 業務の値を型に封じる
 
@@ -251,6 +251,6 @@ Roslyn は analyzer と source generator に netstandard2.0 を課し、生成�
 配布するときは `analyzers/dotnet/cs` に詰め、`IncludeBuildOutput=false` で実行時の出力に含めない。
 
 ## 参照
-業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md)、合成と継承の境界は [separation](../../principles/separation.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、analyzer project の置き場は [structure/libs/layout](../../structure/libs/layout.md) に従う。
+業務意味の型封入は [modeling](../../principles/modeling/README.md)、型の規律は [types](../../concerns/types/README.md)、合成と継承の境界は [separation](../../principles/separation/README.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、analyzer project の置き場は [structure/libs/layout](../../structure/libs/layout.md) に従う。
 命名と整形、ドキュメントコメントの体裁は [conventions](./conventions.md) に従う。
 エラーモデルと結果の型は [connection](./connection.md)、境界での外部表現の変換は [translation](./translation.md) に従う。

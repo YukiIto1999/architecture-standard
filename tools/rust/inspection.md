@@ -2,7 +2,7 @@
 
 ## 概要
 inspection は、Rust で検証を扱う実現軸である。
-principles の [verification](../../principles/verification.md) が定める検証の機械化を、Rust の機構で満たす。
+principles の [verification](../../principles/verification/README.md) が定める検証の機械化を、Rust の機構で満たす。
 
 ## 構造
 
@@ -40,8 +40,10 @@ lint は clippy を `[workspace.lints.clippy]` で強制し、unwrap_used・expe
 テストの unwrap・expect は、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可する。
 大きさとネストのしきい値は too_many_lines・excessive_nesting の lint の規則として定め、既定値から緩める変更は project の ADR に明記する。
 excessive_nesting は既定のしきい値を持たないため、project が clippy.toml にしきい値を定め、ADR に記録する。
-認知的複雑さは SonarQube の cognitive complexity(S3776)で測り、clippy 側に複雑度の規則を重ねて持たせない。
-SonarQube の profile は cognitive complexity(S3776)に絞り、ローカル lint と同目的の規則を重ねない。
+認知的複雑さの測り方は、[sonarqube](../platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、clippy 側に複雑度の規則を重ねて持たせない。
+識別子の汎用名は、clippy.toml の disallowed-names で禁止する。
+環境変数の直読は、clippy.toml の disallowed-methods で std::env::var と std::env::var_os を禁止し、設定の読み込みを設定の parse を持つ組立点だけに許可する。
+標準出力への自由文出力は、print_stdout・print_stderr の deny で禁止し、console surface の出力層だけに `#[allow]` を付ける。
 unsafe の使用は `[workspace.lints.rust]` の `unsafe_code = "deny"` で既定禁止にする。
 unsafe を要する project は理由を ADR に記録し、`#[allow(unsafe_code)]` を unsafe を含む最小の item に付ける。
 同じ理由を共有する複数の item に限り、それらを収める最小の module に `#[allow(unsafe_code)]` を付ける。
@@ -55,8 +57,10 @@ unsafe が要る最小の item に `#[allow(unsafe_code)]` を付け、理由を
 同じ理由を共有する item だけを最小の module にまとめれば、同じ allow の重複を避けても許可範囲を広げずに済む。
 clippy の lint 属性は crate 全体と item の単位に付けられ(文・式への属性は stable Rust では安定化されていない stmt_expr_attributes を要するため使えない)、Cargo.toml の `[lints]` はターゲット単位の上書きを持たないため、テストの除外は clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で行う。
 too_many_lines と excessive_nesting は、関数の肥大化とネストの深さを早く気づかせる。
+data・info・temp のような汎用名は生成時に混入しやすく、disallowed-names は [restrict-generic-names](../../principles/naming/restrict-generic-names.md) の「汎用名・略語・一時名を制限する」を識別子の denylist として機械化する。
+環境変数の直読は [single-config-source](../../concerns/configuration/single-config-source.md) の「定めた源からまとめて読む」に反する散在を作るため、disallowed-methods がビルドで止める。
+自由文の標準出力は [structured-events](../../concerns/observability/structured-events.md) の「事実をイベントとして表し、構造化して出す」を素通りするため、print 系 lint で止める。
 clippy 自身の cognitive_complexity lint は、原典と異なる clippy 固有のヒューリスティックで実装され、clippy 公式が測定ツールとしての使用を推奨していないため採用しない。
-SonarQube の cognitive complexity は switch・match の構造化を一度だけ加点し、分岐の数に比例しないので、閉じた直和の網羅的な match を罰しない。
 既定から緩める判断を ADR に残せば、緩和の理由が追える。
 
 ### 完了条件
@@ -66,6 +70,9 @@ workspace の lints に、unwrap_used・expect_used の deny の設定がある�
 大きさとネストのしきい値が、too_many_lines・excessive_nesting の lint の規則として定められている。
 excessive_nesting のしきい値が、project の clippy.toml に定められ ADR に記録されている。
 緩和が、project の ADR に明記されている。
+clippy.toml に disallowed-names の一覧が定められている。
+std::env::var・std::env::var_os が disallowed-methods に登録され、許可が設定の組立点に限られている。
+print_stdout・print_stderr が deny になっており、許可が console surface の出力層に限られている。
 `[workspace.lints.rust]` に `unsafe_code = "deny"` が設定されている。
 unsafe を要する箇所では、`#[allow(unsafe_code)]` が unsafe を含む最小の item に付いている。
 同じ理由を共有する複数の item に module 単位で許可する場合は、それらを収める最小の module に限られている。
@@ -74,7 +81,6 @@ unsafe を許可する理由が、project の ADR に記録されている。
 ### 禁止事項
 警告を、検証入口でエラーとして扱わず黙って通過させること。
 大きさと複雑さのしきい値を、既定から黙って緩めること。
-閉じた直和の網羅的な分岐を、複雑度の加点対象にする指標を採ること。
 cognitive complexity を、clippy の cognitive_complexity lint で測ること。
 `#![allow(unsafe_code)]` を crate root に置き、crate 全体を許可すること。
 異なる理由の unsafe をまとめて、module 単位で許可すること。
@@ -171,9 +177,9 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | translation | 終了を surface の境界表現へ写す | 実行テスト(surface ごとの成功・想定内失敗・欠陥・取り消しの写像) |
 | translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
 | connection | 効果を言語の効果型で表す | 型(Future・Result)+レビュー(domain の同期性の判断) |
-| thiserror | 失敗を Result に、欠陥を panic にする | analyzer/lint(clippy unwrap_used・expect_used deny)+型(Result) |
+| connection | 失敗を Result に、欠陥を panic にする | analyzer/lint(clippy unwrap_used・expect_used deny)+型(Result) |
 | connection | 要求する依存を能力の trait bound で型に出す | 型(trait bound) |
-| async-trait | port を trait で宣言する | 型(trait)+構造検査(依存方向) |
+| connection | port を trait で宣言する | 型(trait)+構造検査(依存方向) |
 | connection | 配線を組立点に置き、境界で実行する | 構造検査(composition root 外の具象生成の検出)+レビュー |
 | sqlx | 型付き SQL | 型/実行テスト(sqlx の `query!` コンパイル時検証・検証入口の offline 照合) |
 | sqlx | 並行更新の表面 | 実行テスト(結合テストでの競合検出) |
@@ -197,5 +203,5 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
 
 ## 参照
-検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification.md) に従う。
+検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification/README.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

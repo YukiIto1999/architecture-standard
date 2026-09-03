@@ -2,7 +2,7 @@
 
 ## 概要
 translation は、TypeScript で外部表現とドメイン型の変換を扱う実現軸である。
-principles の [separation](../../principles/separation.md) が定める境界での変換と、concerns の [types](../../concerns/types.md) が定める境界での parse・[security](../../concerns/security.md) が定める境界の不信を、TypeScript の機構で満たす。
+principles の [separation](../../principles/separation/README.md) が定める境界での変換と、concerns の [types](../../concerns/types/README.md) が定める境界での parse・[security](../../concerns/security/README.md) が定める境界の不信を、TypeScript の機構で満たす。
 境界での parse とエラー分類の規律は [valibot](./valibot.md) が、契約の型生成の規律は [typespec](./typespec.md) が持つ。
 
 ## 生成型を型としてのみ使い、通信を port に通す
@@ -29,4 +29,4 @@ contracts/generated の型は型としてだけ import し、契約の package �
 生成型を `import type` で取り込み、通信は ui port を通す。
 
 ## 参照
-境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect.md)、契約の生成物の置き場と drift 検査は [structure/contracts/generated](../../structure/contracts/generated.md) に従う。
+境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect/README.md)、契約の生成物の置き場と drift 検査は [structure/contracts/generated](../../structure/contracts/generated.md) に従う。

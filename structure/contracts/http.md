@@ -34,7 +34,7 @@ http は、REST と OpenAPI 3.x に従う。
 エラーの表現は、RFC 9457 の problem+json に束ねる。
 HTTP 仕様の SHOULD の規定には、明確な理由がない限り従う。
 エラーの内部の詳細は外部の応答へ出さず、利用者の語彙へ翻訳して返す。
-内部の詳細を出さない規律は [concerns/effect](../../concerns/effect.md) に従う。
+内部の詳細を出さない規律は [concerns/effect](../../concerns/effect/README.md) に従う。
 
 ## 作成の応答
 

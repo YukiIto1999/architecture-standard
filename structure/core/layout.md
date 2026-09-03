@@ -45,7 +45,7 @@ core/
 `<context>/` は、境界付けられたコンテキストが複数あるときにのみ置く。
 `shared/` は、複数のコンテキストが値を共有するときにのみ置く。
 `<context>/` の直下に置ける層は domain・application・infrastructure の3層であり、必要な層のみを置く。
-generic と分類したコンテキストには、業務の不変条件を持つ集約を置かない。集約を持たなければ domain 層も置かない。分類は [principles/separation](../../principles/separation.md) に従う。
+generic と分類したコンテキストには、業務の不変条件を持つ集約を置かない。集約を持たなければ domain 層も置かない。分類は [principles/separation](../../principles/separation/README.md) に従う。
 `<common-value>` は、一つのコンテキスト内で複数の集約が共有する値である。
 集約が一つだけのコンテキストでは、common-value を置かず集約のファイル内に畳む。
 値が一つのときは `<common-value>` を直に置き、二つ以上で `values/` に集める。
@@ -55,7 +55,7 @@ shared-kernel は、値オブジェクトの constructor・不変条件・基本
 shared-kernel は、use-case と policy を持たない。
 shared-kernel へ型を置けるのは、共有する全てのコンテキストで意味と変更理由が同一だと記録した場合に限る。
 domain event はコンテキストの内部に閉じ、integration event は公開する application が所有するため、イベントの型は shared-kernel に置かない。
-コンテキスト間の関係と型の共有の判定は [principles/separation](../../principles/separation.md) に従う。
+コンテキスト間の関係と型の共有の判定は [principles/separation](../../principles/separation/README.md) に従う。
 
 ## 単位
 
@@ -75,7 +75,7 @@ core 直下の単位の役割を示す。
 単位は依存の上下で3つの tier に分かれる。
 下から shared、コンテキスト、composition の順に積み重なる。
 参照は上位 tier から下位 tier へ向かう。
-依存を一方向に保つ原則は [principles/separation](../../principles/separation.md) と [concerns/dependency](../../concerns/dependency.md) に従う。
+依存を一方向に保つ原則は [principles/separation](../../principles/separation/README.md) と [concerns/dependency](../../concerns/dependency/README.md) に従う。
 
 単位をまたぐ参照は、参照先の公開面にのみ到達する。
 
