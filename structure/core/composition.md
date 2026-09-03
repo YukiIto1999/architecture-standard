@@ -22,6 +22,9 @@ composition は、port に adapter を結びつける。
 複数コンテキストの情報を即時に読む operation は、その query を所有するコンテキストの読みモデルへ写像する。
 application が公開した integration event を libs の配送 port へ渡す経路を、composition が配線する。
 整合の即時性を要さない派生読みモデルへは、outbox を経て非同期で駆動する。
+integration event の消費は、composition が受信側コンテキストの公開 application 入口へ配線する。
+integration event から受信側の入力への翻訳は、受信側を配線する composition が下流の側の翻訳として所有し、上流の event 型を受信側の domain へ持ち込まない。
+コンテキスト間の関係と翻訳の所有の記録は [principles/separation](../../principles/separation.md) に従う。
 composition は、業務判断を持たない。
 composition が行うのは、配線と境界の写像である。
 依存注入の規律は [concerns/dependency](../../concerns/dependency.md) に従う。
