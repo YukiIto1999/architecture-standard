@@ -461,6 +461,40 @@ else
 fi
 
 echo
+echo "=== 12. structure の台帳が本文ファイルを file 粒度で網羅しているか ==="
+# 台帳の宣言側: 各行の「ファイル」列を stem へ展開し、path として並べる
+ledger_declared=$(
+  for spec in "structure/README.md:structure" \
+              "structure/surfaces/README.md:structure/surfaces" \
+              "structure/runtimes/README.md:structure/runtimes"; do
+    ledger="${spec%%:*}"; base="${spec##*:}"
+    rg '^\|' "$ledger" | awk -F'|' -v base="$base" '
+      NR==1 { for (i=2; i<NF+1; i++) { c=$i; gsub(/^ +| +$/,"",c); if (c=="ファイル") fc=i }
+              if (!fc) { print "NOFILECOL" > "/dev/stderr"; exit 1 } next }
+      NR==2 { next }
+      {
+        key=$2; sub(/.*\[/,"",key); sub(/\].*/,"",key)
+        decl=$fc; gsub(/^ +| +$/,"",decl)
+        if (decl ~ /README/) next
+        dir = (key=="skeleton") ? base : base "/" key
+        n=split(decl, parts, "・")
+        for (j=1; j<=n; j++) { s=parts[j]; gsub(/^ +| +$/,"",s); print dir "/" s }
+      }'
+  done | sort -u
+)
+ledger_actual=$(find structure -name '*.md' ! -name 'README.md' | sed 's/\.md$//' | sort -u)
+ledger_diff=$(comm -3 <(printf '%s\n' "$ledger_declared") <(printf '%s\n' "$ledger_actual"))
+structure_body=$(printf '%s\n' "$ledger_actual" | wc -l | tr -d ' ')
+echo "structure 本文ファイル数: $structure_body"
+if [ -z "$ledger_diff" ]; then
+  pass "structure の台帳が本文ファイルと file 粒度で一致($structure_body)"
+else
+  echo "左=台帳のみ / 右=実ファイルのみ"
+  printf '%s\n' "$ledger_diff"
+  fail "structure の台帳が本文ファイルと一致していない"
+fi
+
+echo
 if [ "$FAILED" = 0 ]; then
   echo "=== 総合: PASS ==="
 else

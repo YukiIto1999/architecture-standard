@@ -251,6 +251,23 @@ fixture=$(make_fixture product-build-registry)
 printf '\nNx は、task graph の orchestrator である。\n' >> "$fixture/structure/tests/layout.md"
 expect_pass "build の採用名を tools registry に含める" "$fixture"
 
+fixture=$(make_fixture structure-ledger-stray-file)
+cp "$fixture/structure/core/domain.md" "$fixture/structure/core/stray.md"
+expect_fail "台帳に無い structure 本文ファイルを検出する" "$fixture" "structure/core/stray"
+
+fixture=$(make_fixture structure-ledger-missing-entry)
+sed -i 's/| layout・methods・doubles |/| layout・methods |/' "$fixture/structure/README.md"
+expect_fail "台帳から落ちた structure 本文ファイルを検出する" "$fixture" "structure/tests/doubles"
+
+fixture=$(make_fixture structure-ledger-subdirectory)
+cp "$fixture/structure/surfaces/viewer/state.md" "$fixture/structure/surfaces/server/state.md"
+expect_fail "surface 単位の台帳の欠落を検出する" "$fixture" "structure/surfaces/server/state"
+
+fixture=$(make_fixture structure-ledger-added-pair)
+cp "$fixture/structure/core/domain.md" "$fixture/structure/core/policy.md"
+sed -i 's/| layout・domain・application・infrastructure・composition |/| layout・domain・application・infrastructure・composition・policy |/' "$fixture/structure/README.md"
+expect_pass "台帳と本文ファイルを揃えた追加を受理する" "$fixture"
+
 fixture=$(make_fixture overlap-nonheading-quote)
 overlap_line='検査用の「これは見出しではない引用でありそのまま重複判定に含まれる」文である。'
 printf '\n%s\n' "$overlap_line" >> "$fixture/principles/comment.md"
