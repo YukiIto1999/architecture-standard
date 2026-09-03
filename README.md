@@ -124,7 +124,17 @@ project の入口の文書は、次の3点だけを書き、標準の内容を�
 遵守の判定は、領域ごとの枠で行う。
 枠の正本は各領域の README であり、ここには対応だけを示す。
 principles と concerns は、要求で意図を捉え、完了条件と禁止事項で照合する。
+principles と concerns の規律は、見出しと必須の節で書かれた判定の単位であり、規律の中の個々の要求・完了条件・禁止事項の一文が規範命題である。
+すべての規範命題は、検証手段への割当を持つ。機械で検証できる規範は structure/tests と languages の inspection が割り当て、残りは process の確認点の照合が、正本の file または領域の名指しで担う。
 structure は、構成・依存方向・各 layout の固有規律で判定する。
 languages は、採用機構と各規律の完了条件・禁止事項で判定する。
 tools は、採用と判断基準で判定する。
 process は、順序の遵守と確認点の照合で判定する。
+監査の severity は、この枠で得た違反を一意な対応へ写す。
+principles と concerns は、禁止事項への違反を critical、完了条件の不達を major に写す。
+structure は、依存方向か明示された禁止への違反を critical、必須の構成か layout の不達を major に写す。
+languages は、明示された禁止への違反を critical、採用機構か完了条件の不達を major に写す。
+tools は、採用か判断基準の不達を major に写す。
+process は、順序の不遵守か確認点の未照合を major に写す。
+同じ箇所が critical と major の両方に当たる場合は、critical だけを列挙する。
+この枠にない磨きは違反に数えず、minor の提案として区別する。

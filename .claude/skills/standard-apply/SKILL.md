@@ -131,7 +131,7 @@ Executive Diagnosis、要約、結論にも回収表と同じ観測境界を適�
 監査とレビューでは、対象 project の ADR から準拠 commit を特定した後、次の前処理を完了するまで対象 source の意味監査を始めない。
 
 1. `git -C <standard-root> show <commit>:README.md` と `git -C <standard-root> show <commit>:process/<mode>.md` で root README と選択した process を読み、根拠にした commit、file、見出しを内部台帳へ記録する。
-2. 記録 commit の `process/audit.md` にある severity 対応を一字一句そのまま内部台帳へ写し、その対応だけを使う。skill の現行本文、記憶、過去の判定例で severity を補足または引き上げない。
+2. 記録 commit の root `README.md` の判定の枠にある severity 対応を一字一句そのまま内部台帳へ写し、その対応だけを使う。skill の現行本文、記憶、過去の判定例で severity を補足または引き上げない。
 3. 選択した process の全 step を evidence ledger へ列挙し、状態を pending にする。各 step は実施済み、理由を添えた見送り、実行不能のいずれかへ更新し、根拠 file と確認結果を添える。tool output または直接の読取証拠がない step を実施済みにしない。
 
 前処理後は、観測した実装だけを違反の根拠にする。コメントに書かれた意図だけで未実装の挙動を認定しない。依存方向表の「依存してよい先」は許可された辺であり、その依存先がないこと自体は方向違反ではない。
