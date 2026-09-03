@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 標準の更新後に走らせる機械検査。repo の root で実行する。読み取り専用。repo 内に一時ファイルを作らない。
-# リンク切れ・単位ごとの必須5節と任意の例・層への製品名漏れ・台帳と実ファイル数の整合・language 規律と検証対応表の整合・principles/concerns の逐語一致・concerns/structure/languages の製品名指しの tools 登録を、すべて pass/fail で確かめる。
+# リンク切れ・単位ごとの必須5節と任意の例・層への製品名漏れ・台帳と実ファイル数の整合・language 規律と検証対応表の整合・principles/concerns の逐語一致・concerns/structure/languages の製品名指しの tools 登録・規律名指しの見出し一致・統一語彙の旧表記・principles/concerns の消費者存在を、すべて pass/fail で確かめる。
 set -uo pipefail
 
 required_commands=(git rg fd awk sed find wc tr head tail sort diff dirname paste basename cut node)
@@ -494,6 +494,45 @@ else
   fail "structure の台帳が本文ファイルと一致していない"
 fi
 
+echo "=== 13. 規律名指しの鉤括弧引用が正本の見出しと一致するか ==="
+if citation_out=$(node "$SCRIPT_DIR/heading-citation-check.mjs" 2>&1); then
+  echo "$citation_out"
+  pass "link 行の鉤括弧引用が全て link 先の見出しと一致"
+else
+  echo "$citation_out"
+  fail "正本の見出しに無い規律名の名指しあり"
+fi
+
+echo
+echo "=== 14. 統一済み語彙の旧表記が残っていないか ==="
+if rg -nP '真実の所在|詰め替え|二次の読みモデル|期限の正本|単方向|コンテキストの自己完結|明快さ|境界面|ドメインモデル|value object|ドメインの型|domain の型|業務の型|なぜを決定の記録に残す' principles concerns structure languages tools process README.md; then
+  fail "統一済み語彙の旧表記が残っている(正へ揃える)"
+else
+  pass "統一済み語彙の旧表記なし"
+fi
+
+echo
+echo "=== 15. principles/concerns の各 file に下位の消費者がいるか ==="
+# 根拠: concerns/README「file を分ける単位は、structure と languages が独立に名指して従う契約である」と
+# principles/README「原則の file を分ける単位は、下位の層の file が名指して参照する単位である」。
+# root README の検証割当(file または領域の名指し)とは別の検査であり、領域単位の照合を否定しない。
+orphan_files=""
+for consumer_area in principles concerns; do
+  while IFS= read -r body_file; do
+    body_key="$consumer_area/$(basename "$body_file")"
+    if ! rg -q -F "$body_key" process structure languages 2>/dev/null; then
+      orphan_files="$orphan_files $body_key"
+    fi
+  done < <(find "$consumer_area" -maxdepth 1 -type f -name '*.md' ! -name 'README.md')
+done
+if [ -z "$orphan_files" ]; then
+  pass "principles/concerns の全 file を下位の層が参照"
+else
+  echo "未参照:$orphan_files"
+  fail "下位の層から参照されない file あり"
+fi
+
+echo
 echo
 if [ "$FAILED" = 0 ]; then
   echo "=== 総合: PASS ==="

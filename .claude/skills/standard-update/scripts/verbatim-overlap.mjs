@@ -11,6 +11,8 @@ const ROOT = process.cwd();
 const SEED = 10;
 const THRESHOLD = 18;
 
+// 名指し規則(root README)は正本の見出しの逐語引用を要求するため、
+// 「」で囲まれた見出しの引用は意図した一致であり、重複判定から除く。
 const AREAS = ["principles", "concerns", "structure", "languages", "tools", "process"];
 const HEADINGS = new Set();
 for (const area of AREAS) {
