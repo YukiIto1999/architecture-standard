@@ -56,4 +56,4 @@ core.handle(actor, parse(request.input))
 
 ## 参照
 「関心を境界の内に隠す」は [separation](../principles/separation.md)、構築済みの actor の権限評価は [authorization](./authorization.md)、安全の姿勢は [security](./security.md) に従う。
-認証境界の surface ごとの配置は [structure/surfaces](../structure/surfaces/)、言語別の実現は [languages](../languages/) が定める。
+認証境界の surface ごとの配置は [structure/surfaces](../structure/surfaces/)、言語別の実現は [tools](../tools/) が定める。

@@ -1,9 +1,9 @@
 # principles
 
 principles は、ソフトウェア設計の判断の土台となる原則を置く。
-concerns・structure・languages は、この原則の上に立つ。
+concerns・structure・tools は、この原則の上に立つ。
 原則は言語に依存しない。
-言語ごとの実現は languages が、概念ごとの規律は concerns が担う。
+言語ごとの実現は tools が、概念ごとの規律は concerns が担う。
 原則の file を分ける単位は、下位の層の file が名指して参照する単位である。
 
 ## 目的

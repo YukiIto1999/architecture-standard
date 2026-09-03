@@ -20,7 +20,7 @@ surface の名は、公開する protocol の対話様式で付ける。
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
 composition が endpoints を組み立て、core を埋め込む。
 endpoints は composition を参照しない。
 埋め込み surface の外との依存は [skeleton](../../skeleton.md) に従う。

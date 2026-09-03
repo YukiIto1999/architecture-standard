@@ -4,7 +4,7 @@
 persistence は、永続データの設計を全系で統べる規律である。
 principles の [data](../principles/data.md) が定める事実の追記と整合性の所在を、関係と制約による永続データの設計として具象化する。
 persistence は静止した関係と制約を扱い、書き込みパスの動的な確定は [transaction](./transaction.md) が扱う。
-永続化と一時データの実現に用いる store は単一とし、採用は [tools/platforms](../tools/platforms.md) が定める。
+永続化と一時データの実現に用いる store は単一とし、採用は [tools/platforms](../tools/platforms/README.md) が定める。
 cache の規律の正本は [caching](./caching.md) に置く。
 store の採用では、persistence は datastore と一時データの store の単一採用だけを扱う。
 
@@ -341,7 +341,7 @@ JSON 列が単一の不可分な value または document か、独立した属�
 ### 要求
 永続化する事実の正本の datastore は、単一とする。
 一時データの store は、単一とし、一時データの store を採用の外に増やさない。
-datastore と一時データの store の採用は、[tools/platforms](../tools/platforms.md) が定める。
+datastore と一時データの store の採用は、[tools/platforms](../tools/platforms/README.md) が定める。
 
 ### 根拠
 datastore と一時データの store を project ごとに選び直すと、選定と運用の知識が分散し、置き換えの決定が単一の場所で完結しなくなる。
@@ -365,4 +365,4 @@ datastore と一時データの store を project ごとに選び直すと、選
 データの原則は [data](../principles/data.md)、論理設計と物理設計の分離は [modeling](../principles/modeling.md)、書き込みパスの一貫性は [transaction](./transaction.md) に従う。
 稼働中のスキーマと別 datastore への移行は [migration](./migration.md) に従う。
 cache の鮮度・無効化・不在・障害時の意味は [caching](./caching.md) の「cache を正本の控えに保つ」に従う。
-永続化の置き場は [structure/core/infrastructure](../structure/core/infrastructure.md)、言語別の実現は [languages](../languages/) が定める。
+永続化の置き場は [structure/core/infrastructure](../structure/core/infrastructure.md)、言語別の実現は [tools](../tools/) が定める。

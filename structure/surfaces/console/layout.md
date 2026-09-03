@@ -20,7 +20,7 @@ console/
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
 composition が commands を組み立て、core を埋め込む。
 commands は composition を参照しない。
 console の外との依存は [skeleton](../../skeleton.md) に従う。
@@ -32,7 +32,7 @@ command は、引数を core API の operation へ写像する。
 command は、業務判断を持たず、入力の解析と operation の呼び出しだけを行う。
 console は wire の binding を持たず、外部へ面を公開しない。
 console は、派生読みモデルの臨時・手動の再構築 workflow を command として起動する役割を担う。
-引数の解析の機構は [languages](../../../languages/) が定める。
+引数の解析の機構は [tools](../../../tools/) が定める。
 
 ## 配布
 

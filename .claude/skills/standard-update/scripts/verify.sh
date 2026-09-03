@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 標準の更新後に走らせる機械検査。repo の root で実行する。読み取り専用。repo 内に一時ファイルを作らない。
-# リンク切れ・単位ごとの必須5節と任意の例・層への製品名漏れ・台帳と実ファイル数の整合・language 規律と検証対応表の整合・principles/concerns の逐語一致・concerns/structure/languages の製品名指しの tools 登録・規律名指しの見出し一致・統一語彙の旧表記・principles/concerns の消費者存在を、すべて pass/fail で確かめる。
+# リンク切れ・単位ごとの必須5節と任意の例・層への製品名漏れ・台帳と実ファイル数の整合・言語 ecosystem の規律と検証対応表の整合・principles/concerns の逐語一致・concerns/structure/ecosystem の製品名指しの tools 登録・規律名指しの見出し一致・統一語彙の旧表記・principles/concerns の消費者存在を、すべて pass/fail で確かめる。
 set -uo pipefail
 
 required_commands=(git rg fd awk sed find wc tr head tail sort diff dirname paste basename cut node)
@@ -40,6 +40,7 @@ language_body_discipline_records() {
   while IFS= read -r file; do
     axis=$(basename "$file" .md)
     awk -v axis="$axis" '
+      # 規律の H2 は「### 要求」を持つ塊だけ。採用エントリの H2(用途は、…)は規律でない。
       function fence_run_length(line, marker, cursor) {
         marker = substr(line, 1, 1)
         if (marker != "`" && marker != "~") return 0
@@ -75,15 +76,26 @@ language_body_discipline_records() {
 
       consume_fence($0) { next }
 
+      function flush_pending() {
+        pending = ""
+      }
+
       /^## / {
+        flush_pending()
         discipline = substr($0, 4)
         if (discipline == "概要" || discipline == "規則と検証機構の対応" || discipline == "参照") {
           next
         }
-        printf "%s | %s\t%s:%d\n", axis, discipline, FILENAME, FNR
+        pending = sprintf("%s | %s\t%s:%d", axis, discipline, FILENAME, FNR)
+        next
+      }
+
+      /^### 要求[[:space:]]*$/ && pending != "" {
+        print pending
+        pending = ""
       }
     ' "$file"
-  done < <(find "languages/$language" -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | sort)
+  done < <(find "tools/$language" -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | sort)
 }
 
 language_inspection_discipline_records() {
@@ -139,12 +151,12 @@ language_inspection_discipline_records() {
       split($0, columns, "|")
       axis = trim(columns[2])
       discipline = trim(columns[3])
-      if (axis == "" || axis == "実現軸" || axis == "全域" || axis ~ /^-+$/) {
+      if (axis == "" || axis == "file" || axis == "全域" || axis ~ /^-+$/) {
         next
       }
       printf "%s | %s\t%s:%d\n", axis, discipline, FILENAME, FNR
     }
-  ' "languages/$language/inspection.md"
+  ' "tools/$language/inspection.md"
 }
 
 record_keys() {
@@ -200,7 +212,7 @@ is_non_product_token() {
   esac
 }
 
-echo "=== 1. broken .md links(principles/concerns/languages/structure/tools + README) ==="
+echo "=== 1. broken .md links(principles/concerns/tools/structure/tools + README) ==="
 broken=0
 while IFS= read -r f; do
   d=$(dirname "$f")
@@ -208,14 +220,14 @@ while IFS= read -r f; do
     [ -z "$l" ] && continue
     [ -f "$d/$l" ] || { echo "  broken: $f -> $l"; broken=1; }
   done < <(rg -oN '\]\(([^)]+\.md)\)' "$f" -r '$1' 2>/dev/null)
-done < <(fd . principles concerns languages structure tools process -e md 2>/dev/null; echo README.md)
+done < <(fd . principles concerns structure tools process -e md 2>/dev/null; echo README.md)
 if [ "$broken" = 0 ]; then pass "リンク切れなし"; else fail "リンク切れあり(上記 broken 行)"; fi
 
 echo
-echo "=== 2. 単位ごとの必須5節(principles/concerns/languages。例は任意) ==="
+echo "=== 2. 単位ごとの必須5節(principles/concerns/言語 ecosystem。例は任意) ==="
 mapfile -d '' discipline_files < <(
   find principles concerns -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0
-  find languages -mindepth 2 -type f -name '*.md' ! -name 'README.md' -print0
+  find tools/rust tools/csharp tools/typescript -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0
 )
 sections_out=$(awk -f "$SCRIPT_DIR/discipline-sections.awk" "${discipline_files[@]}" 2>&1)
 echo "$sections_out"
@@ -229,7 +241,7 @@ fi
 echo
 echo "=== 3. concerns への言語機構/方言の漏れ(あってはならない) ==="
 if rg -nP '\b(sqlx|tokio|axum|tower|serde|Dapper|Npgsql|EF Core|zod|valibot|neverthrow|SolidJS|Tailwind|Vite|VSCode|fred|apalis|PGMQ|clap|NSwag|Wolverine|Photino|MAUI|Kobalte|ON CONFLICT|ON DUPLICATE|StreamJsonRpc|vscode-jsonrpc|createResource|createSignal|actor framework|Playwright|TypeScript|compiler API)\b' concerns/*.md; then
-  fail "concerns に言語機構/方言が漏れている(中立化するか languages へ移すこと)"
+  fail "concerns に言語機構/方言が漏れている(中立化するか tools の言語 ecosystem へ移すこと)"
 else
   pass "concerns に言語機構/方言の漏れなし"
 fi
@@ -253,7 +265,7 @@ while IFS= read -r product; do
     principles_leak=1
   fi
 done < <(
-  rg --no-filename '^採用は、' tools/*.md 2>/dev/null \
+  rg --no-filename '^採用は、' tools -g '*.md' 2>/dev/null \
     | rg -o '[@A-Za-z][A-Za-z0-9_.#+@/-]*' \
     | sort -u
 )
@@ -279,9 +291,9 @@ else
 fi
 
 echo
-echo "=== 6. process/tools/languages の単位数 ==="
+echo "=== 6. process/tools/言語 ecosystem の単位数 ==="
 numeric_ok=1
-process_expected=8
+process_expected=10
 process_readme_rows=$(markdown_section_file_table_rows process/README.md 単位)
 process_actual=$(find process -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
 echo "process: 台帳=$process_readme_rows 実ファイル=$process_actual 期待=$process_expected"
@@ -290,75 +302,54 @@ if [ "$process_readme_rows" != "$process_expected" ] || [ "$process_actual" != "
   numeric_ok=0
 fi
 
-tools_expected=6
-tools_readme_rows=$(
-  awk '
-    $0 == "## 構成" { in_section = 1; next }
-    in_section && /^##[[:space:]]+/ { in_section = 0 }
-    in_section { print }
-  ' tools/README.md \
-    | sed -n 's#^| \[\([^]]*\)\](\./\([^)]*\.md\)) |.*#\1\t\2#p'
-)
-tools_readme_names=$(printf '%s\n' "$tools_readme_rows" | cut -f1)
-tools_readme_files=$(printf '%s\n' "$tools_readme_rows" | cut -f2)
-tools_readme_count=$(printf '%s\n' "$tools_readme_files" | sed '/^$/d' | wc -l | tr -d ' ')
-tools_readme_set=$(printf '%s\n' "$tools_readme_files" | sed '/^$/d' | sort)
-tools_catalog=$(printf '%s\n' "$tools_readme_names" | sed '/^$/d' | paste -sd '・' -)
-tools_actual_files=$(find tools -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -exec basename {} \; | sort)
-tools_actual=$(find tools -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
-echo "tools: 台帳=$tools_readme_count 実ファイル=$tools_actual 期待=$tools_expected"
-if [ "$tools_actual" != "$tools_expected" ] || [ "$tools_readme_count" != "$tools_expected" ]; then
-  fail "tools の分割数が不一致(実ファイル=$tools_actual, 期待=$tools_expected)"
-  numeric_ok=0
+tools_ok=1
+tools_top_actual=$(find tools -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+tools_dirs_actual=$(find tools -mindepth 1 -maxdepth 1 -type d | sed 's#^tools/##' | sort | paste -sd ' ' -)
+echo "tools: 直下file=$tools_top_actual 区分=[$tools_dirs_actual]"
+if [ "$tools_top_actual" != "0" ]; then
+  fail "tools 直下に README 以外の file がある(区分のフォルダへ置く)"
+  tools_ok=0
 fi
-if [ "$tools_readme_set" != "$tools_actual_files" ]; then
-  echo "  tools/README.md の構成表:"
-  printf '%s\n' "$tools_readme_set" | sed 's/^/    /'
-  echo "  tools/ の実ファイル:"
-  printf '%s\n' "$tools_actual_files" | sed 's/^/    /'
-  fail "tools/README.md の構成表と実ファイルが不一致"
-  numeric_ok=0
+if [ "$tools_dirs_actual" != "build csharp platforms rust services typescript" ]; then
+  fail "tools の区分が不一致([$tools_dirs_actual])"
+  tools_ok=0
 fi
-
-if ! rg -qF "$tools_catalog の${tools_expected}分割" README.md; then
-  fail "root README.md の tools 6分類が不一致"
-  numeric_ok=0
-fi
-if ! rg -qF "$tools_catalog の${tools_expected}分割" .claude/skills/standard-update/SKILL.md; then
-  fail "standard-update/SKILL.md の tools 6分類が不一致"
-  numeric_ok=0
-fi
-tools_reference_line=$(rg -m1 '^[0-9]+分割に置く。' .claude/skills/standard-update/references/tools.md 2>/dev/null || true)
-tools_reference_count=$(printf '%s\n' "$tools_reference_line" | sed -n 's/^\([0-9][0-9]*\)分割に置く。.*/\1/p')
-tools_reference_catalog=$(printf '%s\n' "$tools_reference_line" | sed -E 's/^[0-9]+分割に置く。//; s/。$//; s/\([^)]*\)//g')
-if [ "$tools_reference_count" != "$tools_expected" ] || [ "$tools_reference_catalog" != "$tools_catalog" ]; then
-  fail "references/tools.md の tools 6分類が不一致"
-  numeric_ok=0
-fi
+for division in build platforms services rust csharp typescript; do
+  division_declared=$(rg -oN '\]\(\./([^)#]+\.md)\)' "tools/$division/README.md" -r '$1' 2>/dev/null | sort -u)
+  division_actual=$(find "tools/$division" -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -printf '%f\n' | sort -u)
+  if [ "$division_declared" != "$division_actual" ]; then
+    echo "  tools/$division の台帳:"
+    printf '%s\n' "$division_declared" | sed 's/^/    /'
+    echo "  tools/$division の実ファイル:"
+    printf '%s\n' "$division_actual" | sed 's/^/    /'
+    fail "tools/$division の台帳と実ファイルが不一致"
+    tools_ok=0
+  fi
+done
+if [ "$tools_ok" = 0 ]; then numeric_ok=0; fi
 
 language_dirs_expected=3
-language_dirs_actual=$(find languages -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
-language_files_expected=8
+language_dirs_actual=$(for d in tools/rust tools/csharp tools/typescript; do [ -d "$d" ] && echo x; done | wc -l | tr -d ' ')
+language_files_expected=7
 language_counts=""
 languages_ok=1
 for language in rust csharp typescript; do
-  if [ -d "languages/$language" ]; then
-    language_count=$(find "languages/$language" -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
-  else
-    language_count=0
-  fi
+  language_count=0
+  for axis in formation translation connection coordination publication inspection conventions; do
+    [ -f "tools/$language/$axis.md" ] && language_count=$((language_count+1))
+  done
   language_counts+="$language=$language_count "
   [ "$language_count" = "$language_files_expected" ] || languages_ok=0
 done
-echo "languages: 言語ディレクトリ=$language_dirs_actual 期待=$language_dirs_expected; $language_counts"
+echo "言語 ecosystem: ディレクトリ=$language_dirs_actual 期待=$language_dirs_expected; $language_counts"
 if [ "$language_dirs_actual" != "$language_dirs_expected" ] || [ "$languages_ok" = 0 ]; then
-  fail "languages の単位数が不一致(言語数=$language_dirs_actual, $language_counts期待=各$language_files_expected)"
+  fail "言語 ecosystem の単位数が不一致(言語数=$language_dirs_actual, $language_counts期待=各$language_files_expected)"
   numeric_ok=0
 fi
-if [ "$numeric_ok" = 1 ]; then pass "process=8、tools=6、languages=3×8 で一致"; fi
+if [ "$numeric_ok" = 1 ]; then pass "process=10、tools の区分と台帳、言語 ecosystem=3×(6軸+conventions)で一致"; fi
 
 echo
-echo "=== 7. languages 本文の規律と inspection 対応表の一対一照合 ==="
+echo "=== 7. 言語 ecosystem 本文の規律と inspection 対応表の一対一照合 ==="
 language_discipline_tables_ok=1
 for language in rust csharp typescript; do
   body_records=$(language_body_discipline_records "$language")
@@ -372,27 +363,27 @@ for language in rust csharp typescript; do
 
   if [ -n "$body_duplicates" ]; then
     print_record_sources "$body_records" "$body_duplicates"
-    fail "languages/$language の本文規律名に重複"
+    fail "tools/$language の本文規律名に重複"
     language_discipline_tables_ok=0
   fi
   if [ -n "$table_duplicates" ]; then
     print_record_sources "$table_records" "$table_duplicates"
-    fail "languages/$language の規律対応表に重複"
+    fail "tools/$language の規律対応表に重複"
     language_discipline_tables_ok=0
   fi
   if [ -n "$missing" ]; then
     print_record_sources "$body_records" "$missing"
-    fail "languages/$language の規律対応表に欠落"
+    fail "tools/$language の規律対応表に欠落"
     language_discipline_tables_ok=0
   fi
   if [ -n "$extra" ]; then
     print_record_sources "$table_records" "$extra"
-    fail "languages/$language の規律対応表に余分"
+    fail "tools/$language の規律対応表に余分"
     language_discipline_tables_ok=0
   fi
 done
 if [ "$language_discipline_tables_ok" = 1 ]; then
-  pass "languages 3言語の本文規律と inspection 対応表が一対一で一致"
+  pass "言語 ecosystem 3言語の本文規律と inspection 対応表が一対一で一致"
 fi
 
 echo
@@ -428,7 +419,7 @@ else
 fi
 
 echo
-echo "=== 10. concerns・structure・languages の製品名指しが tools のエントリに登録済みか(goal-25・goal-26) ==="
+echo "=== 10. concerns・structure・言語 ecosystem の製品名指しが tools のエントリに登録済みか(goal-25・goal-26) ==="
 if naming_out=$(node "$SCRIPT_DIR/naming-registry-check.mjs" 2>&1); then
   echo "$naming_out"
   name_violations=$(echo "$naming_out" | rg -oP '(?<=violations: )\d+' | head -1)
@@ -446,16 +437,16 @@ echo
 echo "=== 11. 参照動詞の向き(抽象から具象へは「が定める」) ==="
 verb_violations=$(
   {
-    rg -n "に従う。" principles concerns --no-heading 2>/dev/null | rg "\]\((\.\./)+(structure|languages|tools|process)" || true
-    rg -n "に従う。" structure --no-heading 2>/dev/null | rg "\]\((\.\./)+(languages|tools)" || true
+    rg -n "に従う。" principles concerns --no-heading 2>/dev/null | rg "\]\((\.\./)+(structure|tools|process)" || true
+    rg -n "に従う。" structure --no-heading 2>/dev/null | rg "\]\((\.\./)+tools" || true
   } | wc -l
 )
 if [ "${verb_violations:-0}" = "0" ]; then
   pass "抽象から具象への「従う」参照なし"
 else
   {
-    rg -n "に従う。" principles concerns --no-heading 2>/dev/null | rg "\]\((\.\./)+(structure|languages|tools|process)" || true
-    rg -n "に従う。" structure --no-heading 2>/dev/null | rg "\]\((\.\./)+(languages|tools)" || true
+    rg -n "に従う。" principles concerns --no-heading 2>/dev/null | rg "\]\((\.\./)+(structure|tools|process)" || true
+    rg -n "に従う。" structure --no-heading 2>/dev/null | rg "\]\((\.\./)+tools" || true
   }
   fail "抽象から具象への参照に「従う」が残っている(「が定める」へ)"
 fi
@@ -505,7 +496,7 @@ fi
 
 echo
 echo "=== 14. 統一済み語彙の旧表記が残っていないか ==="
-if rg -nP '真実の所在|詰め替え|二次の読みモデル|期限の正本|単方向|コンテキストの自己完結|明快さ|境界面|ドメインモデル|value object|ドメインの型|domain の型|業務の型|なぜを決定の記録に残す' principles concerns structure languages tools process README.md; then
+if rg -nP '真実の所在|詰め替え|二次の読みモデル|期限の正本|単方向|コンテキストの自己完結|明快さ|境界面|ドメインモデル|value object|ドメインの型|domain の型|業務の型|なぜを決定の記録に残す' principles concerns structure tools process README.md; then
   fail "統一済み語彙の旧表記が残っている(正へ揃える)"
 else
   pass "統一済み語彙の旧表記なし"
@@ -513,14 +504,14 @@ fi
 
 echo
 echo "=== 15. principles/concerns の各 file に下位の消費者がいるか ==="
-# 根拠: concerns/README「file を分ける単位は、structure と languages が独立に名指して従う契約である」と
+# 根拠: concerns/README「file を分ける単位は、structure と tools が独立に名指して従う契約である」と
 # principles/README「原則の file を分ける単位は、下位の層の file が名指して参照する単位である」。
 # root README の検証割当(file または領域の名指し)とは別の検査であり、領域単位の照合を否定しない。
 orphan_files=""
 for consumer_area in principles concerns; do
   while IFS= read -r body_file; do
     body_key="$consumer_area/$(basename "$body_file")"
-    if ! rg -q -F "$body_key" process structure languages 2>/dev/null; then
+    if ! rg -q -F "$body_key" process structure tools 2>/dev/null; then
       orphan_files="$orphan_files $body_key"
     fi
   done < <(find "$consumer_area" -maxdepth 1 -type f -name '*.md' ! -name 'README.md')

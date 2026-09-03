@@ -63,4 +63,4 @@ log({ event: "order_placed", customerId, amount })
 事実の保持と削除の判断は [data](../principles/data.md) に従う。
 観測の記録への適用と、境界を越えて伝播する文脈の扱いは [observability](./observability.md) に従う。
 消去する port と管理操作の置き場は [structure/core/infrastructure](../structure/core/infrastructure.md) が定める。
-言語別の実現は [languages](../languages/) が定める。
+言語別の実現は [tools](../tools/) が定める。

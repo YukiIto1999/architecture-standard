@@ -13,27 +13,26 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 
 - `principles/` — 言語に依存しない設計原則。なぜを所有する。
 - `concerns/` — 言語非依存の24概念。effect・concurrency・dependency・types・context-propagation・persistence・caching・migration・transaction・messaging・workflow・authentication・authorization・privacy・security・secrets・audit-trail・observability・configuration・resilience・performance・lifecycle・experience・accessibility。複数の部または全層へ効く規律を所有する。
-- `languages/` — rust、csharp、typescript による上位規律の実現を所有する。
 - `structure/` — 一つの部の境界、中身、依存方向を所有する。検証技法の選択、性質から型・静的検査・実行テスト・計測への割当、mutation・coverage・実行範囲は `structure/tests/methods.md` が所有する。
-- `tools/` — language・stack・build・inspection・services・platforms の6分割で、採用と判断基準を所有する。
-- `process/` — bootstrap・recovery・design・implementation・refactoring・review・audit・migration の順序と確認点を所有する。
+- `tools/` — csharp・rust・typescript の言語 ecosystem と、build・platforms・services の区分で、採用と言語ごとの実現を所有する。
+- `process/` — bootstrap・recovery・design・implementation・refactoring・review・audit・migration・verification・release の順序と確認点を所有する。
 - `docs/` — 調査と判断の材料であり、標準本文には含めない。
 
 ## 参照経路
 
 ### 検証の重複と割当の固定経路
 
-入力の候補が、検証手段を「同じ性質」とみなして重複排除する言語非依存の判定基準を追加または変更し、特定言語の実現 file 自体の変更を依頼していない場合に限り、次の順序を使う。この固定経路は、その候補の所有者裁定についてだけ下の一般経路より優先する。特定の `languages/*/inspection.md`、tool、または複数の明示 target への変更依頼は、主張と所有者を分けて一般経路で扱う。
+入力の候補が、検証手段を「同じ性質」とみなして重複排除する言語非依存の判定基準を追加または変更し、特定言語の実現 file 自体の変更を依頼していない場合に限り、次の順序を使う。この固定経路は、その候補の所有者裁定についてだけ下の一般経路より優先する。特定の `tools/*/inspection.md`、tool、または複数の明示 target への変更依頼は、主張と所有者を分けて一般経路で扱う。
 
 1. `README.md`、`structure/tests/methods.md`、`structure/tests/layout.md` を、この順に exact path の Read で直接読む。一つでも読めなければ止める。三つの Read が tool evidence に揃う前に reference または編集へ進まない。
 2. 手順1の三つを読んだことを確認してから、`.claude/skills/standard-update/references/normative-quality.md` を exact path で読む。layout を未読のまま reference を読んだ場合は、後から補って編集を続けず、この経路を未完了として止める。
-3. 裁定が段4なら、`languages/README.md`、`languages/rust/inspection.md`、`languages/csharp/inspection.md`、`languages/typescript/inspection.md` を、この順に exact path の Read で直接読む。文章上の定義変更または実現機構を変えない変更でも省略しない。各 inspection について `有効な metric / 無効な metric / 無効にする理由 / 上位規範が必須検証へ割り当てた metric` を内部台帳へ記録し、四項目を本文から埋められない file は一致確認済みとしない。二つの metric を別の性質と明記しながら、重複、二重測定、または一本化を理由に片方を無効化している記述は上位判定と矛盾する。たとえば cyclomatic complexity と cognitive complexity を別物と書いた直後に「二重に測らないため cognitive complexity へ一本化する」と続ける文は矛盾であり、同じ指標の重複だと読み替えない。片方だけが標準の表で必須検証へ割り当てられているなら、非採用理由は「他方は標準の必須検証へ割り当てられていない」とだけ書く。その metric が誤判定する、劣る、不要であるという未検証の品質判断へ置き換えず、別性質であるだけで両方を必須化しない。同じ規律の行動に「複雑度を一つへ一本化する」のような総称が残る場合も、採用した具体的な metric だけを測る文へ同期する。最終報告では各言語を「同一指標だった」と一括せず、編集要否を決めた metric と現行理由を file ごとに示す。
+3. 裁定が段4なら、`tools/README.md`、`tools/rust/inspection.md`、`tools/csharp/inspection.md`、`tools/typescript/inspection.md` を、この順に exact path の Read で直接読む。文章上の定義変更または実現機構を変えない変更でも省略しない。各 inspection について `有効な metric / 無効な metric / 無効にする理由 / 上位規範が必須検証へ割り当てた metric` を内部台帳へ記録し、四項目を本文から埋められない file は一致確認済みとしない。二つの metric を別の性質と明記しながら、重複、二重測定、または一本化を理由に片方を無効化している記述は上位判定と矛盾する。たとえば cyclomatic complexity と cognitive complexity を別物と書いた直後に「二重に測らないため cognitive complexity へ一本化する」と続ける文は矛盾であり、同じ指標の重複だと読み替えない。片方だけが標準の表で必須検証へ割り当てられているなら、非採用理由は「他方は標準の必須検証へ割り当てられていない」とだけ書く。その metric が誤判定する、劣る、不要であるという未検証の品質判断へ置き換えず、別性質であるだけで両方を必須化しない。同じ規律の行動に「複雑度を一つへ一本化する」のような総称が残る場合も、採用した具体的な metric だけを測る文へ同期する。最終報告では各言語を「同一指標だった」と一括せず、編集要否を決めた metric と現行理由を file ごとに示す。
 4. 上位の判定基準を変更するなら `structure/tests/methods.md` を編集する。reference だけにある用語を持ち込まず、編集前に同じ節で使われていた標準本文の語彙で書く。本文には、要求・禁止事項から導く非空の全適用集合、集合の一致と合否の双方向含意、不一致・適用不能・一方だけ不合格なら両方を残すこと、反例未発見だけでは同一にしないこと、実装欠陥・更新漏れだけでは別性質にしないことを全て明記する。一つでも欠ければ編集を完了としない。手順3で下位実現との矛盾を確認した場合だけ、矛盾する exact inspection file も同じ変更契約で同期する。矛盾がなければ下位 file を編集しない。編集後は `structure/tests/methods.md` と、編集した場合だけその exact inspection file を Read し直し、用語の存在確認にも Grep を使わない。次に `git diff -- structure/tests/methods.md` を一回実行し、inspection file も編集した場合だけ同じ command の末尾にその exact path を加える。この exact diff を最終 reviewer へ渡す差分とする。最後に exact path の `.claude/skills/standard-update/scripts/verify.sh` を実行する。最終報告の変更先も `structure/tests/methods.md` と正確に書き、path を組み替えない。
 
 この経路では開始から最終報告まで Glob と Grep、`principles/verification.md`、`references/structure.md`、script directory の列挙を使わない。段1から4の途中と検証後に記載外の標準 file を読まず、所有者確定後の重複検索や repository-wide な自己監査を行わない。後述する最終の standard-audit / 独立 reviewer は免除しないが、reviewer の入力を変更差分、手順1から3で読んだ exact files、`verify.sh` の結果だけに固定し、新しい repository 探索を許可しない。subagent が利用できない場合は、同じ既読証拠だけで自己照合し、Grep、Glob、Bash、追加の Read を呼ばない。禁止した tool または file を使った場合は、経路を満たしたと報告しない。最終報告には、意図した読みと、それより弱く遵守判定を変える合理的な読みを、それぞれ一つの具体例で対比する。
 
 開始時は `references/` を読まない。入力が既存の正本 file を明示する場合、または入力の主題が上の領域一覧と領域の台帳から具体的な正本 file へ一意に対応し、配置や所有者を変える候補でない場合は、その標準本文を直接読む。明示された path を Glob や path 未指定の Grep で再発見せず、より一般的な語を持つ principles または concerns を検索して所有者候補を増やさない。具体的な正本 file へ一意に対応しない場合だけ root `README.md` を先に読み、候補の所有者になりうる標準本文を一つに絞る。
-配置または領域書式の判断が必要になった時点で、分解した一つの主張につき、対応する `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/{principles,concerns,languages,structure,tools,process}.md` を一つだけ読む。
+配置または領域書式の判断が必要になった時点で、分解した一つの主張につき、対応する `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/{principles,concerns,structure,tools,process}.md` を一つだけ読む。
 既存規律がある候補について、充足済み、意味を保った文章のリファクタリング、意味の拡張のいずれかを裁定するときだけ `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/normative-quality.md` を読む。
 各 reference を読む前に、その reference が変えうる判断を一つ記録する。答えを得たらその参照経路を止め、reference directory の列挙、他領域 reference の一括読取、将来の判断に備えた先回り読取は行わない。
 一つの入力が複数領域へ分かれる場合は、先に主張と所有者を分け、それぞれの判断を始める時点で対応する reference を読む。
@@ -55,7 +54,7 @@ typo、リンク、見出し、registry の機械修正では、変更前の Git
 ### 2. 所有者を決める
 
 root `README.md` の領域表を正本にする。
-値・なぜは principles、複数の部に効く言語非依存の規律は concerns、特定言語の実現は languages、一つの部の境界と中身は structure、採用と判断基準は tools、作業の順序と確認点は process へ置く。
+値・なぜは principles、複数の部に効く言語非依存の規律は concerns、特定言語の実現は tools の言語 ecosystem、一つの部の境界と中身は structure、採用と判断基準は tools、作業の順序と確認点は process へ置く。
 
 次の順序で所有者と裁定を固定する。
 
@@ -102,7 +101,7 @@ context7 と web-researcher のいずれかが利用できなければ、利用�
 ### 5. 領域の書式で書く
 
 - principles: H1 直下のリード、規律ごとの H2、`要求/根拠/完了条件/禁止事項/行動`、必要な場合だけ例。`## 概要` と `## 参照` は置かない。
-- concerns / languages: `## 概要`、規律ごとの必須5節、必要な場合だけ例、末尾の `## 参照`。
+- concerns / tools の言語 ecosystem: `## 概要`、規律ごとの必須5節、必要な場合だけ例、末尾の `## 参照`。
 - structure: 導入の参照文、folder tree、単位表または依存方向表、topical な見出しからなる layout 書式。必須5節を持ち込まない。詳細は `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/structure.md` に従う。
 - tools: 用途、採用、判断基準、撤回条件の4行 entry。
 - process: 導入の参照文、`## 順序`、`## 確認点`、`## 範囲外`。必須5節を持ち込まない。
@@ -110,7 +109,7 @@ context7 と web-researcher のいずれかが利用できなければ、利用�
 要求、完了条件、禁止事項は判定可能な表現にする。
 例は次の順で書く。
 
-1. 例の言語を特定し、その言語の `languages/<language>/conventions.md` を読む。擬似コードなら言語固有の構文を使わない。
+1. 例の言語を特定し、その言語の `tools/<language>/conventions.md` を読む。擬似コードなら言語固有の構文を使わない。
 2. 編集前に、意図的に違反させる項目と、例に表示する規律対象の構文を特定する。
 3. 差と帰結はコードフェンス外の本文へ置き、コード例へ説明のコメントを足さない。ドキュメントコメント、採らなかった理由、禁止するコメントそのものを示す例では、規律の対象であるコメントだけをコード内に残す。
 4. コード例は判定に必要な部分だけを示す断片とする。例の主題でない import、ドキュメントコメント、周辺の宣言は表示を省けるが、実コードで不要であるとは示さない。表示する構文は、意図的な違反を除き、conventions の規律を例の中でも満たす。
@@ -189,7 +188,7 @@ skill の場所が current directory にない host では、host が与える `
 
 ## 関連
 
-- `references/{principles,concerns,languages,structure,tools,process}.md` — 領域固有の配置、根拠、書式、MECE 点検。
+- `references/{principles,concerns,structure,tools,process}.md` — 領域固有の配置、根拠、書式、MECE 点検。
 - `references/normative-quality.md` — 充足済み、文章のリファクタリング、意味の拡張を分ける局所的な裁定。
 - `scripts/verify.sh` — 標準本文の機械検査。
 - `scripts/verify-test.sh` — verifier の回帰検査。

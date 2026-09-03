@@ -562,7 +562,7 @@ expect_text \
   .claude/skills/standard-update/SKILL.md
 expect_text \
   "update はmethodsの段4を三言語のinspectionへ直接照合する" \
-  '`languages/README.md`、`languages/rust/inspection.md`、`languages/csharp/inspection.md`、`languages/typescript/inspection.md` を、この順に exact path の Read' \
+  '`tools/README.md`、`tools/rust/inspection.md`、`tools/csharp/inspection.md`、`tools/typescript/inspection.md` を、この順に exact path の Read' \
   .claude/skills/standard-update/SKILL.md
 expect_text \
   "update は別metricの非採用と重複排除を混同しない" \
@@ -686,7 +686,7 @@ expect_text \
   .claude/skills/standard-update/SKILL.md
 expect_text \
   "update のmethods固定経路は明示された下位targetを奪わない" \
-  '特定の `languages/\*/inspection.md`、tool、または複数の明示 target への変更依頼は、主張と所有者を分けて一般経路で扱う' \
+  '特定の `tools/\*/inspection.md`、tool、または複数の明示 target への変更依頼は、主張と所有者を分けて一般経路で扱う' \
   .claude/skills/standard-update/SKILL.md
 expect_text \
   "update はmethods意味変更で矛盾する下位実現だけ同期する" \
@@ -771,7 +771,7 @@ expect_text \
 expect_text \
   "typescript は別metricを重複として無効化しない" \
   'cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない.*必須の検証へ割り当てていないため' \
-  languages/typescript/inspection.md
+  tools/typescript/inspection.md
 expect_text \
   "規範文の裁定はdriftを別性質の証拠にしない" \
   '欠陥または更新漏れで誤判定することは、別の性質の証拠にしない' \
@@ -840,7 +840,7 @@ expect_text \
   .claude/skills/standard-update/SKILL.md
 expect_text \
   "標準のコード例は対象言語の全域規律を読む" \
-  '例の言語を特定し、その言語の `languages/<language>/conventions.md` を読む' \
+  '例の言語を特定し、その言語の `tools/<language>/conventions.md` を読む' \
   .claude/skills/standard-update/SKILL.md
 expect_text \
   "断片での表示省略を実コードの免除にしない" \

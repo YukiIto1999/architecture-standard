@@ -3,7 +3,7 @@
 structure は、ターゲットプロジェクトの各部の、言語非依存の構造と、その部に固有の規律を定める。
 設計原則は [principles](../principles/) に従う。
 横断的な規律は [concerns](../concerns/) を参照し、再定義しない。
-言語別の実現は [languages](../languages/) に置く。
+言語別の実現は [tools](../tools/) に置く。
 
 ## 構成
 

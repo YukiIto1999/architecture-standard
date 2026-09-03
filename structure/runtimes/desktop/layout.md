@@ -19,7 +19,7 @@ desktop/
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
 composition が adapters を組み立て、viewer へ注入する。
 adapters は、viewer の ui port を実装し、composition を参照しない。
 desktop の外との依存は [skeleton](../../skeleton.md) に従う。
@@ -36,7 +36,7 @@ composition は、viewer が公開する起動の入口に依存する。
 desktop は、viewer の内部へ踏み込まない。
 desktop 固有の処理は、adapters と composition に置く。
 viewer の中に、native や desktop の分岐を置かない。
-具体の API の機構は [languages](../../../languages/) が定める。
+具体の API の機構は [tools](../../../tools/) が定める。
 
 ## 組み立てと起動
 
@@ -49,4 +49,4 @@ host がプロセス内に core を抱けるなら、composition が core を埋
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 desktop は、署名を検証する自動更新で配布し、検証を無効化しない。
 配布と更新は [deploy](../../deploy/layout.md) に従う。
-shell・bundler・更新の機構は [languages](../../../languages/) が定める。
+shell・bundler・更新の機構は [tools](../../../tools/) が定める。

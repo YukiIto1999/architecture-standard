@@ -24,7 +24,7 @@ extension/
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
 composition が features を組み立て、host port を注入する。
 core への接続も composition が持つ。
 features は shared を参照できる。
@@ -52,7 +52,7 @@ local の接続は、host が要求する場合に限って使う。
 server の API を、この接続で置き換えない。
 extension は、注入された client または protocol の operation を呼び、業務判断を持たない。
 接続の依存は [skeleton](../../skeleton.md) に従う。
-接続の機構は [languages](../../../languages/) が定める。
+接続の機構は [tools](../../../tools/) が定める。
 
 ## 配布
 

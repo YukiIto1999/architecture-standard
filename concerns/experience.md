@@ -331,4 +331,4 @@ else hide(operation)
 ## 参照
 明瞭さは [legibility](../principles/legibility.md)、責務の境界は [separation](../principles/separation.md)、不正状態の排除は [modeling](../principles/modeling.md)、境界での parse は [types](./types.md)、語彙の統一は [naming](../principles/naming.md) に従う。
 利用者面の可達性と識別性は [accessibility](./accessibility.md) に従う。
-viewer の構造は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md)、見た目と機構は [languages](../languages/) が定める。
+viewer の構造は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md)、見た目と機構は [tools](../tools/) が定める。

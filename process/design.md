@@ -12,7 +12,7 @@
 5. 概念・状態・制約を洗い出す([principles/modeling](../principles/modeling.md) の「不正な状態を表現できなくする」の行動に従い、欠けている制約まで出す)。
 6. アクターと処理の接続を図示し、複数のアクターが一つの処理へつながっていないかを確かめる([principles/separation](../principles/separation.md) の「変更理由で分ける」に従う)。
 7. 境界と依存の方向を決める([principles/separation](../principles/separation.md)、[structure/skeleton](../structure/skeleton.md) に従う)。
-8. 境界を決めてから、[principles/construction](../principles/construction.md) の「新しい要素を最後に選ぶ」の段を適用し、必要な型とパターンの戦術を選ぶ。境界の決定を飛ばして戦術だけを適用しない([languages](../languages/) に従う)。
+8. 境界を決めてから、[principles/construction](../principles/construction.md) の「新しい要素を最後に選ぶ」の段を適用し、必要な型とパターンの戦術を選ぶ。境界の決定を飛ばして戦術だけを適用しない([tools](../tools/) に従う)。
 
 ## 確認点
 

@@ -5,7 +5,7 @@
 //   1. tools/{language,stack,build,inspection,services,platforms}.md の各 `## 見出し` エントリから、
 //      見出しテキストと「採用は、」で始まる行を抽出し、名指し語(Latin token)の registry を作る。
 //      「判断基準」欄は却下・比較の記述を含みうるため、registry の抽出対象にしない。
-//   2. concerns/*.md・structure/**/*.md・languages/**/*.md の、fenced code と inline code(`...`)を
+//   2. concerns/*.md・structure/**/*.md・tools/**/*.md の、fenced code と inline code(`...`)を
 //      除いた本文のうち「である。」で終わる行(tools の採用行と同じ宣言文型)から、
 //      大文字で始まり内部に小文字を含む token を候補として抽出する。
 //      `*.md` で終わる token(標準内の自己参照ファイル名)は候補から除く。
@@ -21,23 +21,27 @@ import path from "node:path";
 const ROOT = process.cwd();
 
 function extractRegistry() {
-  const toolFiles = ["language", "stack", "build", "inspection", "services", "platforms"].map((f) =>
-    path.join(ROOT, "tools", `${f}.md`)
+  const AXIS_FILES = new Set(
+    ["formation", "translation", "connection", "coordination", "publication", "inspection", "conventions"].map(
+      (a) => `${a}.md`
+    )
   );
+  const ECOSYSTEMS = new Set(["rust", "csharp", "typescript"]);
+  const files = [];
+  walk(path.join(ROOT, "tools"), files);
   const tokenRe = /[A-Za-z][A-Za-z0-9_.#+@/-]*/g;
   const registry = new Set();
-  for (const file of toolFiles) {
+  for (const file of files) {
+    const base = path.basename(file);
+    const dir = path.basename(path.dirname(file));
+    if (ECOSYSTEMS.has(dir) && AXIS_FILES.has(base)) continue; // 軸 file は実現規律であり採用の正本でない
     const text = fs.readFileSync(file, "utf8");
-    const blocks = text.split(/^## /m).slice(1);
-    for (const block of blocks) {
-      const heading = block.split("\n", 1)[0];
-      let source = `${heading}\n`;
-      for (const line of block.split("\n")) {
-        if (line.startsWith("採用は、")) source += `${line}\n`;
-      }
-      let m;
-      while ((m = tokenRe.exec(source))) registry.add(m[0]);
+    let source = "";
+    for (const line of text.split("\n")) {
+      if (line.startsWith("# ") || line.startsWith("## ") || line.includes("採用は、")) source += `${line}\n`;
     }
+    let m;
+    while ((m = tokenRe.exec(source))) registry.add(m[0]);
   }
   return registry;
 }
@@ -95,7 +99,11 @@ const registry = extractRegistry();
 const files = [];
 walk(path.join(ROOT, "concerns"), files);
 walk(path.join(ROOT, "structure"), files);
-walk(path.join(ROOT, "languages"), files);
+for (const language of ["rust", "csharp", "typescript"]) {
+  for (const axis of ["formation", "translation", "connection", "coordination", "publication", "inspection", "conventions"]) {
+    files.push(path.join(ROOT, "tools", language, `${axis}.md`));
+  }
+}
 
 const candidates = findCandidates(files);
 const violations = candidates.filter((c) => !registry.has(c.token));

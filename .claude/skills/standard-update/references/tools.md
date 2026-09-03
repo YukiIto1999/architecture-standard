@@ -1,36 +1,59 @@
 # tools を更新するとき
 
-tools は、principles・concerns・structure・languages の上位規律に従属し、何を使うか・どう選ぶかの採用だけを定める。
+tools は、principles・concerns・structure の上位規律に従属し、何を・どう選び・どう使うかの採用と言語実現を定める。
 上位規律を再定義せず、機構の置き場としてだけ存在する。
 
 ## 構成と役割
 
-6分割に置く。language(対象言語と基盤版)・stack(制御の反転を伴う骨格)・build(task の編成・共有ライブラリの取得・生成・署名)・inspection(検証の道具)・services(外部 Web サービスの方針)・platforms(セルフホストする基盤)。
-新しい採用は、このどれかに当たる。当たらなければ抜けであり、[tools/README](../../../../tools/README.md) の構成表と本 skill の両方を更新する。
+区分は、採用物の提供形態で分ける。言語 ecosystem(rust・csharp・typescript。言語の採用、実現軸の規律、採用物のツール file)・build(言語横断の開発道具)・platforms(セルフホストする基盤)・services(外部 Web サービスの方針)。
+新しい採用は、このどれかの区分のツール file に当たる。当たらなければ抜けであり、区分の README の台帳と本 skill の両方を更新する。
 
 ## 根拠の高度
 
 tools は「何を使うか、どう選ぶか」に答える。
 根拠は、選定の決め手(判断基準)を述べる。
-principles・concerns・structure・languages が定めた性質の要求を再定義しない。それぞれの層への参照に留める。
+principles・concerns・structure が定めた性質の要求を再定義しない。それぞれの層への参照に留める。
 
 ## 書式
 
-エントリは、用途・採用・判断基準・撤回条件の4行を基本にする([tools/README](../../../../tools/README.md) の書式に従う)。
+ツール file は、用途・採用・判断基準・撤回条件の4行を基本にする([tools/README](../../../../tools/README.md) のツール file の書式に従う)。
 未採用の候補と比較の経緯は、標準に含めない。却下理由を書くときは、判断基準の一部として簡潔に留める。
 採用行は機構を安定した識別子で直接名指しし、実装主体や成立の経緯を修飾語として添えない。
 
 ## 移設の型(上位層からの取り込み)
 
-principles・concerns・structure・languages の本文に、採用(製品名・機構の選定)や選定理由・却下理由が書かれているのを見つけたら、次の形で tools へ移す。
+principles・concerns・structure の本文に、採用(製品名・機構の選定)や選定理由・却下理由が書かれているのを見つけたら、次の形で tools へ移す。
 
-- 採用の事実と選定理由・撤回条件は、対応する tools のファイルのエントリへ移す。
+- 採用の事実と選定理由・撤回条件は、対応する区分のツール file のエントリへ移す。
 - 移設元には、性質の要求だけを残し、tools への参照を添える。
 - 規格・プロトコル名(HTTP・REST・OpenAPI・RFC など)で、市場からの選定でなく仕様として一意に定まるものは、移設の対象にしない。
 
+## 言語 ecosystem の軸 file
+
+軸 file は、principles・concerns・structure の上位規律に従属し、各言語の標準機構で上位規律をどう満たすかだけを定める。
+上位規律を再定義しない。決定は principles と concerns に置き、軸 file はその実現を書く。
+3つの言語(rust・csharp・typescript)に、6つの実現軸(formation・translation・connection・coordination・publication・inspection)と1つの全域規律 conventions を置く。
+conventions は、コード上の置き場を持たず、全ての実現軸に一様に適用する。
+言語と基盤の版は、各 ecosystem の README を正本とする。
+役割の非対称を保つ。rust と csharp はサーバ側(永続化を持ち、problem+json を出す)、typescript はクライアント・viewer 側(永続化を持たず状態を管理し、problem+json を受けて 4xx と 5xx を分ける)。
+書式は `## 概要`(従う上位規律への参照)、規律ごとの `## 規律名` と必須の5節、末尾の `## 参照` である。
+根拠は、上位規律の再導出でなく、その言語の機構で上位規律をどう満たすかを述べる。
+例は、その言語の実コードで、避けたい形と望ましい形を対比する。版に正しい構文を使う。
+製品を主駆動とする規律は軸 file に置かず、採用したツールの file に規律の H2 として置く。
+未充足を見つけたら、[gaps](../../../../docs/reflect/languages-gaps.md) の台帳を更新する。
+
+### 軸 file の MECE 点検
+
+- 上位規律の原則や概念を再定義していないか(再定義していれば principles/concerns へ戻す)。
+- 概念の決定を軸 file で下していないか(決定は concerns、軸 file は実現)。
+- 選定理由・比較・却下理由を軸 file に書いていないか(書いていればツール file の判断基準へ移す)。
+- 製品を主駆動とする規律が軸 file に残っていないか(残っていればツール file へ移す)。
+- 役割の非対称が崩れていないか(サーバ側とクライアント側の責務が混ざっていないか)。
+- 版に依存する事実が正しいか。実コードがその言語・版でそのまま通るか。
+
 ## この層の MECE 点検
 
-- 採用でなく性質の要求を書いていないか(要求は principles/concerns/structure/languages が持ち、tools は採用と判断基準だけを持つ)。
+- 採用でなく性質の要求を書いていないか(要求は principles/concerns/structure が持ち、tools のツール file は採用と判断基準だけを持つ)。
 - 未採用の候補・比較の経緯を書き込んでいないか(書いていれば判断基準へ圧縮するか削除する)。
 - 撤回条件と再評価のトリガーを欠いていないか。
-- 新しい採用が6分割のどれにも当たらないとき、tools/README の構成表を更新したか。
+- 新しい採用がどの区分にも当たらないとき、tools/README の構成と区分 README の台帳を更新したか。

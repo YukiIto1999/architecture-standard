@@ -13,7 +13,7 @@ file を分ける単位の契約は、[concerns/README](../../../../concerns/REA
 
 概念の高度での具象化を述べる。
 原則の根本のなぜを再導出しない。それは principles 側にあり、概要で参照する。
-languages の機構の話もしない。
+tools の言語 ecosystem の機構の話もしない。
 
 ## 書式
 
@@ -23,7 +23,7 @@ languages の機構の話もしない。
 
 ## この層の MECE 点検
 
-- 言語機構・方言(sqlx・EF・tokio・zod・ON CONFLICT など)が本文や例に漏れていないか(漏れていれば languages へ)。
+- 言語機構・方言(sqlx・EF・tokio・zod・ON CONFLICT など)が本文や例に漏れていないか(漏れていれば tools の言語 ecosystem へ)。
 - 市場から選ぶ製品の採用や選定理由が漏れていないか(漏れていれば tools へ。規格・プロトコル名は対象外)。
 - principles の原則文を再述していないか。完了条件と禁止事項に、具象化する principle の完了条件・禁止事項と同じ観測を別の語で書いていないか(書いていれば参照だけに置き換える)。
 - 他の概念と同じ規律を重複させていないか(一つが所有し他は参照。例: outbox は transaction が所有、messaging は配送に絞り参照)。

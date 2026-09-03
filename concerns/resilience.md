@@ -284,5 +284,5 @@ retry({ max: config.maxRetries, backoff: exponentialWithJitter }, call)
 行き止まりへの到達を監視し、原因を直してから手順を経て再投入する。
 
 ## 参照
-port の構造は [structure/core/application](../structure/core/application.md)、言語別の機構は [languages](../languages/) が定める。
+port の構造は [structure/core/application](../structure/core/application.md)、言語別の機構は [tools](../tools/) が定める。
 時間上限の合成と期限の伝播は [concurrency](./concurrency.md)、過負荷の中での健全性の応答の優先は [lifecycle](./lifecycle.md) に従う。

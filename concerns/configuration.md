@@ -161,4 +161,4 @@ flag の判定を一点に集約し、不要になった flag を在庫として
 ## 参照
 分離の原則は [separation](../principles/separation.md)、検証に失敗した起動の停止は [lifecycle](./lifecycle.md)、secret の伝送は [security](./security.md) に従う。
 secret の正本は [secrets](./secrets.md) であり、configuration は secret 参照の型と起動時の解決を書く。
-設定の読み込みと flag の配置は、プロセスを起動する [structure/surfaces](../structure/surfaces/) または [structure/runtimes](../structure/runtimes/) が定め、言語別の機構は [languages](../languages/) が定める。
+設定の読み込みと flag の配置は、プロセスを起動する [structure/surfaces](../structure/surfaces/) または [structure/runtimes](../structure/runtimes/) が定め、言語別の機構は [tools](../tools/) が定める。

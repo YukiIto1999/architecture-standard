@@ -18,13 +18,12 @@ architecture-standard は、ソフトウェアアーキテクチャの標準そ�
 | [principles](./principles/) | なぜ | 設計判断の土台となる言語非依存の原則。構成・規律・表現の3群 |
 | [concerns](./concerns/) | 全体を貫く規律は何か | システム全体を通す概念ごとの規律。24概念 |
 | [structure](./structure/) | 各部をどう組むか | ターゲットプロジェクトの骨格と各部の構造 |
-| [languages](./languages/) | 言語でどう実現するか | 言語ごとの採用機構とイディオム |
-| [tools](./tools/) | 何を使うか、どう選ぶか | 用途ごとの採用と判断基準。language・stack・build・inspection・services・platforms の6分割 |
-| [process](./process/) | どの順で作り、どこで確かめるか | 作業の種別ごとの順序と確認点。8単位 |
+| [tools](./tools/) | 何を、どう選び、どう使うか | 採用と言語ごとの実現。csharp・rust・typescript の言語 ecosystem と、language・stack・build・inspection・services・platforms の6分割 |
+| [process](./process/) | どの順で作り、どこで確かめるか | 作業の種別ごとの順序と確認点。10単位 |
 
 参照は、具象から抽象への一方向に保つ。
-tools は languages・structure・concerns・principles に、languages は structure・concerns・principles に、structure は concerns・principles に、concerns は principles に従う。
-process は principles・concerns に従い、順序の入力と確認点の照合先として structure・languages・tools を指す。
+tools は structure・concerns・principles に、structure は concerns・principles に、concerns は principles に従う。
+process は principles・concerns に従い、順序の入力と確認点の照合先として structure・tools を指す。
 process は順序と確認点だけを所有し、性質の規範を再定義しない。
 具象の側から、より抽象の側への参照は、常に適法である。
 抽象の側は、機構の置き場として具象の側を指すだけで、具象の内容に依存しない。
@@ -38,7 +37,7 @@ docs/ は、決定・調査・議事録・レビューの材料であり、標�
 ## 矛盾の解決
 
 記述が層をまたいで矛盾したときは、抽象側の記述を正とする。
-優先は principles、concerns、structure、languages、tools の順である。
+優先は principles、concerns、structure、tools の順である。
 process の記述が他の層と食い違うときは、他の層を正とする。
 同じ層の中の矛盾は、その層の README が正本と指すファイルを正とする。
 root の構成は skeleton が、各部の内部は各 layout が、概念の規律は当該概念のファイルが、言語の機構は該当する実現軸のファイルが正本である。
@@ -80,11 +79,10 @@ root の構成は skeleton が、各部の内部は各 layout が、概念の規
 2. 各関心は、変更理由が及ぶ最も広いスコープに1度だけ置く。狭い層は参照するだけで、再定義しない。
 3. 置き場は次の順で判定し、最初に該当した所へ置く。
    1. 値・なぜ → principles/
-   2. 採用と判断基準 → tools/
+   2. 採用と判断基準、特定言語の実現 → tools/
    3. 作業の順序と確認点 → process/
-   4. 特定言語の実現 → languages/
-   5. ちょうど1つの部の境界・中身 → structure/
-   6. 複数の部にまたがる、または全層に効く → concerns/
+   4. ちょうど1つの部の境界・中身 → structure/
+   5. 複数の部にまたがる、または全層に効く → concerns/
 
 ## 適用の4則
 
@@ -117,8 +115,7 @@ project の入口の文書は、次の3点だけを書き、標準の内容を�
 ### 適用の手順
 
 手順の正本は [process](./process/) にある。
-新規構築は [process/bootstrap](./process/bootstrap.md)、既存システムの意味回収は [process/recovery](./process/recovery.md)、監査は [process/audit](./process/audit.md)、移行は [process/migration](./process/migration.md) に従う。
-日常の作業は、設計が [process/design](./process/design.md)、実装が [process/implementation](./process/implementation.md)、構造改善が [process/refactoring](./process/refactoring.md)、レビューが [process/review](./process/review.md) に従う。
+日常の作業は、設計が [process/design](./process/design.md)、実装が [process/implementation](./process/implementation.md)、構造改善が [process/refactoring](./process/refactoring.md)、レビューが [process/review](./process/review.md)、検証の実行が [process/verification](./process/verification.md)、release と配備が [process/release](./process/release.md) に従う。
 
 ## 判定の枠
 
@@ -126,16 +123,14 @@ project の入口の文書は、次の3点だけを書き、標準の内容を�
 枠の正本は各領域の README であり、ここには対応だけを示す。
 principles と concerns は、要求で意図を捉え、完了条件と禁止事項で照合する。
 principles と concerns の規律は、見出しと必須の節で書かれた判定の単位であり、規律の中の個々の要求・完了条件・禁止事項の一文が規範命題である。
-すべての規範命題は、検証手段への割当を持つ。機械で検証できる規範は structure/tests と languages の inspection が割り当て、残りは process の確認点の照合が、正本の file または領域の名指しで担う。
+すべての規範命題は、検証手段への割当を持つ。機械で検証できる規範は structure/tests と tools の inspection が割り当て、残りは process の確認点の照合が、正本の file または領域の名指しで担う。
 structure は、構成・依存方向・各 layout の固有規律で判定する。
-languages は、採用機構と各規律の完了条件・禁止事項で判定する。
-tools は、採用と判断基準で判定する。
+tools は、採用と判断基準、採用機構と各規律の完了条件・禁止事項で判定する。
 process は、順序の遵守と確認点の照合で判定する。
 監査の severity は、この枠で得た違反を一意な対応へ写す。
 principles と concerns は、禁止事項への違反を critical、完了条件の不達を major に写す。
 structure は、依存方向か明示された禁止への違反を critical、必須の構成か layout の不達を major に写す。
-languages は、明示された禁止への違反を critical、採用機構か完了条件の不達を major に写す。
-tools は、採用か判断基準の不達を major に写す。
+tools は、明示された禁止への違反を critical、採用機構・完了条件・判断基準の不達を major に写す。
 process は、順序の不遵守か確認点の未照合を major に写す。
 同じ箇所が critical と major の両方に当たる場合は、critical だけを列挙する。
 この枠にない磨きは違反に数えず、minor の提案として区別する。

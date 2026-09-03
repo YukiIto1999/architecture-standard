@@ -98,7 +98,7 @@ persisted state を completion authority とする Accepted な契約を読ん�
 
 ## 手順
 
-1. 標準の `README.md` を読み、依頼をモードへ写像する。新規構築=`process/bootstrap.md`、既存システムの意味回収=`process/recovery.md`、監査=`process/audit.md`、移行=`process/migration.md`、設計=`process/design.md`、実装=`process/implementation.md`、構造改善=`process/refactoring.md`、レビュー=`process/review.md` である。構造再生の複合依頼は recovery を読み取り専用で先に完了し、確定した意味だけを後続モードへ渡す。
+1. 標準の `README.md` を読み、依頼をモードへ写像する。新規構築=`process/bootstrap.md`、既存システムの意味回収=`process/recovery.md`、監査=`process/audit.md`、移行=`process/migration.md`、設計=`process/design.md`、実装=`process/implementation.md`、構造改善=`process/refactoring.md`、レビュー=`process/review.md`、release と配備=`process/release.md` である。検証の実行は、どのモードからも `process/verification.md` に従う。構造再生の複合依頼は recovery を読み取り専用で先に完了し、確定した意味だけを後続モードへ渡す。
 2. 選んだ process 本文を読み、参照経路の規則に従って、対象範囲の判定に必要な本文だけを読む。記憶、見出し、一般的なベストプラクティスで補完しない。
    設計では `process/design.md` の順序1から8と確認点を省略しない。番号付き step または確認点が `従う` と定める直接参照は、対象が小さくても読んで照合する。directory 参照はその `README.md` から一つに絞る。
    並行処理を設計する場合は、子処理の失敗伝播と cancellation を、依頼の受入条件に列挙がなくても標準の必須条件として変更契約へ残す。現行契約が不明なら具体的な継続・停止・戻り値を決めず、未確定の必須条件にする。受入条件外の別件として落とさない。
@@ -137,7 +137,7 @@ Executive Diagnosis、要約、結論にも回収表と同じ観測境界を適�
 前処理後は、観測した実装だけを違反の根拠にする。コメントに書かれた意図だけで未実装の挙動を認定しない。依存方向表の「依存してよい先」は許可された辺であり、その依存先がないこと自体は方向違反ではない。
 監査の早い step で違反を見つけても、後続の照合を打ち切らない。依頼で定めた範囲の全 step を実施済み、理由を添えた見送り、実行不能のいずれかへ消し込むまで監査を終えない。
 最終応答の前に「確認予定」「後で確認」「未処理」を探す。残る項目はその場で実施するか、理由を示した見送りまたは実行不能へ変え、pending のまま完了と書かない。
-必須の folder が欠けていても、現存する source の意味監査を止める理由にはしない。たとえば worker の配置が不正でも、その source を concerns の並行処理規律と languages の実現規律へ照合する。対象 artifact 自体が存在しない確認だけを実行不能にし、folder 欠落を理由に領域全体を見送らない。
+必須の folder が欠けていても、現存する source の意味監査を止める理由にはしない。たとえば worker の配置が不正でも、その source を concerns の並行処理規律と tools の言語 ecosystem の実現規律へ照合する。対象 artifact 自体が存在しない確認だけを実行不能にし、folder 欠落を理由に領域全体を見送らない。
 同じ source が複数の完了条件または禁止事項に当たる場合は、最初の違反だけで照合を止めず、該当する規律を全て確認する。指摘数を報告する場合は、重複排除後の列挙を数え、内訳と合計を一致させる。
 
 ## 報告

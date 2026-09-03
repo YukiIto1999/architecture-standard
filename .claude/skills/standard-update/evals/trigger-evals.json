@@ -3,7 +3,7 @@
     {"query": "標準の concerns/types.md に新しい型の規律を追加してください。", "should_trigger": true},
     {"query": "architecture-standard の層間矛盾を解消し、本文を修正してください。", "should_trigger": true},
     {"query": "project の docs/revision にある標準改訂提案を回収してください。", "should_trigger": true},
-    {"query": "tools/build.md に新しいtask runnerの採用を追加してください。", "should_trigger": true},
+    {"query": "tools/build/nx.md に新しいtask runnerの採用を追加してください。", "should_trigger": true},
     {"query": "standard-audit の指摘に従って標準本文と検査を直してください。", "should_trigger": true},
     {"query": "外部スライドの設計原則をprinciplesへ反映できるか裁定してください。", "should_trigger": true},
     {"query": "languages/rust のコード例が古いので現行版へ改訂してください。", "should_trigger": true},
