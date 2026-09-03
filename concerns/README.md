@@ -55,4 +55,5 @@ principle と同じ観測を別の語で言い直さず、参照だけを置く�
 | [performance](./performance.md) | 運用・品質 | 計測の後の最適化 |
 | [lifecycle](./lifecycle.md) | 運用・品質 | プロセスの起動・健全性・終了 |
 | [experience](./experience.md) | 利用者面 | 利用者に向けた画面の体験 |
+| [accessibility](./accessibility.md) | 利用者面 | 利用者面の可達性と識別性。keyboard 操作・色に頼らない識別・対比・pointer target の下限 |
 

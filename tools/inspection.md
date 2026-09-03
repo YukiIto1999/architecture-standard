@@ -73,6 +73,7 @@ Reqnroll は自前のテスト実行系を持たないため、実行基盤は R
 採用は、TypeScript は @axe-core/playwright である。
 Rust と C# は、viewer を TypeScript に委ねるため採用を持たない。
 判断基準は、採用済みの Playwright の runner と page に対して、操作後の各状態で対比・ラベル・focus の機械判定できる違反を検査し、リポジトリの検証入口で止められることである。
+検査する規律は、[concerns/accessibility](../concerns/accessibility.md) に従う。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止と Playwright との互換性の喪失を再評価のトリガーとする。
 
 ## mutation
