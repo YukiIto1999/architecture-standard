@@ -29,11 +29,11 @@ conformance は、業務の語彙で書いた Gherkin の executable spec を、
 適合は、シナリオの合否で判定し、点数化しない。
 contract は、[contracts/canonical](../contracts/canonical.md) の契約定義を駆動元として検証する。
 generated が canonical と binding(http・protocol)から外れていないことを、drift の検査で確かめる。
-arch は、[skeleton](../skeleton.md) と各部の layout、[concerns/dependency](../../concerns/dependency.md) が定める依存と境界の禁止を、機械で検証する。
+arch は、[skeleton](../skeleton.md) と各部の layout、[concerns/dependency](../../concerns/dependency/README.md) が定める依存と境界の禁止を、機械で検証する。
 viewer と extension が特定 host の API や型を参照しないことも、arch で検証する。
 e2e は、critical path の最小の smoke と visual だけに絞る。
 integration は、複数の実装単位または境界を組み合わせて検証する。
-検証の重みは、公開 interface 越しのユースケースの検証に置き、内側の個別のテストは型と契約の保証で減らす([principles/verification](../../principles/verification.md) に従う)。
+検証の重みは、公開 interface 越しのユースケースの検証に置き、内側の個別のテストは型と契約の保証で減らす([principles/verification](../../principles/verification/README.md) に従う)。
 
 ## サイズによる配置
 
@@ -65,7 +65,7 @@ Large の実行環境は、対象として記録した外部資源だけを接�
 全 size の discovery 集合の和は、filter をかけない全域 discovery の native test ID 集合と一致させる。
 未分類の ID、複数 size に属する ID、配置より大きい資源を必要とした test、対象に記録していない外部資源へ接続した test は失敗する。
 サイズを分けても、各段が個別に肥大すれば配分は崩れる。
-厚みは Small に置き、上の段は絞る([principles/verification](../../principles/verification.md) に従う)。
+厚みは Small に置き、上の段は絞る([principles/verification](../../principles/verification/README.md) に従う)。
 
 ## 段階実行
 

@@ -2,7 +2,7 @@
 
 ## 概要
 conventions は、Rust で実現軸を横断する全域規律を扱う。
-principles の [comment](../../principles/comment.md) が定めるドキュメントコメントの契約を、Rust の機構で満たす。
+principles の [comment](../../principles/comment/README.md) が定めるドキュメントコメントの契約を、Rust の機構で満たす。
 実現軸に紐づく置き場を持たず、formation・translation・connection・coordination・publication・inspection の全てに一様に適用する。
 
 ## 命名と整形を道具に委ねる
@@ -12,7 +12,7 @@ principles の [comment](../../principles/comment.md) が定めるドキュメ�
 ファイルとモジュールの名前は、標準の命名規約の snake_case にする。
 
 ### 根拠
-[verification](../../principles/verification.md) が定める、コードスタイルの細則は人の合意でなく単一の formatter と linter に委ねるという要求に、rustfmt で応える。
+[verification](../../principles/verification/README.md) が定める、コードスタイルの細則は人の合意でなく単一の formatter と linter に委ねるという要求に、rustfmt で応える。
 ファイルとモジュールを snake_case にすると、`mod` の宣言とファイルが一意に対応する。
 
 ### 完了条件
@@ -112,5 +112,5 @@ order_mapper
 ```
 
 ## 参照
-ドキュメントコメントの契約は [comment](../../principles/comment.md)、型の規律は [types](../../concerns/types.md)、整形の機械化は [verification](../../principles/verification.md) に従う。
+ドキュメントコメントの契約は [comment](../../principles/comment/README.md)、型の規律は [types](../../concerns/types/README.md)、整形の機械化は [verification](../../principles/verification/README.md) に従う。
 永続化から読んだ行の型は [sqlx](./sqlx.md)、境界の wire の型は [translation](./translation.md) に従う。

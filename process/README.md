@@ -3,7 +3,7 @@
 process は、どの順で作り、どこで確かめるかを定める。
 作業の種別ごとに、順序と確認点を置く。
 process は、順序と確認点だけを所有し、性質の規範を再定義しない。
-規範の内容は [principles](../principles/) と [concerns](../concerns/) に従い、順序の入力と確認点の照合先として [structure](../structure/)・[tools](../tools/)・[tools](../tools/) を指す。
+規範の内容は [principles](../principles/) と [concerns](../concerns/) に従い、順序の入力と確認点の照合先として [structure](../structure/)・[tools](../tools/) を指す。
 
 ## 書式
 

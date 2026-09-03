@@ -226,8 +226,8 @@ if [ "$broken" = 0 ]; then pass "リンク切れなし"; else fail "リンク切
 echo
 echo "=== 2. 単位ごとの必須5節(principles/concerns/言語 ecosystem。例は任意) ==="
 mapfile -d '' discipline_files < <(
-  find principles concerns -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0
-  find tools/rust tools/csharp tools/typescript -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0
+  find principles concerns -mindepth 2 -maxdepth 2 -type f -name '*.md' ! -name 'README.md' -print0
+  find tools/rust tools/csharp tools/typescript tools/build tools/platforms tools/services -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0
 )
 sections_out=$(awk -f "$SCRIPT_DIR/discipline-sections.awk" "${discipline_files[@]}" 2>&1)
 echo "$sections_out"
@@ -240,7 +240,7 @@ fi
 
 echo
 echo "=== 3. concerns への言語機構/方言の漏れ(あってはならない) ==="
-if rg -nP '\b(sqlx|tokio|axum|tower|serde|Dapper|Npgsql|EF Core|zod|valibot|neverthrow|SolidJS|Tailwind|Vite|VSCode|fred|apalis|PGMQ|clap|NSwag|Wolverine|Photino|MAUI|Kobalte|ON CONFLICT|ON DUPLICATE|StreamJsonRpc|vscode-jsonrpc|createResource|createSignal|actor framework|Playwright|TypeScript|compiler API)\b' concerns/*.md; then
+if rg -nP '\b(sqlx|tokio|axum|tower|serde|Dapper|Npgsql|EF Core|zod|valibot|neverthrow|SolidJS|Tailwind|Vite|VSCode|fred|apalis|PGMQ|clap|NSwag|Wolverine|Photino|MAUI|Kobalte|ON CONFLICT|ON DUPLICATE|StreamJsonRpc|vscode-jsonrpc|createResource|createSignal|actor framework|Playwright|TypeScript|compiler API)\b' concerns; then
   fail "concerns に言語機構/方言が漏れている(中立化するか tools の言語 ecosystem へ移すこと)"
 else
   pass "concerns に言語機構/方言の漏れなし"
@@ -249,7 +249,7 @@ fi
 echo
 echo "=== 4. principles への言語/製品/方言の漏れ(あってはならない) ==="
 principles_leak=0
-if rg -nP '\b(sqlx|tokio|axum|Dapper|Npgsql|EF Core|zod|valibot|SolidJS|ON CONFLICT|ON DUPLICATE)\b' principles/*.md; then
+if rg -nP '\b(sqlx|tokio|axum|Dapper|Npgsql|EF Core|zod|valibot|SolidJS|ON CONFLICT|ON DUPLICATE)\b' principles; then
   principles_leak=1
 fi
 
@@ -258,7 +258,7 @@ while IFS= read -r product; do
   [ -z "$product" ] && continue
   is_non_product_token "$product" && continue
   product_count=$((product_count + 1))
-  product_matches=$(rg --with-filename -nP "(?<![A-Za-z0-9_.#+@/-])\\Q${product}\\E(?![A-Za-z0-9_.#+@/-])" principles/*.md 2>/dev/null || true)
+  product_matches=$(rg --with-filename -nP "(?<![A-Za-z0-9_.#+@/-])\\Q${product}\\E(?![A-Za-z0-9_.#+@/-])" principles 2>/dev/null || true)
   if [ -n "$product_matches" ]; then
     echo "  台帳由来の製品名: $product"
     while IFS= read -r product_match; do echo "    $product_match"; done <<< "$product_matches"
@@ -278,7 +278,7 @@ fi
 
 echo
 echo "=== 5. 概念数の整合(concerns/README.md の台帳 = concerns 実ファイル = root README.md) ==="
-concerns_actual=$(find concerns -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+concerns_actual=$(find concerns -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
 root_claim=$(rg -oP '(?<=概念ごとの規律。)\d+(?=概念)' README.md | head -1)
 concerns_readme_rows=$(markdown_section_file_table_rows concerns/README.md 概念)
 echo "concerns 実ファイル数: $concerns_actual"
@@ -388,7 +388,7 @@ fi
 
 echo
 echo "=== 8. skill の概念列挙と concerns/ 実ファイルの突合 ==="
-concerns_files=$(find concerns -maxdepth 1 -name '*.md' ! -name 'README.md' -exec basename {} .md \; | sort)
+concerns_files=$(find concerns -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
 skill_ok=1
 for f in ".claude/skills/standard-update/SKILL.md" ".claude/skills/standard-update/references/concerns.md"; do
   if [ ! -f "$f" ]; then echo "  MISSING FILE: $f"; skill_ok=0; continue; fi
@@ -503,24 +503,70 @@ else
 fi
 
 echo
-echo "=== 15. principles/concerns の各 file に下位の消費者がいるか ==="
+echo "=== 15. principles/concerns の各概念フォルダに下位の消費者がいるか ==="
 # 根拠: concerns/README「file を分ける単位は、structure と tools が独立に名指して従う契約である」と
 # principles/README「原則の file を分ける単位は、下位の層の file が名指して参照する単位である」。
 # root README の検証割当(file または領域の名指し)とは別の検査であり、領域単位の照合を否定しない。
 orphan_files=""
 for consumer_area in principles concerns; do
-  while IFS= read -r body_file; do
-    body_key="$consumer_area/$(basename "$body_file")"
+  while IFS= read -r body_dir; do
+    body_key="$consumer_area/$(basename "$body_dir")/"
     if ! rg -q -F "$body_key" process structure tools 2>/dev/null; then
       orphan_files="$orphan_files $body_key"
     fi
-  done < <(find "$consumer_area" -maxdepth 1 -type f -name '*.md' ! -name 'README.md')
+  done < <(find "$consumer_area" -mindepth 1 -maxdepth 1 -type d)
 done
 if [ -z "$orphan_files" ]; then
   pass "principles/concerns の全 file を下位の層が参照"
 else
   echo "未参照:$orphan_files"
   fail "下位の層から参照されない file あり"
+fi
+
+echo
+echo "=== 16. 概念フォルダの規律台帳(README の行 = 実 file = file 先頭の規律 H2) ==="
+ledger_ok=1
+for concept_dir in principles/*/ concerns/*/; do
+  readme="${concept_dir}README.md"
+  if [ ! -f "$readme" ]; then echo "  $concept_dir: README.md がない"; ledger_ok=0; continue; fi
+  ledger_records=$(rg -oN '^- \[([^]]+)\]\(\./([^)]+)\.md\)$' "$readme" -r '$2'$'\t''$1' | sort)
+  actual_records=$(
+    while IFS= read -r rule_file; do
+      heading=$(rg -m1 -oN '^## (.+)$' "$rule_file" -r '$1')
+      printf '%s\t%s\n' "$(basename "$rule_file" .md)" "$heading"
+    done < <(find "$concept_dir" -maxdepth 1 -type f -name '*.md' ! -name 'README.md') | sort
+  )
+  if [ "$ledger_records" != "$actual_records" ]; then
+    echo "  $concept_dir: 台帳と実 file/規律名が不一致"
+    diff <(echo "$ledger_records") <(echo "$actual_records") | sed 's/^/    /'
+    ledger_ok=0
+  fi
+done
+if [ "$ledger_ok" = 1 ]; then
+  pass "概念フォルダの台帳・実 file・規律 H2 が一致"
+else
+  fail "概念フォルダの台帳が不一致(上記 diff)"
+fi
+
+echo
+echo "=== 17. ツール file の entry 書式(用途・採用・判断基準・撤回条件の4行) ==="
+entry_ok=1
+while IFS= read -r tool_file; do
+  base=$(basename "$tool_file" .md)
+  case "$base" in
+    README|formation|translation|connection|coordination|publication|inspection|conventions) continue ;;
+  esac
+  for prefix in 用途は、 採用は、 判断基準は、 撤回条件は、; do
+    if ! rg -q "^$prefix" "$tool_file"; then
+      echo "  $tool_file: 「$prefix」で始まる行がない"
+      entry_ok=0
+    fi
+  done
+done < <(find tools -mindepth 2 -maxdepth 2 -type f -name '*.md')
+if [ "$entry_ok" = 1 ]; then
+  pass "全ツール file が entry の4行を持つ"
+else
+  fail "entry の4行を欠くツール file あり"
 fi
 
 echo

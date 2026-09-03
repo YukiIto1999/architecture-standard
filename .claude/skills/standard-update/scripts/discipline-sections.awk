@@ -15,7 +15,7 @@ function clear_section(    i) {
 # ツール file(ecosystem 直下の軸 file 以外)では、5節マーカーを一つも持たない H2 は
 # 採用エントリであり規律単位に数えない。軸 file では全 H2(免除以外)が単位。
 function is_tool_file(file,    base) {
-  if (file !~ /(^|\/)tools\/(rust|csharp|typescript)\/[^/]+\.md$/) return 0
+  if (file !~ /(^|\/)tools\/(rust|csharp|typescript|build|platforms|services)\/[^/]+\.md$/) return 0
   base = file
   sub(/^.*\//, "", base)
   sub(/\.md$/, "", base)

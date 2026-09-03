@@ -2,8 +2,8 @@
 
 ## 概要
 coordination は、C# で非同期・並行・取り消しの実行を扱う実現軸である。
-principles の [separation](../../principles/separation.md) が定める副作用の境界と、concerns の [concurrency](../../concerns/concurrency.md) が定める構造化された並行・取り消しの協調・共有可変状態の回避を、C# の機構で満たす。
-取り消しは [effect](../../concerns/effect.md) の Canceled 終了を実現し、資源は失敗と取り消しの経路でも using と IAsyncDisposable で解放する。
+principles の [separation](../../principles/separation/README.md) が定める副作用の境界と、concerns の [concurrency](../../concerns/concurrency/README.md) が定める構造化された並行・取り消しの協調・共有可変状態の回避を、C# の機構で満たす。
+取り消しは [effect](../../concerns/effect/README.md) の Canceled 終了を実現し、資源は失敗と取り消しの経路でも using と IAsyncDisposable で解放する。
 
 ## 非同期
 
@@ -378,5 +378,5 @@ await using var lease = await OpenLeaseAsync(deadline, cancellationToken);
 ```
 
 ## 参照
-並行の規律は [concurrency](../../concerns/concurrency.md)、副作用を境界に集める原則は [separation](../../principles/separation.md)、効果の取り消しと資源は [effect](../../concerns/effect.md)、停止の合図と優雅な終了は [lifecycle](../../concerns/lifecycle.md) に従う。
+並行の規律は [concurrency](../../concerns/concurrency/README.md)、副作用を境界に集める原則は [separation](../../principles/separation/README.md)、効果の取り消しと資源は [effect](../../concerns/effect/README.md)、停止の合図と優雅な終了は [lifecycle](../../concerns/lifecycle/README.md) に従う。
 Effect の中の資源解放は [connection](./connection.md) の `AcquireRelease` に従う。

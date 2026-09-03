@@ -2,7 +2,7 @@
 
 ## 概要
 translation は、C# で外部表現とドメイン型の変換を扱う実現軸である。
-principles の [separation](../../principles/separation.md) が定める境界での変換と、concerns の [types](../../concerns/types.md) が定める境界での parse・[security](../../concerns/security.md) が定める境界の不信を、C# の機構で満たす。
+principles の [separation](../../principles/separation/README.md) が定める境界での変換と、concerns の [types](../../concerns/types/README.md) が定める境界での parse・[security](../../concerns/security/README.md) が定める境界の不信を、C# の機構で満たす。
 problem+json への写しの規律は [aspnet-core](./aspnet-core.md) が、契約生成と drift 検査の規律は [nswag](./nswag.md) が持つ。
 
 ## 境界で一度だけ parse してドメイン型へ移す
@@ -19,7 +19,7 @@ problem+json への写しの規律は [aspnet-core](./aspnet-core.md) が、契�
 境界の DTO に受けてから factory で検証変換すれば、検証が境界の一点に集まる。
 source generation は実行時のリフレクションを避け、契約を明示する。
 未知のフィールドを弾く既定は、送り手と受け手の版が配備で一時的に重なる瞬間の後方互換を壊すので、寛容な読み手にし、必須の項目だけ `required` で欠落を弾く。
-検知した未知のフィールドをログに出せば残存が可視化され、恒常的に未知が流れ続ける状態は [evolution](../../principles/evolution.md) が定める収縮が終わっていない欠陥として扱える。
+検知した未知のフィールドをログに出せば残存が可視化され、恒常的に未知が流れ続ける状態は [evolution](../../principles/evolution/README.md) が定める収縮が終わっていない欠陥として扱える。
 ドメイン型を直接直列化すると、外部表現の都合がドメインの形を縛る。
 
 ### 完了条件
@@ -64,4 +64,4 @@ Result<User> ToDomain(CreateUserRequest request)
 ```
 
 ## 参照
-境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect.md)、未知フィールドの残存と収縮は [evolution](../../principles/evolution.md)、契約の置き場は [structure/contracts](../../structure/contracts/layout.md) に従う。
+境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect/README.md)、未知フィールドの残存と収縮は [evolution](../../principles/evolution/README.md)、契約の置き場は [structure/contracts](../../structure/contracts/layout.md) に従う。

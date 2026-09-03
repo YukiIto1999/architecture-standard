@@ -14,10 +14,10 @@ release は、成果物の検証から配備先への反映まで、戻せる状
 ## 確認点
 
 release 前の検証は、[verification](./verification.md) の「順序」に従って全域まで実行する。
-反映時の生存と準備は、[concerns/lifecycle](../concerns/lifecycle.md) の完了条件と禁止事項に照合する。
-migration の段の区切りは、[concerns/migration](../concerns/migration.md) に照合する。
+反映時の生存と準備は、[concerns/lifecycle](../concerns/lifecycle/README.md) の完了条件と禁止事項に照合する。
+migration の段の区切りは、[concerns/migration](../concerns/migration/README.md) に照合する。
 稼働中のデータを移す配備は、[migration](./migration.md) に従う。
 
 ## 範囲外
 
-成果物の版づけと不変性の規範は扱わない([concerns/security](../concerns/security.md) と [structure/deploy](../structure/deploy/layout.md) が正本である)。
+成果物の版づけと不変性の規範は扱わない([concerns/security](../concerns/security/README.md) と [structure/deploy](../structure/deploy/layout.md) が正本である)。

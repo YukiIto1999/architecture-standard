@@ -13,7 +13,7 @@ trace と event は同じ文脈で相関させ、OTLP/HTTP で collector へ送�
 SDK の登録と exporter の構成は、host の adapter が持つ。
 
 ### 根拠
-収集を境界の殻で行う規律([observability](../../concerns/observability.md))に、ui port の背後の OpenTelemetry で応える。
+収集を境界の殻で行う規律([observability](../../concerns/observability/README.md))に、ui port の背後の OpenTelemetry で応える。
 viewer 本体が SDK に触れると、収集の機構が UI の関心へ漏れる。
 API と SDK を分ける OpenTelemetry の構成は、port の型を API だけに依存させ、SDK を adapter に隔離できる。
 独立した UI の event は、trace の文脈を付けた LogRecord で表すと、trace と同じ文脈で相関できる。
