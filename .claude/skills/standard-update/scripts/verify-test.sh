@@ -268,11 +268,31 @@ cp "$fixture/structure/core/domain.md" "$fixture/structure/core/policy.md"
 sed -i 's/| layout・domain・application・infrastructure・composition |/| layout・domain・application・infrastructure・composition・policy |/' "$fixture/structure/README.md"
 expect_pass "台帳と本文ファイルを揃えた追加を受理する" "$fixture"
 
+fixture=$(make_fixture heading-citation-valid)
+printf '\n保存の形は [persistence](./persistence.md) の「事実を追記する形で残す」に従う。\n' >> "$fixture/concerns/transaction.md"
+expect_pass "link 先の見出しと一致する鉤括弧引用を受理する" "$fixture"
+
+fixture=$(make_fixture heading-citation-same-file)
+printf '\n同じ file の「事実を追記する形で残す」と [data](../principles/data.md) に従う。\n' >> "$fixture/concerns/persistence.md"
+expect_pass "同一 file 内の見出し引用を受理する" "$fixture"
+
+fixture=$(make_fixture heading-citation-drift)
+printf '\n文脈の伝播は [observability](./observability.md) の「存在しない規律」に従う。\n' >> "$fixture/concerns/transaction.md"
+expect_fail "link 先の見出しに無い規律名の名指しを検出する" "$fixture" "正本の見出しに無い規律名"
+
 fixture=$(make_fixture overlap-nonheading-quote)
 overlap_line='検査用の「これは見出しではない引用でありそのまま重複判定に含まれる」文である。'
 printf '\n%s\n' "$overlap_line" >> "$fixture/principles/comment.md"
 printf '\n%s\n' "$overlap_line" >> "$fixture/concerns/privacy.md"
 expect_fail "見出しでない鉤括弧引用の逐語一致は検出する" "$fixture" "逐語一致の候補あり"
+
+fixture=$(make_fixture vocabulary-legacy-term)
+printf '\n二次の読みモデルを許す。\n' >> "$fixture/concerns/persistence.md"
+expect_fail "統一済み語彙の旧表記を検出する" "$fixture" "統一済み語彙の旧表記"
+
+fixture=$(make_fixture orphan-principle)
+printf '# orphan\n' > "$fixture/principles/orphan.md"
+expect_fail "下位の層から参照されない principles file を検出する" "$fixture" "下位の層から参照されない file"
 
 printf '\nテスト: %d passed, %d failed\n' "$passed" "$failed"
 if [ "$failed" -eq 0 ]; then
