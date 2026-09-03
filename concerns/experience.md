@@ -43,8 +43,7 @@ principles の [legibility](../principles/legibility.md) が定める明瞭さ�
 ### 要求
 利用者面の主操作は一つにする。
 visual UI の主操作は、見つけやすい位置に、押しやすい target size で置く。
-visual UI の pointer target は、WCAG 2.2 の Success Criterion 2.5.8 に従い、24×24 CSS px 以上にする。
-24×24 CSS px 未満の target は、Success Criterion 2.5.8 が定める例外に該当する場合だけ許し、該当する例外と理由を記録する。
+visual UI の pointer target の下限と例外は、[accessibility](./accessibility.md) に従う。
 予測できる既定値を選択済みで提示し、変えたい利用者だけが触る形にする。
 予測できる妥当な既定値が無いなら、選択済みにせず空で出す。
 既定値を選ぶ基準は、project が定める。
@@ -59,23 +58,19 @@ visual UI の主操作が見つけやすく十分な target size を持てば、
 
 ### 完了条件
 各利用者面の主操作が、一つに絞られている。
-visual UI の主操作が、他の操作より強い視覚的重みと十分な target size を持つ位置に置かれている。
-visual UI の pointer target が24×24 CSS px以上であるか、Success Criterion 2.5.8 の例外と理由を持っている。
-各 pointer target の表示後の CSS px の bounding box と例外記録が、照合できる証拠として残っている。
+visual UI の主操作が、他の操作より強い視覚的重みを持つ位置に置かれている。
+主操作の target size の判定は、[accessibility](./accessibility.md) の完了条件に従う。
 予測できる既定値が選択済みで示され、予測できない項目が空で示されている。
 頻繁に使う操作に、近道がある。
 
 ### 禁止事項
 同格の操作を利用者面に複数並べ、主操作を埋もれさせること。
 妥当でない既定値を、選択済みにすること。
-Success Criterion 2.5.8 の例外記録がない pointer target を、24×24 CSS px 未満にすること。
 
 ### 行動
 利用者面の操作を見渡し、主操作が複数並んでいないか確認する。
 主操作を一つに定める。
 visual UI では、主操作を見つけやすい位置に十分な target size で置く。
-各 pointer target の表示後の bounding box を CSS px で測り、幅と高さを24 CSS px以上にする。
-24×24 CSS px 未満の target は、Success Criterion 2.5.8 の例外と理由が記録されている場合だけ検査から除外する。
 妥当な既定値を選択済みで出し、無ければ空で出す。
 頻用操作に近道を添える。
 
@@ -334,5 +329,6 @@ else hide(operation)
 ```
 
 ## 参照
-明快さは [legibility](../principles/legibility.md)、責務の境界は [separation](../principles/separation.md)、不正状態の排除は [modeling](../principles/modeling.md)、境界での parse は [types](./types.md)、語彙の統一は [naming](../principles/naming.md) に従う。
+明瞭さは [legibility](../principles/legibility.md)、責務の境界は [separation](../principles/separation.md)、不正状態の排除は [modeling](../principles/modeling.md)、境界での parse は [types](./types.md)、語彙の統一は [naming](../principles/naming.md) に従う。
+利用者面の可達性と識別性は [accessibility](./accessibility.md) に従う。
 viewer の構造は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md)、見た目と機構は [languages](../languages/) が定める。

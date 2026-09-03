@@ -3,7 +3,7 @@
 console は、CLI の surface である。
 core を埋め込み、コマンドの引数を build_core が返す API の operation へ写像する。
 自己ホストであり、自身でプロセスを起動する。
-対話の体験は [concerns/experience](../../../concerns/experience.md) に従う。
+対話の体験は [concerns/experience](../../../concerns/experience.md)、keyboard 操作の可達性は [concerns/accessibility](../../../concerns/accessibility.md) に従う。
 console は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成

@@ -133,4 +133,5 @@ Large test、全 mutation、全 SLO 計測は、影響が及ぶ変更、定期�
 失敗後の修正では失敗した検証と、修正した source の依存先と逆依存の consumer に対応する検証を再実行する。
 検証を省いたのでなく、影響がないことを差分と依存関係から示せない検証は実行する。
 性能の目標は [concerns/performance](../../concerns/performance.md)、耐障害性は [concerns/resilience](../../concerns/resilience.md) と [concerns/lifecycle](../../concerns/lifecycle.md)、security と privacy は [concerns/security](../../concerns/security.md) と [concerns/privacy](../../concerns/privacy.md) に従う。
+利用者面の体験は [concerns/experience](../../concerns/experience.md)、可達性と識別性は [concerns/accessibility](../../concerns/accessibility.md) に従う。
 言語ごとの具体の機構は [languages](../../languages/) が定め、道具の採用は [tools/inspection](../../tools/inspection.md) が定める。

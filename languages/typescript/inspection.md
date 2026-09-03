@@ -174,9 +174,10 @@ baseline の更新処理は画像と metadata を同時に生成し、両方を�
 キーボードの到達性は、Playwright の操作と focus の assertion で E2E シナリオとして確かめる。
 pointer target は、Playwright で表示後の bounding box を CSS px で測定し、Success Criterion 2.5.8 の例外記録と照合する。
 text と non-text の contrast は、Playwright で表示結果の style、font face、user agent の font metadata、font metrics、隣接色を取得し、Success Criterion 1.4.3 と1.4.11の閾値と例外記録に照合する。
+keyboard の到達性、色に頼らない表現、pointer target の下限、text と non-text の対比の規律は、[accessibility](../../concerns/accessibility.md) に従う。
 
 ### 根拠
-[experience](../../concerns/experience.md) が要求する対比・ラベル・色だけに頼らない表現のうち、機械判定できる違反は axe の規則が検出する。
+[accessibility](../../concerns/accessibility.md) が要求する対比・ラベル・色だけに頼らない表現のうち、機械判定できる違反は axe の規則が検出する。
 playwright-bdd は Playwright Test へ変換するので、生成されたテストの page に AxeBuilder を適用すれば、既存の runner のまま検査が加わる。
 axe は focus trap やキーボードの全機能への到達を判定し切れないので、到達性は操作のシナリオで確かめる。
 axe の規則だけでは、project が記録した Success Criterion 2.5.8 の例外、Roman と CJK の large text の根拠、Success Criterion 1.4.3 と1.4.11の対象別の例外を照合できない。

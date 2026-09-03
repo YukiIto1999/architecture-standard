@@ -3,10 +3,10 @@
 concerns は、言語非依存の概念ごとの規律を置く。
 principles の原則を、全系を通す概念の高度で具象化する。モジュール設計の詳細(認証認可・DB/テーブル・型など)はここに来る。
 
-## 既存の23概念
+## 既存の24概念
 
-effect・concurrency・dependency・types・context-propagation・persistence・caching・migration・transaction・messaging・workflow・authentication・authorization・privacy・security・secrets・audit-trail・observability・configuration・resilience・performance・lifecycle・experience。
-新概念を足す前に、この23に当たる所がないかを必ず確かめる。当たれば足す、当たらなければ抜けなので新設する。
+effect・concurrency・dependency・types・context-propagation・persistence・caching・migration・transaction・messaging・workflow・authentication・authorization・privacy・security・secrets・audit-trail・observability・configuration・resilience・performance・lifecycle・experience・accessibility。
+新概念を足す前に、この24に当たる所がないかを必ず確かめる。当たれば足す、当たらなければ抜けなので新設する。
 file を分ける単位の契約は、[concerns/README](../../../../concerns/README.md) を正本とする。分ける根拠は分類軸で述べ、行数や項目数を根拠にしない。
 
 ## 根拠の高度
