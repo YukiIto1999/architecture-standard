@@ -43,7 +43,7 @@ release する成果物の供給網の保証は [concerns/security](../../concer
 infrastructure は、配備先を宣言的に定義する。
 手で変えた snowflake な構成を作らない。
 同じ定義から、同じ配備先を再現する。
-secret を含む state の暗号化は、secrets の規律に従う。
+secret を含む state の暗号化は、[concerns/secrets](../../concerns/secrets.md) の規律に従う。
 infrastructure の内部は、配備先の単位ごとに分ける。
 一つの配備先の宣言を一つの単位にまとめ、複数の配備先の定義を一つの単位に混ぜない。
 
@@ -61,7 +61,7 @@ delivery の内部は、反映する配備先の単位に対応させて分け�
 一つの配備先への反映定義を一つの単位にまとめる。
 datastore の schema migration は、新しい版のアプリケーションへ切り替える前に適用する。
 migration の実施は delivery の反映手順の一部とし、アプリケーションの起動処理へ埋め込まない。
-migration が満たす拡張・移行・収縮の段の区切りは [concerns/persistence](../../concerns/persistence.md) に従う。
+migration が満たす拡張・移行・収縮の段の区切りは [concerns/migration](../../concerns/migration.md) に従う。
 
 ## provenance
 
@@ -74,4 +74,4 @@ attestation は、署名と内容を検証するまで、安全の証明にな�
 
 secrets は、secret を at-rest 暗号化して保つ。
 暗号化の機構の採用は、[tools/platforms](../../tools/platforms.md) が定める。
-secret の型・読み込み・回転・失効・監査は、[concerns/configuration](../../concerns/configuration.md) に従う。
+secret の型・読み込み・回転・失効・監査は、[concerns/secrets](../../concerns/secrets.md) に従う。

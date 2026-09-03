@@ -2,7 +2,7 @@
 
 ## 概要
 inspection は、TypeScript で検証を扱う実現軸である。
-principles の [verification](../../principles/verification.md) が定める検証の機械化と、[evolution](../../principles/evolution.md) が定める構造を機械で守ることを、TypeScript の機構で満たす。
+principles の [verification](../../principles/verification.md) が定める検証の機械化を、TypeScript の機構で満たす。
 
 ## 実行
 
@@ -174,13 +174,14 @@ baseline の更新処理は画像と metadata を同時に生成し、両方を�
 キーボードの到達性は、Playwright の操作と focus の assertion で E2E シナリオとして確かめる。
 pointer target は、Playwright で表示後の bounding box を CSS px で測定し、Success Criterion 2.5.8 の例外記録と照合する。
 text と non-text の contrast は、Playwright で表示結果の style、font face、user agent の font metadata、font metrics、隣接色を取得し、Success Criterion 1.4.3 と1.4.11の閾値と例外記録に照合する。
+keyboard の到達性、色に頼らない表現、pointer target の下限、text と non-text の対比の規律は、[accessibility](../../concerns/accessibility.md) に従う。
 
 ### 根拠
-[experience](../../concerns/experience.md) が要求する対比・ラベル・色だけに頼らない表現のうち、機械判定できる違反は axe の規則が検出する。
+[accessibility](../../concerns/accessibility.md) が要求する対比・ラベル・色だけに頼らない表現のうち、機械判定できる違反は axe の規則が検出する。
 playwright-bdd は Playwright Test へ変換するので、生成されたテストの page に AxeBuilder を適用すれば、既存の runner のまま検査が加わる。
 axe は focus trap やキーボードの全機能への到達を判定し切れないので、到達性は操作のシナリオで確かめる。
 axe の規則だけでは、project が記録した Success Criterion 2.5.8 の例外、Roman と CJK の large text の根拠、Success Criterion 1.4.3 と1.4.11の対象別の例外を照合できない。
-Playwright で表示結果と例外記録を同じ E2E に入力すれば、experience の観測可能な閾値と証拠要件をそのまま検査できる。
+Playwright で表示結果と例外記録を同じ E2E に入力すれば、accessibility の観測可能な閾値と証拠要件をそのまま検査できる。
 
 ### 完了条件
 操作後の各状態が、@axe-core/playwright で検査され、違反が検証入口で失敗になっている。
@@ -419,7 +420,7 @@ TSDoc の構文と @typeParam・@param・@returns の宣言との対応を、構
 最初の一行が一行であり句読点を含まないことを、構造検査で検査する。
 呼出先または rejected Promise から伝播する欠陥が当該宣言の契約かと、その @throws は、公開範囲を問わずレビューで確かめる。
 最初の一行が名前の直訳でないこと、用途を判断できること、体言止めであることはレビューで確かめる。
-内容が、実効的な可視境界を基準に、module 外へ公開される要素では外部契約を、同一境界内だけの要素では内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致しているかは、レビューで確かめる。
+内容が、実効的な可視境界を基準に、module 外へ公開される要素では外部契約を、同一境界内だけの要素では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致しているかは、レビューで確かめる。
 
 ### 根拠
 TypeScript compiler API は宣言と型引数、引数、戻り値、直接の throw、try/catch の包含関係、対応するコメント範囲を構文木から取得できる。
@@ -428,7 +429,7 @@ TypeScript compiler API の semantic model は、throw 式の型と link が参�
 両者を組み合わせれば、存在、構文、宣言と tag の機械判定できる対応、外へ伝播する直接の throw の型と link、先頭行の一行と句読点を照合できる。
 呼出先や rejected Promise から伝播する欠陥が当該宣言の契約かは、呼出関係と契約の意味を読む必要がある。
 名前の直訳でないこと、用途を判断できること、体言止めであることは、字面だけでは判定できない。
-内容が可視性に応じた外部契約または内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致しているかは、意味を読む必要があるため機械化しない。
+内容が可視性に応じた外部契約または内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致しているかは、意味を読む必要があるため機械化しない。
 
 ### 完了条件
 ドキュメントコメントの存在が、TypeScript compiler API による構造検査で検査されている。
@@ -440,7 +441,7 @@ TSDoc の構文が、`@microsoft/tsdoc` による構造検査で検査されて�
 最初の一行が一行であり句読点を含まないことが、構造検査で検査されている。
 呼出先または rejected Promise から伝播して当該宣言の契約になる欠陥と @throws の対応が、公開範囲を問わずレビューで確かめられている。
 最初の一行が名前の直訳でなく用途を判断できる体言止めであることが、レビューで確かめられている。
-内容が、module 外へ公開される要素では外部契約を、同一境界内だけの要素では内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致していることが、レビューで確かめられている。
+内容が、module 外へ公開される要素では外部契約を、同一境界内だけの要素では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致していることが、レビューで確かめられている。
 
 ### 禁止事項
 ドキュメントコメントの存在、構文、機械判定できる tag の対応、最初の一行と句読点を、レビューだけで検査すること。
@@ -449,7 +450,7 @@ TSDoc の構文が、`@microsoft/tsdoc` による構造検査で検査されて�
 当該宣言内の try/catch で吸収される throw に、@throws を機械的に要求すること。
 呼出先または rejected Promise から伝播する欠陥の @throws を、構造検査だけで網羅できるとみなすこと。
 先頭行の用途と体言止めを、構造検査だけで保証できるとみなすこと。
-内容の意味とユビキタス言語との一致を、構造検査だけで保証できるとみなすこと。
+内容の意味と統一した語彙との一致を、構造検査だけで保証できるとみなすこと。
 
 ### 行動
 TypeScript compiler API で宣言とコメントを取得し、`@microsoft/tsdoc` でコメントを parse する構造検査を検証入口で実行する。
@@ -458,11 +459,11 @@ semantic model で当該宣言から外へ伝播する直接の throw の型と�
 当該宣言内の try/catch で吸収される throw を、@throws の構造検査対象から除く。
 公開範囲を問わず、呼出先または rejected Promise から伝播して当該宣言の契約になる欠陥と @throws の対応をレビューする。
 レビューで、先頭行が名前の直訳でなく用途を判断できる体言止めであることを確かめる。
-ドキュメントコメントが、実効的な可視境界を基準に、module 外へ公開される要素では外部契約を、同一境界内だけの要素では内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致していることをレビューする。
+ドキュメントコメントが、実効的な可視境界を基準に、module 外へ公開される要素では外部契約を、同一境界内だけの要素では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致していることをレビューする。
 
 ## 規則と検証機構の対応
 
-formation・translation・connection・retention・coordination・publication・conventions・inspection の8実現軸の各規律を、検証手段へ写像する。
+formation・translation・connection・retention・coordination・publication・inspection の7実現軸と全域規律 conventions の各規律を、検証手段へ写像する。
 inspection 軸は、この文書の規律を定める H2 見出しを対応表へ全て列挙する。
 標準 repository の verifier は、各実現軸の規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
@@ -478,13 +479,13 @@ inspection 軸は、この文書の規律を定める H2 見出しを対応表�
 | inspection | 有効性 | mutation(StrykerJS の totalUndetected または Survived+NoCoverage が0件の gate と対象件数0の失敗) |
 | inspection | 構造 | 構造検査(TypeScript compiler API と dependency-cruiser が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
 | inspection | 予防 | analyzer/lint(tsc・oxlint・tsgolint・SonarQube の設定と診断を検証入口でエラー化) |
-| inspection | ドキュメントコメントの検査 | 構造検査(TypeScript compiler API と `@microsoft/tsdoc`)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、語彙) |
+| inspection | ドキュメントコメントの検査 | 構造検査(TypeScript compiler API と `@microsoft/tsdoc`)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | formation | 業務の値を型に封じる | 型(valibot の brand・safeParse)+実行テスト(factory の単体テスト) |
 | formation | 不正な状態を構築できなくする | 型(判別子つき union・never 網羅) |
 | formation | 不変を既定にする | 型(readonly・as const) |
 | formation | 意味と単位を型で区別する | 型(branded type) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+構造検査(TypeScript compiler API による型・値の PascalCase・camelCase の命名照合) |
-| conventions | ドキュメントコメントを書く | 構造検査(TypeScript compiler API と @microsoft/tsdoc。存在・構文・宣言と tag の対応・`@throws {@link ErrorType} 条件`・外へ伝播する直接の throw の型と link・try/catch で吸収される throw の除外・先頭行の一行と句読点)+レビュー(実効的な可視境界に応じた外部契約または内部契約、call/rejected Promise から伝播する欠陥と @throws、再述でない意味、ユビキタス言語) |
+| conventions | ドキュメントコメントを書く | 構造検査(TypeScript compiler API と @microsoft/tsdoc。存在・構文・宣言と tag の対応・`@throws {@link ErrorType} 条件`・外へ伝播する直接の throw の型と link・try/catch で吸収される throw の除外・先頭行の一行と句読点)+レビュー(実効的な可視境界に応じた外部契約または内部契約、call/rejected Promise から伝播する欠陥と @throws、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(TypeScript compiler API による命名照合) |
 | 全域 | branch coverage と safety-critical decision | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定)+構造検査・実行テスト([structure/tests の methods](../../structure/tests/methods.md) が定める safety analysis と MC/DC case の一対一照合) |
 | translation | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・境界の parse の単体テスト) |
@@ -516,5 +517,5 @@ inspection 軸は、この文書の規律を定める H2 見出しを対応表�
 | publication | 可視性 | 構造検査(package.json の exports フィールドの検査) |
 
 ## 参照
-検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification.md)、構造を守る進化は [evolution](../../principles/evolution.md) に従う。
+検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

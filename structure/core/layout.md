@@ -45,13 +45,17 @@ core/
 `<context>/` は、境界付けられたコンテキストが複数あるときにのみ置く。
 `shared/` は、複数のコンテキストが値を共有するときにのみ置く。
 `<context>/` の直下に置ける層は domain・application・infrastructure の3層であり、必要な層のみを置く。
+generic と分類したコンテキストには、業務の不変条件を持つ集約を置かない。集約を持たなければ domain 層も置かない。分類は [principles/separation](../../principles/separation.md) に従う。
 `<common-value>` は、一つのコンテキスト内で複数の集約が共有する値である。
 集約が一つだけのコンテキストでは、common-value を置かず集約のファイル内に畳む。
 値が一つのときは `<common-value>` を直に置き、二つ以上で `values/` に集める。
 エラーの型は、値と同じ規則で置く。
-`<shared-kernel>` は、複数のコンテキストが共有する値・エラー・イベントの型である。
-shared-kernel は、value object の constructor・不変条件・基本演算を持つ。
+`<shared-kernel>` は、複数のコンテキストが共有する値・エラーの型である。
+shared-kernel は、値オブジェクトの constructor・不変条件・基本演算を持つ。
 shared-kernel は、use-case と policy を持たない。
+shared-kernel へ型を置けるのは、共有する全てのコンテキストで意味と変更理由が同一だと記録した場合に限る。
+domain event はコンテキストの内部に閉じ、integration event は公開する application が所有するため、イベントの型は shared-kernel に置かない。
+コンテキスト間の関係と型の共有の判定は [principles/separation](../../principles/separation.md) に従う。
 
 ## 単位
 
@@ -60,7 +64,7 @@ core 直下の単位の役割を示す。
 | 単位 | 役割 |
 |---|---|
 | `<context>/` | 境界付けられたコンテキストを境界ごとに置く。コンテキストは互いに参照しない |
-| `shared/` | 複数のコンテキストが共有する値・エラー・イベントの型を置く |
+| `shared/` | 複数のコンテキストが共有する値・エラーの型を置く |
 | `composition/` | コンテキストと adapter を配線し、canonical の写像と外部への入口を公開する |
 
 同じコンテキストの複数の use-case にまたがる流れは、そのコンテキストの application workflow が担う。
@@ -71,7 +75,7 @@ core 直下の単位の役割を示す。
 単位は依存の上下で3つの tier に分かれる。
 下から shared、コンテキスト、composition の順に積み重なる。
 参照は上位 tier から下位 tier へ向かう。
-単方向依存の原則は [principles/separation](../../principles/separation.md) と [concerns/dependency](../../concerns/dependency.md) に従う。
+依存を一方向に保つ原則は [principles/separation](../../principles/separation.md) と [concerns/dependency](../../concerns/dependency.md) に従う。
 
 単位をまたぐ参照は、参照先の公開面にのみ到達する。
 
@@ -108,7 +112,7 @@ core の内部では composition だけが canonical に触れ、canonical と�
 下位の型は変更単位のファイル内に記述する。
 下位の型のうち、複数の変更単位で共有するもの、または肥大したもののみを別ファイルへ分離する。
 values・events・ports などの集合フォルダは、要素が二つ以上の場合に置く。
-shared-kernel も、値・エラー・イベントが二つ以上になれば、同じ規則で集合フォルダに分ける。
+shared-kernel も、値・エラーが二つ以上になれば、同じ規則で集合フォルダに分ける。
 
 ## 外部公開
 

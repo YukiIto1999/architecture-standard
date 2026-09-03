@@ -4,7 +4,7 @@
 connection は、Rust で副作用と依存の渡し方を扱う実現軸である。
 concerns の [effect](../../concerns/effect.md) が定める効果システムを、Rust が言語に持つ効果型で満たす。
 自前の効果モナドを作らず、async の Future と Result と所有権を効果として使い、要求する依存は能力の trait bound で型に出す。
-[separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の単方向性に従う。
+[separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の「依存を内側へ一方向に向ける」の規律に従う。
 
 ## 効果を言語の効果型で表す
 

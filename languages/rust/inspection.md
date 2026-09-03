@@ -2,7 +2,7 @@
 
 ## 概要
 inspection は、Rust で検証を扱う実現軸である。
-principles の [verification](../../principles/verification.md) が定める検証の機械化と、[evolution](../../principles/evolution.md) が定める構造を機械で守ることを、Rust の機構で満たす。
+principles の [verification](../../principles/verification.md) が定める検証の機械化を、Rust の機構で満たす。
 
 ## 実行
 
@@ -246,21 +246,21 @@ crate ルートに `#![deny(missing_docs)]` を置き、`pub` な要素のドキ
 非公開の要素は `clippy::missing_docs_in_private_items` を deny にし、ドキュメントコメントの欠落を検出する。
 `# Errors`・`# Panics`・`# Safety` の節の欠落は、`clippy::missing_errors_doc`・`clippy::missing_panics_doc`・`clippy::missing_safety_doc` を deny にして検出する。
 最初の一行が [conventions](./conventions.md) の体裁(一行の体言止め・句読点なし)を満たしているかは、構造検査で確かめる。
-ドキュメントコメントが、公開要素では可視境界の利用側への外部契約を、非公開要素では同一境界内の呼び出し側への内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致しているかは、レビューで確かめる。
+ドキュメントコメントが、公開要素では可視境界の利用側への外部契約を、非公開要素では同一境界内の呼び出し側への内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致しているかは、レビューで確かめる。
 
 ### 根拠
 missing_docs は rustc 組み込みの allow-by-default の lint で、deny にしなければ欠落が検出されない。
 missing_docs は `pub` な要素だけを対象にし、非公開の要素のドキュメントコメントの欠落は検出しないので、`clippy::missing_docs_in_private_items` を別に deny にして非公開の要素を埋める。
 clippy の missing_errors_doc・missing_panics_doc は Result を返す・panic しうる `pub fn` に節の記述を求め、missing_safety_doc は `pub unsafe fn` に `# Safety` を求めるので、conventions が要求する節の網羅を公開要素の範囲で機械検査に載せられる。
 最初の一行の体言止めと句読点の有無は構造として判定できるため、構造検査へ載せられる。
-可視性に応じた外部契約または内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語に一致しているかの判断は意味を読む必要があり、機械化できない。
+可視性に応じた外部契約または内部契約を述べ、名前や実装の言い換えでなく、統一した語彙に一致しているかの判断は意味を読む必要があり、機械化できない。
 
 ### 完了条件
 crate ルートに `#![deny(missing_docs)]` があり、`pub` な要素のドキュメントコメントの欠落がビルドの失敗になっている。
 非公開の要素のドキュメントコメントの欠落が、`clippy::missing_docs_in_private_items` で検出されている。
 公開要素の `# Errors`・`# Panics`・`# Safety` の欠落が、clippy の missing_errors_doc・missing_panics_doc・missing_safety_doc で検出されている。
 最初の一行の体裁が、構造検査で確かめられている。
-ドキュメントコメントが、公開要素では外部契約を、非公開要素では内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致していることが、レビューで確かめられている。
+ドキュメントコメントが、公開要素では外部契約を、非公開要素では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致していることが、レビューで確かめられている。
 
 ### 禁止事項
 `#![deny(missing_docs)]` を、crate 全体の `#![allow(missing_docs)]` で無効化すること。
@@ -270,11 +270,11 @@ crate ルートに `#![deny(missing_docs)]` があり、`pub` な要素のドキ
 crate ルートに `#![deny(missing_docs)]` を置く。
 `[workspace.lints.clippy]` に `missing_docs_in_private_items`・`missing_errors_doc`・`missing_panics_doc`・`missing_safety_doc` を deny で設定する。
 最初の一行の体裁を、構造検査で確かめる。
-ドキュメントコメントが、公開要素では外部契約を、非公開要素では内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致していることをレビューする。
+ドキュメントコメントが、公開要素では外部契約を、非公開要素では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致していることをレビューする。
 
 ## 規則と検証機構の対応
 
-formation・translation・connection・retention・coordination・publication・conventions・inspection の8実現軸の各規律を、検証手段へ写像する。
+formation・translation・connection・retention・coordination・publication・inspection の7実現軸と全域規律 conventions の各規律を、検証手段へ写像する。
 inspection 軸は、この文書の規律を定める H2 見出しを対応表へ全て列挙する。
 標準 repository の verifier は、各実現軸の規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
@@ -288,16 +288,16 @@ inspection 軸は、この文書の規律を定める H2 見出しを対応表�
 | inspection | 有効性 | mutation(cargo-mutants の未検出 mutant 0件 gate と対象件数0の失敗) |
 | inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
 | inspection | 予防 | analyzer/lint(rustc・clippy・SonarQube の設定と診断を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
-| inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、語彙) |
+| inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、統一した語彙) |
 | formation | 業務の値を型に封じる | 型(newtype・非公開フィールド・Rust の可視性機構) |
 | formation | 不正な状態を構築できなくする | 型(enum・網羅 match・コンパイラの網羅性検査) |
 | formation | 不変の束縛と共有参照を既定にする | 型(所有権・不変束縛・共有参照・排他借用) |
 | formation | 意味と単位を型で区別する | 型(newtype) |
 | formation | 生成と検証の macro を libs の proc-macro crate に分ける | 構造検査(proc-macro crate 境界)+型(proc-macro crate type の compiler 制約) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(rustfmt --check、rustc の non_snake_case 系 lint) |
-| conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、ユビキタス言語) |
+| conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(命名照合) |
-| 全域 | branch coverage と safety-critical decision | 計測(cargo-llvm-cov で project 記録の branch 下限を検証入口で判定)+構造検査・実行テスト([structure/tests の methods](../../structure/tests/methods.md) が定める safety analysis と MC/DC case の一対一照合) |
+| 全域 | branch coverage と safety-critical decision | 計測(branch を数える設定は nightly channel で実行する `cargo llvm-cov --branch` であり、その json 出力の branch 集計から project 記録の branch 下限を検証入口で判定)+構造検査・実行テスト([structure/tests の methods](../../structure/tests/methods.md) が定める safety analysis と MC/DC case の一対一照合) |
 | translation | 境界で一度だけ parse してドメイン型へ移す | 型(TryFrom)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | translation | 終了を surface の境界表現へ写す | 実行テスト(surface ごとの成功・想定内失敗・欠陥・取り消しの写像) |
 | translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
@@ -328,5 +328,5 @@ inspection 軸は、この文書の規律を定める H2 見出しを対応表�
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
 
 ## 参照
-検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification.md)、構造を守る進化は [evolution](../../principles/evolution.md) に従う。
+検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

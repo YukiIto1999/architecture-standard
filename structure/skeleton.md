@@ -138,6 +138,6 @@ package の依存境界は、依存方向の両表を入力にした言語別の
 
 ## 加算
 
-境界の展開は [principles/construction](../principles/construction.md) の単純な形の既定と投機の排除に、分割の契機は [principles/separation](../principles/separation.md) の変更理由に従う。
+境界の展開は [principles/construction](../principles/construction.md) の「単純な形を既定にする」と「投機的で説明できない要素を作らない」に、分割の契機は [principles/separation](../principles/separation.md) の「変更理由で分ける」に従う。
 媒体の追加は加算で行い、既存の core と server を変えない。
 surface の追加は、surfaces の直下に閉じ、root を変えない。

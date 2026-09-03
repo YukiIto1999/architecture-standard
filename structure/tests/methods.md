@@ -46,6 +46,7 @@ adapter は、実の依存をコンテナで起動して検証する。
 oracle が得にくい対象は、metamorphic な関係で検証する。
 移行と置換は、旧と新の経路の差分で検証する。
 replay は、イベントから projection を再構築して検証する。
+再構築の決定性は、同じイベント列を空の状態へ二度適用して結果が一致することで検証する。二度の一致は決定性の証明ではなく、実行時の入力と外部への効果を早期に見つける検査である。
 信頼できない入力は、契約を駆動にした fuzz で検証する。
 契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools の inspection](../../tools/inspection.md) が定める。
 公開 API の契約への適合も、同じ機構で検証する。
@@ -66,9 +67,9 @@ protocol 経路の適合は、生成物と実装の drift の検査と conforman
 | use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、未検出 mutant |
 | canonical と binding | operation・型・error の欠落と余剰、generated drift、serialize round-trip、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
 | 認証と認可 | 各認証境界の credential 拒否と actor 構築、credential の core 非流入、主体・操作・資源・条件の許可と拒否 |
-| 永続化、transaction、messaging | 実 datastore の制約、version conflict、単一の確定点、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり |
+| 永続化、transaction、messaging | 実 datastore の制約、version conflict、単一の確定点、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |
 | effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test |
-| structure と dependency | root と単位の列挙、依存方向、公開面、配置、循環、禁止 import |
+| structure と dependency | root と単位の列挙、依存方向、公開面、配置、循環、複雑さの閾値と統合・削除での変更前後の比較、禁止 import、サブドメイン分類の記録と構造の対応 |
 | lifecycle と configuration | 不正設定での起動拒否、生存と準備、受付停止、期限内 drain、突然死後の回復 |
 | security と privacy | default deny と最小権限、信頼境界ごとの abuse case、標準暗号の設定、secret と個人情報の非流出、保持期限後の消去、供給物と依存の検査 |
 | experience と accessibility | 利用者が観測する状態遷移、keyboard 操作、focus、名前と役割、contrast、回復経路 |
@@ -83,7 +84,10 @@ canonical operation から core API、surface の binding、公開 interface の
 構造の規則は、依存方向・公開面と可視性・配置と粒度・命名・純粋性のクラスに分けて検証する。
 依存方向と参照の禁止は、構造の検査で機械検証する。
 公開面は、言語の可視性の機構と構造の検査で守る。
-結合・循環・規模などのアーキテクチャ特性は、客観の尺度の適応度関数として測り、閾値を超えたら不合格とする。
+循環・規模・複雑さなどのアーキテクチャ特性は、客観の尺度の適応度関数として測り、閾値を超えたら不合格とする。
+互いを読まずに独立して理解できる要素を統合または削除して数を減らす変更では、変更が触れた要素の複雑さの指標を変更前の同じ集合と比較し、変更前の値を上回ったら不合格とする。独立して読めていたかの判別と、この比較を求める規律は [principles/construction](../../principles/construction.md) に従う。
+結合は、境界を越える依存の距離の記録と、遠い境界を越えて内部へ到達する依存の不在で判定する。知識の段の記録は、記録の有無を機械で確かめ、内容の正しさはレビューで確かめる。
+結合と凝集の指標へ閾値を置く扱いは [principles/separation](../../principles/separation.md) に従う。
 特性を客観の尺度で測る規律は [principles/verification](../../principles/verification.md) に従う。
 全単位(コンテキスト・機構・surface・runtime)が検査対象として列挙されていることを、実フォルダとの照合で機械確認する。
 単位を追加したときに検査の対象へ自動で追従しない構成を、置かない。
@@ -129,4 +133,5 @@ Large test、全 mutation、全 SLO 計測は、影響が及ぶ変更、定期�
 失敗後の修正では失敗した検証と、修正した source の依存先と逆依存の consumer に対応する検証を再実行する。
 検証を省いたのでなく、影響がないことを差分と依存関係から示せない検証は実行する。
 性能の目標は [concerns/performance](../../concerns/performance.md)、耐障害性は [concerns/resilience](../../concerns/resilience.md) と [concerns/lifecycle](../../concerns/lifecycle.md)、security と privacy は [concerns/security](../../concerns/security.md) と [concerns/privacy](../../concerns/privacy.md) に従う。
+利用者面の体験は [concerns/experience](../../concerns/experience.md)、可達性と識別性は [concerns/accessibility](../../concerns/accessibility.md) に従う。
 言語ごとの具体の機構は [languages](../../languages/) が定め、道具の採用は [tools/inspection](../../tools/inspection.md) が定める。

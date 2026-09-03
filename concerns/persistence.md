@@ -5,6 +5,8 @@ persistence は、永続データの設計を全系で統べる規律である�
 principles の [data](../principles/data.md) が定める事実の追記と整合性の所在を、関係と制約による永続データの設計として具象化する。
 persistence は静止した関係と制約を扱い、書き込みパスの動的な確定は [transaction](./transaction.md) が扱う。
 永続化と一時データの実現に用いる store は単一とし、採用は [tools/platforms](../tools/platforms.md) が定める。
+cache の規律の正本は [caching](./caching.md) に置く。
+store の採用では、persistence は datastore と一時データの store の単一採用だけを扱う。
 
 ## 事実・状態・時間を別の関係に落とす
 
@@ -20,11 +22,11 @@ persistence は静止した関係と制約を扱い、書き込みパスの動�
 
 ### 完了条件
 分類の異なるデータが、別の関係または別のカラムに分かれている。
-リソースの状態の違いが、削除フラグでなく状態を表すイベントの関係で表されている。
-実世界の時刻と記録した時刻の両方を持つ対象は、それぞれ別のカラムに保存されている。
+リソースの状態の違いを表すイベントが、別の関係として表されている。
+実世界の時刻と記録した時刻が別のカラムであることの判定は、[data](../principles/data.md) の完了条件に従う。
 
 ### 禁止事項
-リソースの更新日時や削除フラグに、状態を表す別の関係の代わりをさせること。
+リソースの更新日時や削除フラグに、状態を表す別の関係の代わりをさせる禁止は、[data](../principles/data.md) の禁止事項に従う。
 実世界の時刻と記録した時刻を、同じカラムへ混ぜること。
 
 ### 行動
@@ -65,7 +67,7 @@ user_withdrawals(user_id, withdrawn_at)
 曖昧な語は関係の中身を説明せず、名前から事実と現在状態の区別を読み取れなくする。
 
 ### 完了条件
-状態の遷移が、行として追記される関係で表されている。
+状態の遷移が追記で残ることの判定は、[data](../principles/data.md) の完了条件に従う。
 追記が続く関係で、現在状態の導出が最新の区切りの行から先の事実に限られている。
 区切りの確定値が、元の関係と別の関係に記録されている。
 区切りより前の履歴を分離した場合、削除でなく分離先の保管に残っている。
@@ -73,7 +75,7 @@ user_withdrawals(user_id, withdrawn_at)
 事実を追記する関係の名前が出来事を表す名詞であり、情報・データ・履歴・管理・マスタ・記録という語を含んでいない。
 
 ### 禁止事項
-状態の遷移を、状態カラムの上書きで表すこと。
+状態の遷移を上書きで表す禁止は、[data](../principles/data.md) の禁止事項に従う。
 追記が続く関係で、毎回すべての履歴を読んで現在状態を導くこと。
 区切りより前の事実を、削除して失うこと。
 現在状態を導く関係や事実を追記する関係の名前に、意味を伝えない語を使うこと。
@@ -113,6 +115,34 @@ point_closings(user_id, balance, closed_at)
 point_balance_current(user_id, balance, version)
 ```
 
+## 追記した事実の版を読み出しで現在へ変換する
+
+### 要求
+追記した事実の構造を互換の保てない形へ変えるときは、新しい版で追記を始め、保存済みの行を書き換えない。
+保存された旧い版から現在の構造への変換は、読み出しの一箇所に集め、変換後の構造だけを内側へ渡す。
+wire 上のイベント契約の版の進化は [messaging](./messaging.md) の「イベント契約を版で進化させ、寛容に読む」が正本であり、この規律は保存済みの事実の読み出しだけを扱う。
+
+### 根拠
+事実を上書きや削除で消さない理由は [data](../principles/data.md) に従う。
+追記した事実の行を書き換える移行は、その定めに反し、監査の根拠を失わせる。
+版の変換を読み出しの一箇所に集めれば、保存済みの行を不変に保ったまま構造を進化でき、版の解釈が読み手ごとに割れない。
+変換が内側へ散ると、全ての読み手が全ての版を知り、版の追加が全ての読み手へ波及する。
+
+### 完了条件
+構造の変更後も、保存済みの事実の行が書き換えられていない。
+旧い版の読み出しが、一箇所の変換を通って現在の構造になっている。
+読み出しの変換より内側の処理が、版の分岐を持たない。
+
+### 禁止事項
+保存済みの事実の行を、構造の変更を理由に書き換えること。
+版の分岐を、読み出しの変換より内側へ持ち込むこと。
+版のない追記の関係に、互換の保てない構造の変更を加えること。
+
+### 行動
+追記した事実の構造を変えるときは、新しい版で追記を始める。
+読み出しの変換に、旧い版から現在の構造への変換を足す。
+内側に散った版の分岐を見つけたら、読み出しの変換の一箇所へ集める。
+
 ## 正規化して一つの事実を一箇所に置く
 
 ### 要求
@@ -130,7 +160,7 @@ point_balance_current(user_id, balance, version)
 導出できる値を独立した列として持たせると、元の値との整合を保つ処理を書き手が担うことになる。
 
 ### 完了条件
-一つの事実の正本が、一箇所だけに存在する。
+一つの事実の正本が一箇所だけであることの判定は、[data](../principles/data.md) の完了条件に従う。
 独立に問い合わせまたは更新する複数の属性が、意味ごとに別の列へ置かれている。
 JSON の一列に置く値が、単一の不可分な value または document として一体に検証され、一体に読み書きされている。
 技術的な控えでない導出値が、独立した列として保存されていない。
@@ -173,8 +203,9 @@ signed_documents(id, body_json)
 ## 関係の意図を制約で表す
 
 ### 要求
-整合性はアプリケーションの規約でなくデータ層の制約で守り、外部キー・一意・NOT NULL・検査で関係の意図を表す。
+外部キー・一意・NOT NULL・検査で関係の意図を表す。
 任意の項目は本体の nullable でなく、値があるときだけ行が存在する別の関係に切り出す。
+整合性をデータ層で守る規則は、[data](../principles/data.md) に従う。
 
 ### 根拠
 データ層の制約で守る理由は [data](../principles/data.md) に従う。
@@ -216,14 +247,37 @@ order_lines(
 order_line_notes(line_id REFERENCES order_lines(id) PRIMARY KEY, note NOT NULL)
 ```
 
+## 一つの操作の問い合わせ数を件数から独立させる
+
+### 要求
+一つの操作が発行する問い合わせの数を、扱う件数に比例させない。
+複数の対象をまとめて扱う操作は、対象ごとの問い合わせでなく、件数によらない数の問い合わせで結果を得る形に関係と操作を定める。
+
+### 根拠
+扱う件数に比例して問い合わせが増えると、件数の増加がそのまま往復の増加になり、索引の追加では解消しない。
+問い合わせの数が件数に依存する形は、関係と操作が対象の集合をまとめて扱えていない契約の欠陥であり、計測を待って入れる最適化ではない。
+件数によらない数の問い合わせで済む契約にすれば、扱う件数が増えても操作の往復は変わらない。
+
+### 完了条件
+一つの操作の問い合わせ数が、扱う件数に依存しない。
+複数の対象をまとめて扱う操作が、対象ごとの問い合わせでなく、件数によらない数の問い合わせで結果を得ている。
+
+### 禁止事項
+一つの操作で、扱う件数に比例した数の問い合わせを発行すること。
+件数に比例する問い合わせを、計測の根拠を待つ最適化として残すこと。
+
+### 行動
+件数に比例して増える問い合わせを見つけたら、一度の問い合わせへまとめる。
+まとめられない場合は、対象の集合を一度に扱える形へ関係と操作を直す。
+
 ## 物理の最適化は計測した根拠で行う
 
 ### 要求
-索引・分割・非正規化・属性値の縦持ちと、独立した属性をまとめる JSON 列は物理の最適化であり、計測した根拠があるときだけ行う。
+索引・分割・非正規化・属性値の縦持ちと、独立した属性をまとめる JSON 列は物理の最適化であり、[performance](./performance.md) の「計測の後にだけ最適化する」に従い、計測した根拠があるときだけ行う。
 最適化として JSON 列を置く場合は、schema と version を持たせる。
 頻繁に独立して検索、更新、制約するデータを、JSON 列や属性値の縦持ちで表さない。
 派生した JSON 列は、正本から再構築できるようにする。
-検索や分析のための二次の読みモデルも採用済み datastore の projection とし、正本から再構築できる派生として置いて正本にしない。
+検索や分析のための派生読みモデルも採用済み datastore の projection とし、正本から再構築できる導出として置いて正本にしない。
 
 ### 根拠
 物理の最適化は論理設計を歪め、非正規化や独立した属性をまとめる JSON 列は更新時の異常と検索の不能を招く。
@@ -238,165 +292,77 @@ JSON の schema と version がなければ、保存した document の解釈と
 最適化として置いた JSON 列が、schema と version を持っている。
 頻繁に独立して検索、更新、制約するデータが、JSON 列や縦持ちでなく正規化された関係で表されている。
 派生した JSON 列が、正本から再構築できる。
-二次の読みモデルが、正本から再構築でき、正本になっていない。
+派生読みモデルが、正本から再構築でき、正本になっていない。
 
 ### 禁止事項
 計測した根拠なく、非正規化や最適化目的の JSON 列を入れること。
 最適化として置く JSON 列に、schema または version を持たせないこと。
 頻繁に独立して検索、更新、制約するデータを、JSON 列や属性値の縦持ちで表すこと。
 派生した JSON 列を、正本から再構築できない形にすること。
-二次の読みモデルを正本として扱い、正本から作り直せない形にすること。
+派生読みモデルを正本として扱い、正本から作り直せない形にすること。
 
 ### 行動
 JSON 列が単一の不可分な value または document か、独立した属性をまとめる最適化かを判定する。
 独立した属性をまとめる JSON 列は、検索、更新、制約の要否を確認し、必要なら正規化する。
-最適化は、計測の後にだけ行う。
+最適化の判断には、問い合わせの実行計画を計測の入力に含める。
 最適化として残す JSON 列には schema と version を持たせる。
 派生した JSON 列は、正本から再構築する手順を検証する。
-二次の読みモデルは採用済み datastore の projection に置き、失っても正本から作り直せる形に保つ。
+派生読みモデルは採用済み datastore の projection に置き、失っても正本から作り直せる形に保つ。
 
-## 稼働中のスキーマを拡張・移行・収縮の段で進化させる
-
-### 要求
-稼働中の関係に互換を保てない変更を加えるときは、新しい構造を加える段、新旧の構造へ両方とも反映して既存データを移す段、旧い構造を落とす段の三段に分ける。
-読み出しを新しい構造へ切り替える段より前は、いつでも旧い構造へ戻せる状態を保つ。
-拡張の段で加える列や表は、移行が終わるまでの一時的なものであり、任意項目として恒久的に残さない。
-
-### 根拠
-段階に分ける理由と拡張・移行・収縮という一般の形は [evolution](../principles/evolution.md) に従い、ここでは関係の変更として具象化する。
-稼働中の関係を一度で置き換えると、新しい構造しか読めない実行中のコードと、旧い構造しか書かない実行中のコードが同時に存在する間、どちらかが失敗する。
-新しい構造を先に加えて両方へ反映すれば、新旧のコードが並行して動き続けられる。
-読み出しを新しい構造へ切り替えた後は、旧い構造だけに残る更新が届いても現在状態に反映されなくなるため、そこから先は戻れない。
-参照が消えたことを確かめてから旧い構造を落とせば、両立の期間を必要最小限に閉じられる。
-拡張で加えた列を任意項目のまま恒久的に残すと、移行が終わったのかを判別できず、収縮の段が永遠に来ない。
-
-### 完了条件
-互換を保てない変更が、追加・移行・除去の三段の順で進められている。
-読み出しの切り替えより前の各段で、旧い構造への後戻りができる。
-旧い構造の除去が、読み出しの切り替えと参照の消滅を確かめた後に行われている。
-拡張の段で加えた列や表が、移行の完了後に除去されているか、恒久の構造として制約を備え直されている。
-
-### 禁止事項
-稼働中の関係の構造を、三段を経ずに一度で置き換えること。
-旧い構造を、参照が残っている間に落とすこと。
-拡張の段の列を、任意項目として恒久的に残すこと。
-
-### 行動
-互換を保てない変更を見つけたら、新しい構造を一時的な nullable として加え、旧い構造と併存させる。
-新旧どちらの書き込みも新しい構造に反映されることを確かめてから、読み出しを新しい構造へ切り替える。
-参照が消えたことを確認し、旧い構造を落とす。
-適用の手段と配備から分離した順序は [process/migration](../process/migration.md) が定める。
-
-### 例
-
-稼働中に列の型を一度で変えると、変換できない既存値が失われるか、旧版のコードによる書き込みが失敗する。
-
-```sql
-ALTER TABLE payments ALTER COLUMN amount TYPE integer;
-```
-
-拡張では、新しい型の列を一時的に nullable として加え、古い列と併存させる。
-
-```sql
-ALTER TABLE payments ADD COLUMN amount_minor_unit integer;
-```
-
-移行では新旧両方の列へ書き込み、既存行を変換する。
-
-```sql
-UPDATE payments SET amount_minor_unit = round(amount * 100) WHERE amount_minor_unit IS NULL;
-```
-
-読み出しを新しい列へ切り替えた後、収縮で古い列を削除する。
-
-```sql
-ALTER TABLE payments DROP COLUMN amount;
-```
-
-## 別 datastore の移行を同じ時点で検証して切り替える
+## 派生の再構築を決定的にする
 
 ### 要求
-別 datastore への backfill は、開始前に source の high-water mark と各 record の version を記録し、その時点の consistent snapshot から行う。
-destination は version 付きの conditional upsert を使い、新しい live update を古い backfill で上書きしない。
-high-water mark より後の変更は、[transaction](./transaction.md) が定める migration event の outbox から追随する。
-logical canonical representation は、schema だけの差を除き、key の順序と値の normalization を固定する。
-cutover の completeness gate は、同じ watermark の source と destination について、件数、不変条件、logical canonical representation の checksum を照合する。
-cutover barrier は、旧い正本への write を fence して処理中の write を確定し、source の final watermark まで destination を追随させる。
-barrier 中の新しい request は、再試行可能な失敗として拒否するか durable queue に保持する。
-final completeness gate の通過後に、read と write の routing を原子的な一つの cutover で新しい正本へ切り替える。
-final completeness gate または cutover に失敗した場合は read と write の routing を旧い正本へ rollback し、保持した request を旧い正本へ適用してから受付を再開する。
-final completeness gate と cutover に成功した場合は保持した request を新しい正本へ適用してから受付を再開する。
-無停止を要件とする場合は、routing layer が同等の atomic fence と durable forwarding を実証する。
+派生読みモデルと現在状態の再構築は、保存済みの事実に記録された値だけから導き、実行時の時刻・乱数・外部の照会を入力にしない。
+経過時間と期間は、事実に記録された時刻から導く。
+再構築は状態の再計算に限り、その経路から外部への効果を起こさない。
 
 ### 根拠
-high-water mark と version がなければ、backfill と live update の前後関係を判定できない。
-同じ watermark の canonical representation を照合すれば、schema の物理差を除いた内容の一致を判定できる。
-write を fence して final watermark まで追随させれば、検証後に旧い正本へだけ確定する write を残さない。
-read と write を一つの cutover で切り替えれば、新旧を別々の正本として使う期間を作らない。
+再構築は同じ事実へ何度でも適用するため、実行時の時刻や外部の照会が導出に入ると、実行した時点で結果が変わり、復旧の手段として使えない。
+純粋な核であることは決定性を保証しない。殻が取得した実行時刻を引数で渡す形は核を純粋に保つが、再構築のたびに違う値が入る。
+純粋な核と効果の殻の分離は [effect](./effect.md) に従う。
+再構築の経路から外部への効果を起こすと、過去の事実の数だけ効果が繰り返され、送信や課金のような取り消せない効果を戻せない。
 
 ### 完了条件
-backfill が、記録済みの high-water mark の consistent snapshot と record version を使っている。
-destination の conditional upsert が、古い version による上書きを拒否している。
-logical canonical representation に、除外する schema 差、key の順序、値の normalization が定められている。
-件数、不変条件、checksum が、同じ watermark の source と destination で一致している。
-別 datastore の cutover では、write fence、final watermark までの追随、final completeness gate、read と write の原子的な切替の順が守られている。
-final completeness gate と cutover の成否に応じて、保持した request が一方の正本だけへ適用された後に受付が再開されている。
-新しい正本への昇格後にだけ、旧い正本への write と旧い経路が削除されている。
-無停止の移行では、routing layer の atomic fence と durable forwarding が同じ性質を満たすことが実証されている。
+再構築の導出が、事実に記録された値だけを入力にしている。
+経過時間と期間の導出が、事実に記録された時刻から行われている。
+再構築の経路に、外部への効果がない。
 
 ### 禁止事項
-record version を持たずに、live update と backfill を同じ destination へ書くこと。
-異なる watermark の source と destination を、completeness gate で比較すること。
-logical canonical representation の key 順序または値の normalization を、実装ごとの暗黙の挙動へ委ねること。
-旧い正本への write を fence せずに、final completeness gate と cutover を行うこと。
-read と write の routing を、別々の cutover で切り替えること。
-final completeness gate または cutover の失敗後に、旧い routing への rollback が終わる前に write 受付を再開すること。
-新しい正本への昇格前に、旧い正本への write または旧い経路を削除すること。
+再構築の導出で、実行時の時刻・乱数・外部の照会を入力にすること。
+再構築の経路から、外部への効果を起こすこと。
 
 ### 行動
-source の high-water mark と record version を記録し、consistent snapshot から backfill する。
-destination へ version 付き conditional upsert で書き、outbox を high-water mark より後へ追随させる。
-schema 差を除いた logical canonical representation を定め、key 順序と値の normalization を固定する。
-cutover 時は旧い write を fence し、処理中の write の確定後に final watermark を記録して、outbox をそこまで drain する。
-同じ final watermark で件数、不変条件、checksum を照合し、通過後に read と write の routing を原子的に切り替える。
-final completeness gate または cutover の失敗時は旧い routing へ rollback し、両方の成功時は新しい routing を維持して、それぞれ保持した request の適用後に受付を再開する。
-新しい正本への昇格を観測してから、旧い write と経路を削除する。
+再構築の導出が読む入力を洗い出し、事実に記録された値だけへ絞る。
+経過時間の導出を、実行時の時刻から事実に記録された時刻へ置き換える。
+状態を再計算する処理と外部へ働きかける処理を分け、再構築では前者だけを通す。
 
-## store を単一に採用する
+## datastore と一時データの store を単一に採用する
 
 ### 要求
 永続化する事実の正本の datastore は、単一とする。
-キャッシュと一時データの store は、単一とし、一時データの store を採用の外に増やさない。
+一時データの store は、単一とし、一時データの store を採用の外に増やさない。
 datastore と一時データの store の採用は、[tools/platforms](../tools/platforms.md) が定める。
-cache は正本の代わりにせず、cache-aside で読み書きし、各項目を期限で失効させて対象を特定して無効化する。
-HTTP の CDN と edge cache は応答の配送だけに使い、アプリケーションの状態または一時データの store にしない。
 
 ### 根拠
 datastore と一時データの store を project ごとに選び直すと、選定と運用の知識が分散し、置き換えの決定が単一の場所で完結しなくなる。
 単一の datastore と単一の一時 store の採用を tools に固定すれば、採用を変える決定は一箇所の編集で済む。
 一時データの store を増やすと、失効・整合・運用の手順がストアの数だけ増える。
-cache-aside と期限と対象別の無効化を固定すれば、cache の欠落を正本の欠落にせず、古い値の残存範囲を閉じられる。
-HTTP の配送 cache とアプリケーションの状態を分ければ、配信経路を正本や共有状態と誤認しない。
 
 ### 完了条件
 事実の正本の datastore が、単一であり、tools の採用と一致している。
-キャッシュと一時データの store が、単一であり、tools の採用と一致している。
+一時データの store が、単一であり、tools の採用と一致している。
 一時データの store が、採用の外に増えていない。
-cache の項目が期限で失効し、対象別に無効化され、cache の欠落時に正本から取得されている。
-CDN と edge cache が HTTP 応答の配送だけに使われ、アプリケーションの状態を保持していない。
 
 ### 禁止事項
 事実の正本の datastore を、project ごとに異なる製品へ置き換えること。
 一時データの store を、採用の外に増やすこと。
-cache を正本として扱うこと、期限または対象別の無効化を持たないこと。
-CDN または edge cache を、アプリケーションの状態または一時データの store として使うこと。
 
 ### 行動
 永続化と一時データの置き場を洗い出し、事実の正本と一時データを tools の採用へ統一する。
 新たな一時 store の追加を提案されたら、既存の採用で満たせないかを先に確かめる。
-cache は cache-aside で配置し、項目の期限と対象別の無効化を定める。
-CDN と edge cache は HTTP 応答の配送だけに限定する。
 
 ## 参照
 データの原則は [data](../principles/data.md)、論理設計と物理設計の分離は [modeling](../principles/modeling.md)、書き込みパスの一貫性は [transaction](./transaction.md) に従う。
+稼働中のスキーマと別 datastore への移行は [migration](./migration.md) に従う。
+cache の鮮度・無効化・不在・障害時の意味は [caching](./caching.md) の「cache を正本の控えに保つ」に従う。
 永続化の置き場は [structure/core/infrastructure](../structure/core/infrastructure.md)、言語別の実現は [languages](../languages/) が定める。

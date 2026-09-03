@@ -3,52 +3,7 @@
 ## 概要
 observability は、外部の出力から内部の状態を推し量れる状態を全系で統べる規律である。
 principles の [separation](../principles/separation.md) が定める副作用の境界隔離を全系の観測として具象化し、未知の原因を運用しながら絞り込めるようにする。
-
-## 文脈を一つにまとめて伝える
-
-### 要求
-trace・cancel・principal は一つの request context にまとめて伝え、処理は必要な文脈をその context から受け取る。
-相関の識別子を文脈に載せ、境界を越えて伝播させる。
-context は不変に保ち、値の追加は新しい context を生む。
-境界を越えて伝播する文脈に、秘密や個人情報を載せない。
-
-### 根拠
-trace・cancel・principal を別々の経路で引き回すと、引数が増え、伝え漏れが起きる。
-一つの context にまとめれば、境界を越える文脈が一貫して伝わる。
-相関の識別子を載せれば、分散した処理を一つの流れとして追える。
-context を不変にすれば、並行する処理が同じ context を共有しても壊れない。
-伝播する文脈は境界を越えて外まで流れるので、秘密や個人情報を載せると漏れる。
-
-### 完了条件
-trace・cancel・principal が、一つの request context で伝わっている。
-処理が、必要な文脈をその context から受け取っている。
-相関の識別子が、境界を越えて伝播している。
-request context が不変で、値の追加が新しい context を生んでいる。
-境界を越えて伝播する文脈に、秘密や個人情報が載っていない。
-
-### 禁止事項
-trace・cancel・principal を、別々の経路で個別に引き回すこと。
-相関の識別子を、境界で途切れさせること。
-request context を、破壊的に書き換えること。
-境界を越えて伝播する文脈に、秘密や個人情報を載せること。
-
-### 行動
-文脈を一つの request context にまとめ、境界を越えて伝播させる。
-相関の識別子を文脈に載せ、下流と外部呼び出しへ引き継ぐ。
-
-### 例
-
-trace、cancel、principal を別々に引き回すと、引数が増えて伝達漏れが起きる。
-
-```
-f(trace, cancel, principal, arg)
-```
-
-trace、cancel、principal、相関 ID を一つの context にまとめて伝える。
-
-```
-f(context, arg)
-```
+carrier の正本は [context-propagation](./context-propagation.md) であり、observability は trace と観測 event への付与を書く。
 
 ## 事実をイベントとして表し、構造化して出す
 
@@ -115,7 +70,7 @@ log({ event: "order_placed", orderId, actorId, traceId, at })
 ## 仕込みを境界の殻で行う
 
 ### 要求
-観測の仕込みは業務の核の外側、境界の殻で行い、業務の核に観測のための処理を混ぜない。
+純粋核と効果の殻の分離は [separation](../principles/separation.md) の「副作用を境界に集める」に従い、観測の仕込みは業務の核の外側、境界の殻で行う。
 telemetry の出力は、単一の規格に統一し、規格と collector の採用と収集の分離は [tools/platforms](../tools/platforms.md) が定める。
 利用者の環境で動く surface も観測の対象であり、そこでの収集も境界の殻で行う。
 利用者の環境から届く観測は、境界の外から来る値として検証してから使う。
@@ -208,7 +163,7 @@ record(metric); if (decision.rejected) reject()
 ## 参照
 業務の事実の種別は [messaging](./messaging.md) に従う。
 観測のための技術イベントは、この概念の扱いであり messaging の種別の外である。
-取り消しの伝播は [concurrency](./concurrency.md)、principal は [authorization](./authorization.md) に従う。
+carrier の正本は [context-propagation](./context-propagation.md) であり、trace と観測 event への付与は observability が正本である。
 観測に載せる個人情報の最小化と期限の消去は [privacy](./privacy.md) に従う。
 利用者の環境で動く surface の観測の配線は [structure/surfaces/viewer](../structure/surfaces/viewer/layout.md) が定める。
 観測の機構の置き場は [structure](../structure/)、言語別の実現は [languages](../languages/) が定める。

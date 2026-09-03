@@ -73,6 +73,7 @@ Reqnroll は自前のテスト実行系を持たないため、実行基盤は R
 採用は、TypeScript は @axe-core/playwright である。
 Rust と C# は、viewer を TypeScript に委ねるため採用を持たない。
 判断基準は、採用済みの Playwright の runner と page に対して、操作後の各状態で対比・ラベル・focus の機械判定できる違反を検査し、リポジトリの検証入口で止められることである。
+検査する規律は、[concerns/accessibility](../concerns/accessibility.md) に従う。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止と Playwright との互換性の喪失を再評価のトリガーとする。
 
 ## mutation
@@ -86,8 +87,8 @@ Rust と C# は、viewer を TypeScript に委ねるため採用を持たない�
 
 用途は、テストが実行していない箇所を見つけるカバレッジ計測である。
 採用は、Rust は cargo-llvm-cov、C# は Microsoft.Testing.Extensions.CodeCoverage、TypeScript は Vitest の coverage(v8 provider)である。
-判断基準は、採用済みのテスト実行系と統合して機械可読な coverage report を出力し、記録した下限を判定する検証入口の入力にできることである。
-撤回条件は、判断基準を満たさなくなることであり、保守の停止、report 形式、test runner との統合方法の変化を再評価のトリガーとする。
+判断基準は、採用済みのテスト実行系と統合して機械可読な coverage report を branch まで数える設定で出力し、記録した下限を判定する検証入口の入力にできることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止、report 形式、branch を数える設定の変化、test runner との統合方法の変化を再評価のトリガーとする。
 
 ## 構造検査
 
