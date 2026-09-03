@@ -34,6 +34,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [clippy](./clippy.md) | 規則の違反をビルドで止める linter である | Rust は clippy である |
 | [cucumber](./cucumber.md) | 業務語彙の executable spec を実行する道具である | Rust は cucumber の Rust 実装である |
 | [fred](./fred.md) | Valkey へ接続する client である | Rust は fred である |
+| [reqwest](./reqwest.md) | 外部 HTTP API を呼び出す非同期 client |
 | [openidconnect](./openidconnect.md) | BFF の token 管理・OIDC クライアント | Rust は tower-sessions のサーバー側セッションと openidconnect のトークンエンドポイントクライアントである |
 | [proptest](./proptest.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | Rust は proptest である |
 | [rustfmt](./rustfmt.md) | 表記を道具の既定で一意に揃える formatter である | Rust は rustfmt である |
