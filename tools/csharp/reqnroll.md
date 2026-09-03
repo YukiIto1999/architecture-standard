@@ -9,13 +9,13 @@ Reqnroll は自前のテスト実行系を持たないため、実行基盤は R
 ## 仕様
 
 ### 要求
-業務語彙の executable spec は、[verification](../../principles/verification.md) が定める同じ検査経路で、Reqnroll として実行する。
+業務語彙の executable spec は、[verification](../../principles/verification/README.md) が定める同じ検査経路で、Reqnroll として実行する。
 feature の各 step は、一つの step binding と、その binding が呼ぶ公開 interface の operation に対応させる。
 feature、step binding、公開 interface の対応は、各一覧を実体から導く drift 検査と executable spec の実行で検証する。
 Reqnroll の実行基盤は Reqnroll.TUnit を使い、単体・性質と同じ TUnit に一本化する。
 
 ### 根拠
-[verification](../../principles/verification.md) が定める、実行可能な仕様と実装を同じ検査経路に載せ、別成果物なら対応を検証する要求に、Reqnroll で応える。
+[verification](../../principles/verification/README.md) が定める、実行可能な仕様と実装を同じ検査経路に載せ、別成果物なら対応を検証する要求に、Reqnroll で応える。
 feature、step binding、公開 interface は別の成果物なので、対応の drift 検査がなければ一方だけ古くなりうる。
 Reqnroll は自前のテスト実行系を持たず、xUnit・NUnit・MSTest・TUnit のいずれかの実行基盤を要する。
 Reqnroll.TUnit を使えば、仕様の実行基盤が単体・性質と同じ TUnit に揃い、実行基盤を二つに割らずに済む。

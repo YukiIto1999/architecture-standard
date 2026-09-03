@@ -30,8 +30,8 @@ contracts/
 
 ## 依存方向
 
-依存の向きは [concerns/dependency](../../concerns/dependency.md) に従う。
-依存方向の規律は [concerns/dependency](../../concerns/dependency.md) に従う。
+依存の向きは [concerns/dependency](../../concerns/dependency/README.md) に従う。
+依存方向の規律は [concerns/dependency](../../concerns/dependency/README.md) に従う。
 
 | 参照元 | 参照可 |
 |---|---|

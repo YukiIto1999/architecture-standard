@@ -21,13 +21,13 @@ ide/
 
 ## 依存方向
 
-依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存の向きは [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 composition が adapters を組み立て、extension へ注入する。
 adapters は、extension の host port を実装し、composition を参照しない。
 ide の外との依存は [skeleton](../../skeleton.md) に従う。
 同じ extension をホストする runtime どうしは、互いに依存しない。
 それぞれが extension に依存する。
-依存方向の規律は [concerns/dependency](../../../concerns/dependency.md) に従う。
+依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## host port の実装
 

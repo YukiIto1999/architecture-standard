@@ -22,7 +22,7 @@ surface は、対話様式ごとの入口である。
 server・console・worker・extension・embedded では composition が、viewer では app が組立点を担う。
 app は、viewer における composition root の別名である。
 入口は、業務判断を持たず、入力を build_core が返す core API、remote API、または protocol の operation へ写像する。
-core を埋め込む surface は、[concerns/authentication](../../concerns/authentication.md) に従って認証境界で資格情報を検証し、actor を構築する。
+core を埋め込む surface は、[concerns/authentication](../../concerns/authentication/README.md) に従って認証境界で資格情報を検証し、actor を構築する。
 core の公開 API へは actor と検証済み入力だけを渡し、資格情報と認証方式の型を渡さない。
 自己ホストの surface は、core を埋め込み、自身でプロセスを起動する。
 埋め込みの surface は、core を埋め込み protocol を公開し、host が同梱して起動する。

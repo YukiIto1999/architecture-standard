@@ -33,7 +33,16 @@ for (const area of AREAS) {
 }
 
 function readLines(dir) {
-  const files = fs.readdirSync(path.join(ROOT, dir)).filter((f) => f.endsWith(".md"));
+  const files = [];
+  const stack = [dir];
+  while (stack.length > 0) {
+    const rel = stack.pop();
+    for (const entry of fs.readdirSync(path.join(ROOT, rel))) {
+      const relPath = `${rel}/${entry}`;
+      if (fs.statSync(path.join(ROOT, relPath)).isDirectory()) stack.push(relPath);
+      else if (entry.endsWith(".md")) files.push(relPath.slice(dir.length + 1));
+    }
+  }
   const out = [];
   for (const f of files) {
     const raw = fs.readFileSync(path.join(ROOT, dir, f), "utf8");
