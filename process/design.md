@@ -5,9 +5,9 @@
 
 ## 順序
 
-1. 解くべき問題を、観測された事実と解釈を分け、判断を左右する主張の根拠と決定状態を記録して定める([principles/verification](../principles/verification.md) の目的から要件を導くと根拠と決定状態を分けるに従う)。既存システムの意味が確立していなければ [recovery](./recovery.md) へ戻る。
-2. 候補の手段から上位の目的へ遡り、目的から例を挙げて要件へ降りる([principles/verification](../principles/verification.md) の目的から要件を導くに従う)。
-3. 要件と完了条件を定める([principles/verification](../principles/verification.md) の検証できる形で要件と制約を定めるに従う)。
+1. 解くべき問題を、観測された事実と解釈を分け、判断を左右する主張の根拠と決定状態を記録して定める([principles/requirements](../principles/requirements.md) の「目的から要件を導く」と「根拠と決定状態を分ける」に従う)。既存システムの意味が確立していなければ [recovery](./recovery.md) へ戻る。
+2. 候補の手段から上位の目的へ遡り、目的から例を挙げて要件へ降りる([principles/requirements](../principles/requirements.md) の「目的から要件を導く」に従う)。
+3. 要件と完了条件を定める([principles/requirements](../principles/requirements.md) の「検証できる形で要件と制約を定める」に従う)。
 4. 対象コンテキストの語彙を確かめる([principles/naming](../principles/naming.md) の語彙を統一するの行動に従う)。
 5. 概念・状態・制約を洗い出す([principles/modeling](../principles/modeling.md) の不正な状態を表現できなくするの行動に従い、欠けている制約まで出す)。
 6. アクターと処理の接続を図示し、複数のアクターが一つの処理へつながっていないかを確かめる([principles/separation](../principles/separation.md) の変更理由で分けるに従う)。
