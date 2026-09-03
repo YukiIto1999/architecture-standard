@@ -28,6 +28,7 @@ use-case の名前は、単一の動作を表す動詞と名詞の組とする�
 
 workflow は、同じコンテキストの複数の use-case を一つの業務の流れとして束ねる。
 workflow は、use-case の公開入口を呼び、順序、結果に基づく分岐、再開点、打ち消しの開始を担う。
+workflow の順序・分岐・再開・補償の規律は [concerns/workflow](../../concerns/workflow.md) に従う。
 個々の不変条件と状態遷移は domain に、単一の業務動作は use-case に置き、workflow に重複させない。
 分岐の意味を決める業務規則は domain の policy に置き、workflow は型付きの outcome に従って次の入口を選ぶ。
 workflow は、adapter の実装型を参照せず、直接 I/O を行わない。

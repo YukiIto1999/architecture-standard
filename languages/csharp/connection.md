@@ -4,7 +4,7 @@
 connection は、C# で副作用と依存の渡し方を扱う実現軸である。
 concerns の [effect](../../concerns/effect.md) が定める効果システムを、C# の型と機構で満たす。
 効果は `Effect<TRequirements, TFailure, TValue>` の遅延した値で表し、要求する依存を型に出し、境界でだけ実行する。
-[separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の単方向性に従う。
+[separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の「依存を内側へ一方向に向ける」の規律に従う。
 
 ## 効果を Effect 型で組む
 
@@ -240,7 +240,7 @@ TFailure を sealed record の階層にすると、網羅の switch で扱える
 配列要素、field、未解決の generic から来る default まで analyzer で完全には検出できない。
 tag 0 を有効な二状態から外し全ての観測で guard すれば、静的検査を抜けた default を成功や失敗として処理せず欠陥として閉じられる。
 外部依存の失敗は adapter で回復できる失敗と欠陥に分け、回復できる失敗を Failed に、欠陥を Defected にする。
-EffectExit の基底も非 sealed な abstract record で、外部 assembly からの派生を型だけでは防げない限界と、その手当ては [formation](./formation.md) の閉じた階層の規律に従う。
+EffectExit の基底も非 sealed な abstract record で、外部 assembly からの派生を型だけでは防げない限界と、その手当ては [formation](./formation.md) の「継承を判別共用体に限る」に従う。
 
 ### 完了条件
 Effect の終了が、Succeeded・Failed・Defected・Canceled に分かれている。

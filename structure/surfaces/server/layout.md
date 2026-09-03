@@ -81,7 +81,7 @@ cookie に __Host- 接頭辞を使う。
 
 ## 観測
 
-観測と request context の規律は [concerns/observability](../../../concerns/observability.md) に従う。
+観測の規律は [concerns/observability](../../../concerns/observability.md)、request context の規律は [concerns/context-propagation](../../../concerns/context-propagation.md) に従う。
 
 ## 生存と準備
 
@@ -93,7 +93,7 @@ server は、生存と準備の面を公開する。
 
 composition は、build_core で core を埋め込む。
 http の serve を組み立て、自身でプロセスを起動する。
-composition は、認証境界が構築した actor から request context を組み立て、core へ渡す。
+composition は、認証境界が構築した actor から [request context](../../../concerns/context-propagation.md) を組み立て、core へ渡す。
 core の公開 API へ資格情報、principal、token、claim、認証方式の型を渡さない。
 終了の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。

@@ -30,18 +30,18 @@ domain は、加えてログ、外部 SDK、非同期実行も参照しない。
 副作用と非同期は application と infrastructure が担う。
 効果の規律と、状態の遷移を副作用のない判断として書く方法は [concerns/effect](../../concerns/effect.md) に従う。
 
-## 業務の型と語彙
+## ドメイン型と語彙
 
-業務上の意味をもつ値は、value object で表す。
-識別子、金額、数量、状態、期間はその例である。
+業務上の意味をもつ値は、値オブジェクトで表し、domain に置く。
+どの値を値オブジェクトで表すかは [principles/modeling](../../principles/modeling.md) に従う。
 裸の string、number、boolean を業務上の意味に用いない。
-domain が用いてよいのは、domain の型と shared である。
+domain が用いてよいのは、ドメイン型と shared である。
 domain は、persistence の record、wire 型、DTO、contracts の型を参照しない。
 許可される依存は [layout](./layout.md) の依存方向に、型の設計は [concerns/types](../../concerns/types.md) に、命名は [principles/naming](../../principles/naming.md) に従う。
 
 ## イベント
 
 集約は、履歴として残すべき状態変更を domain イベントとして表す。
-ログではなくイベントで残すかの判断は [principles/data](../../principles/data.md) の履歴保持に従う。
+ログではなくイベントで残すかの判断は [principles/data](../../principles/data.md) の「事実は追記し、現在状態は導出する」に従う。
 integration event への写像は application が担い、配送経路の配線は composition が担う。
 配送の規律は [concerns/messaging](../../concerns/messaging.md) に従う。

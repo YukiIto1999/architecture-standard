@@ -14,7 +14,7 @@ adapter の名前は、実装の方式を表す語で付ける。
 DB driver、HTTP client、ファイルシステム、現在時刻の取得、乱数生成、外部 SDK は、この層でのみ用いる。
 キャッシュは、cache-aside の adapter として置く。
 キャッシュと一時データの store の採用は [tools/platforms](../../tools/platforms.md) が定める。
-キャッシュの失効、無効化、配送 cache の範囲は [concerns/persistence](../../concerns/persistence.md) に従う。
+キャッシュの失効、無効化、配送 cache の範囲は [concerns/caching](../../concerns/caching.md) の「cache を正本の控えに保つ」に従う。
 流入の制限は surface 側の境界に置き、置き場は各 surface の layout が定める。
 core から外部システムへの呼び出しの制限に使うカウンタは、この層で一時データの store に置く。
 副作用と非同期の境界の規律は [concerns/effect](../../concerns/effect.md) と [concerns/concurrency](../../concerns/concurrency.md) に従う。
@@ -31,6 +31,7 @@ store は、型付きの SQL を発行する薄い adapter として書く。
 起動は workflow を呼べる surface の layout に従う。
 schema migration の実装は infrastructure に置き、適用の順序は [process/migration](../../process/migration.md) が定める。
 個人データを消去する port の実装と管理操作は infrastructure に置き、消去する情報と期限は [concerns/privacy](../../concerns/privacy.md) に従う。
+管理操作と消去の証跡は [concerns/audit-trail](../../concerns/audit-trail.md) に従う。
 
 ## 外部システム
 

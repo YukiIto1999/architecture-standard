@@ -4,7 +4,7 @@
 connection は、TypeScript で副作用と依存の渡し方を扱う実現軸である。
 concerns の [effect](../../concerns/effect.md) が定める効果システムを、viewer・extension・host の軽い役割に合わせて満たす。
 副作用は、環境、AbortSignal、wall-clock の絶対期限を受け ResultAsync を返す遅延した関数で表す。
-[separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の単方向性に従う。
+[separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の「依存を内側へ一方向に向ける」の規律に従う。
 
 ## 効果を遅延した関数で表す
 
@@ -27,7 +27,7 @@ default parameter と destructuring の binding initializer は、factory 本体
 全ての公開 factory を `deferEffect` へ限定すれば、副作用を開始できる箇所を実行用の関数リテラルの内側へ集約できる。
 環境を引数に受けると、計算が要求する能力が型に出て、テストで差し替えられる。
 AbortSignal を通すと、取り消しを計算全体へ伝播できる。
-wall-clock の絶対期限を通すと、[coordination](./coordination.md) の Effect 専用 `withDeadlineEffect` が定める期限の正本を下流へ渡せる。
+wall-clock の絶対期限を通すと、[coordination](./coordination.md) の Effect 専用 `withDeadlineEffect` が定める期限の権威を下流へ渡せる。
 実行を UI のイベント境界に集めると、どこで副作用が起きるかが一箇所で読める。
 viewer・extension・host は server の効果と永続化を持たないので、重い効果型を作らず、この軽い形で足りる。
 

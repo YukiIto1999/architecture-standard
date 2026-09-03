@@ -3,7 +3,7 @@
 ## 概要
 retention は、TypeScript で永続化と共有される状態を扱う実現軸である。
 TypeScript は viewer・extension・web と ide の host の面を担い業務データの正本を持たないので、状態を権威の所在と local での寿命・共有範囲に分けて扱い、認証の秘密を保持しない。
-principles の [data](../../principles/data.md) が定める真実の所在の一意さと、concerns の [security](../../concerns/security.md) が定める境界の不信を、viewer は [structure/surfaces/viewer/state](../../structure/surfaces/viewer/state.md) の4分離で、extension は host の状態 API との切り分けで満たす。
+principles の [data](../../principles/data.md) が定める一つの事実を一箇所に置く形と、concerns の [security](../../concerns/security.md) が定める境界の不信を、viewer は [structure/surfaces/viewer/state](../../structure/surfaces/viewer/state.md) の4分離で、extension は host の状態 API との切り分けで満たす。
 
 ## 状態の機構
 
@@ -200,4 +200,4 @@ interface SecretPort { getToken(): Promise<string | undefined>; }
 ```
 
 ## 参照
-真実の所在は [data](../../principles/data.md)、境界の不信は [security](../../concerns/security.md)、Web BFF が token をブラウザへ公開しない規律は [structure/surfaces/server/layout](../../structure/surfaces/server/layout.md)、状態の4分離は [structure/surfaces/viewer/state](../../structure/surfaces/viewer/state.md)、extension の host 非依存の境界は [publication](./publication.md) に従う。
+一つの事実を一箇所に置く形は [data](../../principles/data.md)、境界の不信は [security](../../concerns/security.md)、Web BFF が token をブラウザへ公開しない規律は [structure/surfaces/server/layout](../../structure/surfaces/server/layout.md)、状態の4分離は [structure/surfaces/viewer/state](../../structure/surfaces/viewer/state.md)、extension の host 非依存の境界は [publication](./publication.md) に従う。

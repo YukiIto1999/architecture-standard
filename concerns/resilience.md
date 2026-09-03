@@ -64,7 +64,7 @@ principles の [data](../principles/data.md) が定める事実の追記と、[s
 外部依存への呼び出しは port を包む層で制御し、時間の上限・再試行・遮断をその層に置く。
 これらを業務の処理へ持ち込まない。
 port 層の時間上限は、文脈で伝わる絶対期限と合成し、短い方を採る。
-期限の伝播は [concurrency](./concurrency.md) に従う。
+期限の意味は [concurrency](./concurrency.md)、carrier の伝播は [context-propagation](./context-propagation.md) に従う。
 一つの呼び出しの再試行は、port を包む層のうち一箇所だけが担い、それより上流の層は同じ呼び出しを重ねて再試行しない。
 
 ### 根拠

@@ -28,7 +28,7 @@ async/await は非同期の流れを逐次の形で書け、コールバック�
 
 ### 要求
 取り消しは AbortSignal を渡して協調し、fetch には signal を渡す。
-wall-clock の絶対期限を時刻値として正本にし、境界から全ての下流へ渡す。
+wall-clock の絶対期限を時刻値として権威にし、境界から全ての下流へ渡す。
 外部 I/O、待機、下流 Effect の非同期境界は、共通の Effect 専用 `withDeadlineEffect(env, effect, deadlineAt, parentSignal, resumeSource)` からだけ呼ぶ。
 外部 I/O と待機の symbol は、TypeScript compiler API による AST 構造検査の設定に列挙する。
 下流 Effect の呼出は、callee expression の型が Effect の nominal brand を持つか、branded Effect へ代入可能かで識別する。
@@ -66,7 +66,7 @@ wall-clock の絶対期限を時刻値で渡せば、call を重ねても期限�
 非同期境界の前後と実行環境の再開時に `Date.now()` で確認すれば、suspend 中に期限を越えた仕事を再開後に続行しない。
 期限処理を `withDeadlineEffect` に集めれば、外部 I/O、待機、下流 Effect で確認と signal 合成の手順がずれない。
 外部 I/O と待機の symbol を検査設定に列挙し、callee expression の型に Effect の nominal brand があるかを調べれば、直接呼出を構文から判定できる。
-operation へ絶対期限を渡せば、下流でも局所の timeout signal が止まる環境に wall-clock の正本を失わない。
+operation へ絶対期限を渡せば、下流でも局所の timeout signal が止まる環境に wall-clock の権威を失わない。
 親の signal、active time の timeout signal、期限用の controller を `AbortSignal.any` で合成すれば、親の取消と局所の待ちの打ち切りを同じ下流の signal へ伝えられる。
 複数の入力が合成前から abort 済みなら、`AbortSignal.any` は iterable で先に現れる abort 済み signal の reason を選ぶ。
 期限確認後に期限用 signal の reason を直接送出すると、合成した signal が選んだ親の reason を上書きする。

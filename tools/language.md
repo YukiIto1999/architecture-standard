@@ -1,7 +1,7 @@
 # language
 
 language は、標準が実現を定める言語と基盤の版を定める。
-[README](./README.md) の選定の共通基準に従う。
+[README](./README.md) の「選定の共通基準」に従う。
 
 ## 対象言語
 

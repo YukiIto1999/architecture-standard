@@ -5,6 +5,8 @@ persistence は、永続データの設計を全系で統べる規律である�
 principles の [data](../principles/data.md) が定める事実の追記と整合性の所在を、関係と制約による永続データの設計として具象化する。
 persistence は静止した関係と制約を扱い、書き込みパスの動的な確定は [transaction](./transaction.md) が扱う。
 永続化と一時データの実現に用いる store は単一とし、採用は [tools/platforms](../tools/platforms.md) が定める。
+cache の規律の正本は [caching](./caching.md) に置く。
+store の採用では、persistence は datastore と一時データの store の単一採用だけを扱う。
 
 ## 事実・状態・時間を別の関係に落とす
 
@@ -253,80 +255,14 @@ JSON 列が単一の不可分な value または document か、独立した属�
 最適化は、計測の後にだけ行う。
 最適化として残す JSON 列には schema と version を持たせる。
 派生した JSON 列は、正本から再構築する手順を検証する。
-二次の読みモデルは採用済み datastore の projection に置き、失っても正本から作り直せる形に保つ。
-
-## 稼働中のスキーマを拡張・移行・収縮の段で進化させる
-
-### 要求
-稼働中の関係に互換を保てない変更を加えるときは、新しい構造を加える段、新旧の構造へ両方とも反映して既存データを移す段、旧い構造を落とす段の三段に分ける。
-読み出しを新しい構造へ切り替える段より前は、いつでも旧い構造へ戻せる状態を保つ。
-拡張の段で加える列や表は、移行が終わるまでの一時的なものであり、任意項目として恒久的に残さない。
-
-### 根拠
-段階に分ける理由と拡張・移行・収縮という一般の形は [evolution](../principles/evolution.md) に従い、ここでは関係の変更として具象化する。
-稼働中の関係を一度で置き換えると、新しい構造しか読めない実行中のコードと、旧い構造しか書かない実行中のコードが同時に存在する間、どちらかが失敗する。
-新しい構造を先に加えて両方へ反映すれば、新旧のコードが並行して動き続けられる。
-読み出しを新しい構造へ切り替えた後は、旧い構造だけに残る更新が届いても現在状態に反映されなくなるため、そこから先は戻れない。
-参照が消えたことを確かめてから旧い構造を落とせば、両立の期間を必要最小限に閉じられる。
-拡張で加えた列を任意項目のまま恒久的に残すと、移行が終わったのかを判別できず、収縮の段が永遠に来ない。
-
-### 完了条件
-互換を保てない変更が、追加・移行・除去の三段の順で進められている。
-読み出しの切り替えより前の各段で、旧い構造への後戻りができる。
-旧い構造の除去が、読み出しの切り替えと参照の消滅を確かめた後に行われている。
-拡張の段で加えた列や表が、移行の完了後に除去されているか、恒久の構造として制約を備え直されている。
-
-### 禁止事項
-稼働中の関係の構造を、三段を経ずに一度で置き換えること。
-旧い構造を、参照が残っている間に落とすこと。
-拡張の段の列を、任意項目として恒久的に残すこと。
-
-### 行動
-互換を保てない変更を見つけたら、新しい構造を一時的な nullable として加え、旧い構造と併存させる。
-新旧どちらの書き込みも新しい構造に反映されることを確かめてから、読み出しを新しい構造へ切り替える。
-参照が消えたことを確認し、旧い構造を落とす。
-適用の手段と配備から分離した順序は [process/migration](../process/migration.md) が定める。
-
-### 例
-
-稼働中に列の型を一度で変えると、変換できない既存値が失われるか、旧版のコードによる書き込みが失敗する。
-
-```sql
-ALTER TABLE payments ALTER COLUMN amount TYPE integer;
-```
-
-拡張では、新しい型の列を一時的に nullable として加え、古い列と併存させる。
-
-```sql
-ALTER TABLE payments ADD COLUMN amount_minor_unit integer;
-```
-
-移行では新旧両方の列へ書き込み、既存行を変換する。
-
-```sql
-UPDATE payments SET amount_minor_unit = round(amount * 100) WHERE amount_minor_unit IS NULL;
-```
-
-読み出しを新しい列へ切り替えた後、収縮で古い列を削除する。
-
-```sql
-ALTER TABLE payments DROP COLUMN amount;
-```
+派生読みモデルは採用済み datastore の projection に置き、失っても正本から作り直せる形に保つ。
 
 ## 別 datastore の移行を同じ時点で検証して切り替える
 
 ### 要求
-別 datastore への backfill は、開始前に source の high-water mark と各 record の version を記録し、その時点の consistent snapshot から行う。
-destination は version 付きの conditional upsert を使い、新しい live update を古い backfill で上書きしない。
-high-water mark より後の変更は、[transaction](./transaction.md) が定める migration event の outbox から追随する。
-logical canonical representation は、schema だけの差を除き、key の順序と値の normalization を固定する。
-cutover の completeness gate は、同じ watermark の source と destination について、件数、不変条件、logical canonical representation の checksum を照合する。
-cutover barrier は、旧い正本への write を fence して処理中の write を確定し、source の final watermark まで destination を追随させる。
-barrier 中の新しい request は、再試行可能な失敗として拒否するか durable queue に保持する。
-final completeness gate の通過後に、read と write の routing を原子的な一つの cutover で新しい正本へ切り替える。
-final completeness gate または cutover に失敗した場合は read と write の routing を旧い正本へ rollback し、保持した request を旧い正本へ適用してから受付を再開する。
-final completeness gate と cutover に成功した場合は保持した request を新しい正本へ適用してから受付を再開する。
-無停止を要件とする場合は、routing layer が同等の atomic fence と durable forwarding を実証する。
+派生読みモデルと現在状態の再構築は、保存済みの事実に記録された値だけから導き、実行時の時刻・乱数・外部の照会を入力にしない。
+経過時間と期間は、事実に記録された時刻から導く。
+再構築は状態の再計算に限り、その経路から外部への効果を起こさない。
 
 ### 根拠
 high-water mark と version がなければ、backfill と live update の前後関係を判定できない。
@@ -399,4 +335,6 @@ CDN と edge cache は HTTP 応答の配送だけに限定する。
 
 ## 参照
 データの原則は [data](../principles/data.md)、論理設計と物理設計の分離は [modeling](../principles/modeling.md)、書き込みパスの一貫性は [transaction](./transaction.md) に従う。
+稼働中のスキーマと別 datastore への移行は [migration](./migration.md) に従う。
+cache の鮮度・無効化・不在・障害時の意味は [caching](./caching.md) の「cache を正本の控えに保つ」に従う。
 永続化の置き場は [structure/core/infrastructure](../structure/core/infrastructure.md)、言語別の実現は [languages](../languages/) が定める。

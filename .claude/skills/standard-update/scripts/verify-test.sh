@@ -112,15 +112,19 @@ expect_pass "現行ツリーを受理する" "$fixture"
 
 fixture=$(make_fixture dynamic-concerns-ledger)
 cp "$fixture/concerns/privacy.md" "$fixture/concerns/extra.md"
-sed -i '/^| \[experience\]/a | [extra](./extra.md) | 台帳から追加した検査用の概念 |' "$fixture/concerns/README.md"
-sed -i 's/17概念/18概念/' "$fixture/README.md"
-sed -i 's/・experience。/・experience・extra。/' \
+concept_catalog=$(<"$fixture/.claude/skills/standard-update/SKILL.md")
+[[ "$concept_catalog" =~ (effect・concurrency・dependency(・[a-z-]+)+) ]]
+concept_anchor="${BASH_REMATCH[1]##*・}"
+sed -i "/^| \\[$concept_anchor\\]/a | [extra](./extra.md) | 台帳から追加した検査用の概念 |" "$fixture/concerns/README.md"
+sed -i 's/23概念/24概念/' "$fixture/README.md"
+sed -i "s/・$concept_anchor\\([・。]\\)/・$concept_anchor・extra\\1/" \
   "$fixture/.claude/skills/standard-update/SKILL.md" \
   "$fixture/.claude/skills/standard-update/references/concerns.md"
+printf '検査用の横断規律は [concerns/extra](../../concerns/extra.md) に従う。\n' >> "$fixture/structure/core/domain.md"
 expect_pass "concerns の期待数を台帳から導出する" "$fixture"
 
 fixture=$(make_fixture concept-three-way-mismatch)
-sed -i 's/17概念/16概念/' "$fixture/README.md"
+sed -i 's/23概念/22概念/' "$fixture/README.md"
 expect_fail "concerns の台帳・実ファイル・root 記載を三者照合する" "$fixture" "概念数が不一致"
 
 fixture=$(make_fixture concept-table-scope)
