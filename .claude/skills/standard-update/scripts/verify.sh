@@ -293,7 +293,7 @@ fi
 echo
 echo "=== 6. process/tools/言語 ecosystem の単位数 ==="
 numeric_ok=1
-process_expected=8
+process_expected=10
 process_readme_rows=$(markdown_section_file_table_rows process/README.md 単位)
 process_actual=$(find process -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
 echo "process: 台帳=$process_readme_rows 実ファイル=$process_actual 期待=$process_expected"
