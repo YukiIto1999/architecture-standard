@@ -27,7 +27,7 @@ process は、順序の不遵守か確認点の未照合を major に写す。
 root の判定の枠にない磨きは違反に数えず、minor の提案として区別する。
 照合で見つけた標準本文の矛盾は、root の [README](../README.md) の矛盾の解決に従って報告する。
 標準への改訂提案は、root の [README](../README.md) の標準の参照に従い、project の docs/revision に置く。
-意味回収を行った場合は、監査の判断を左右した主張が [principles/verification](../principles/verification.md) の根拠と決定状態を分けるの完了条件を満たすことを確かめる。
+意味回収を行った場合は、監査の判断を左右した主張が [principles/requirements](../principles/requirements.md) の「根拠と決定状態を分ける」の完了条件を満たすことを確かめる。
 
 ## 範囲外
 
