@@ -48,7 +48,7 @@ oracle が得にくい対象は、metamorphic な関係で検証する。
 replay は、イベントから projection を再構築して検証する。
 再構築の決定性は、同じイベント列を空の状態へ二度適用して結果が一致することで検証する。二度の一致は決定性の証明ではなく、実行時の入力と外部への効果を早期に見つける検査である。
 信頼できない入力は、契約を駆動にした fuzz で検証する。
-契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools の inspection](../../tools/inspection.md) が定める。
+契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools](../../tools/) の各 ecosystem が定める。
 公開 API の契約への適合も、同じ機構で検証する。
 protocol 経路の適合は、生成物と実装の drift の検査と conformance で検証する。
 契約 generator の生成結果は、全 variant の判別子と payload を serialize と deserialize で往復する generated-contract round-trip で検証し、repository の検証入口で失敗として扱う。
@@ -92,9 +92,9 @@ canonical operation から core API、surface の binding、公開 interface の
 全単位(コンテキスト・機構・surface・runtime)が検査対象として列挙されていることを、実フォルダとの照合で機械確認する。
 単位を追加したときに検査の対象へ自動で追従しない構成を、置かない。
 構造で検証できない規則は、型と lint・実行テスト・人手レビューのいずれかに割り当てる。
-structure と languages の各規律は、検証手段を名指しで持つ。
+structure と tools の各規律は、検証手段を名指しで持つ。
 どの手段にも割り当てない規則を、残さない。
-言語ごとの検査の機構は [languages](../../languages/) が定める。
+言語ごとの検査の機構は [tools](../../tools/) が定める。
 
 ## テストの有効性
 
@@ -134,4 +134,4 @@ Large test、全 mutation、全 SLO 計測は、影響が及ぶ変更、定期�
 検証を省いたのでなく、影響がないことを差分と依存関係から示せない検証は実行する。
 性能の目標は [concerns/performance](../../concerns/performance.md)、耐障害性は [concerns/resilience](../../concerns/resilience.md) と [concerns/lifecycle](../../concerns/lifecycle.md)、security と privacy は [concerns/security](../../concerns/security.md) と [concerns/privacy](../../concerns/privacy.md) に従う。
 利用者面の体験は [concerns/experience](../../concerns/experience.md)、可達性と識別性は [concerns/accessibility](../../concerns/accessibility.md) に従う。
-言語ごとの具体の機構は [languages](../../languages/) が定め、道具の採用は [tools/inspection](../../tools/inspection.md) が定める。
+言語ごとの具体の機構と道具の採用は [tools](../../tools/) の各 ecosystem が定める。

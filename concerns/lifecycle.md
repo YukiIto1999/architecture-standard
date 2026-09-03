@@ -169,4 +169,4 @@ onSignal(async () => { stopAccepting(); await drain(deadline); })
 ## 参照
 起動時の検証は [configuration](./configuration.md)、取り消しの協調は [concurrency](./concurrency.md) に従う。
 確定点は [transaction](./transaction.md)、冪等性と再実行・過負荷の抑制は [resilience](./resilience.md)、再配送は [messaging](./messaging.md) に従う。
-面の構造は [structure](../structure/)、言語別の機構は [languages](../languages/) が定める。
+面の構造は [structure](../structure/)、言語別の機構は [tools](../tools/) が定める。

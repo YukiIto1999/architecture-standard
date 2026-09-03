@@ -18,7 +18,7 @@ http と protocol は canonical から導き、generated は canonical と bindi
 ## 記述
 
 canonical は、単一の契約記述言語で記述し、その記述を契約の単一の正本とする。
-契約記述言語と生成器の採用は、[tools/build](../../tools/build.md) が定める。
+契約記述言語と生成器の採用は、[tools/build/typespec](../../tools/build/typespec.md) が定める。
 
 ## 集合の操作
 

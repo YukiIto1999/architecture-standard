@@ -59,8 +59,6 @@ running な配備先を、手続きで直接書き換えない。
 反映時の生存と準備の規律は [concerns/lifecycle](../../concerns/lifecycle.md) に従う。
 delivery の内部は、反映する配備先の単位に対応させて分ける。
 一つの配備先への反映定義を一つの単位にまとめる。
-datastore の schema migration は、新しい版のアプリケーションへ切り替える前に適用する。
-migration の実施は delivery の反映手順の一部とし、アプリケーションの起動処理へ埋め込まない。
 migration が満たす拡張・移行・収縮の段の区切りは [concerns/migration](../../concerns/migration.md) に従う。
 
 ## provenance
@@ -73,5 +71,5 @@ attestation は、署名と内容を検証するまで、安全の証明にな�
 ## secrets
 
 secrets は、secret を at-rest 暗号化して保つ。
-暗号化の機構の採用は、[tools/platforms](../../tools/platforms.md) が定める。
+暗号化の機構の採用は、[tools/platforms/sops](../../tools/platforms/sops.md) が定める。
 secret の型・読み込み・回転・失効・監査は、[concerns/secrets](../../concerns/secrets.md) に従う。

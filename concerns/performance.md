@@ -89,4 +89,4 @@ cache を用いる経路では、cache が空の状態を代表負荷の条件�
 単純な形の既定と投機の排除は、principles の [construction](../principles/construction.md) の「単純な形を既定にする」と「投機的で説明できない要素を作らない」に従う。
 永続データの物理の最適化への適用は [persistence](./persistence.md)、並行の構造は [concurrency](./concurrency.md) に従う。
 永続化の改善も、計測した制約を一つずつ解消するこの規律に従う。
-言語別の機構は [languages](../languages/) が定める。
+言語別の機構は [tools](../tools/) が定める。

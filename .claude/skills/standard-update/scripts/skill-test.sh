@@ -117,7 +117,7 @@ expect_text \
 expect_text \
   "typescript は別metricを重複として無効化しない" \
   'cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない.*必須の検証へ割り当てていないため' \
-  languages/typescript/inspection.md
+  tools/typescript/inspection.md
 expect_eval_prompt_no_text \
   "無変更evalは不要な一次資料調査を指示しない" \
   3 \
