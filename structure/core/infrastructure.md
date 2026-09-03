@@ -13,7 +13,7 @@ adapter の実装型は、配線する composition のみが参照する。
 adapter の名前は、実装の方式を表す語で付ける。
 DB driver、HTTP client、ファイルシステム、現在時刻の取得、乱数生成、外部 SDK は、この層でのみ用いる。
 キャッシュは、cache-aside の adapter として置く。
-キャッシュと一時データの store の採用は [tools/platforms](../../tools/platforms.md) が定める。
+キャッシュと一時データの store の採用は [tools/platforms/valkey](../../tools/platforms/valkey.md) が定める。
 キャッシュの失効、無効化、配送 cache の範囲は [concerns/caching](../../concerns/caching.md) の「cache を正本の控えに保つ」に従う。
 流入の制限は surface 側の境界に置き、置き場は各 surface の layout が定める。
 core から外部システムへの呼び出しの制限に使うカウンタは、この層で一時データの store に置く。
@@ -21,7 +21,7 @@ core から外部システムへの呼び出しの制限に使うカウンタは
 
 ## 永続化
 
-datastore の採用は [tools/platforms](../../tools/platforms.md) が定める。
+datastore の採用は [tools/platforms/postgresql](../../tools/platforms/postgresql.md) が定める。
 事実、状態、projection、派生読みモデルの性質は [concerns/persistence](../../concerns/persistence.md) に従い、確定点と outbox の性質は [concerns/transaction](../../concerns/transaction.md) に従う。
 application の store port、projection の読み取り port、外部 datastore の adapter は infrastructure に置く。
 store は record 型を定義し、domain と record の写像を持つ。
@@ -38,8 +38,8 @@ schema migration の実装は infrastructure に置き、適用の順序は [pro
 外部システムへの接続は、client と adapter を持つ。
 外部システムの wire 型と、domain との写像は、外部システムのファイル内に置く。
 認可の判定の adapter は、認可の engine を呼ぶ。
-認可の engine の採用は [tools/platforms](../../tools/platforms.md) が定める。
-判定の cache と engine の datastore の採用は [tools/platforms](../../tools/platforms.md) が定める。
+認可の engine の採用は [tools/platforms/openfga](../../tools/platforms/openfga.md) が定める。
+判定の cache と engine の datastore の採用は [tools/platforms](../../tools/platforms/README.md) が定める。
 認可のモデルと判定の規律は [concerns/authorization](../../concerns/authorization.md) に従う。
 
 ## 論理と物理の分離
@@ -49,5 +49,5 @@ record 型は、`persistence/` の中だけに置く。
 domain と record の写像は store ファイル内に、domain と wire 型の写像は外部システムのファイル内に置く。
 domain、application、composition は、record 型と外部システムの wire 型を参照しない。
 論理の型と名前で区別する。
-型名の接尾辞の規約は [languages](../../languages/) が定める。
+型名の接尾辞の規約は [tools](../../tools/) が定める。
 型の分離は [concerns/types](../../concerns/types.md) に従う。

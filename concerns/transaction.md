@@ -308,4 +308,4 @@ transaction { const events = place(order); record(events) }
 ## 参照
 整合性と集約は [data](../principles/data.md)、効果とエラーは [effect](./effect.md) に従う。
 配送は [messaging](./messaging.md)、冪等と再試行は [resilience](./resilience.md) に従う。
-書き込みパスの所有を実現する構造は [structure/core/composition](../structure/core/composition.md)、言語別の実現は [languages](../languages/) が定める。
+書き込みパスの所有を実現する構造は [structure/core/composition](../structure/core/composition.md)、言語別の実現は [tools](../tools/) が定める。

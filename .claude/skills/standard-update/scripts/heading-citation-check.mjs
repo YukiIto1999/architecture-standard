@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // 鉤括弧「」で引用された規律名が、同じ行の link 先 file の見出しに逐語一致するかを検査する。
-// 対象は標準本文(principles/concerns/structure/languages/tools/process + root README.md)。
+// 対象は標準本文(principles/concerns/structure/tools/tools/process + root README.md)。
 // fenced code の中は見出しとしても引用としても数えない。
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 
 const ROOT = process.cwd();
-const AREAS = ["principles", "concerns", "structure", "languages", "tools", "process"];
+const AREAS = ["principles", "concerns", "structure", "tools", "process"];
 
 function mdFiles(dir) {
   const out = [];

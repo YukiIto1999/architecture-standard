@@ -268,4 +268,4 @@ onAccumulatedFact(event) {
 ## 参照
 outbox の書き込みは [transaction](./transaction.md)、冪等・再試行・行き止まりの正本は [resilience](./resilience.md)、契約の独立は [separation](../principles/separation.md) に従う。
 手順の所有と補償の正本は [workflow](./workflow.md) であり、messaging は event の契約と配送・消費を書く。
-言語別の実現は [languages](../languages/) が定める。
+言語別の実現は [tools](../tools/) が定める。

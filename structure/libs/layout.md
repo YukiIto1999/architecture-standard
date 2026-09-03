@@ -2,7 +2,7 @@
 
 libs は、root に置く境界であり、言語拡張と技術基盤の機構を収める。
 機構は、業務を参照しない。
-横断的な規律は [concerns](../../concerns/) に、言語別の実現は [languages](../../languages/) に置く。
+横断的な規律は [concerns](../../concerns/) に、言語別の実現は [tools](../../tools/) に置く。
 libs は [skeleton](../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成
@@ -97,7 +97,7 @@ mechanism: <mechanism>
 これは実行時の層に属さず、出荷物にも含まれず、対象とは別のコンパイル単位になる。
 compile 時のツールは、libs の機構として置く。
 compile 時のツールは、ビルド時にだけ参照され、実行時の依存に現れない。
-言語ごとの検査と生成の機構、およびその構築と参照の仕方は [languages](../../languages/) が定める。
+言語ごとの検査と生成の機構、およびその構築と参照の仕方は [tools](../../tools/) が定める。
 
 ## 検査の実行機
 
@@ -113,7 +113,7 @@ arch test は、Testing package の内部参照が同じ機構の公開 domain �
 libs の機構の共有は、機構ごとに独立したライブラリリポジトリから取り込む。
 リポジトリの名は、機構名に言語の接尾辞を付ける。
 target は、取り込む機構の origin、exact commit、`libs/<mechanism>` の path を追跡対象にする。
-取り込みの機構は [tools/build](../../tools/build.md) が、bootstrap で path へ materialize する順序は [process/bootstrap](../../process/bootstrap.md) が定める。
+取り込みの機構は [tools/build/git-submodule](../../tools/build/git-submodule.md) が、bootstrap で path へ materialize する順序は [process/bootstrap](../../process/bootstrap.md) が定める。
 独立リポジトリの機構では、README.md を消費側の文書とする。
 独立した機構リポジトリの git は、製品であるコード、テスト、消費側文書と、arch test の入力となる製品メタデータであるルートの `spec.md` を管理し、clone に含める。
 target は、取り込んだ同じ製品メタデータを `libs/<mechanism>/spec.md` で参照できるようにする。

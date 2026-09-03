@@ -1,7 +1,7 @@
 # contracts の構造
 
 contracts のフォルダ構成と、層間の依存・正本の規則を定める。
-横断的な規律は [concerns](../../concerns/) に、言語別の実現は [languages](../../languages/) に置く。
+横断的な規律は [concerns](../../concerns/) に、言語別の実現は [tools](../../tools/) に置く。
 各層の内部は、[canonical](./canonical.md)・[http](./http.md)・[protocol](./protocol.md)・[generated](./generated.md) で規定する。
 
 ## フォルダ構成
@@ -30,7 +30,7 @@ contracts/
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../concerns/dependency.md) に従う。
 依存方向の規律は [concerns/dependency](../../concerns/dependency.md) に従う。
 
 | 参照元 | 参照可 |

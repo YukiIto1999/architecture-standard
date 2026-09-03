@@ -1,7 +1,7 @@
 # core の構造
 
 core のフォルダ構成と、単位間の依存・契約・粒度の規則を定める。
-横断的な規律は [concerns](../../concerns/) に、言語別の実現は [languages](../../languages/) に置く。
+横断的な規律は [concerns](../../concerns/) に、言語別の実現は [tools](../../tools/) に置く。
 各層と composition の内部は、[domain](./domain.md)・[application](./application.md)・[infrastructure](./infrastructure.md)・[composition](./composition.md) で規定する。
 
 ## フォルダ構成

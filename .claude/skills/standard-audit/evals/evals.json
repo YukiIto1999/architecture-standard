@@ -32,7 +32,7 @@
     {
       "id": 3,
       "model": "opus",
-      "prompt": "architecture-standard の tools/build.md と、その直接の参照先だけを読み取り専用で監査してください。採用の正本、層間MECE、事実の正確さ、toolsの4行書式を確認し、修正せず指摘だけ返してください。",
+      "prompt": "architecture-standard の tools/build/nx.md と、その直接の参照先だけを読み取り専用で監査してください。採用の正本、層間MECE、事実の正確さ、toolsの4行書式を確認し、修正せず指摘だけ返してください。",
       "expected_output": "指定fileのscoped auditとしてtoolsの責務と直接参照の整合を重点確認する。",
       "files": [],
       "expectations": [

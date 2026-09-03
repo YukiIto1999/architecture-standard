@@ -69,10 +69,16 @@ Large の実行環境は、対象として記録した外部資源だけを接�
 
 ## 段階実行
 
-検証は、Small・Medium・Large の順で実行する。
-前の段が落ちたら、後の段を実行しない。
+実行の順序と失敗時の停止は、[process/verification](../../process/verification.md) が定める。
 各段は、runner が許可する資源と配置が一致した test を選ぶ。
 conformance と e2e も、実依存に対応する段で実行する。
+
+
+## タスク実行の正本
+
+検証と release の手順は、単一の正本として root のタスク定義に集約する。
+外部の検証サービスがファイルの置き場を強制する場合、その置き場には正本を呼ぶ最小の起動だけを置く。
+タスクを編成する orchestrator の採用は、[tools/build](../../tools/build/README.md) が定める。
 
 ## 依存方向
 

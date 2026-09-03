@@ -54,24 +54,21 @@ delivery は、immutable な成果物を配備先へ反映する。
 成果物の semantic versioning による版づけと不変性は [concerns/security](../../concerns/security.md) に、generated の drift 検査は [contracts/generated](../contracts/generated.md) に従う。
 配備先の desired state を、宣言として版で管理する。
 running な配備先を、手続きで直接書き換えない。
-配備の回帰は、新しい版を切るのでなく、前の不変な版の desired state へ宣言を戻して反映する。
-配備先への反映は、準備の面が処理可能を宣言してから振り分け、全インスタンスの同時離脱を避ける。
+反映の振り分け、回帰の戻し方、migration を適用する時点は、[process/release](../../process/release.md) が定める。
 反映時の生存と準備の規律は [concerns/lifecycle](../../concerns/lifecycle.md) に従う。
 delivery の内部は、反映する配備先の単位に対応させて分ける。
 一つの配備先への反映定義を一つの単位にまとめる。
-datastore の schema migration は、新しい版のアプリケーションへ切り替える前に適用する。
-migration の実施は delivery の反映手順の一部とし、アプリケーションの起動処理へ埋め込まない。
 migration が満たす拡張・移行・収縮の段の区切りは [concerns/migration](../../concerns/migration.md) に従う。
 
 ## provenance
 
 provenance は、成果物の出所の証明と署名を、配備の前に検証できるようにする。
 SLSA provenance と SBOM と署名の生成は、release が行う。
-配備の前に、provenance と署名を検証し、検証できない成果物を配備しない。
+配備の前の provenance と署名の検証は、[process/release](../../process/release.md) が定める。
 attestation は、署名と内容を検証するまで、安全の証明にならない。
 
 ## secrets
 
 secrets は、secret を at-rest 暗号化して保つ。
-暗号化の機構の採用は、[tools/platforms](../../tools/platforms.md) が定める。
+暗号化の機構の採用は、[tools/platforms/sops](../../tools/platforms/sops.md) が定める。
 secret の型・読み込み・回転・失効・監査は、[concerns/secrets](../../concerns/secrets.md) に従う。

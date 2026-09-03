@@ -16,7 +16,7 @@ description: architecture-standard 自体を読み取り専用で監査し、重
   - 対象から明示的にリンクされた直接の参照先は、依頼が範囲追加を許す場合だけ監査対象へ加える。
   - 判定 context が許可されていなければ読まず、その基準を要する軸を未確認にする。
   - 検索、列挙、読取、機械検査を両 allowlist の外へ向けない。directory 全体の glob、逆参照、利用側の探索は、直接影響の立証を依頼された場合に限る。
-- **full audit**: 「全体」「白紙から再監査」のように明示された場合。principles、concerns、languages、structure、tools、process の全域を対象にする。
+- **full audit**: 「全体」「白紙から再監査」のように明示された場合。principles、concerns、structure、tools、process の全域を対象にする。
 
 範囲を広げた事実を隠さない。指定範囲の外で問題を見つけても、直接影響がなければ別件として分ける。
 
@@ -40,10 +40,10 @@ description: architecture-standard 自体を読み取り専用で監査し、重
 
 - **A 思想の足場**: root `README.md` の目的、領域、標準の単一性、配置規則に照らし、各規律の前提と所有者がずれていないか。
 - **B 文章**: 冗長、曖昧、一文多義、進捗語、不要な記号がないか。
-- **C 書式**: 標準本文は、principles が H1 直下のリードと必須5節、concerns / languages が概要・必須5節・参照、structure が layout 書式、tools が4行 entry、process が手順書式か。skill は frontmatter と実行手順が host で成立するか。
+- **C 書式**: 標準本文は、principles が H1 直下のリードと必須5節、concerns と tools の言語 ecosystem が概要・必須5節・参照、structure が layout 書式、tools の採用 file が4行 entry、process が手順書式か。skill は frontmatter と実行手順が host で成立するか。
 - **D 整合性**: folder 内の重複、矛盾、参照方向の逆転がないか。
 - **E 単一標準**: 標準側へ条件分岐や例外を作らず、逸脱を project ADR へ送っているか。
-- **F 層間 MECE**: principles=なぜ、concerns=言語非依存の概念、languages=言語機構、structure=一つの部の境界と中身、tools=採用、process=順序と確認点に分かれているか。
+- **F 層間 MECE**: principles=なぜ、concerns=言語非依存の概念、structure=一つの部の境界と中身、tools=採用と言語ごとの実現、process=順序と確認点に分かれているか。
 - **G 自己充足**: 要求、完了条件、禁止事項と参照だけで遵守を判定できるか。
 - **H 作り切り**: 要求範囲の欠落、または未要求の投機がないか。
 - **I 事実**: 一次資料と現行版に照らして正確か。実コード例は対象言語で成立するか。

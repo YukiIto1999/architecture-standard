@@ -24,7 +24,7 @@ worker/
 
 ## 依存方向
 
-依存は一方向に保つ。
+依存の向きは [concerns/dependency](../../../concerns/dependency.md) に従う。
 composition が jobs・queue・schedule を組み立て、core を埋め込む。
 jobs・queue・schedule は、composition を参照しない。
 worker の外との依存は [skeleton](../../skeleton.md) に従う。
@@ -43,7 +43,7 @@ worker は、派生読みモデルの定常・定期の再構築 workflow を jo
 queue runner は、queue から実行可能な job を取り出して起動する。
 schedule runner は、定期実行の時点に達した job を起動する。
 長期にわたる stateful な workflow は、標準の対象外とする。
-queue と schedule の engine は、project の選択の対象でなく、languages が固定する。
+queue と schedule の engine は、project の選択の対象でなく、[tools](../../../tools/) が固定する。
 並行度、順序、排他、背圧、durable receipt、ack、processing completion、冪等な確定、再配送、失敗の隔離は、[concerns/concurrency](../../../concerns/concurrency.md)、[concerns/messaging](../../../concerns/messaging.md)、[concerns/resilience](../../../concerns/resilience.md)、[concerns/transaction](../../../concerns/transaction.md) に従う。
 
 ## 組み立てと起動
@@ -57,4 +57,4 @@ lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle.md) に�
 観測の規律は [concerns/observability](../../../concerns/observability.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration.md) に従う。
-queue と schedule の機構は [languages](../../../languages/) が定める。
+queue と schedule の機構は [tools](../../../tools/) が定める。
