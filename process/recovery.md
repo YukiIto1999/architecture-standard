@@ -1,12 +1,12 @@
 # 意味回収の順序
 
 意味回収は、既存システムの修正または評価より先に、判断に必要な目的・語彙・状態・責務・依存・実行時の流れを根拠付きで復元する。
-根拠の扱いは [principles/verification](../principles/verification.md) の根拠と決定状態を分けるに、概念と状態の性質は [principles/modeling](../principles/modeling.md) と [principles/separation](../principles/separation.md) に従う。
+根拠の扱いは [principles/requirements](../principles/requirements.md) の「根拠と決定状態を分ける」に、概念と状態の性質は [principles/modeling](../principles/modeling.md) と [principles/separation](../principles/separation.md) に従う。
 
 ## 順序
 
 1. 対象 repo に記録された build・test・主要な実行例の入口を実行し、再現できた結果と再現できない範囲を記録する。入口の修復は行わない。
-2. 判断または変更を左右する主張を抽出し、根拠を `Known`・`Derived`・`Observed`・`Assumed`・`Unknown` に、確認済みの意図と変更先を別軸の `Intended`・`Target` に分類する。
+2. 判断または変更を左右する主張を抽出し、[principles/requirements](../principles/requirements.md) の「根拠と決定状態を分ける」に従って根拠の状態と決定の状態を分類する。
 3. 一次資料、契約、入口の文書、利用者から、system purpose、actor、主要な use case、bounded context を回収する。
 4. 主要概念を、コード・DB・API・UI・error・log・test の表現から横断して追い、一つのコンテキスト内の語彙と境界間の対応を回収する。
 5. 判断に関わる state ごとに、意味、kind、authority、owner、writer、reader、lifecycle、derivation、invariant を回収する。
@@ -17,8 +17,8 @@
 
 ## 確認点
 
-判断を左右する `Known` と `Observed` に file・行・一次資料・コマンド結果のいずれかがあり、`Derived` に導出元があることを確かめる。
-`Observed` を `Intended` とみなさず、一般的な慣習または領域知識でシステム固有の仕様を補っていないことを確かめる。
+主張の分類が、[principles/requirements](../principles/requirements.md) の「根拠と決定状態を分ける」の完了条件を満たすことを確かめる。
+一般的な慣習または領域知識で、システム固有の仕様を補っていないことを確かめる。
 目的に必要な view だけを作り、該当しない map や空の節を定型で増やしていないことを確かめる。
 重要な state と値について、authority、owner、lifecycle、derivation と、順方向・逆方向の実行経路を説明できることを確かめる。
 判断に必要な主張が根拠付きで確定したか `Unknown` として残り、その `Unknown` に依存する判断が後続へ渡されていない時点で止める。

@@ -96,7 +96,6 @@ domain event と integration event の区別は [messaging](./messaging.md) に�
 
 ### 完了条件
 状態の変更・参照の更新と、公開する integration event の outbox への記録が、同一の書き込みパスにある。
-integration event が、outbox を経て配送されている。
 異なる datastore への migration event が、現在の正本への write と同じ transaction で outbox に記録されている。
 
 ### 禁止事項
@@ -106,7 +105,6 @@ outbox の記録を経ずに、イベントを配送すること。
 
 ### 行動
 状態の変更と outbox への記録を、一つのトランザクションにまとめる。
-配送は outbox から読み出して行う。
 異なる datastore への移行では、現在の正本への write と migration event の outbox 記録だけを同じ transaction へ置き、destination へ冪等に再配送する。
 配送は [messaging](./messaging.md) に従う。
 
@@ -239,7 +237,7 @@ retry(key, responseProof)
 ## 部分確定を不可視にする
 
 ### 要求
-部分的に確定した状態を成功として扱わない。
+確定より前の状態を成功として公開しない定めは、「一つの確定点を持つ」に従う。
 失敗の後に外部から見える状態は、再実行または調査で判定できるようにする。
 
 ### 根拠
@@ -247,11 +245,10 @@ retry(key, responseProof)
 失敗後の状態が判定できれば、再実行で回復するか調査するかを決められる。
 
 ### 完了条件
-部分的に確定した状態が、成功として公開されていない。
 失敗の後に外部から見える状態が、再実行または調査で判定できる。
 
 ### 禁止事項
-部分的に確定した状態を、成功として公開すること。
+失敗の後の外部から見える状態を、再実行でも調査でも判定できない形に放置すること。
 
 ### 行動
 失敗時は確定点までで止め、外部への効果は確定後か outbox 経由にする。

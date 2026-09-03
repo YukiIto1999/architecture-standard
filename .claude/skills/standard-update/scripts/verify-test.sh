@@ -112,15 +112,16 @@ expect_pass "現行ツリーを受理する" "$fixture"
 
 fixture=$(make_fixture dynamic-concerns-ledger)
 cp "$fixture/concerns/privacy.md" "$fixture/concerns/extra.md"
-sed -i '/^| \[experience\]/a | [extra](./extra.md) | 台帳から追加した検査用の概念 |' "$fixture/concerns/README.md"
-sed -i 's/17概念/18概念/' "$fixture/README.md"
-sed -i 's/・experience。/・experience・extra。/' \
+sed -i '/^| \[accessibility\]/a | [extra](./extra.md) | 台帳から追加した検査用の概念 |' "$fixture/concerns/README.md"
+sed -i 's/24概念/25概念/' "$fixture/README.md"
+sed -i 's/・accessibility。/・accessibility・extra。/' \
   "$fixture/.claude/skills/standard-update/SKILL.md" \
   "$fixture/.claude/skills/standard-update/references/concerns.md"
+printf '検査用の横断規律は [concerns/extra](../../concerns/extra.md) に従う。\n' >> "$fixture/structure/core/domain.md"
 expect_pass "concerns の期待数を台帳から導出する" "$fixture"
 
 fixture=$(make_fixture concept-three-way-mismatch)
-sed -i 's/17概念/16概念/' "$fixture/README.md"
+sed -i 's/24概念/23概念/' "$fixture/README.md"
 expect_fail "concerns の台帳・実ファイル・root 記載を三者照合する" "$fixture" "概念数が不一致"
 
 fixture=$(make_fixture concept-table-scope)
@@ -249,6 +250,49 @@ expect_fail "@ で始まる製品名を正規名の境界で検出する" "$fixt
 fixture=$(make_fixture product-build-registry)
 printf '\nNx は、task graph の orchestrator である。\n' >> "$fixture/structure/tests/layout.md"
 expect_pass "build の採用名を tools registry に含める" "$fixture"
+
+fixture=$(make_fixture structure-ledger-stray-file)
+cp "$fixture/structure/core/domain.md" "$fixture/structure/core/stray.md"
+expect_fail "台帳に無い structure 本文ファイルを検出する" "$fixture" "structure/core/stray"
+
+fixture=$(make_fixture structure-ledger-missing-entry)
+sed -i 's/| layout・methods・doubles |/| layout・methods |/' "$fixture/structure/README.md"
+expect_fail "台帳から落ちた structure 本文ファイルを検出する" "$fixture" "structure/tests/doubles"
+
+fixture=$(make_fixture structure-ledger-subdirectory)
+cp "$fixture/structure/surfaces/viewer/state.md" "$fixture/structure/surfaces/server/state.md"
+expect_fail "surface 単位の台帳の欠落を検出する" "$fixture" "structure/surfaces/server/state"
+
+fixture=$(make_fixture structure-ledger-added-pair)
+cp "$fixture/structure/core/domain.md" "$fixture/structure/core/policy.md"
+sed -i 's/| layout・domain・application・infrastructure・composition |/| layout・domain・application・infrastructure・composition・policy |/' "$fixture/structure/README.md"
+expect_pass "台帳と本文ファイルを揃えた追加を受理する" "$fixture"
+
+fixture=$(make_fixture heading-citation-valid)
+printf '\n保存の形は [persistence](./persistence.md) の「事実を追記する形で残す」に従う。\n' >> "$fixture/concerns/transaction.md"
+expect_pass "link 先の見出しと一致する鉤括弧引用を受理する" "$fixture"
+
+fixture=$(make_fixture heading-citation-same-file)
+printf '\n同じ file の「事実を追記する形で残す」と [data](../principles/data.md) に従う。\n' >> "$fixture/concerns/persistence.md"
+expect_pass "同一 file 内の見出し引用を受理する" "$fixture"
+
+fixture=$(make_fixture heading-citation-drift)
+printf '\n文脈の伝播は [observability](./observability.md) の「存在しない規律」に従う。\n' >> "$fixture/concerns/transaction.md"
+expect_fail "link 先の見出しに無い規律名の名指しを検出する" "$fixture" "正本の見出しに無い規律名"
+
+fixture=$(make_fixture overlap-nonheading-quote)
+overlap_line='検査用の「これは見出しではない引用でありそのまま重複判定に含まれる」文である。'
+printf '\n%s\n' "$overlap_line" >> "$fixture/principles/comment.md"
+printf '\n%s\n' "$overlap_line" >> "$fixture/concerns/privacy.md"
+expect_fail "見出しでない鉤括弧引用の逐語一致は検出する" "$fixture" "逐語一致の候補あり"
+
+fixture=$(make_fixture vocabulary-legacy-term)
+printf '\n二次の読みモデルを許す。\n' >> "$fixture/concerns/persistence.md"
+expect_fail "統一済み語彙の旧表記を検出する" "$fixture" "統一済み語彙の旧表記"
+
+fixture=$(make_fixture orphan-principle)
+printf '# orphan\n' > "$fixture/principles/orphan.md"
+expect_fail "下位の層から参照されない principles file を検出する" "$fixture" "下位の層から参照されない file"
 
 printf '\nテスト: %d passed, %d failed\n' "$passed" "$failed"
 if [ "$failed" -eq 0 ]; then

@@ -6,12 +6,12 @@ runtime は、被ホストの surface をホストする具体の host である
 
 ## 構成
 
-| host | ホストする面 | platform |
-|---|---|---|
-| [web](./web/layout.md) | viewer | browser |
-| [desktop](./desktop/layout.md) | viewer | native の shell |
-| [mobile](./mobile/layout.md) | viewer | mobile の shell |
-| [ide](./ide/layout.md) | extension。UI を持つ場合は viewer も | IDE |
+| host | ホストする面 | platform | ファイル |
+|---|---|---|---|
+| [web](./web/layout.md) | viewer | browser | layout |
+| [desktop](./desktop/layout.md) | viewer | native の shell | layout |
+| [mobile](./mobile/layout.md) | viewer | mobile の shell | layout |
+| [ide](./ide/layout.md) | extension。UI を持つ場合は viewer も | IDE | layout |
 
 ## 共通の形
 

@@ -5,7 +5,7 @@ host は、runtimes の ide が担う。
 host の機能を remote API または埋め込み protocol の operation へ写像する。
 host に求める能力を port として定義する。
 host 非依存で、host の分岐を持たない。
-UI の体験は [concerns/experience](../../../concerns/experience.md) に従う。
+UI の体験は [concerns/experience](../../../concerns/experience.md)、可達性と識別性の規律は [concerns/accessibility](../../../concerns/accessibility.md) に従う。
 extension は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成

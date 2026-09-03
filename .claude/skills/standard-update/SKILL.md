@@ -12,7 +12,7 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 ## 領域
 
 - `principles/` — 言語に依存しない設計原則。なぜを所有する。
-- `concerns/` — 言語非依存の17概念。effect・concurrency・dependency・types・persistence・transaction・messaging・authentication・authorization・observability・privacy・security・configuration・resilience・performance・lifecycle・experience。複数の部または全層へ効く規律を所有する。
+- `concerns/` — 言語非依存の24概念。effect・concurrency・dependency・types・context-propagation・persistence・caching・migration・transaction・messaging・workflow・authentication・authorization・privacy・security・secrets・audit-trail・observability・configuration・resilience・performance・lifecycle・experience・accessibility。複数の部または全層へ効く規律を所有する。
 - `languages/` — rust、csharp、typescript による上位規律の実現を所有する。
 - `structure/` — 一つの部の境界、中身、依存方向を所有する。検証技法の選択、性質から型・静的検査・実行テスト・計測への割当、mutation・coverage・実行範囲は `structure/tests/methods.md` が所有する。
 - `tools/` — language・stack・build・inspection・services・platforms の6分割で、採用と判断基準を所有する。
@@ -196,6 +196,6 @@ skill の場所が current directory にない host では、host が与える `
 - `scripts/skill-package-check.sh` — 実作業用の frontmatter、3 skill の eval schema、script 構文の検査。
 - `scripts/skill-test.sh` — 評価対象へ公開しない、期待解答と mutation を含む evaluator 回帰検査。
 - `scripts/run-task-evals.mjs` / `scripts/run-trigger-evals.mjs` — skill-creator を使えない host の隔離評価入口。
-- `scripts/discipline-sections.awk` / `scripts/naming-registry-check.mjs` / `scripts/verbatim-overlap.mjs` — verifier が呼び出す内部実装。個別の公開入口にはしない。
+- `scripts/discipline-sections.awk` / `scripts/naming-registry-check.mjs` / `scripts/verbatim-overlap.mjs` / `scripts/heading-citation-check.mjs` — verifier が呼び出す内部実装。個別の公開入口にはしない。
 - `evals/evals.json` / `evals/trigger-evals.json` — task 品質と発火境界の評価集合。
 - `standard-audit` — 標準自体の読み取り専用監査。

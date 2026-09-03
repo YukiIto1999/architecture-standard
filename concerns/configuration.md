@@ -2,7 +2,8 @@
 
 ## 概要
 configuration は、設定の扱いの方針を全系で統べる規律である。
-principles の [separation](../principles/separation.md) が定める副作用の境界隔離とコンテキストの自己完結を、全系の設定の扱いとして具象化する。
+principles の [separation](../principles/separation.md) が定める副作用の隔離と関心の隠蔽を、全系の設定の扱いとして具象化する。
+secret の正本は [secrets](./secrets.md) であり、configuration は secret 参照の型と起動時の解決を書く。
 
 ## 設定を型付きの値で扱う
 
@@ -70,54 +71,6 @@ const config: Config = loadConfig(); serve(config.port)
 ### 行動
 設定の源を一つに定め、ADR に記録する。
 定めた源から、起動時に設定をまとめて読み込む。
-
-## secret を分けて専用の型に封じる
-
-### 要求
-secret は設定と分けて扱い、専用の型に封じる。
-secret を平文で保存せず、ログや応答に出さない。
-設定には secret の値でなく参照を置き、値は起動時に専用の仕組みから解決する。
-secret は回転・失効・期限・監査の対象にする。
-
-### 根拠
-secret を一般の設定と同じに扱うと、ログや応答に紛れて漏れる。
-専用の型に封じれば、表示や直列化を型で塞げる。
-平文の保存は、保存先の漏洩でそのまま流出する。
-値でなく参照を置き起動時に解決すれば、値が設定やコードに残らない。
-回転・失効・期限の対象にすれば、漏れた secret の有効な期間を短くできる。
-
-### 完了条件
-secret が、設定と分けて専用の型に封じられている。
-secret が、平文で保存されていない。
-secret が、ログや応答に出ていない。
-設定が secret の値でなく参照を持ち、値が起動時に解決されている。
-secret が、回転・失効・期限と、誰がいつ使ったかの監査の対象になっている。
-リポジトリを公開しても、資格情報が漏れない。
-
-### 禁止事項
-secret を、平文の設定やコードに置くこと。
-secret を、ログや応答に出すこと。
-secret を、ビルドの成果物やイメージへ焼き込むこと。
-secret を、必要のない子プロセスへまで継承させること。
-
-### 行動
-secret を専用の型に封じ、表示と直列化を塞ぐ。
-設定には参照だけを置き、値は起動時に専用の仕組みから解決する。
-secret の保存・回転・監査は、専用の仕組みへ委ねる。
-
-### 例
-
-secret を一般の設定と同じ値として扱うと、ログへ漏れる。
-
-```
-log(config)
-```
-
-secret を専用の型へ封じ、表示と直列化を塞ぐ。平文を取り出せる経路は必要な箇所へ限定する。
-
-```
-class Secret { toString() { return "***" }; expose(): string { ... } }
-```
 
 ## 環境差分を設定値で表す
 
@@ -207,4 +160,5 @@ flag の判定を一点に集約し、不要になった flag を在庫として
 
 ## 参照
 分離の原則は [separation](../principles/separation.md)、検証に失敗した起動の停止は [lifecycle](./lifecycle.md)、secret の伝送は [security](./security.md) に従う。
+secret の正本は [secrets](./secrets.md) であり、configuration は secret 参照の型と起動時の解決を書く。
 設定の読み込みと flag の配置は、プロセスを起動する [structure/surfaces](../structure/surfaces/) または [structure/runtimes](../structure/runtimes/) が定め、言語別の機構は [languages](../languages/) が定める。

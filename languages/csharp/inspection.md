@@ -2,7 +2,7 @@
 
 ## 概要
 inspection は、C# で検証を扱う実現軸である。
-principles の [verification](../../principles/verification.md) が定める検証の機械化と、[evolution](../../principles/evolution.md) が定める構造を機械で守ることを、C# の機構で満たす。
+principles の [verification](../../principles/verification.md) が定める検証の機械化を、C# の機構で満たす。
 
 ## 実行
 
@@ -241,7 +241,7 @@ NoWarn で CS1591 を抑止しない。
 summary の先頭行の体言止め・句読点禁止・一行の体裁と、param・typeparam・returns・value の網羅は Roslyn analyzer で検査する。
 当該宣言内の直接の throw など、構文と semantic model で判定できる欠陥に対応する exception は Roslyn analyzer で検査する。
 呼び出し先から伝播して当該宣言の契約になる欠陥と exception の対応は、公開範囲を問わずレビューで確かめる。
-内容が、実効的な可視境界を基準に、境界外へ公開される宣言では外部契約を、同一境界内だけの宣言では内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致しているかは、レビューで確かめる。
+内容が、実効的な可視境界を基準に、境界外へ公開される宣言では外部契約を、同一境界内だけの宣言では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致しているかは、レビューで確かめる。
 
 ### 根拠
 CS1591 は `GenerateDocumentationFile` を有効にしたときだけ発火する既定 level 4 の警告で、エラー扱いにしなければビルドを止めない。
@@ -250,7 +250,7 @@ NoWarn は CS1591 を丸ごと無効化し、欠落の検出そのものを消�
 全宣言での存在と項目と体裁の検査は Roslyn analyzer で実現する。
 直接の throw などは、構文と semantic model から当該宣言の exception と対応づけられる。
 呼び出し先から伝播する欠陥が当該宣言の契約に含まれるかは、呼び出しの意味を読むレビューが要る。
-内容が可視性に応じた外部契約または内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致しているかの判断は意味を読む必要があり、機械化できない。
+内容が可視性に応じた外部契約または内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致しているかの判断は意味を読む必要があり、機械化できない。
 
 ### 完了条件
 CS1591 が、`WarningsAsErrors` でエラー扱いになっている。
@@ -259,7 +259,7 @@ CS1591 が、NoWarn で抑止されていない。
 summary の先頭行の体裁と param・typeparam・returns・value の網羅が、Roslyn analyzer で検査されている。
 当該宣言内で機械判定できる欠陥と exception の対応が、Roslyn analyzer で検査されている。
 呼び出し先から伝播して当該宣言の契約になる欠陥と exception の対応が、公開範囲を問わずレビューで確かめられている。
-内容が、境界外へ公開される宣言では外部契約を、同一境界内だけの宣言では内部契約を述べ、名前や実装の言い換えでなく、ユビキタス言語と一致していることが、レビューで確かめられている。
+内容が、境界外へ公開される宣言では外部契約を、同一境界内だけの宣言では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致していることが、レビューで確かめられている。
 
 ### 禁止事項
 CS1591 を、NoWarn で抑止すること。
@@ -275,7 +275,7 @@ Roslyn analyzer で当該宣言内の機械判定できる欠陥と exception �
 
 ## 規則と検証機構の対応
 
-formation・translation・connection・retention・coordination・publication・conventions・inspection の8実現軸の各規律を、検証手段へ写像する。
+formation・translation・connection・retention・coordination・publication・inspection の7実現軸と全域規律 conventions の各規律を、検証手段へ写像する。
 inspection 軸は、この文書の規律を定める H2 見出しを対応表へ全て列挙する。
 標準 repository の verifier は、各実現軸の規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
@@ -299,7 +299,7 @@ inspection 軸は、この文書の規律を定める H2 見出しを対応表�
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、production の SonarAnalyzer.CSharp 命名規則、test project では Sonar の method 命名規則だけを抑止して命名 analyzer で test attribute 付き entry の snake_case とその他 method の .NET 命名を検査) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化。公開要素のコメント欠落)+analyzer(Roslyn analyzer。全宣言のコメント存在・param/typeparam/returns/value・先頭行・当該宣言内で機械判定できる欠陥の exception)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET の命名照合) |
-| 全域 | branch coverage と safety-critical decision | 計測(Microsoft.Testing.Extensions.CodeCoverage で project 記録の branch 下限を検証入口で判定)+構造検査・実行テスト([structure/tests の methods](../../structure/tests/methods.md) が定める safety analysis と MC/DC case の一対一照合) |
+| 全域 | branch coverage と safety-critical decision | 計測(branch を数える設定は Microsoft.Testing.Extensions.CodeCoverage の cobertura 出力と managed instrumentation であり、その branch 情報から project 記録の branch 下限を検証入口で判定)+構造検査・実行テスト([structure/tests の methods](../../structure/tests/methods.md) が定める safety analysis と MC/DC case の一対一照合) |
 | translation | 境界で一度だけ parse してドメイン型へ移す | 型(JsonSerializerContext・required・JsonExtensionData)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | translation | 公開するエラーを境界で problem+json へ写す | 実行テスト(ProblemDetails の単体テスト) |
 | translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
@@ -334,5 +334,5 @@ inspection 軸は、この文書の規律を定める H2 見出しを対応表�
 | publication | 可視性 | 型(internal・file 修飾子) |
 
 ## 参照
-検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification.md)、構造を守る進化は [evolution](../../principles/evolution.md) に従う。
+検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

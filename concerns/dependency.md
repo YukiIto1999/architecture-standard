@@ -2,7 +2,7 @@
 
 ## 概要
 dependency は、依存の向きと合成を全系で統べる規律である。
-principles の [separation](../principles/separation.md) が定める依存の単方向性とコンテキストの自己完結を、全系の依存の扱いとして具象化する。
+principles の [separation](../principles/separation.md) が定める依存方向と関心の隠蔽を、全系の依存の扱いとして具象化する。
 依存はゼロにするのでなく、安定で抽象なものへ向ける。
 効果が要求する依存の型での表現は [effect](./effect.md) が定め、dependency はその配線を統べる。
 
@@ -230,5 +230,5 @@ framework・DB の選択は組立点まで遅らせ、内側は port だけを�
 
 ## 参照
 依存と境界の原則は [separation](../principles/separation.md)、効果の合成は [effect](./effect.md) に従う。
-投機の排除は principles の [construction](../principles/construction.md) の要求に従う。
+投機の排除は principles の [construction](../principles/construction.md) の「投機的で説明できない要素を作らない」に従う。
 プロセス全体の組立点は [structure/surfaces](../structure/surfaces/) と [structure/runtimes](../structure/runtimes/) が、core の module factory は [structure/core/composition](../structure/core/composition.md) が定める。言語別の依存注入は [languages](../languages/) が定める。

@@ -4,7 +4,7 @@ viewer は、GUI の surface である。
 feature ごとのスライスに分け、host に求める能力を ui port として定義する。
 host 非依存で、host の分岐を持たない。
 状態の分離は [state](./state.md)、見た目は [styling](./styling.md) で規定する。
-利用者に向けた体験の規律は [concerns/experience](../../../concerns/experience.md) に従う。
+利用者に向けた体験の規律は [concerns/experience](../../../concerns/experience.md)、可達性と識別性の規律は [concerns/accessibility](../../../concerns/accessibility.md) に従う。
 viewer は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成
@@ -64,6 +64,6 @@ viewer は、host の分岐を持たない。
 エラーの報告と telemetry の収集は、viewer の業務の判断に混ぜず、境界の殻で行う([concerns/observability](../../../concerns/observability.md) に従う)。
 収集は ui port として定義し、host が実装を注入する。
 viewer 自体は、収集の機構を持たない。
-個人情報を含む観測は、[concerns/observability](../../../concerns/observability.md) の個人情報の規律に従う。
+観測に個人情報が載る場合は、[concerns/privacy](../../../concerns/privacy.md) に従う。
 収集の機構は [languages](../../../languages/) が定める。
 host の実装は [runtimes](../../runtimes/) に従う。

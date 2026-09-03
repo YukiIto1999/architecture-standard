@@ -11,6 +11,27 @@ const ROOT = process.cwd();
 const SEED = 10;
 const THRESHOLD = 18;
 
+// 名指し規則(root README)は正本の見出しの逐語引用を要求するため、
+// 「」で囲まれた見出しの引用は意図した一致であり、重複判定から除く。
+const AREAS = ["principles", "concerns", "structure", "languages", "tools", "process"];
+const HEADINGS = new Set();
+for (const area of AREAS) {
+  const stack = [path.join(ROOT, area)];
+  while (stack.length > 0) {
+    const dir = stack.pop();
+    for (const entry of fs.readdirSync(dir)) {
+      const p = path.join(dir, entry);
+      if (fs.statSync(p).isDirectory()) stack.push(p);
+      else if (entry.endsWith(".md")) {
+        for (const line of fs.readFileSync(p, "utf8").split("\n")) {
+          const m = line.match(/^#{1,3} (.+)$/);
+          if (m) HEADINGS.add(m[1].trim());
+        }
+      }
+    }
+  }
+}
+
 function readLines(dir) {
   const files = fs.readdirSync(path.join(ROOT, dir)).filter((f) => f.endsWith(".md"));
   const out = [];
@@ -23,6 +44,7 @@ function readLines(dir) {
       if (/^\s*#/.test(line)) return; // heading / section marker
       if (/^\s*\|/.test(line)) return; // table row
       line = line.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1"); // link text keep, path drop
+      line = line.replace(/「([^「」]+)」/g, (whole, name) => (HEADINGS.has(name) ? `\u0000${dir}/${f}:${idx}\u0000` : whole));
       line = line.trim();
       if (line.length < SEED) return;
       out.push({ file: `${dir}/${f}`, lineNo: idx + 1, text: line });
