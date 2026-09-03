@@ -81,7 +81,7 @@ principles の [construction](../principles/construction.md) が定める単純�
 並列の実行の寿命・取り消し・並行度は [concurrency](./concurrency.md) に従う。
 
 ## 参照
-単純な形の既定と投機の排除は、principles の [construction](../principles/construction.md) の要求に従う。
+単純な形の既定と投機の排除は、principles の [construction](../principles/construction.md) の「単純な形を既定にする」と「投機的で説明できない要素を作らない」に従う。
 永続データの物理の最適化への適用は [persistence](./persistence.md)、並行の構造は [concurrency](./concurrency.md) に従う。
 永続化の改善も、計測した制約を一つずつ解消するこの規律に従う。
 言語別の機構は [languages](../languages/) が定める。

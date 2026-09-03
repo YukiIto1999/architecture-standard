@@ -2,7 +2,7 @@
 
 ## 概要
 authorization は、アクセス制御の流れを全系で統べる規律である。
-principles の [separation](../principles/separation.md) が定める変更理由での分離・コンテキストの自己完結・副作用の境界隔離を、全系のアクセス制御として具象化する。
+principles の [separation](../principles/separation.md) が定める変更理由での分割・関心の隠蔽・副作用の隔離を、全系のアクセス制御として具象化する。
 authorization は認証境界による構築済みの actor の権限評価を扱い、資格情報の検証と actor の構築は [authentication](./authentication.md) が扱う。
 
 ## 業務規則と認可を分ける
@@ -128,7 +128,7 @@ interface PolicyPort { decide(actor: Actor, action: Action, target: Target): Dec
 ## 拒否は業務の前で止める
 
 ### 要求
-拒否された要求は業務の処理に入る前に止め、拒否の応答は [effect](./effect.md) が定める外部へ公開するエラーの形に従って汎用的に返す。
+拒否された要求を業務の処理の前で止める定めは「入口で評価し、通った要求だけ進める」に従い、拒否の応答は [effect](./effect.md) が定める外部へ公開するエラーの形に従って汎用的に返す。
 対象の存在が機微な文脈では、見つからない場合と許されない場合を外から区別させない。
 拒否の詳細は応答でなくサーバ側のログに残す。
 
@@ -140,7 +140,6 @@ interface PolicyPort { decide(actor: Actor, action: Action, target: Target): Dec
 詳細をサーバ側のログに残せば、クライアントに明かさずに調査と監査ができる。
 
 ### 完了条件
-拒否された要求が、業務の処理に入る前に止まっている。
 拒否の応答の形が、[effect](./effect.md) の外部へ公開するエラーの規律に従っている。
 対象の存在が機微な文脈で、見つからない場合と許されない場合が外から区別できない。
 拒否の詳細が、サーバ側のログに残っている。
@@ -167,6 +166,6 @@ log({ denied: true, actorId, target, reason }); return forbidden()
 ```
 
 ## 参照
-分離の原則は [separation](../principles/separation.md)、request context の伝播は [observability](./observability.md)、安全の姿勢は [security](./security.md) に従う。
+分離の原則は [separation](../principles/separation.md)、request context の伝播は [context-propagation](./context-propagation.md)、安全の姿勢は [security](./security.md) に従う。
 外部へ公開するエラーの形は [effect](./effect.md) に従う。
 資格情報の検証と actor の構築は [authentication](./authentication.md)、認証境界の surface ごとの構造は [surfaces](../structure/surfaces/)、言語別の実現は [languages](../languages/) が定める。

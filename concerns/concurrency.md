@@ -213,7 +213,7 @@ withConcurrencyLimit(16, inputs, handle)
 ## 非同期と並行を業務の核から隔離する
 
 ### 要求
-業務の計算・判断は同期の純粋関数として書き、非同期と並行の制御は境界で扱う。
+純粋核と効果の殻の分離は [separation](../principles/separation.md) の「副作用を境界に集める」に従い、非同期と並行の制御は核に持ち込まず境界で扱う。
 
 ### 根拠
 非同期や並行の制御が業務判断に混ざると、判断のテストに並行の足場が要る。
@@ -221,7 +221,7 @@ withConcurrencyLimit(16, inputs, handle)
 非同期は並行と別の関心であり、ブロッキングは境界へ追い出す。
 
 ### 完了条件
-業務の計算・判断が、同期の純粋関数として書かれている。
+業務の計算・判断が、非同期と並行の制御を持たない同期の関数として書かれている。
 非同期と並行の制御が、境界に置かれている。
 ブロッキングする処理が、境界へ隔離されている。
 
@@ -249,6 +249,6 @@ function decide(x, fetched) { return fetched.ok ? a : b; }
 
 ## 参照
 不変は [construction](../principles/construction.md)、副作用の隔離は [separation](../principles/separation.md) に従う。
-効果の合成は [effect](./effect.md)、文脈の伝播は [observability](./observability.md) に従う。
+効果の合成は [effect](./effect.md)、文脈の伝播は [context-propagation](./context-propagation.md) に従う。
 待ち行列と流入の上限は [resilience](./resilience.md)、性能目的の並列化は [performance](./performance.md) に従う。
 言語別の実現は [languages](../languages/) が定める。

@@ -8,14 +8,14 @@ principles の [separation](../../principles/separation.md) が定める境界�
 
 ### 要求
 境界の入力は DTO の record(`init` のプロパティと `[JsonPropertyName]`)で受け、source generation の `JsonSerializerContext` を通す。
-ドメイン型へは値オブジェクトの factory で詰め替え、失敗は Result で表す。
+ドメイン型へは値オブジェクトの factory で検証変換し、失敗は Result で表す。
 検証を通った値だけを内部へ渡し、内側で再検証しない。
 未知のフィールドは弾かず、`[JsonExtensionData]` で捕捉し、値があればログに出す。必須の項目は `required` で欠落を弾く。
 外部表現の命名や形式は境界の DTO 側に置き、ドメイン型を直接直列化しない。
 
 ### 根拠
 ドメインのエンティティに直接デシリアライズすると、検証を経ない値がそのまま内部へ入る。
-境界の DTO に受けてから factory で詰め替えれば、検証が境界の一点に集まる。
+境界の DTO に受けてから factory で検証変換すれば、検証が境界の一点に集まる。
 source generation は実行時のリフレクションを避け、契約を明示する。
 未知のフィールドを弾く既定は、送り手と受け手の版が配備で一時的に重なる瞬間の後方互換を壊すので、寛容な読み手にし、必須の項目だけ `required` で欠落を弾く。
 検知した未知のフィールドをログに出せば残存が可視化され、恒常的に未知が流れ続ける状態は [evolution](../../principles/evolution.md) が定める収縮が終わっていない欠陥として扱える。
@@ -38,7 +38,7 @@ source generation は実行時のリフレクションを避け、契約を明�
 ### 行動
 境界に DTO の record を定義し、`JsonSerializerContext` に登録する。
 DTO に `[JsonExtensionData]` の捕捉プロパティを持たせ、非空なら警告としてログに出す。
-値オブジェクトの factory で詰め替え、`required` で境界を締める。
+値オブジェクトの factory で検証変換し、`required` で境界を締める。
 
 ### 例
 外部入力をドメインエンティティへ直接デシリアライズすると、未検証の値が内側へ入る。

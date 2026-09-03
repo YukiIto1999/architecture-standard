@@ -180,4 +180,4 @@ cache.set(accountId, balance);
 ### 行動
 既存のスキーマから、制約で表せるのに規約だけで守っている整合性を洗い出す。
 守るべき整合性を、データ層の制約で表せる形にする。
-制約の種類・任意項目の扱い・物理の最適化の判断は、[persistence](../concerns/persistence.md) が具象化する。
+データ層の制約による守り方は、[persistence](../concerns/persistence.md) が具象化する。
