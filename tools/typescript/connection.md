@@ -2,9 +2,9 @@
 
 ## 概要
 connection は、TypeScript で副作用と依存の渡し方を扱う実現軸である。
-concerns の [effect](../../concerns/effect.md) が定める効果システムを、viewer・extension・host の軽い役割に合わせて満たす。
+concerns の [effect](../../concerns/effect/README.md) が定める効果システムを、viewer・extension・host の軽い役割に合わせて満たす。
 効果の表現と Result の規律は [neverthrow](./neverthrow.md) が持つ。
-[separation](../../principles/separation.md) の依存の向きと [dependency](../../concerns/dependency.md) の「依存を内側へ一方向に向ける」の規律に従う。
+[separation](../../principles/separation/README.md) の依存の向きと [dependency](../../concerns/dependency/inward-dependencies.md) の「依存を内側へ一方向に向ける」の規律に従う。
 
 ## 依存を環境で受け、host の能力を port で宣言する
 
@@ -47,5 +47,5 @@ interface UiPort { notify(message: Message): void }
 ```
 
 ## 参照
-効果システムは [effect](../../concerns/effect.md)、依存の向きは [dependency](../../concerns/dependency.md) に従う。
+効果システムは [effect](../../concerns/effect/README.md)、依存の向きは [dependency](../../concerns/dependency/README.md) に従う。
 取り消しの AbortSignal は [coordination](./coordination.md)、状態は [solidjs](./solidjs.md) に従う。

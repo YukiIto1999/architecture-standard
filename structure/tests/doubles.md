@@ -6,7 +6,7 @@ doubles は、テストダブルとフィクスチャの扱いを定める。
 ## 最小化
 
 テストダブルは、実際に外部を動かさなければ確かめられない箇所だけに使う。
-効果を型で追跡する規律([concerns/effect](../../concerns/effect.md))が、置き換えの必要な範囲を狭める。
+効果を型で追跡する規律([concerns/effect](../../concerns/effect/README.md))が、置き換えの必要な範囲を狭める。
 use-case の port の置き換えは [methods](./methods.md) に従い、それより内側はダブルなしで検証する。
 
 ## 共通化の判定

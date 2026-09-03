@@ -2,9 +2,9 @@
 
 ## 概要
 coordination は、TypeScript で非同期・並行・取り消しの実行を扱う実現軸である。
-principles の [separation](../../principles/separation.md) が定める副作用の境界と、concerns の [concurrency](../../concerns/concurrency.md) が定める構造化された並行・取り消しの協調・共有可変状態の回避を、TypeScript の機構で満たす。
+principles の [separation](../../principles/separation/README.md) が定める副作用の境界と、concerns の [concurrency](../../concerns/concurrency/README.md) が定める構造化された並行・取り消しの協調・共有可変状態の回避を、TypeScript の機構で満たす。
 共有可変状態の回避は、connection が定める module 最上位の可変な singleton の禁止と、[solidjs](./solidjs.md) が持つ状態の機構の規律で満たす。
-取り消しは AbortSignal で計算全体へ伝播し、[effect](../../concerns/effect.md) の取り消しの終了を実現する。
+取り消しは AbortSignal で計算全体へ伝播し、[effect](../../concerns/effect/README.md) の取り消しの終了を実現する。
 資源は範囲の終わりで解放する。
 
 ## 非同期
@@ -503,4 +503,4 @@ context.subscriptions.push(disposable);
 ```
 
 ## 参照
-並行の規律は [concurrency](../../concerns/concurrency.md)、副作用を境界に集める原則は [separation](../../principles/separation.md)、効果の取り消しと資源は [effect](../../concerns/effect.md) に従う。
+並行の規律は [concurrency](../../concerns/concurrency/README.md)、副作用を境界に集める原則は [separation](../../principles/separation/README.md)、効果の取り消しと資源は [effect](../../concerns/effect/README.md) に従う。

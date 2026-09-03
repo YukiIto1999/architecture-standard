@@ -2,7 +2,7 @@
 
 ## 概要
 inspection は、C# で検証を扱う実現軸である。
-principles の [verification](../../principles/verification.md) が定める検証の機械化を、C# の機構で満たす。
+principles の [verification](../../principles/verification/README.md) が定める検証の機械化を、C# の機構で満たす。
 
 ## ドキュメントコメントの検査
 
@@ -45,6 +45,95 @@ Roslyn analyzer で当該宣言内の機械判定できる欠陥と exception �
 公開範囲を問わず、呼び出し先から伝播して当該宣言の契約になる欠陥と exception の対応をレビューする。
 ドキュメントコメントが、実効的な可視境界を基準に、境界外へ公開される宣言では外部契約を、同一境界内だけの宣言では内部契約を述べ、名前や実装の言い換えになっていないことをレビューする。
 
+## nullable と警告を検証入口でエラーにする
+
+### 要求
+nullable reference types と analyzer の警告は、検証入口でエラーとして扱う。
+
+### 根拠
+nullable reference types と analyzer の警告をエラーにすれば、不在の取り違えや規則の違反がビルドで止まる。
+
+### 完了条件
+nullable reference types と analyzer の警告が、検証入口でエラーとして扱われている。
+
+### 禁止事項
+analyzer の警告を、エラーにせず警告のまま残すこと。
+
+### 行動
+nullable reference types を有効にし、警告を検証入口でエラーにする。
+
+## 非同期の形と期限の伝播を analyzer で検査する
+
+### 要求
+Roslyn analyzer は、surface と host の公開非同期 API が Task または Task<T> を返し、Effect 内部の Run、Try body、AcquireRelease release が ValueTask または ValueTask<T> を返すことを semantic model で検査する。
+Roslyn analyzer は、request、message、job の境界より内側の非同期 API が、非取消の後始末である `AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` を除き、Deadline と CancellationToken を必須引数に持つことを検査する。
+Roslyn analyzer は、release が同じ Deadline を受けて CancellationToken を受け取らず、`DisposeAsync` が引数なしで非取消の後始末を行うことを検査する。
+`IAsyncDisposable.DisposeAsync` の呼出側が、同じ Deadline を後始末の scope に保持することを検査する。
+Deadline の生成が request、message、job の境界に限られることを検査する。
+Roslyn analyzer は、各 hop の CancellationTokenSource が `deadline.Remaining(timeProvider)` から作られ、下流へ remaining でなく同じ Deadline が渡ることを検査する。
+
+### 根拠
+Roslyn semantic model なら、method の accessibility、戻り値、引数、呼出式の symbol を結び付け、公開 host API と Effect 内部の awaitable の役割を区別できる。
+同じ model で Deadline の生成と伝播、remaining の使用先を追えば、hop ごとに新しい相対 timeout を始める経路を拒否できる。
+release と `DisposeAsync` を CancellationToken の必須規則から明示的に分ければ、通常の非同期 API の伝播漏れと、非取消でなければならない後始末を混同しない。
+
+### 完了条件
+公開する surface と host の非同期 API が Task または Task<T>、Effect 内部の Run、Try body、AcquireRelease release が ValueTask または ValueTask<T> に分かれている。
+境界より内側の非同期 API が、release と `DisposeAsync` を除いて Deadline と CancellationToken を必須引数に持ち、Deadline が request、message、job の境界だけで生成されている。
+release が同じ Deadline を受けて CancellationToken を受け取らず、`DisposeAsync` が引数なしで非取消の後始末を完了している。
+各 hop の局所 timeout が `deadline.Remaining(timeProvider)` から作られ、同じ Deadline が下流へ渡されている。
+
+### 禁止事項
+公開 host API と Effect 内部の awaitable の役割分担を、レビューだけで検査すること。
+hop ごとに相対 timeout を引き直す経路を、構造検査から外すこと。
+release と `DisposeAsync` へ CancellationToken を要求し、非取消の後始末を通常の非同期 API と同じ規則で検査すること。
+
+### 行動
+Roslyn analyzer で、公開 host API の Task と Effect 内部の ValueTask の戻り値を検査する。
+Roslyn analyzer で、境界より内側の非同期 API の Deadline と CancellationToken、境界だけでの Deadline 生成、remaining からの局所 timeout 生成、同じ Deadline の下流伝播を検査する。
+release と `DisposeAsync` は CancellationToken の必須規則から除き、元の Deadline を保持する非取消の後始末として検査する。
+
+## 汎用名を自作 analyzer で禁止する
+
+### 要求
+識別子の汎用名は、denylist を持つ自作の Roslyn analyzer で禁止し、違反を検証入口のエラーとして扱う。
+denylist には、data・info・temp・result・manager・helper のような役割を示さない名前を登録する。
+
+### 根拠
+data・info・temp のような汎用名は生成時に混入しやすく、denylist は [restrict-generic-names](../../principles/naming/restrict-generic-names.md) の「汎用名・略語・一時名を制限する」を識別子の検査として機械化する。
+採用済みの linter に識別子の denylist の規則がないため、自作の Roslyn analyzer で補う。
+
+### 完了条件
+汎用名の denylist を持つ analyzer が検証入口で実行され、違反がエラーとして扱われている。
+
+### 禁止事項
+denylist を空にして検査を無効化すること。
+
+### 行動
+libs の analyzer project に denylist の analyzer を実装し、違反箇所は役割を示す名前へ付け直す。
+analyzer の置き場は [formation](./formation.md) の「検証と生成を libs の analyzer project に分ける」に従う。
+
+## Result の非網羅な取り出しを analyzer で禁止する
+
+### 要求
+判別共用体の Result からの値の取り出しは、網羅的な switch か全域の combinator に限る。
+派生型への cast による直接の取り出しは、自作の Roslyn analyzer で検出し、検証入口のエラーとして扱う。
+
+### 根拠
+派生型への cast は不成功の分岐を型検査から外し、[total-functions](../../principles/construction/total-functions.md) の「関数を全域にする」に反する部分関数を作る。
+採用済みの linter に判別共用体の網羅的な取り出しを検査する規則がないため、自作の Roslyn analyzer で補う。
+
+### 完了条件
+Result の値の取り出しが、網羅的な switch か全域の combinator で行われている。
+派生型への cast による取り出しが、検証入口でエラーとして扱われている。
+
+### 禁止事項
+Result の派生型へ cast して、不成功の分岐を検査せずに値を取り出すこと。
+
+### 行動
+libs の analyzer project に、Result の派生型への cast を検出する analyzer を実装する。
+違反箇所は、網羅的な switch か全域の combinator へ直す。
+
 ## 規則と検証機構の対応
 
 この言語 ecosystem の全規律を、検証手段へ写像する。
@@ -68,7 +157,7 @@ Roslyn analyzer で当該宣言内の機械判定できる欠陥と exception �
 | formation | 不変を既定にする | 型(init 専用プロパティ) |
 | formation | 意味と単位を型で区別する | 型(record) |
 | formation | 検証と生成を libs の analyzer project に分ける | 構造検査(analyzer project 境界)+型(netstandard2.0 の Analyzer 参照制約) |
-| csharpier | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、production の SonarAnalyzer.CSharp 命名規則、test project では Sonar の method 命名規則だけを抑止して命名 analyzer で test attribute 付き entry の snake_case とその他 method の .NET 命名を検査) |
+| conventions | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、production の SonarAnalyzer.CSharp 命名規則、test project では Sonar の method 命名規則だけを抑止して命名 analyzer で test attribute 付き entry の snake_case とその他 method の .NET 命名を検査) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化。公開要素のコメント欠落)+analyzer(Roslyn analyzer。全宣言のコメント存在・param/typeparam/returns/value・先頭行・当該宣言内で機械判定できる欠陥の exception)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET の命名照合) |
 | 全域 | branch coverage と safety-critical decision | 計測(branch を数える設定は Microsoft.Testing.Extensions.CodeCoverage の cobertura 出力と managed instrumentation であり、その branch 情報から project 記録の branch 下限を検証入口で判定)+構造検査・実行テスト([structure/tests の methods](../../structure/tests/methods.md) が定める safety analysis と MC/DC case の一対一照合) |
@@ -105,6 +194,13 @@ Roslyn analyzer で当該宣言内の機械判定できる欠陥と exception �
 | streamjsonrpc | extension の接続 | 型(StreamJsonRpc の型付き proxy)+レビュー |
 | publication | 可視性 | 型(internal・file 修飾子) |
 
+| banned-api-analyzers | 直読と自由文出力を禁止 API で止める | analyzer/lint(BannedApiAnalyzers の禁止一覧を検証入口でエラー化) |
+
+| inspection | nullable と警告を検証入口でエラーにする | analyzer/lint(nullable reference types と WarningsAsErrors の compiler 設定) |
+| inspection | 非同期の形と期限の伝播を analyzer で検査する | 構造検査(自作 Roslyn analyzer を検証入口で実行) |
+
+| inspection | 汎用名を自作 analyzer で禁止する | analyzer/lint(自作 Roslyn analyzer の denylist を検証入口でエラー化) |
+| inspection | Result の非網羅な取り出しを analyzer で禁止する | analyzer/lint(自作 Roslyn analyzer の cast 検出を検証入口でエラー化) |
 ## 参照
-検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification.md) に従う。
+検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification/README.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

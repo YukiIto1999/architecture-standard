@@ -416,7 +416,7 @@ function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
 
   // fixture-mutation:start
   if (skillName === "standard-update" && evalId === 5) {
-    const transactionConcern = path.join(fixtureRoot, "concerns", "transaction.md");
+    const transactionConcern = path.join(fixtureRoot, "concerns", "transaction", "invisible-partial-commits.md");
     const legacyExample = `### 例
 \`\`\`
 // 途中まで書いて失敗し、不完全な状態を成功として返す
@@ -454,7 +454,7 @@ transaction { write(a); write(b) }
 
   // fixture-mutation:start
   if (skillName === "standard-update" && evalId === 6) {
-    const commentPrinciple = path.join(fixtureRoot, "principles", "comment.md");
+    const commentPrinciple = path.join(fixtureRoot, "principles", "comment", "declaration-contracts.md");
     const legacyExample = `### 例
 \`\`\`ts
 // 名前の直訳で、署名を超える情報がない

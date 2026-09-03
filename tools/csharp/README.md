@@ -16,7 +16,7 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [coordination](./coordination.md) | 非同期・並行・取り消しの実行(実現軸) |
 | [publication](./publication.md) | 外部公開面と host(実現軸) |
 | [inspection](./inspection.md) | 検証(実現軸) |
-| [conventions](./conventions.md) | ドキュメントコメント・型名接尾辞(全域規律) |
+| [conventions](./conventions.md) | 命名・整形・ドキュメントコメント・型名接尾辞(全域規律) |
 
 ## 採用
 

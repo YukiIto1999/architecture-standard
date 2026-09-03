@@ -2,7 +2,7 @@
 
 ## 概要
 translation は、Rust で外部表現とドメイン型の変換を扱う実現軸である。
-principles の [separation](../../principles/separation.md) が定める境界での変換と、concerns の [types](../../concerns/types.md) が定める境界での parse・[security](../../concerns/security.md) が定める境界の不信・[effect](../../concerns/effect.md) が定めるエラーモデルを、Rust の機構で満たす。
+principles の [separation](../../principles/separation/README.md) が定める境界での変換と、concerns の [types](../../concerns/types/README.md) が定める境界での parse・[security](../../concerns/security/README.md) が定める境界の不信・[effect](../../concerns/effect/README.md) が定めるエラーモデルを、Rust の機構で満たす。
 境界での parse の実現は [serde](./serde.md) が持つ。
 
 ## 終了を surface の境界表現へ写す
@@ -33,7 +33,7 @@ surface の出力に、内部の実装の詳細が出ていない。
 内部の実装の詳細を、surface の出力へ出すこと。
 
 ### 行動
-成功、想定内の失敗、欠陥、取り消しを [effect](../../concerns/effect.md) の基準で分類する。
+成功、想定内の失敗、欠陥、取り消しを [effect](../../concerns/effect/README.md) の基準で分類する。
 想定内の失敗だけを、各 surface の契約が定める表現へ境界で写す。
 欠陥は最上位の報告境界で記録し、取り消しは失敗へ変換せず終了させる。
 surface の出力から内部の詳細を除く。
@@ -68,4 +68,4 @@ client と型が、TypeSpec から `@typespec/openapi3` を経て openapi-genera
 TypeSpec から `@typespec/openapi3` で OpenAPI を出力し、openapi-generator の rust generator(library=reqwest)で client と型を生成する。
 
 ## 参照
-境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect.md)、未知フィールドの残存と収縮は [evolution](../../principles/evolution.md)、契約の生成物の置き場と drift 検査は [structure/contracts/generated](../../structure/contracts/generated.md)、契約の置き場は [structure/contracts](../../structure/contracts/layout.md) に従う。
+境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect/README.md)、未知フィールドの残存と収縮は [evolution](../../principles/evolution/README.md)、契約の生成物の置き場と drift 検査は [structure/contracts/generated](../../structure/contracts/generated.md)、契約の置き場は [structure/contracts](../../structure/contracts/layout.md) に従う。

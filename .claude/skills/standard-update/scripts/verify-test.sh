@@ -110,13 +110,15 @@ fixture=$(make_fixture baseline)
 expect_pass "現行ツリーを受理する" "$fixture"
 
 fixture=$(make_fixture dynamic-concerns-ledger)
-cp "$fixture/concerns/privacy.md" "$fixture/concerns/extra.md"
-sed -i '/^| \[accessibility\]/a | [extra](./extra.md) | 台帳から追加した検査用の概念 |' "$fixture/concerns/README.md"
+mkdir -p "$fixture/concerns/extra"
+cp "$fixture/concerns/privacy/minimize-and-expire.md" "$fixture/concerns/extra/minimize-and-expire.md"
+printf '# extra\n\n## 概要\n\n検査用の概念である。\n\n## 規律\n\n- [個人情報は最小化して載せ、期限で消す](./minimize-and-expire.md)\n' > "$fixture/concerns/extra/README.md"
+sed -i '/^| \[accessibility\]/a | [extra](./extra/README.md) | 台帳から追加した検査用の概念 |' "$fixture/concerns/README.md"
 sed -i 's/24概念/25概念/' "$fixture/README.md"
 sed -i 's/・accessibility。/・accessibility・extra。/' \
   "$fixture/.claude/skills/standard-update/SKILL.md" \
   "$fixture/.claude/skills/standard-update/references/concerns.md"
-printf '検査用の横断規律は [concerns/extra](../../concerns/extra.md) に従う。\n' >> "$fixture/structure/core/domain.md"
+printf '検査用の横断規律は [concerns/extra](../../concerns/extra/README.md) に従う。\n' >> "$fixture/structure/core/domain.md"
 expect_pass "concerns の期待数を台帳から導出する" "$fixture"
 
 fixture=$(make_fixture concept-three-way-mismatch)
@@ -124,22 +126,22 @@ sed -i 's/24概念/23概念/' "$fixture/README.md"
 expect_fail "concerns の台帳・実ファイル・root 記載を三者照合する" "$fixture" "概念数が不一致"
 
 fixture=$(make_fixture concept-table-scope)
-printf '\n## 補助表\n\n| ファイル | 用途 |\n|---|---|\n| [effect](./effect.md) | 既存概念への補助参照 |\n' >> "$fixture/concerns/README.md"
+printf '\n## 補助表\n\n| ファイル | 用途 |\n|---|---|\n| [effect](./effect/README.md) | 既存概念への補助参照 |\n' >> "$fixture/concerns/README.md"
 expect_pass "concerns の概念台帳以外のファイル表を数えない" "$fixture"
 
 fixture=$(make_fixture section-order)
-sed -i '0,/^### 根拠$/{s//### __SWAP__/}' "$fixture/concerns/privacy.md"
-sed -i '0,/^### 完了条件$/{s//### 根拠/}' "$fixture/concerns/privacy.md"
-sed -i 's/^### __SWAP__$/### 完了条件/' "$fixture/concerns/privacy.md"
+sed -i '0,/^### 根拠$/{s//### __SWAP__/}' "$fixture/concerns/privacy/minimize-and-expire.md"
+sed -i '0,/^### 完了条件$/{s//### 根拠/}' "$fixture/concerns/privacy/minimize-and-expire.md"
+sed -i 's/^### __SWAP__$/### 完了条件/' "$fixture/concerns/privacy/minimize-and-expire.md"
 expect_fail "規律単位内の必須節の順序違反を検出する" "$fixture" "必須節が不正"
 
 fixture=$(make_fixture section-local-counts)
-sed -i '0,/^### 根拠$/{s//### 完了条件/}' "$fixture/concerns/privacy.md"
-sed -i '0,/^### 完了条件$/{s//### 根拠/}' "$fixture/concerns/performance.md"
+sed -i '0,/^### 根拠$/{s//### 完了条件/}' "$fixture/concerns/privacy/minimize-and-expire.md"
+sed -i '0,/^### 完了条件$/{s//### 根拠/}' "$fixture/concerns/performance/measure-before-compare.md"
 expect_fail "層合計が均衡していても規律単位内の重複と欠落を検出する" "$fixture" "必須節が不正"
 
 fixture=$(make_fixture section-exclusion-scope)
-printf '\n## 概要\n\nprinciples では全ての第2見出しが規律単位である。\n' >> "$fixture/principles/comment.md"
+printf '\n## 概要\n\nprinciples では全ての第2見出しが規律単位である。\n' >> "$fixture/principles/comment/no-code-explanation.md"
 expect_fail "非単位節の除外を該当する領域だけに限定する" "$fixture" "必須節が不正"
 
 fixture=$(make_fixture process-count)
@@ -235,19 +237,19 @@ mv -- "$large_inspection" "$fixture/tools/typescript/inspection.md"
 expect_pass "大きな language 規律集合を同一集合として照合する" "$fixture"
 
 fixture=$(make_fixture concerns-product-leakage)
-printf '\nPlaywright で表示を計測する。\n' >> "$fixture/concerns/experience.md"
+printf '\nPlaywright で表示を計測する。\n' >> "$fixture/concerns/experience/decision-simplicity.md"
 expect_fail "concerns への検査製品の混入を検出する" "$fixture" "concerns に言語機構/方言が漏れている"
 
 fixture=$(make_fixture product-leak)
-printf '\nSchemathesis を原則本文で名指しする。\n' >> "$fixture/principles/comment.md"
+printf '\nSchemathesis を原則本文で名指しする。\n' >> "$fixture/principles/comment/no-code-explanation.md"
 expect_fail "tools の採用行から得た製品名の principles 漏れを検出する" "$fixture" "台帳由来の製品名"
 
 fixture=$(make_fixture product-boundary)
-printf '\nSchemathesisLike は別の識別子である。\n' >> "$fixture/principles/comment.md"
+printf '\nSchemathesisLike は別の識別子である。\n' >> "$fixture/principles/comment/no-code-explanation.md"
 expect_pass "製品名の部分文字列だけでは違反にしない" "$fixture"
 
 fixture=$(make_fixture product-at-prefix)
-printf '\n@typespec/openapi3 を原則本文で名指しする。\n' >> "$fixture/principles/comment.md"
+printf '\n@typespec/openapi3 を原則本文で名指しする。\n' >> "$fixture/principles/comment/no-code-explanation.md"
 expect_fail "@ で始まる製品名を正規名の境界で検出する" "$fixture" "台帳由来の製品名: @typespec/openapi3"
 
 fixture=$(make_fixture product-build-registry)
@@ -272,30 +274,43 @@ sed -i 's/| layout・domain・application・infrastructure・composition |/| lay
 expect_pass "台帳と本文ファイルを揃えた追加を受理する" "$fixture"
 
 fixture=$(make_fixture heading-citation-valid)
-printf '\n保存の形は [persistence](./persistence.md) の「事実を追記する形で残す」に従う。\n' >> "$fixture/concerns/transaction.md"
+printf '\n保存の形は [persistence](../persistence/append-only-facts.md) の「事実を追記する形で残す」に従う。\n' >> "$fixture/concerns/transaction/single-write-path.md"
 expect_pass "link 先の見出しと一致する鉤括弧引用を受理する" "$fixture"
 
 fixture=$(make_fixture heading-citation-same-file)
-printf '\n同じ file の「事実を追記する形で残す」と [data](../principles/data.md) に従う。\n' >> "$fixture/concerns/persistence.md"
+printf '\n同じ file の「事実を追記する形で残す」と [data](../../principles/data/README.md) に従う。\n' >> "$fixture/concerns/persistence/append-only-facts.md"
 expect_pass "同一 file 内の見出し引用を受理する" "$fixture"
 
 fixture=$(make_fixture heading-citation-drift)
-printf '\n文脈の伝播は [observability](./observability.md) の「存在しない規律」に従う。\n' >> "$fixture/concerns/transaction.md"
+printf '\n文脈の伝播は [observability](../observability/README.md) の「存在しない規律」に従う。\n' >> "$fixture/concerns/transaction/single-write-path.md"
 expect_fail "link 先の見出しに無い規律名の名指しを検出する" "$fixture" "正本の見出しに無い規律名"
 
 fixture=$(make_fixture overlap-nonheading-quote)
 overlap_line='検査用の「これは見出しではない引用でありそのまま重複判定に含まれる」文である。'
-printf '\n%s\n' "$overlap_line" >> "$fixture/principles/comment.md"
-printf '\n%s\n' "$overlap_line" >> "$fixture/concerns/privacy.md"
+printf '\n%s\n' "$overlap_line" >> "$fixture/principles/comment/no-code-explanation.md"
+printf '\n%s\n' "$overlap_line" >> "$fixture/concerns/privacy/minimize-and-expire.md"
 expect_fail "見出しでない鉤括弧引用の逐語一致は検出する" "$fixture" "逐語一致の候補あり"
 
 fixture=$(make_fixture vocabulary-legacy-term)
-printf '\n二次の読みモデルを許す。\n' >> "$fixture/concerns/persistence.md"
+printf '\n二次の読みモデルを許す。\n' >> "$fixture/concerns/persistence/normalization.md"
 expect_fail "統一済み語彙の旧表記を検出する" "$fixture" "統一済み語彙の旧表記"
 
 fixture=$(make_fixture orphan-principle)
-printf '# orphan\n' > "$fixture/principles/orphan.md"
+mkdir -p "$fixture/principles/orphan"
+printf '# orphan\n' > "$fixture/principles/orphan/README.md"
 expect_fail "下位の層から参照されない principles file を検出する" "$fixture" "下位の層から参照されない file"
+
+fixture=$(make_fixture concept-ledger-missing-row)
+sed -i '/minimize-and-expire/d' "$fixture/concerns/privacy/README.md"
+expect_fail "概念台帳から欠けた規律 file を検出する" "$fixture" "概念フォルダの台帳が不一致"
+
+fixture=$(make_fixture concept-ledger-name-drift)
+sed -i 's/- \[個人情報は最小化して載せ、期限で消す\]/- [別の名の規律]/' "$fixture/concerns/privacy/README.md"
+expect_fail "概念台帳の規律名と file の H2 の乖離を検出する" "$fixture" "概念フォルダの台帳が不一致"
+
+fixture=$(make_fixture tool-entry-line-missing)
+sed -i '/^撤回条件は、/d' "$fixture/tools/rust/sqlx.md"
+expect_fail "ツール file の entry 4行の欠落を検出する" "$fixture" "entry の4行を欠くツール file あり"
 
 printf '\nテスト: %d passed, %d failed\n' "$passed" "$failed"
 if [ "$failed" -eq 0 ]; then

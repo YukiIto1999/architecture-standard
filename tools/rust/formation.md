@@ -2,7 +2,7 @@
 
 ## 概要
 formation は、Rust で値・型・不変条件をモデリングする実現軸である。
-principles の [modeling](../../principles/modeling.md) が定める業務意味の型封入と、concerns の [types](../../concerns/types.md) が定める型の規律を、Rust の機構で満たす。
+principles の [modeling](../../principles/modeling/README.md) が定める業務意味の型封入と、concerns の [types](../../concerns/types/README.md) が定める型の規律を、Rust の機構で満たす。
 
 ## 業務の値を型に封じる
 
@@ -110,8 +110,8 @@ domain の状態遷移は既存の値を `&mut T` で変更せず、新しい値
 `&mut T` による局所更新は、infrastructure が所有する状態または構築途中の値のうち、共有されず外部から観測されない所有範囲に限る。
 
 ### 根拠
-domain の値を不変にする理由は、[construction](../../principles/construction.md) に従う。
-発生したイベントを不変な事実として残す理由は、[data](../../principles/data.md) に従う。
+domain の値を不変にする理由は、[construction](../../principles/construction/README.md) に従う。
+発生したイベントを不変な事実として残す理由は、[data](../../principles/data/README.md) に従う。
 domain の既存値を `&mut T` で変更すると、遷移前の状態が失われ、状態の変更と発生したイベントの対応が戻り値に現れない。
 新しい値とイベントを一緒に返せば、遷移後の状態と発生した事実が呼び出し側へ明示される。
 Rust の排他借用は同じ値への参照の共存を防ぐが、それだけでは domain の値を不変に扱う規律を表さない。
@@ -228,6 +228,6 @@ pub fn derive_value_object(input: TokenStream) -> TokenStream { /* ... */ }
 ```
 
 ## 参照
-業務意味の型封入は [modeling](../../principles/modeling.md)、型の規律は [types](../../concerns/types.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、proc-macro crate の置き場は [structure/libs/layout](../../structure/libs/layout.md) に従う。
+業務意味の型封入は [modeling](../../principles/modeling/README.md)、型の規律は [types](../../concerns/types/README.md)、置き場は [structure/core/domain](../../structure/core/domain.md)、proc-macro crate の置き場は [structure/libs/layout](../../structure/libs/layout.md) に従う。
 命名と整形、ドキュメントコメントの体裁は [conventions](./conventions.md) に従う。
 境界での外部表現の変換は [translation](./translation.md) に従う。
