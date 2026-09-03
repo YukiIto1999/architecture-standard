@@ -251,6 +251,12 @@ fixture=$(make_fixture product-build-registry)
 printf '\nNx は、task graph の orchestrator である。\n' >> "$fixture/structure/tests/layout.md"
 expect_pass "build の採用名を tools registry に含める" "$fixture"
 
+fixture=$(make_fixture overlap-nonheading-quote)
+overlap_line='検査用の「これは見出しではない引用でありそのまま重複判定に含まれる」文である。'
+printf '\n%s\n' "$overlap_line" >> "$fixture/principles/comment.md"
+printf '\n%s\n' "$overlap_line" >> "$fixture/concerns/privacy.md"
+expect_fail "見出しでない鉤括弧引用の逐語一致は検出する" "$fixture" "逐語一致の候補あり"
+
 printf '\nテスト: %d passed, %d failed\n' "$passed" "$failed"
 if [ "$failed" -eq 0 ]; then
   exit 0
