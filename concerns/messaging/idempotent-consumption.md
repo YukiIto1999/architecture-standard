@@ -17,7 +17,7 @@ effect operation の識別子は、配備上の consumer の名前を含めず�
 一度きりの配送は、分散した経路では保証できない。
 配送そのものを一度きりにはできないが、消費を冪等にすれば結果は一度分になる。
 durable receipt を処理の確定から分ければ、前段の停止は source の再配送で、後段の停止は inbox item の再処理で回復できる。
-冪等そのものの理由は [resilience](../resilience/README.md) に従う。
+冪等そのものの理由は [resilience](../resilience/idempotent-operations.md) に従う。
 consumer contract または subscription の scope を含めれば、同じイベントに独立して反応する別の契約を重複として扱わずに済む。
 consumer contract または subscription の scope とイベントの識別子の組を一意にすれば、同じ契約への再配送だけを排除できる。
 scope ごとに inbox を分ける場合は、その inbox の中でイベントの識別子を一意にすれば同じ排他になる。

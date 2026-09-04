@@ -1,7 +1,7 @@
 ## 取り消しと資源を言語の機構に委ねる
 
 ### 要求
-取り消しは計算全体へ伝播させ、その協調の仕方は [concurrency](../concurrency/README.md) に従う。
+取り消しは計算全体へ伝播させ、その協調の仕方は [concurrency](../concurrency/cooperative-cancellation.md) に従う。
 資源は、取得と使用と解放を一つの効果に閉じ、失敗と取り消しの下でも解放する。
 並行の駆動とスケジューリングは、[concurrency](../concurrency/delegate-to-language-async.md) の「並行の駆動を言語の機構に委ねる」に従う。
 

@@ -20,6 +20,8 @@ use-case は、単一の業務動作である。
 use-case は、port と domain、および shared のみに依存する。
 use-case は、別の use-case を参照しない。
 use-case の強整合な書き込みは、一つの集約に閉じる。
+use-case は、一つの use-case を一つのフォルダに置く。
+port への到達に共有の wrapper 層(capability accessor)を挟まず、use-case は port の抽象を直接受ける。
 use-case の名前は、単一の動作を表す動詞と名詞の組とする。
 命名は [principles/naming](../../principles/naming/README.md) に従う。
 表記の規約は [tools](../../tools/) が定める。

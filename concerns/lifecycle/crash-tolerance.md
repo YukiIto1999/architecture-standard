@@ -25,4 +25,4 @@
 ### 行動
 重要な状態を専用の永続化へ外出しし、プロセス内に溜めない。
 冪等性と追記の永続化で、突然死からの回復の前提を満たす。
-冪等性と再実行は [resilience](../resilience/README.md)、追記の永続化は [data](../../principles/data/README.md) に従う。
+冪等性と再実行は [resilience](../resilience/README.md)、追記の永続化は [data](../../principles/data/append-facts-derive-state.md) に従う。

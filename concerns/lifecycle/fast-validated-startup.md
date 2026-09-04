@@ -22,5 +22,5 @@
 
 ### 行動
 起動時に設定と前提を検証し、失敗なら止める。
-検証は [configuration](../configuration/README.md) に従う。
+検証は [configuration](../configuration/validate-at-startup.md) に従う。
 migration は、起動と別の手順にする。

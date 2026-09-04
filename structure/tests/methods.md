@@ -73,7 +73,7 @@ protocol 経路の適合は、生成物と実装の drift の検査と conforman
 | 対象 | 必須の検証 |
 |---|---|
 | domain の不変条件と状態遷移 | constructor の拒否、状態遷移の property、網羅する outcome |
-| use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、未検出 mutant |
+| use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、中間状態の面ごとの通過集合、未検出 mutant |
 | canonical と binding | operation・型・error の欠落と余剰、generated drift、serialize round-trip、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
 | 認証と認可 | 各認証境界の credential 拒否と actor 構築、credential の core 非流入、主体・操作・資源・条件の許可と拒否 |
 | 永続化、transaction、messaging | 実 datastore の制約、version conflict、単一の確定点、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |

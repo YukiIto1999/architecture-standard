@@ -15,6 +15,10 @@ canonical は、契約の意味の唯一の正本である。
 http と protocol は canonical から導き、generated は canonical と binding から導く。
 言語の型を、正本にしない。
 
+## 分割
+
+canonical は、コンテキストごとのファイルに分け、一枚のファイルへ集約しない。
+
 ## 記述
 
 canonical は、単一の契約記述言語で記述し、その記述を契約の単一の正本とする。

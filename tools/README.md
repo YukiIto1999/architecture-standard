@@ -11,13 +11,13 @@ tools は、採用だけを書く。
 
 | 区分 | 場所 | 中身 |
 |---|---|---|
-| 言語 ecosystem | [rust](./rust/)・[csharp](./csharp/)・[typescript](./typescript/) | 言語の採用、実現軸の規律、採用物ごとのツール file |
+| 言語 ecosystem | [rust](./rust/)・[csharp](./csharp/)・[typescript](./typescript/) | 言語の採用、実現軸の規律、採用物ごとのツールファイル |
 | 言語横断の開発道具 | [build](./build/README.md) | task の編成、共有ライブラリの取得、契約の生成、署名と検査の道具 |
 | 自運用基盤 | [platforms](./platforms/README.md) | セルフホストする基盤の採用 |
 | 外部 Web サービス | [services](./services/README.md) | 外部 Web サービスの採用方針 |
 
 区分の軸は、採用物の提供形態である。
-各区分と各 ecosystem の README が、その中の file の台帳である。
+各区分と各 ecosystem の README が、その中のファイルの台帳である。
 
 ## 言語 ecosystem
 
@@ -50,6 +50,8 @@ tools は、採用だけを書く。
 | [csharp](./csharp/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセス |
 | [typescript](./typescript/) | viewer・extension・web と ide の host |
 
+言語の間で揃えるのは保証(満たす性質とその検証)であり、実装の形の双子性ではない。
+
 標準は project の実装言語を選定しない。
 実装単位と言語の対応を適用時の入力とし、各 ecosystem の README が定める言語の採用のうち使用する各言語の規律を適用する。
 自己ホストの surface と、desktop・mobile の host は、core の言語に従う。
@@ -81,9 +83,9 @@ inspection.md は、`## 参照` の直前に `## 規則と検証機構の対応`
 
 製品を主駆動とする規律は、軸のファイルでなく採用したツールのファイルに置く。
 機構の規律が上位規律と重なるときは、上位規律が正である。
-## ツール file の書式
+## ツールファイルの書式
 
-採用物ごとに一つの file を置き、用途・採用・判断基準・撤回条件の4行を基本にする。
+採用物ごとに一つのファイルを置き、用途・採用・判断基準・撤回条件の4行を基本にする。
 一つの採用物が複数の用途を持つ場合は、用途ごとの H2 の下に4行を置く。
 その採用物を主駆動とする規律の H2 は、entry の後ろに置き、軸のファイルと同じ必須の5節で書く。
 

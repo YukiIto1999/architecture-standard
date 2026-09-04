@@ -10,7 +10,7 @@ integration event は outbox に記録し、配送は別途行う。
 同一トランザクションで状態と outbox に記録すれば、状態とイベントは必ず一致する。
 異なる datastore へ同期に dual write せず、現在の正本と outbox だけを同じ transaction で確定すれば、destination の停止を再配送で回復できる。
 配送を記録の後に別途行えば、確実な記録と配送の責務を分けられる。
-domain event と integration event の区別は [messaging](../messaging/README.md) に従う。
+domain event と integration event の区別は [messaging](../messaging/domain-integration-events.md) に従う。
 
 ### 完了条件
 状態の変更・参照の更新と、公開する integration event の outbox への記録が、同一の書き込みパスにある。
@@ -24,7 +24,7 @@ outbox の記録を経ずに、イベントを配送すること。
 ### 行動
 状態の変更と outbox への記録を、一つのトランザクションにまとめる。
 異なる datastore への移行では、現在の正本への write と migration event の outbox 記録だけを同じ transaction へ置き、destination へ冪等に再配送する。
-配送は [messaging](../messaging/README.md) に従う。
+配送は [messaging](../messaging/outbox-delivery.md) に従う。
 
 ### 例
 

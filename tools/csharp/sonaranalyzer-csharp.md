@@ -9,6 +9,7 @@
 
 ### 要求
 linter は SonarAnalyzer.CSharp を使い、その警告を検証入口でエラーとして扱う。
+規則の重大度は .editorconfig を正本とし、SonarAnalyzer の規則のしきい値 parameter だけを SonarLint.xml に置く。同じ関心を両方のファイルへ書かない。
 ファイル・関数の大きさとネストの深さのしきい値は SonarAnalyzer.CSharp の S104(ファイル)・S138(関数)・S134(ネスト)の規則として定め、既定値から緩める変更は project の ADR に明記する。
 集合の添字による裸ループは、S3267 で検出し、LINQ の名前のある操作へ直す。
 認知的複雑さの測り方は、[sonarqube](../platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、SonarAnalyzer.CSharp のビルド時 lint 側では複雑度の規則を重ねて有効にしない。

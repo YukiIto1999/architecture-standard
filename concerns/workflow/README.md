@@ -9,6 +9,8 @@ event の契約と配送・消費は [messaging](../messaging/README.md)、確�
 
 - [連携の手順の所有を決める](./orchestration-choreography.md) — レビュー(手順所有はdesign照合)
 - [連鎖の失敗を、逆順の補償で打ち消す](./reverse-compensation.md) — 機械(補償開始・冪等テスト)
+- [進行の状態を持ち、停止から再開する](./resumable-progress.md) — 機械(step の確定と再開の実行テスト)
+- [中間の状態を語彙にして、公開の範囲を分ける](./intermediate-state-exposure.md) — 機械+レビュー(状態の型網羅と面ごとの通過集合のテスト+公開範囲の設計レビュー)
 
 ## 参照
 event の契約と配送・消費は [messaging](../messaging/README.md) に従う。

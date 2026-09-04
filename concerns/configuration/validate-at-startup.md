@@ -2,7 +2,7 @@
 
 ### 要求
 設定は起動時に全体を検証し、不正な設定は理由を知らせる。
-検証に失敗した起動の停止は、[lifecycle](../lifecycle/README.md) に従う。
+検証に失敗した起動の停止は、[lifecycle](../lifecycle/fast-validated-startup.md) に従う。
 
 ### 根拠
 設定の誤りを実行時に初めて検出すると、稼働中に倒れる。
@@ -18,4 +18,4 @@
 
 ### 行動
 起動時に設定の全体を検証し、不正なら理由を知らせる。
-停止は [lifecycle](../lifecycle/README.md) に従う。
+停止は [lifecycle](../lifecycle/fast-validated-startup.md) に従う。

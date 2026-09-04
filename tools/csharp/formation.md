@@ -230,24 +230,24 @@ public sealed record Money(decimal Value);
 ## 検証と生成を libs の analyzer project に分ける
 
 ### 要求
-値オブジェクトの生成、閉じた階層の網羅の suppressor、効果の規律の analyzer は、libs の機構として core と別の netstandard2.0 のプロジェクトに置く。
-このプロジェクトは `OutputItemType="Analyzer"` と `ReferenceOutputAssembly="false"` で参照し、実行時の依存にしない。
+値オブジェクトの生成、閉じた階層の網羅の suppressor、効果の規律の analyzer は、libs の機構として core と別の netstandard2.0 の project に置く。
+この project は `OutputItemType="Analyzer"` と `ReferenceOutputAssembly="false"` で参照し、実行時の依存にしない。
 
 ### 根拠
 compile 時のツールが実行時の層に属さず出荷物にも含まれない理由は [structure/libs/layout](../../structure/libs/layout.md) に従う。
-Roslyn は analyzer と source generator に netstandard2.0 を課し、生成器は自身を含むアセンブリのビルドに使えないので、core と同じプロジェクトには置けない。
+Roslyn は analyzer と source generator に netstandard2.0 を課し、生成器は自身を含むアセンブリのビルドに使えないので、core と同じ project には置けない。
 `ReferenceOutputAssembly="false"` は、ツールの dll を実行時の参照に混ぜないために要る。
 
 ### 完了条件
-生成器と suppressor と analyzer が、libs の機構として core と別の netstandard2.0 プロジェクトにある。
+生成器と suppressor と analyzer が、libs の機構として core と別の netstandard2.0 project にある。
 これらが `OutputItemType="Analyzer"` で参照され、実行時の依存に現れない。
 
 ### 禁止事項
-生成器や analyzer を、実行時のプロジェクトや core の層に置くこと。
+生成器や analyzer を、実行時の project や core の層に置くこと。
 ツールの dll を、実行時の参照に含めること。
 
 ### 行動
-検証と生成を libs 配下の別の netstandard2.0 analyzer project にし、各プロジェクトから `OutputItemType="Analyzer"`・`ReferenceOutputAssembly="false"` で参照する。
+検証と生成を libs 配下の別の netstandard2.0 analyzer project にし、各 project から `OutputItemType="Analyzer"`・`ReferenceOutputAssembly="false"` で参照する。
 配布するときは `analyzers/dotnet/cs` に詰め、`IncludeBuildOutput=false` で実行時の出力に含めない。
 
 ## 参照
