@@ -12,13 +12,13 @@ principles の [construction](../../principles/construction/README.md) が定め
 
 ## 規律
 
-- [純粋核と効果の殻に分ける](./pure-core-effect-shell.md)
-- [効果を遅延した記述にして端で実行する](./deferred-effect-descriptions.md)
-- [要求と想定内失敗を型に現す](./typed-requirements-failures.md)
-- [失敗と欠陥と取り消しを分ける](./failure-defect-cancellation.md)
-- [失敗と欠陥を値の出所で判別する](./value-origin-classification.md)
-- [取り消しと資源を言語の機構に委ねる](./cancellation-resource-safety.md)
-- [合成して部分代替できるようにする](./composable-stages.md)
+- [純粋核と効果の殻に分ける](./pure-core-effect-shell.md) — 機械+レビュー(I/O限定検査+純粋性判断)
+- [効果を遅延した記述にして端で実行する](./deferred-effect-descriptions.md) — 機械(deferEffect構造検査)
+- [要求と想定内失敗を型に現す](./typed-requirements-failures.md) — 機械(効果型の要求宣言(型))
+- [失敗と欠陥と取り消しを分ける](./failure-defect-cancellation.md) — 機械(四つの終了test+型)
+- [失敗と欠陥を値の出所で判別する](./value-origin-classification.md) — 機械+レビュー(境界parse test+出所判断)
+- [取り消しと資源を言語の機構に委ねる](./cancellation-resource-safety.md) — 機械(AcquireRelease型とtest)
+- [合成して部分代替できるようにする](./composable-stages.md) — 機械+レビュー(Result型+段構成レビュー)
 
 ## 参照
 不変と変換は [construction](../../principles/construction/README.md)、副作用の隔離は [separation](../../principles/separation/README.md) に従う。

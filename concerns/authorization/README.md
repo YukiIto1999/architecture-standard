@@ -7,10 +7,10 @@ authorization は認証境界による構築済みの actor の権限評価を�
 
 ## 規律
 
-- [業務規則と認可を分ける](./business-rule-separation.md)
-- [入口で評価し、通った要求だけ進める](./evaluate-at-entry.md)
-- [認可の判定を port で委譲する](./policy-port.md)
-- [拒否は業務の前で止める](./deny-before-business.md)
+- [業務規則と認可を分ける](./business-rule-separation.md) — 機械+レビュー(認可test+重複レビュー)
+- [入口で評価し、通った要求だけ進める](./evaluate-at-entry.md) — 機械+レビュー(matrix+評価位置レビュー)
+- [認可の判定を port で委譲する](./policy-port.md) — 機械+レビュー(matrix+委譲配置レビュー)
+- [拒否は業務の前で止める](./deny-before-business.md) — 機械+レビュー(権限matrix+機微文脈判断)
 
 ## 参照
 分離の原則は [separation](../../principles/separation/README.md)、request context の伝播は [context-propagation](../context-propagation/README.md)、安全の姿勢は [security](../security/README.md) に従う。

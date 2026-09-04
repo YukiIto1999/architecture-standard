@@ -7,7 +7,7 @@ data は、データと状態に関する原則を置く。
 
 ## 規律
 
-- [整合性を集約境界に閉じる](./aggregate-integrity.md)
-- [データを事実・状態・時間で分類する](./fact-state-time.md)
-- [事実は追記し、現在状態は導出する](./append-facts-derive-state.md)
-- [整合性をデータ層の制約で守る](./database-integrity.md)
+- [整合性を集約境界に閉じる](./aggregate-integrity.md) — 機械+レビュー(確定点テスト+境界レビュー)
+- [データを事実・状態・時間で分類する](./fact-state-time.md) — レビュー(分類のモデリングレビュー)
+- [事実は追記し、現在状態は導出する](./append-facts-derive-state.md) — 機械+レビュー(replay 検証+判断レビュー)
+- [整合性をデータ層の制約で守る](./database-integrity.md) — 機械+レビュー(実 datastore 制約テスト)

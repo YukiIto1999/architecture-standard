@@ -524,12 +524,12 @@ else
 fi
 
 echo
-echo "=== 16. 概念フォルダの規律台帳(README の行 = 実 file = file 先頭の規律 H2) ==="
+echo "=== 16. 概念フォルダの規律台帳(README の行 = 実 file = file 先頭の規律 H2。各行は検証手段を持つ) ==="
 ledger_ok=1
 for concept_dir in principles/*/ concerns/*/; do
   readme="${concept_dir}README.md"
   if [ ! -f "$readme" ]; then echo "  $concept_dir: README.md がない"; ledger_ok=0; continue; fi
-  ledger_records=$(rg -oN '^- \[([^]]+)\]\(\./([^)]+)\.md\)$' "$readme" -r '$2'$'\t''$1' | sort)
+  ledger_records=$(rg -oN '^- \[([^]]+)\]\(\./([^)]+)\.md\) — (機械|機械\+レビュー|レビュー)\(.+\)$' "$readme" -r '$2'$'\t''$1' | sort)
   actual_records=$(
     while IFS= read -r rule_file; do
       heading=$(rg -m1 -oN '^## (.+)$' "$rule_file" -r '$1')

@@ -6,10 +6,10 @@ principles の [separation](../../principles/separation/README.md) と [data](..
 
 ## 規律
 
-- [速く起動し、検証に失敗したら止める](./fast-validated-startup.md)
-- [生存と準備を分けて公開する](./liveness-vs-readiness.md)
-- [合図を受けたら受付をやめ、期限内で終える](./graceful-shutdown.md)
-- [突然死に耐える](./crash-tolerance.md)
+- [速く起動し、検証に失敗したら止める](./fast-validated-startup.md) — 機械(起動拒否test+時間計測)
+- [生存と準備を分けて公開する](./liveness-vs-readiness.md) — 機械(生存と準備の面のtest)
+- [合図を受けたら受付をやめ、期限内で終える](./graceful-shutdown.md) — 機械(受付停止・drain test)
+- [突然死に耐える](./crash-tolerance.md) — 機械(突然死後の回復test)
 
 ## 参照
 起動時の検証は [configuration](../configuration/README.md)、取り消しの協調は [concurrency](../concurrency/README.md) に従う。

@@ -5,7 +5,7 @@ evolution は、変更の作法に関する原則を置く。
 
 ## 規律
 
-- [変更は段階的で可逆にする](./incremental-reversible-change.md)
-- [影響範囲へ整合的に波及させる](./consistent-propagation.md)
-- [触れた範囲を構造改善する](./improve-touched-scope.md)
-- [決まらない決定は先送りし、記録に残す](./defer-decisions.md)
+- [変更は段階的で可逆にする](./incremental-reversible-change.md) — レビュー(migration の段の照合)
+- [影響範囲へ整合的に波及させる](./consistent-propagation.md) — レビュー(review の影響範囲照合)
+- [触れた範囲を構造改善する](./improve-touched-scope.md) — レビュー(実装手順の確認点)
+- [決まらない決定は先送りし、記録に残す](./defer-decisions.md) — レビュー(ADR 記録の照合)

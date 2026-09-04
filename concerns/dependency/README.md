@@ -8,12 +8,12 @@ principles の [separation](../../principles/separation/README.md) が定める�
 
 ## 規律
 
-- [依存を内側へ一方向に向ける](./inward-dependencies.md)
-- [抽象を方針側が所有する](./policy-owned-abstractions.md)
-- [port を目的で宣言する](./purpose-driven-ports.md)
-- [配線を組立点に集める](./composition-root.md)
-- [依存は構成子で受け取る](./constructor-injection.md)
-- [循環を作らず、安定へ依存し、詳細を先送りする](./acyclic-stable-dependencies.md)
+- [依存を内側へ一方向に向ける](./inward-dependencies.md) — 機械(依存方向の構造検査)
+- [抽象を方針側が所有する](./policy-owned-abstractions.md) — 機械+レビュー(依存方向検査+幅レビュー)
+- [port を目的で宣言する](./purpose-driven-ports.md) — 機械+レビュー(fake隔離test+目的判断)
+- [配線を組立点に集める](./composition-root.md) — 機械+レビュー(組立点外生成検出+レビュー)
+- [依存は構成子で受け取る](./constructor-injection.md) — 機械+レビュー(locator検出+レビュー)
+- [循環を作らず、安定へ依存し、詳細を先送りする](./acyclic-stable-dependencies.md) — 機械+レビュー(循環検査+安定度レビュー)
 
 ## 参照
 依存と境界の原則は [separation](../../principles/separation/README.md)、効果の合成は [effect](../effect/README.md) に従う。
