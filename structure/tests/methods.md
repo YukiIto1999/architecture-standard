@@ -118,14 +118,6 @@ mutation は repository の検証入口に配線し、しきい値を割った�
 数値が高くてもアサーションの強さは示されず、その検査は mutation が担う。
 低いカバレッジは、確実に検証の不足を意味する。
 各 project は、branch coverage の下限を記録し、repository の検証入口で判定する。
-safety analysis で safety-critical と分類した decision は、各基本条件が独立に decision の結果を左右することを MC/DC で確かめる。
-safety analysis は decision ごとに安定な `decision_id`、source locator、基本条件の `condition_id` を記録し、`tests/mcdc-cases.json` は同じ ID と各 condition の case pair を持つ。
-case pair は二つの case ID、各基本条件の値、decision の期待結果を持つ。
-test harness は `decision_id` と、基本条件の値から boolean の decision 結果を返す純粋な production decision symbol の registry を持ち、case 定義を入力としてその symbol を直接呼ぶ。
-registry の値は safety analysis の source locator が指す production decision symbol への直接参照に限り、真理値表または別実装へ置き換えない。
-検証入口は safety analysis、case 定義、evaluator registry の decision・基本条件を一対一で照合し、registry の参照先 symbol と source locator の一致、pair 内で対象以外の条件が固定され、対象条件と期待結果だけが反転することを判定する。
-test harness は全 case を実行し、evaluator の実結果を期待結果と照合する。
-coverage report が MC/DC の metric を直接出さない場合は、report だけで MC/DC を満たしたと判定しない。
 カバーしない箇所は、見落としでなく判断の結果として残す。
 snapshot を、主たる検証にしない。
 AI が生成したテストを、有効性の検査なしに受け入れない。
