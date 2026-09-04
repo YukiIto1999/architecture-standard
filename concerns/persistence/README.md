@@ -11,7 +11,7 @@ store の採用では、persistence は datastore と一時データの store �
 ## 規律
 
 - [事実・状態・時間を別の関係に落とす](./fact-state-time-relations.md) — レビュー(schema設計はreview)
-- [事実を追記する形で残す](./append-only-facts.md) — レビュー(schema設計はreview)
+- [事実を追記する形で残す](./append-only-facts.md) — 機械+レビュー(関係名の denylist 検査+schema 設計のレビュー)
 - [追記した事実の版を読み出しで現在へ変換する](./read-time-upcasting.md) — レビュー(review規律照合のみ)
 - [正規化して一つの事実を一箇所に置く](./normalization.md) — レビュー(schema設計はreview)
 - [関係の意図を制約で表す](./relational-constraints.md) — 機械+レビュー(実datastore制約テスト)

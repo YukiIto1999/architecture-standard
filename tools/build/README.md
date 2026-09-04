@@ -2,9 +2,9 @@
 
 build は、task の編成、共有ライブラリの取得、契約と release metadata の生成、成果物の署名に使う道具の採用を定める。
 エントリは、[README](../README.md) の書式と選定の共通基準に従う。
-各エントリは、ツールごとの file が持つ。
+各エントリは、ツールごとのファイルが持つ。
 
-| 用途 | 採用 | file |
+| 用途 | 採用 | ファイル |
 |---|---|---|
 | task orchestrator | Nx | [nx.md](./nx.md) |
 | 共有ライブラリの取得 | Git submodule | [git-submodule.md](./git-submodule.md) |
