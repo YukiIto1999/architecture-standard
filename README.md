@@ -19,7 +19,7 @@ architecture-standard は、ソフトウェアアーキテクチャの標準そ�
 | [concerns](./concerns/) | 全体を貫く規律は何か | システム全体を通す概念ごとの規律。24概念 |
 | [structure](./structure/) | 各部をどう組むか | ターゲットプロジェクトの骨格と各部の構造 |
 | [tools](./tools/) | 何を、どう選び、どう使うか | 採用と言語ごとの実現。rust・csharp・typescript の言語 ecosystem と、build・platforms・services の区分 |
-| [process](./process/) | どの順で作り、どこで確かめるか | 作業の種別ごとの順序と確認点。10単位 |
+| [process](./process/) | どの順で作り、どこで確かめるか | 作業の種別ごとの順序と確認点。11単位 |
 
 参照は、具象から抽象への一方向に保つ。
 tools は structure・concerns・principles に、structure は concerns・principles に、concerns は principles に従う。
