@@ -8,7 +8,8 @@ surface ごとの規律は、[aspnet-core](./aspnet-core.md)・[consoleappframew
 ## 可視性
 
 ### 要求
-内部の実装は internal に保ち、1ファイルに閉じる型は file 修飾子で閉じる。
+コンテキストは assembly の境界と一致させ、内部の実装は internal に保ち、1ファイルに閉じる型は file 修飾子で閉じる。
+`InternalsVisibleTo` は、そのコンテキストの tests の assembly に限り、コンテキスト間の可視の穴にしない。
 
 ### 根拠
 通る最も狭い可視性を既定にすれば、public が意図した API の表面に限られ、内部の実装が外から触れない。

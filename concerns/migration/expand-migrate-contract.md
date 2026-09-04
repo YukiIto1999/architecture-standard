@@ -17,6 +17,7 @@ schema migration は forward-only の artifact とし、戻す場合も既存 ar
 拡張で加えた列を任意項目のまま恒久的に残すと、移行が終わったのかを判別できず、収縮の段が永遠に来ない。
 
 ### 完了条件
+schema migration の artifact が forward-only であり、戻しが既存 artifact の逆実行でなく新しい forward migration で行われている。
 互換を保てない変更が拡張・移行・収縮の段で進み、収縮まで到達していることの判定は、[evolution](../../principles/evolution/README.md) の完了条件に従う。
 読み出しの切り替えより前の各段で、旧い構造への後戻りができる。
 旧い構造を落とす収縮の段が、読み出しの切り替えと参照の消滅を確かめた後に行われている。
