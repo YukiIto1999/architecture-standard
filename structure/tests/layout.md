@@ -67,6 +67,8 @@ Large の実行環境は、対象として記録した外部資源だけを接�
 サイズを分けても、各段が個別に肥大すれば配分は崩れる。
 厚みは Small に置き、上の段は絞る([principles/verification](../../principles/verification/README.md) に従う)。
 
+test が存在しない category・size の区画のフォルダは、作らない。
+
 ## 段階実行
 
 実行の順序と失敗時の停止は、[process/verification](../../process/verification.md) が定める。
