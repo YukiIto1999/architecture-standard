@@ -10,7 +10,7 @@
 1. project の関心を列挙し、[structure/skeleton](../structure/skeleton.md) の条件で root と surface の境界集合を決める。
 2. project の実装単位と言語の対応を入力として確定し、[tools](../tools/) の各 ecosystem の README が定める言語の採用に照合する。
 3. [tools](../tools/) の6つの実現軸と全域規律 conventions で、言語の機構を固定する。
-4. 必要な共有ライブラリを、[tools/build/git-submodule](../tools/build/git-submodule.md) が定める取得機構で target の `libs/<mechanism>` へ初期化し、target が記録した exact commit のコードと `spec.md` を materialize する。
+4. 必要な共有ライブラリを、[tools/build/vendoring](../tools/build/vendoring.md) が定める取得機構で target の `libs/<mechanism>` へ初期化し、target が記録した exact commit のコードと `spec.md` を materialize する。
 5. 骨格だけの最薄の一線を、タスク実行の正本と段階実行で検証入口の合格状態にする([structure/tests](../structure/tests/layout.md) の「タスク実行の正本」と「段階実行」に従う)。
 6. 置いた境界ごとに、対応する layout に従って内部を組む。
 7. 各境界の実装は、[implementation](./implementation.md) の順序で進める。
