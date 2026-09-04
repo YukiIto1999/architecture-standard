@@ -23,7 +23,7 @@
 ### 行動
 合図で受付を止め、進行中を期限の中で終える。
 終わらない仕事は取り消しを伝え、再実行できる形で返す。
-取り消しの協調は [concurrency](../concurrency/README.md) に従う。
+取り消しの協調は [concurrency](../concurrency/cooperative-cancellation.md) に従う。
 
 ### 例
 

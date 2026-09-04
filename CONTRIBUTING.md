@@ -16,7 +16,9 @@
 - 本文の変更、その変更を成立させる検査、必須の参照更新は同じ commit に入れる。いずれかを欠いた中間 commit は作らない。
 - 振る舞いの変更と、それに不要な構造改善は別の commit に分ける。
 - 各 commit は、その時点で参照切れや検査失敗を残さず、単独で checkout して検証できる状態にする。
+- 標準本文の変更は、`.claude/skills/standard-update/scripts/verify.sh` の全 PASS を検証入口とし、検査を変えたら `verify-test.sh` に両方向の fixture を足す。
 - `main` に `WIP`、`fixup!`、`squash!` の commit を残さない。公開前に amend または interactive rebase で整理する。
+- 履歴の整理(amend・force push)は公開後も行いうる。整理後の照合可能性は、root README が定める条文引用の契約が担う。整理を行ったら、準拠する project へ再 pin を促す。
 
 ## commit message
 

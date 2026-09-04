@@ -19,7 +19,7 @@ contracts/
 `http` は HTTP の通信に、`protocol` は埋め込み surface との非 HTTP のローカル通信に置く。
 `generated` は、canonical の契約を code から使うすべての場合に置く。
 canonical の型を手書きで写した DTO を、generated の代わりにしない。
-生成は単一の入口(task graph の contracts 生成 task)から行い、HTTP を持つ契約は OpenAPI 経由で client と型を、HTTP を持たない契約(同一プロセス・console 出力・file format)は JSON Schema 経由で型だけを、同じ `generated/` へ出す。
+生成は単一の入口(task graph の contracts 生成 task)から行い、HTTP を持つ契約は OpenAPI 経由で client と型を、HTTP を持たない契約(同一プロセス・console 出力・ファイル形式)は JSON Schema 経由で型だけを、同じ `generated/` へ出す。
 
 ## 層
 

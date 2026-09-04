@@ -3,10 +3,10 @@
 ### 要求
 外部キー・一意・NOT NULL・検査で関係の意図を表す。
 任意の項目は本体の nullable でなく、値があるときだけ行が存在する別の関係に切り出す。
-整合性をデータ層で守る規則は、[data](../../principles/data/README.md) に従う。
+整合性をデータ層で守る規則は、[data](../../principles/data/database-integrity.md) に従う。
 
 ### 根拠
-データ層の制約で守る理由は [data](../../principles/data/README.md) に従う。
+データ層の制約で守る理由は [data](../../principles/data/database-integrity.md) に従う。
 外部キーは関係の意図そのものを表し、NOT NULL と一意は欠けてはならない値と重複してはならない値を保証する。
 NULL は三値論理を持ち込んで一意や検査の意味を崩すので、任意の項目は別の関係へ切り出す。
 

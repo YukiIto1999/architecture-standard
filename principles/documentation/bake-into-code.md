@@ -1,7 +1,7 @@
 ## コードに焼き込めるものは文書に書かない
 
 ### 要求
-機械検証は、[verification](../verification/README.md) に従う。
+機械検証は、[verification](../verification/machine-enforced-constraints.md) に従う。
 機械で検証できる制約を、文書へ重ねて書かない。
 
 ### 根拠
@@ -29,8 +29,4 @@
 - import の順序を守る。
 ```
 
-整形と順序を formatter と lint に委ねれば、文書へ規則を重ねずに済む。
-
-```md
-（コードスタイルは formatter と lint が検証する。文書には書かない）
-```
+整形と順序を formatter と lint に委ねれば、文書へ規則を重ねずに済む。文書の側には書かない。

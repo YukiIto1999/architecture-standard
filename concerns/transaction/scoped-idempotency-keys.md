@@ -18,7 +18,7 @@ scope を持たない匿名の要求では、保存した応答を key の発行
 同じ scope と key で異なる意図を要求したときは、conflict を返す。
 
 ### 根拠
-冪等そのものの理由は [resilience](../resilience/README.md) に従う。
+冪等そのものの理由は [resilience](../resilience/idempotent-operations.md) に従う。
 書き込みパスで適用済みの鍵をデータ層の一意制約に記録すれば、同時に届いた重複要求も確実に一方だけが本体の書き込みへ進む。
 operation、actor、tenant を scope に含めれば、別の操作や主体で同じ key が偶然一致しても衝突しない。
 複合一意制約の列に NULL があると、データ層によっては同じ組を重複として扱わず、冪等性が抜ける。

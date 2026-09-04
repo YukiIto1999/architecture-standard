@@ -9,7 +9,7 @@
 ## 順序
 
 1. 作業単位の名前と範囲を宣言する([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」に従う)。
-2. 変更がどのアクターのどのユースケースに属するかを答え、答えられなければ [design](./design.md) へ戻る([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
+2. 変更がどのアクターのどのuse-caseに属するかを答え、答えられなければ [design](./design.md) へ戻る([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
 3. 着手時点で分かっている、検証すべき振る舞いを、テストリストに列挙する。
 4. 初回は、公開 interface を越して確かめられる最小の振る舞いをリストから選ぶ。
 5. 選んだ振る舞いについて、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の段を記載順に適用し、要求を満たす最初の段で止める。
@@ -32,11 +32,11 @@
 型宣言を利用側へ接続せずに追加することと、未定義の型を参照することを、型検査の赤として扱わない。
 最初の型検査の赤が、既存の implementation か caller と新しい型との不整合から生じていることを確かめる。
 新型を利用側へ接続しても対象の不整合が起きない場合は、振る舞いのテストを最初の赤にしたことを確かめる。
-初回の振る舞いのテストが、公開 interface を越す最小のユースケースを検証していることを確かめる。
+初回の振る舞いのテストが、公開 interface を越す最小のuse-caseを検証していることを確かめる。
 想定内の失敗を、成功の値の側の閉じた型へ入れていないかを確かめる([concerns/effect](../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に照合する)。失敗の型が空のまま全ての計算が成功しうる形になっていれば、赤の立て方が誤っている。
 作業中に気づいた振る舞いは、その場で実装せず、テストリストへ足す。
 テスト名とテスト本体が、内部実装でなく、検証対象、条件、外から観測できる期待結果を表すことを確かめる([principles/naming](../principles/naming/README.md) と [principles/verification](../principles/verification/README.md) に照合する)。
-アクターとユースケースへの帰属は、テストを書く段で確かめ、refactor の段へ先送りしない([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に照合する)。
+アクターとuse-caseへの帰属は、テストを書く段で確かめ、refactor の段へ先送りしない([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に照合する)。
 直和へ新しい場合を追加するときは、新しい arm を足し、既存の arm の本文が変わっていないことを確かめる([principles/construction](../principles/construction/decisions-as-types.md) の「業務判断を型と多態で構造化する」に照合する)。
 緑にする作業を機械に任せた場合も、痛みと臭いの知覚と言語化を省かない([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」に従う)。
 実装を書いた後のアクターと処理の図示照合は、[design](./design.md) の確認点に従う。

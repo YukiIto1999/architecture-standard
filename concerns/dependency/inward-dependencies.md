@@ -7,7 +7,7 @@
 ### 根拠
 実行時の呼び出しは方針から詳細へ向かうが、コンパイル時のソース依存は逆に内へ向ける。
 外側で生成されたデータ形式を内側で使うと、内側がその詳細に縛られる。
-方針が外側の詳細へ依存しない理由は、[separation](../../principles/separation/README.md) に従う。
+方針が外側の詳細へ依存しない理由は、[separation](../../principles/separation/stable-abstract-dependencies.md) に従う。
 
 ### 完了条件
 内側の方針のソースコードに、外側の詳細への import や参照が現れていない。

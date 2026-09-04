@@ -3,7 +3,7 @@
 ### 要求
 利用者面の主操作は一つにする。
 visual UI の主操作は、見つけやすい位置に、押しやすい target size で置く。
-visual UI の pointer target の下限と例外は、[accessibility](../accessibility/README.md) に従う。
+visual UI の pointer target の下限と例外は、[accessibility](../accessibility/pointer-target-size.md) に従う。
 予測できる既定値を選択済みで提示し、変えたい利用者だけが触る形にする。
 予測できる妥当な既定値が無いなら、選択済みにせず空で出す。
 既定値を選ぶ基準は、project が定める。
@@ -17,6 +17,7 @@ visual UI の主操作が見つけやすく十分な target size を持てば、
 頻用操作の近道は、初学者には隠れ、熟達者の速度だけを上げる。
 
 ### 完了条件
+既定値を選ぶ基準が、project の決定の記録に定められている。
 各利用者面の主操作が、一つに絞られている。
 visual UI の主操作が、他の操作より強い視覚的重みを持つ位置に置かれている。
 主操作の target size の判定は、[accessibility](../accessibility/README.md) の完了条件に従う。
