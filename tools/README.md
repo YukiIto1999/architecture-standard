@@ -50,6 +50,8 @@ tools は、採用だけを書く。
 | [csharp](./csharp/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセス |
 | [typescript](./typescript/) | viewer・extension・web と ide の host |
 
+言語の間で揃えるのは保証(満たす性質とその検証)であり、実装の形の双子性ではない。
+
 標準は project の実装言語を選定しない。
 実装単位と言語の対応を適用時の入力とし、各 ecosystem の README が定める言語の採用のうち使用する各言語の規律を適用する。
 自己ホストの surface と、desktop・mobile の host は、core の言語に従う。
