@@ -10,6 +10,7 @@ integration event の記録は [transaction](../transaction/README.md) の outbo
 配送は分散した経路を通るので、少なくとも一度として扱い、重複は消費側の冪等で吸収する。
 
 ### 完了条件
+outbox の項目が、配送の確認の後にだけ配送済みになっている。
 integration event の記録が、transaction の outbox に従っている。
 配送が、outbox から読み出して行われ、記録と分かれている。
 
