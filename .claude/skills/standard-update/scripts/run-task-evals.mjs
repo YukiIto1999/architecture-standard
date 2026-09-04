@@ -388,9 +388,9 @@ function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
   if (skillName === "standard-audit" && evalId === 4) {
     const principlesReadme = path.join(fixtureRoot, "principles", "README.md");
     replaceKnownStateOnce(principlesReadme, [
-      "要求した範囲は、受入条件、標準の必須規律、安全、互換性、必要な検証を欠かさず作り切る。",
+      "要求された機能範囲、受入条件、必須規律、安全性、互換性、必要な検証は妥協なく作り切ります。",
     ],
-      "要求した範囲は、必要な品質を適切に満たす。",
+      "要求された範囲は、必要な品質を適切に満たします。",
     );
   }
   // fixture-mutation:end

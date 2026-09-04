@@ -737,8 +737,8 @@ fake_audit_mutation_probe="$TEST_ROOT/claude-audit-mutation-probe"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'runner=.claude/skills/standard-update/scripts/run-task-evals.mjs' \
-  'expected='\''要求した範囲は、受入条件、標準の必須規律、安全、互換性、必要な検証を欠かさず作り切る。'\''' \
-  'injected='\''要求した範囲は、必要な品質を適切に満たす。'\''' \
+  'expected='\''要求された機能範囲、受入条件、必須規律、安全性、互換性、必要な検証は妥協なく作り切ります。'\''' \
+  'injected='\''要求された範囲は、必要な品質を適切に満たします。'\''' \
   'diff_files=$(git diff --name-only)' \
   'eval_status=$(git status --short --untracked-files=all -- .claude/skills/standard-audit/evals)' \
   'if [ "$diff_files" != "principles/README.md" ] || ! rg -qF "$injected" principles/README.md; then' \
