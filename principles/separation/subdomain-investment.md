@@ -16,6 +16,7 @@ core を既製の機構へ置き換えない。
 費用と対価の一般の規律は [construction](../construction/README.md) に従う。
 
 ### 完了条件
+generic を自作で満たしたコンテキストに、既製の機構で満たせない根拠が記録されている。
 各コンテキストに、core・supporting・generic のいずれかの分類と、その根拠が記録されている。
 generic に分類したコンテキストで置き換わっている規律が、structure が generic を名指しで定めた規律に限られている。
 generic に分類したコンテキストに、業務の不変条件が置かれていない。
