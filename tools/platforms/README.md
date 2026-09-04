@@ -3,9 +3,9 @@
 platforms は、セルフホストする基盤の採用を定める。
 エントリは、[README](../README.md) の書式と選定の共通基準に従う。
 基盤に対する規律は concerns と structure が定め、ここでは採用と判断基準だけを持つ。
-各エントリは、ツールごとの file が持つ。
+各エントリは、ツールごとのファイルが持つ。
 
-| 用途 | 採用 | file |
+| 用途 | 採用 | ファイル |
 |---|---|---|
 | datastore | PostgreSQL | [postgresql.md](./postgresql.md) |
 | 一時 store | Valkey | [valkey.md](./valkey.md) |

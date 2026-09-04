@@ -33,7 +33,7 @@ arch は、[skeleton](../skeleton.md) と各部の layout、[concerns/dependency
 viewer と extension が特定 host の API や型を参照しないことも、arch で検証する。
 e2e は、critical path の最小の smoke と visual だけに絞る。
 integration は、複数の実装単位または境界を組み合わせて検証する。
-検証の重みは、公開 interface 越しのユースケースの検証に置き、内側の個別のテストは型と契約の保証で減らす([principles/verification](../../principles/verification/README.md) に従う)。
+検証の重みは、公開 interface 越しのuse-caseの検証に置き、内側の個別のテストは型と契約の保証で減らす([principles/verification](../../principles/verification/README.md) に従う)。
 
 ## サイズによる配置
 
