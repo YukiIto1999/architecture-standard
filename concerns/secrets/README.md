@@ -7,7 +7,7 @@ secret の値と lifecycle の正本は secrets であり、[configuration](../c
 
 ## 規律
 
-- [secret を分けて専用の型に封じる](./sealed-secret-type.md)
+- [secret を分けて専用の型に封じる](./sealed-secret-type.md) — 機械+レビュー(型封じ+非流出テスト)
 
 ## 参照
 設定へ secret の参照を置き、起動時に値を解決する適用は [configuration](../configuration/README.md) が書く。

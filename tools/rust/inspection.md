@@ -172,7 +172,7 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(rustfmt --check、rustc の non_snake_case 系 lint) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(命名照合) |
-| 全域 | branch coverage と safety-critical decision | 計測(branch を数える設定は nightly channel で実行する `cargo llvm-cov --branch` であり、その json 出力の branch 集計から project 記録の branch 下限を検証入口で判定)+構造検査・実行テスト([structure/tests の methods](../../structure/tests/methods.md) が定める safety analysis と MC/DC case の一対一照合) |
+| 全域 | branch coverage | 計測(branch を数える設定は nightly channel で実行する `cargo llvm-cov --branch` であり、その json 出力の branch 集計から project 記録の branch 下限を検証入口で判定) |
 | serde | 境界で一度だけ parse してドメイン型へ移す | 型(TryFrom)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | translation | 終了を surface の境界表現へ写す | 実行テスト(surface ごとの成功・想定内失敗・欠陥・取り消しの写像) |
 | translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
@@ -202,6 +202,7 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | tower-lsp-server | extension の接続 | 型(tower-lsp-server の LanguageServer 実装と custom method)+レビュー |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
 
+| connection | FFI を安全な境界に閉じる | analyzer/lint(unsafe_code の deny と allow の所在)+構造検査(FFI module 外の unsafe 不在)+レビュー(不変条件のコメント) |
 ## 参照
 検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification/README.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。

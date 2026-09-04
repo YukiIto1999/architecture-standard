@@ -17,6 +17,15 @@ use-case は、port を fake に置き換えて検証する。
 形式手法で、コードの全面は検証しない。
 symbolic と concolic の実行を、標準の検証に組み込まない。
 
+## テストの単位
+
+検証の単位は、公開の振る舞いであり、実装の単位ではない。
+class や関数ごとに 1:1 の単体テストを置かない。
+振る舞いの検証は、公開 API を通し、内部の協力者を実物のまま含めて行う。
+局所の単体テストは薄く保ち、仕様と振る舞いの検証を厚くする。
+実装の詳細に結合したテストはリファクタリングで壊れ、振る舞いに結合したテストだけが構造改善の安全網になる。
+ダブルの範囲は [doubles](./doubles.md) に従う。
+
 ## 決定性と隔離
 
 テストは、実行順序に依存せず、単体でも他のテストと並べても同じ結果を返す。
@@ -109,14 +118,6 @@ mutation は repository の検証入口に配線し、しきい値を割った�
 数値が高くてもアサーションの強さは示されず、その検査は mutation が担う。
 低いカバレッジは、確実に検証の不足を意味する。
 各 project は、branch coverage の下限を記録し、repository の検証入口で判定する。
-safety analysis で safety-critical と分類した decision は、各基本条件が独立に decision の結果を左右することを MC/DC で確かめる。
-safety analysis は decision ごとに安定な `decision_id`、source locator、基本条件の `condition_id` を記録し、`tests/mcdc-cases.json` は同じ ID と各 condition の case pair を持つ。
-case pair は二つの case ID、各基本条件の値、decision の期待結果を持つ。
-test harness は `decision_id` と、基本条件の値から boolean の decision 結果を返す純粋な production decision symbol の registry を持ち、case 定義を入力としてその symbol を直接呼ぶ。
-registry の値は safety analysis の source locator が指す production decision symbol への直接参照に限り、真理値表または別実装へ置き換えない。
-検証入口は safety analysis、case 定義、evaluator registry の decision・基本条件を一対一で照合し、registry の参照先 symbol と source locator の一致、pair 内で対象以外の条件が固定され、対象条件と期待結果だけが反転することを判定する。
-test harness は全 case を実行し、evaluator の実結果を期待結果と照合する。
-coverage report が MC/DC の metric を直接出さない場合は、report だけで MC/DC を満たしたと判定しない。
 カバーしない箇所は、見落としでなく判断の結果として残す。
 snapshot を、主たる検証にしない。
 AI が生成したテストを、有効性の検査なしに受け入れない。

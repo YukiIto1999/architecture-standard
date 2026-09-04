@@ -27,6 +27,7 @@ process は、順序と確認点だけを所有し、性質の規範を再定義
 | [migration](./migration.md) | 移行 |
 | [verification](./verification.md) | 検証の実行 |
 | [release](./release.md) | release と配備 |
+| [drill](./drill.md) | 演習 |
 
 ## 判定の枠
 

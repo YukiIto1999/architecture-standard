@@ -6,7 +6,7 @@ principles の [construction](../../principles/construction/README.md) が定め
 
 ## 規律
 
-- [文脈を一つにまとめて伝える](./unified-request-context.md)
+- [文脈を一つにまとめて伝える](./unified-request-context.md) — 機械+レビュー(Deadline検査+集約レビュー)
 
 ## 参照
 trace の意味と観測への付与は [observability](../observability/README.md) が正本である。

@@ -11,8 +11,8 @@ principles の [legibility](../../principles/legibility/README.md) が定める�
 
 ## 規律
 
-- [キーボードで操作でき、色だけに頼らない](./keyboard-color-contrast.md)
-- [pointer target を掴める大きさに保つ](./pointer-target-size.md)
+- [キーボードで操作でき、色だけに頼らない](./keyboard-color-contrast.md) — 機械+レビュー(axe検査+AA目視レビュー)
+- [pointer target を掴める大きさに保つ](./pointer-target-size.md) — 機械(bounding box照合test)
 
 ## 参照
 明瞭さは [legibility](../../principles/legibility/README.md)、利用者に向けた画面の体験は [experience](../experience/README.md) に従う。

@@ -7,10 +7,10 @@ carrier の正本は [context-propagation](../context-propagation/README.md) で
 
 ## 規律
 
-- [事実をイベントとして表し、構造化して出す](./structured-events.md)
-- [文脈を豊かに載せ、事後に問いを立て直せるようにする](./rich-context.md)
-- [仕込みを境界の殻で行う](./shell-instrumentation.md)
-- [観測は振る舞いを変えない](./non-invasive-observation.md)
+- [事実をイベントとして表し、構造化して出す](./structured-events.md) — 機械+レビュー(print系lint・no-console)
+- [文脈を豊かに載せ、事後に問いを立て直せるようにする](./rich-context.md) — レビュー(review規律照合のみ)
+- [仕込みを境界の殻で行う](./shell-instrumentation.md) — 機械+レビュー(禁止import構造検査)
+- [観測は振る舞いを変えない](./non-invasive-observation.md) — レビュー(review規律照合のみ)
 
 ## 参照
 業務の事実の種別は [messaging](../messaging/README.md) に従う。

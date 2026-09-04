@@ -8,6 +8,6 @@ legibility は、コードによる意図表現に関する原則を置く。
 
 ## 規律
 
-- [コードを第一級の文書として明瞭に書く](./code-as-documentation.md)
-- [可読性と視認性を両立する](./readability-and-scannability.md)
-- [宣言と使用を近接させる](./declare-near-use.md)
+- [コードを第一級の文書として明瞭に書く](./code-as-documentation.md) — レビュー(実装確認点の照合)
+- [可読性と視認性を両立する](./readability-and-scannability.md) — 機械+レビュー(しきい値 lint+レビュー)
+- [宣言と使用を近接させる](./declare-near-use.md) — レビュー(review の照合のみ)
