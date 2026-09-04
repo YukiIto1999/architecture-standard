@@ -7,7 +7,7 @@ principles の [data](../../principles/data/README.md) が定める事実の追�
 
 ## 規律
 
-- [説明責任のある操作を証跡として追記する](./append-accountable-operations.md)
+- [説明責任のある操作を証跡として追記する](./append-accountable-operations.md) — レビュー(決定記録との照合のみ)
 
 ## 参照
 事実の追記の形は [data](../../principles/data/README.md)、不変の保管は [persistence](../persistence/README.md) に従う。

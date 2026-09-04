@@ -6,8 +6,8 @@ verification は、検証に関する原則を置く。
 
 ## 規律
 
-- [重要な制約を機械検証に固定する](./machine-enforced-constraints.md)
-- [検査が見るのは書かれたものだけである](./enforce-existence.md)
-- [テストを設計の道具にする](./tests-as-design.md)
-- [テストを振る舞いの安全網にする](./behavioral-safety-net.md)
-- [テストの信頼性を保つ](./test-reliability.md)
+- [重要な制約を機械検証に固定する](./machine-enforced-constraints.md) — 機械(検証入口と対応表照合)
+- [検査が見るのは書かれたものだけである](./enforce-existence.md) — 機械(実体照合と件数0拒否)
+- [テストを設計の道具にする](./tests-as-design.md) — レビュー(実装手順の red 確認)
+- [テストを振る舞いの安全網にする](./behavioral-safety-net.md) — 機械+レビュー(size 検査+単位レビュー)
+- [テストの信頼性を保つ](./test-reliability.md) — 機械+レビュー(mutation 検査+緩和承認)

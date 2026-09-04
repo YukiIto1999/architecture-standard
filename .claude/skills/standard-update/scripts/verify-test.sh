@@ -112,7 +112,7 @@ expect_pass "現行ツリーを受理する" "$fixture"
 fixture=$(make_fixture dynamic-concerns-ledger)
 mkdir -p "$fixture/concerns/extra"
 cp "$fixture/concerns/privacy/minimize-and-expire.md" "$fixture/concerns/extra/minimize-and-expire.md"
-printf '# extra\n\n## 概要\n\n検査用の概念である。\n\n## 規律\n\n- [個人情報は最小化して載せ、期限で消す](./minimize-and-expire.md)\n' > "$fixture/concerns/extra/README.md"
+printf '# extra\n\n## 概要\n\n検査用の概念である。\n\n## 規律\n\n- [個人情報は最小化して載せ、期限で消す](./minimize-and-expire.md) — レビュー(検査用)\n' > "$fixture/concerns/extra/README.md"
 sed -i '/^| \[accessibility\]/a | [extra](./extra/README.md) | 台帳から追加した検査用の概念 |' "$fixture/concerns/README.md"
 sed -i 's/24概念/25概念/' "$fixture/README.md"
 sed -i 's/・accessibility。/・accessibility・extra。/' \
@@ -307,6 +307,10 @@ expect_fail "概念台帳から欠けた規律 file を検出する" "$fixture" 
 fixture=$(make_fixture concept-ledger-name-drift)
 sed -i 's/- \[個人情報は最小化して載せ、期限で消す\]/- [別の名の規律]/' "$fixture/concerns/privacy/README.md"
 expect_fail "概念台帳の規律名と file の H2 の乖離を検出する" "$fixture" "概念フォルダの台帳が不一致"
+
+fixture=$(make_fixture concept-ledger-missing-verification)
+sed -i 's/^- \[個人情報は最小化して載せ、期限で消す\](\.\/minimize-and-expire\.md).*$/- [個人情報は最小化して載せ、期限で消す](.\/minimize-and-expire.md)/' "$fixture/concerns/privacy/README.md"
+expect_fail "検証手段を欠く台帳行を検出する" "$fixture" "概念フォルダの台帳が不一致"
 
 fixture=$(make_fixture tool-entry-line-missing)
 sed -i '/^撤回条件は、/d' "$fixture/tools/rust/sqlx.md"

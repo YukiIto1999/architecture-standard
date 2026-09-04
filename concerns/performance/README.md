@@ -7,9 +7,9 @@ principles の [construction](../../principles/construction/README.md) が定め
 
 ## 規律
 
-- [計測を定めてから比べる](./measure-before-compare.md)
-- [計測の後にだけ最適化する](./optimize-after-measurement.md)
-- [性能目的の並列化を計測の後の一手段にする](./measured-parallelization.md)
+- [計測を定めてから比べる](./measure-before-compare.md) — 機械(methods表 SLO計測)
+- [計測の後にだけ最適化する](./optimize-after-measurement.md) — 機械+レビュー(前後比較計測+レビュー)
+- [性能目的の並列化を計測の後の一手段にする](./measured-parallelization.md) — 機械+レビュー(SLO計測+ADRレビュー)
 
 ## 参照
 単純な形の既定と投機の排除は、principles の [construction](../../principles/construction/simplicity-by-default.md) の「単純な形を既定にする」と、[no-speculation](../../principles/construction/no-speculation.md) の「投機的で説明できない要素を作らない」に従う。

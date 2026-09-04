@@ -6,6 +6,6 @@ requirements は、要件の確定に関する原則を置く。
 
 ## 規律
 
-- [目的から要件を導く](./purpose-driven-requirements.md)
-- [根拠と決定状態を分ける](./evidence-decision-separation.md)
-- [検証できる形で要件と制約を定める](./verifiable-requirements.md)
+- [目的から要件を導く](./purpose-driven-requirements.md) — レビュー(design 手順1-2の照合)
+- [根拠と決定状態を分ける](./evidence-decision-separation.md) — レビュー(design 手順1の照合)
+- [検証できる形で要件と制約を定める](./verifiable-requirements.md) — レビュー(design 手順3の照合)

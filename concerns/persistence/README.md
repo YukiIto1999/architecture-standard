@@ -10,15 +10,15 @@ store の採用では、persistence は datastore と一時データの store �
 
 ## 規律
 
-- [事実・状態・時間を別の関係に落とす](./fact-state-time-relations.md)
-- [事実を追記する形で残す](./append-only-facts.md)
-- [追記した事実の版を読み出しで現在へ変換する](./read-time-upcasting.md)
-- [正規化して一つの事実を一箇所に置く](./normalization.md)
-- [関係の意図を制約で表す](./relational-constraints.md)
-- [一つの操作の問い合わせ数を件数から独立させる](./bounded-query-count.md)
-- [物理の最適化は計測した根拠で行う](./measured-physical-optimization.md)
-- [派生の再構築を決定的にする](./deterministic-rebuild.md)
-- [datastore と一時データの store を単一に採用する](./single-store-adoption.md)
+- [事実・状態・時間を別の関係に落とす](./fact-state-time-relations.md) — レビュー(schema設計はreview)
+- [事実を追記する形で残す](./append-only-facts.md) — レビュー(schema設計はreview)
+- [追記した事実の版を読み出しで現在へ変換する](./read-time-upcasting.md) — レビュー(review規律照合のみ)
+- [正規化して一つの事実を一箇所に置く](./normalization.md) — レビュー(schema設計はreview)
+- [関係の意図を制約で表す](./relational-constraints.md) — 機械+レビュー(実datastore制約テスト)
+- [一つの操作の問い合わせ数を件数から独立させる](./bounded-query-count.md) — 機械(問い合わせ数不変テスト)
+- [物理の最適化は計測した根拠で行う](./measured-physical-optimization.md) — 機械+レビュー(計測+再構築の検証)
+- [派生の再構築を決定的にする](./deterministic-rebuild.md) — 機械(再構築決定性テスト)
+- [datastore と一時データの store を単一に採用する](./single-store-adoption.md) — 機械+レビュー(store単一性の構造検査)
 
 ## 参照
 データの原則は [data](../../principles/data/README.md)、論理設計と物理設計の分離は [modeling](../../principles/modeling/README.md)、書き込みパスの一貫性は [transaction](../transaction/README.md) に従う。

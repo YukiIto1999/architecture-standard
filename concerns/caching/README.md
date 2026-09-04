@@ -7,7 +7,7 @@ cache の規律の正本は、この file に置く。
 
 ## 規律
 
-- [cache を正本の控えに保つ](./cache-aside.md)
+- [cache を正本の控えに保つ](./cache-aside.md) — 機械(失効・分散・不在のtest)
 
 ## 参照
 事実の正本の datastore と一時データの store の単一採用は [persistence](../persistence/single-store-adoption.md) の「datastore と一時データの store を単一に採用する」に従う。

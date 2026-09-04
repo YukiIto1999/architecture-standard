@@ -9,12 +9,12 @@ principles の [construction](../../principles/construction/README.md) が定め
 
 ## 規律
 
-- [構造化並行で寿命をスコープに束ねる](./structured-concurrency.md)
-- [取り消しを協調的に伝える](./cooperative-cancellation.md)
-- [共有可変状態を避ける](./no-shared-mutable-state.md)
-- [並行度を制限し、背圧を扱う](./bounded-concurrency-backpressure.md)
-- [並行の駆動を言語の機構に委ねる](./delegate-to-language-async.md)
-- [非同期と並行を業務の核から隔離する](./isolate-async-from-core.md)
+- [構造化並行で寿命をスコープに束ねる](./structured-concurrency.md) — 機械+レビュー(drain test+所属レビュー)
+- [取り消しを協調的に伝える](./cooperative-cancellation.md) — 機械+レビュー(期限検査+安全性レビュー)
+- [共有可変状態を避ける](./no-shared-mutable-state.md) — 機械+レビュー(mpsc検査+経路レビュー)
+- [並行度を制限し、背圧を扱う](./bounded-concurrency-backpressure.md) — 機械(並行上限・過負荷test)
+- [並行の駆動を言語の機構に委ねる](./delegate-to-language-async.md) — 機械+レビュー(runtime単一の構造検査)
+- [非同期と並行を業務の核から隔離する](./isolate-async-from-core.md) — 機械+レビュー(I/O限定検査+純粋性判断)
 
 ## 参照
 不変は [construction](../../principles/construction/README.md)、副作用の隔離は [separation](../../principles/separation/README.md) に従う。
