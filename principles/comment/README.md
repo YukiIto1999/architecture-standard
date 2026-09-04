@@ -8,7 +8,7 @@ comment は、実装コメントとドキュメントコメントの境界を定
 
 ## 規律
 
-- [コードの内容を実装コメントで説明しない](./no-code-explanation.md)
-- [実装コメントは採らなかった理由だけを書く](./rejected-alternatives.md)
-- [ドキュメントコメントは宣言の契約を書く](./declaration-contracts.md)
-- [履歴と古いコードを現在の source に残さない](./no-history-in-source.md)
+- [コードの内容を実装コメントで説明しない](./no-code-explanation.md) — レビュー(comment 規律の照合)
+- [実装コメントは採らなかった理由だけを書く](./rejected-alternatives.md) — レビュー(制約の有効性レビュー)
+- [ドキュメントコメントは宣言の契約を書く](./declaration-contracts.md) — 機械+レビュー(存在 lint+内容レビュー)
+- [履歴と古いコードを現在の source に残さない](./no-history-in-source.md) — レビュー(comment 規律の照合)

@@ -7,7 +7,7 @@ principles の [data](../../principles/data/README.md) が定める事実の保�
 
 ## 規律
 
-- [個人情報は最小化して載せ、期限で消す](./minimize-and-expire.md)
+- [個人情報は最小化して載せ、期限で消す](./minimize-and-expire.md) — 機械+レビュー(非流出・期限消去テスト)
 
 ## 参照
 事実の保持と削除の判断は [data](../../principles/data/README.md) に従う。

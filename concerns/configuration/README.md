@@ -7,11 +7,11 @@ secret の正本は [secrets](../secrets/README.md) であり、configuration �
 
 ## 規律
 
-- [設定を型付きの値で扱う](./typed-config.md)
-- [定めた源からまとめて読む](./single-config-source.md)
-- [環境差分を設定値で表す](./environment-as-values.md)
-- [起動時に検証する](./validate-at-startup.md)
-- [起動時設定と実行時 flag を分ける](./config-vs-flags.md)
+- [設定を型付きの値で扱う](./typed-config.md) — 機械(型+直読禁止の検査)
+- [定めた源からまとめて読む](./single-config-source.md) — 機械+レビュー(env直読lint+ADR照合)
+- [環境差分を設定値で表す](./environment-as-values.md) — 機械+レビュー(型付き値+分岐レビュー)
+- [起動時に検証する](./validate-at-startup.md) — 機械(不正設定の起動拒否test)
+- [起動時設定と実行時 flag を分ける](./config-vs-flags.md) — レビュー(機械判定の名指しなし)
 
 ## 参照
 分離の原則は [separation](../../principles/separation/README.md)、検証に失敗した起動の停止は [lifecycle](../lifecycle/README.md)、secret の伝送は [security](../security/README.md) に従う。

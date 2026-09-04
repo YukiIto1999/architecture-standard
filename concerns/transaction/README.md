@@ -7,12 +7,12 @@ transaction は書き込みパスの動的な確定を扱い、静止した関�
 
 ## 規律
 
-- [整合性を一つの書き込みパスに閉じる](./single-write-path.md)
-- [一つの確定点を持つ](./single-commit-point.md)
-- [状態とイベントを同一パスで記録する](./state-event-atomicity.md)
-- [冪等にして再実行できるようにする](./scoped-idempotency-keys.md)
-- [部分確定を不可視にする](./invisible-partial-commits.md)
-- [書き込みパスの所有を組立点に置く](./composition-owned-transactions.md)
+- [整合性を一つの書き込みパスに閉じる](./single-write-path.md) — 機械+レビュー(version conflict検査)
+- [一つの確定点を持つ](./single-commit-point.md) — 機械(methods表 単一確定点)
+- [状態とイベントを同一パスで記録する](./state-event-atomicity.md) — 機械(状態とoutbox同時確定)
+- [冪等にして再実行できるようにする](./scoped-idempotency-keys.md) — 機械(冪等要求記録の検査)
+- [部分確定を不可視にする](./invisible-partial-commits.md) — 機械+レビュー(停止再開テスト+調査性)
+- [書き込みパスの所有を組立点に置く](./composition-owned-transactions.md) — 機械(begin/commit構造検査)
 
 ## 参照
 整合性と集約は [data](../../principles/data/README.md)、効果とエラーは [effect](../effect/README.md) に従う。

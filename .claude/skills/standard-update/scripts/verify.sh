@@ -202,7 +202,7 @@ print_record_sources() {
 is_non_product_token() {
   # 採用行に併記される言語名・規格名・機構の一般語だけを除き、製品名の候補は行から毎回導出する。
   case "$1" in
-    "ADR"|"API"|"Build"|"C#"|"CI"|"CSS"|"Community"|"Core"|"JSON"|"JSON-RPC"|"Minimal"|"NET"|"OpenAPI"|"Rust"|"S3776"|"SPDX"|"TypeScript"|\
+    "ADR"|"API"|"HTTP"|"Build"|"C#"|"CI"|"CSS"|"Community"|"Core"|"JSON"|"JSON-RPC"|"Minimal"|"NET"|"OpenAPI"|"Rust"|"S3776"|"SPDX"|"TypeScript"|\
     "analyzer"|"backend"|"client"|"cognitive"|"collector"|"companion"|"complexity"|"cookie"|"core"|"coverage"|"desktop"|"for"|"framing"|"gate"|"generation"|"generator"|"handler"|"library"|"mobile"|"node"|"one-time"|"plugin"|"project"|"provider"|"quality"|"queue"|"record"|"root"|"runtime"|"rust"|"schema"|"script"|"sealed"|"source"|"tests/"|"tools"|"type-aware"|"union"|"up"|"v1"|"v8")
       return 0
       ;;
@@ -293,7 +293,7 @@ fi
 echo
 echo "=== 6. process/tools/言語 ecosystem の単位数 ==="
 numeric_ok=1
-process_expected=10
+process_expected=11
 process_readme_rows=$(markdown_section_file_table_rows process/README.md 単位)
 process_actual=$(find process -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
 echo "process: 台帳=$process_readme_rows 実ファイル=$process_actual 期待=$process_expected"
@@ -524,12 +524,12 @@ else
 fi
 
 echo
-echo "=== 16. 概念フォルダの規律台帳(README の行 = 実 file = file 先頭の規律 H2) ==="
+echo "=== 16. 概念フォルダの規律台帳(README の行 = 実 file = file 先頭の規律 H2。各行は検証手段を持つ) ==="
 ledger_ok=1
 for concept_dir in principles/*/ concerns/*/; do
   readme="${concept_dir}README.md"
   if [ ! -f "$readme" ]; then echo "  $concept_dir: README.md がない"; ledger_ok=0; continue; fi
-  ledger_records=$(rg -oN '^- \[([^]]+)\]\(\./([^)]+)\.md\)$' "$readme" -r '$2'$'\t''$1' | sort)
+  ledger_records=$(rg -oN '^- \[([^]]+)\]\(\./([^)]+)\.md\) — (機械|機械\+レビュー|レビュー)\(.+\)$' "$readme" -r '$2'$'\t''$1' | sort)
   actual_records=$(
     while IFS= read -r rule_file; do
       heading=$(rg -m1 -oN '^## (.+)$' "$rule_file" -r '$1')

@@ -7,8 +7,8 @@ event の契約と配送・消費は [messaging](../messaging/README.md)、確�
 
 ## 規律
 
-- [連携の手順の所有を決める](./orchestration-choreography.md)
-- [連鎖の失敗を、逆順の補償で打ち消す](./reverse-compensation.md)
+- [連携の手順の所有を決める](./orchestration-choreography.md) — レビュー(手順所有はdesign照合)
+- [連鎖の失敗を、逆順の補償で打ち消す](./reverse-compensation.md) — 機械(補償開始・冪等テスト)
 
 ## 参照
 event の契約と配送・消費は [messaging](../messaging/README.md) に従う。

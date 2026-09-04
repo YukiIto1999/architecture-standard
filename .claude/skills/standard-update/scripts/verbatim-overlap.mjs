@@ -52,6 +52,7 @@ function readLines(dir) {
       let line = lineRaw;
       if (/^\s*#/.test(line)) return; // heading / section marker
       if (/^\s*\|/.test(line)) return; // table row
+      if (/^\s*- \[/.test(line)) return; // ledger row (構造メタデータ)
       line = line.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1"); // link text keep, path drop
       line = line.replace(/「([^「」]+)」/g, (whole, name) => (HEADINGS.has(name) ? `\u0000${dir}/${f}:${idx}\u0000` : whole));
       line = line.trim();

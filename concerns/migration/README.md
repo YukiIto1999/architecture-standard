@@ -7,8 +7,8 @@ migration は移行の段と切替の判定を扱い、静止した関係と制�
 
 ## 規律
 
-- [稼働中のスキーマを拡張・移行・収縮の段で進化させる](./expand-migrate-contract.md)
-- [別 datastore の移行を同じ時点で検証して切り替える](./datastore-cutover.md)
+- [稼働中のスキーマを拡張・移行・収縮の段で進化させる](./expand-migrate-contract.md) — 機械+レビュー(新旧整合検査+移行照合)
+- [別 datastore の移行を同じ時点で検証して切り替える](./datastore-cutover.md) — 機械+レビュー(新旧差分検証+移行照合)
 
 ## 参照
 段階的で可逆な変更は [evolution](../../principles/evolution/README.md)、関係と制約の設計は [persistence](../persistence/README.md)、migration event の確定点は [transaction](../transaction/README.md) に従う。

@@ -160,7 +160,7 @@ libs の analyzer project に、Result の派生型への cast を検出する a
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、production の SonarAnalyzer.CSharp 命名規則、test project では Sonar の method 命名規則だけを抑止して命名 analyzer で test attribute 付き entry の snake_case とその他 method の .NET 命名を検査) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化。公開要素のコメント欠落)+analyzer(Roslyn analyzer。全宣言のコメント存在・param/typeparam/returns/value・先頭行・当該宣言内で機械判定できる欠陥の exception)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET の命名照合) |
-| 全域 | branch coverage と safety-critical decision | 計測(branch を数える設定は Microsoft.Testing.Extensions.CodeCoverage の cobertura 出力と managed instrumentation であり、その branch 情報から project 記録の branch 下限を検証入口で判定)+構造検査・実行テスト([structure/tests の methods](../../structure/tests/methods.md) が定める safety analysis と MC/DC case の一対一照合) |
+| 全域 | branch coverage | 計測(branch を数える設定は Microsoft.Testing.Extensions.CodeCoverage の cobertura 出力と managed instrumentation であり、その branch 情報から project 記録の branch 下限を検証入口で判定) |
 | translation | 境界で一度だけ parse してドメイン型へ移す | 型(JsonSerializerContext・required・JsonExtensionData)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | aspnet-core | 公開するエラーを境界で problem+json へ写す | 実行テスト(ProblemDetails の単体テスト) |
 | nswag | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |

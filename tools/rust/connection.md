@@ -219,6 +219,33 @@ struct OrderService<R: OrderRepository> { repository: R }
 struct Router { repository: Arc<dyn OrderRepository> }
 ```
 
+
+## FFI を安全な境界に閉じる
+
+### 要求
+C ABI との FFI は、infrastructure の専用 module に閉じ、公開面には safe な Rust の型だけを出す。
+unsafe block は、成立している不変条件をコメントで示し、FFI を含む最小の item に限る。
+FFI が返す null・エラーコード・sentinel は、境界で Result へ写す。
+FFI が渡す資源(handle・C 文字列・buffer)の解放は、Drop を実装した wrapper 型で保証する。
+
+### 根拠
+unsafe を境界の module に閉じれば、健全性の検査対象が狭まり、利用側は型だけで安全を得る。
+null とエラーコードを境界で Result に写せば、失敗が型に現れ、呼び出し側が扱いを強制される。
+Drop の wrapper は、解放漏れと二重解放を型の寿命で防ぐ。
+
+### 完了条件
+FFI の呼び出しと unsafe が、infrastructure の専用 module に閉じている。
+公開面に、raw pointer と C の型が出ていない。
+FFI の資源が、Drop を実装した wrapper で解放されている。
+
+### 禁止事項
+unsafe を、FFI の境界 module の外に散らすこと。
+FFI のエラーコードを、検査せずに握り潰すこと。
+
+### 行動
+FFI ごとに wrapper module を作り、extern の呼び出し・型変換・解放をその中に閉じる。
+公開 API は safe な型と Result で宣言し、unsafe には不変条件のコメントと `#[allow(unsafe_code)]` を付ける。
+
 ## 参照
 効果システムは [effect](../../concerns/effect/README.md)、依存の向きは [dependency](../../concerns/dependency/README.md) に従う。
 取り消しは [coordination](./coordination.md)、資源は [sqlx](./sqlx.md)、組立点の構造は [structure/core/composition](../../structure/core/composition.md) に従う。
