@@ -6,6 +6,7 @@ import path from "node:path";
 import process from "node:process";
 
 const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+const distributedSkills = new Set(["standard-apply", "standard-conformance"]);
 const args = process.argv.slice(2);
 const configuration = valueAfter("--configuration");
 const selectedSkill = valueAfter("--skill");
@@ -15,16 +16,16 @@ if (!new Set(["old-skill", "without-skill", "with-skill"]).has(configuration)) {
   throw new Error("--configuration must be old-skill, without-skill, or with-skill");
 }
 
-// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する standard-apply はそこが正本になる
+// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
 function skillRoot(skillName) {
-  return skillName === "standard-apply"
+  return distributedSkills.has(skillName)
     ? path.join("skills", skillName)
     : path.join(".claude", "skills", skillName);
 }
 
 const skillNames = selectedSkill
   ? [selectedSkill]
-  : ["standard-apply", "standard-audit", "standard-update"];
+  : ["standard-apply", "standard-audit", "standard-conformance", "standard-update"];
 const outputRoot = process.env.SKILL_EVAL_OUTPUT_ROOT
   ? path.resolve(process.env.SKILL_EVAL_OUTPUT_ROOT)
   : path.join(repoRoot, "docs", "reviews", "skill-evals", "iteration-1");

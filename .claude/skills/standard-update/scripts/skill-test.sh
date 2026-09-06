@@ -183,9 +183,9 @@ printf '\n=== 2. task eval と trigger eval の schema ===\n'
 eval_output=$(bash "$SCRIPT_DIR/skill-package-check.sh" 2>&1)
 if [ "$?" -eq 0 ]; then
   printf '%s\n' "$eval_output"
-  pass "3 skill の package 構造と eval schema が有効"
+  pass "5 skill の package 構造と eval schema が有効"
 else
-  fail "3 skill の package 構造または eval schema が無効" "$eval_output"
+  fail "5 skill の package 構造または eval schema が無効" "$eval_output"
 fi
 package_fixture="$TEST_ROOT/package-missing-evals"
 mkdir -p "$package_fixture" || fail "package checker fixture を構築" "mkdir failed"
@@ -544,9 +544,9 @@ printf '%s\n' \
   'printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done"}'\''' > "$fake_other_skill"
 chmod +x "$fake_other_skill" || fail "other Skill fixture を構築" "chmod failed"
 if other_skill_output=$(CLAUDE_EVAL_COMMAND="$fake_other_skill" CLAUDE_EVAL_TIMEOUT_MS=1000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 13 2>&1); then
-  pass "対象外のskillは3 skillの誤発火に数えない"
+  pass "対象外のskillは5 skillの誤発火に数えない"
 else
-  fail "対象外のskillは3 skillの誤発火に数えない" "$other_skill_output"
+  fail "対象外のskillは5 skillの誤発火に数えない" "$other_skill_output"
 fi
 
 fake_exact_skill="$TEST_ROOT/claude-exact-skill"
@@ -722,7 +722,7 @@ printf '%s\n' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","total_cost_usd":0,"usage":{}}'\''' \
   'fi' > "$fake_task_harness_probe"
 chmod +x "$fake_task_harness_probe" || fail "task harness probe fixture を構築" "chmod failed"
-for probe_skill in standard-apply standard-audit standard-update; do
+for probe_skill in standard-apply standard-audit standard-conformance standard-update; do
   for eval_configuration in with-skill old-skill without-skill; do
     if task_harness_probe_output=$(CLAUDE_EVAL_COMMAND="$fake_task_harness_probe" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/task-harness-probe-evals" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration "$eval_configuration" --skill "$probe_skill" --eval-id 1 2>&1) \
       && ! rg -q '"is_error": true' "$TEST_ROOT/task-harness-probe-evals/$probe_skill/eval-1-haiku/$eval_configuration/result.json"; then
