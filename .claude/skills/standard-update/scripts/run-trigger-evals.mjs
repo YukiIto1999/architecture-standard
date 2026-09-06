@@ -6,9 +6,9 @@ import path from "node:path";
 import process from "node:process";
 
 const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-const distributedSkills = new Set(["standard-apply", "standard-conformance"]);
+const distributedSkills = new Set(["standard-apply", "standard-conformance", "standard-feedback"]);
 const skillName = process.argv[2];
-const allowedSkills = new Set(["standard-apply", "standard-audit", "standard-conformance", "standard-update"]);
+const allowedSkills = new Set(["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"]);
 if (!allowedSkills.has(skillName)) throw new Error(`skill must be one of ${[...allowedSkills].join(", ")}`);
 const claudeCommand = process.env.CLAUDE_EVAL_COMMAND || "claude";
 const timeoutMs = Number(process.env.CLAUDE_EVAL_TIMEOUT_MS || "60000");
