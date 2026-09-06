@@ -722,7 +722,7 @@ printf '%s\n' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","total_cost_usd":0,"usage":{}}'\''' \
   'fi' > "$fake_task_harness_probe"
 chmod +x "$fake_task_harness_probe" || fail "task harness probe fixture を構築" "chmod failed"
-for probe_skill in standard-apply standard-audit standard-conformance standard-update; do
+for probe_skill in standard-apply standard-audit standard-conformance standard-feedback standard-update; do
   for eval_configuration in with-skill old-skill without-skill; do
     if task_harness_probe_output=$(CLAUDE_EVAL_COMMAND="$fake_task_harness_probe" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/task-harness-probe-evals" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration "$eval_configuration" --skill "$probe_skill" --eval-id 1 2>&1) \
       && ! rg -q '"is_error": true' "$TEST_ROOT/task-harness-probe-evals/$probe_skill/eval-1-haiku/$eval_configuration/result.json"; then

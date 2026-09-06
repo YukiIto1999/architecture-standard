@@ -1,6 +1,6 @@
 ---
 name: standard-conformance
-description: architecture-standard に対する対象プロジェクトの適合性を読み取り専用で監査し、設定 drift と規律違反を baseline 差分管理可能な JSON 形式で報告する。「標準に適合しているか検査」「設定 drift を確認」「conformance baseline と比較」「適合性を JSON で報告」と指定された作業では、調査や編集に着手する前に、この skill を必ず使う。修正、コードの書き換え、標準本文の編集は行わない。対象 project への設計と実装は standard-apply、標準本文の改訂は standard-update、標準側の不備の還流は を使う。
+description: architecture-standard に対する対象プロジェクトの適合性を読み取り専用で監査し、設定 drift と規律違反を baseline 差分管理可能な JSON 形式で報告する。「標準に適合しているか検査」「設定 drift を確認」「conformance baseline と比較」「適合性を JSON で報告」と指定された作業では、調査や編集に着手する前に、この skill を必ず使う。修正、コードの書き換え、標準本文の編集は行わない。対象 project への設計と実装は standard-apply、標準本文の改訂は standard-update、標準側の不備の還流は standard-feedback を使う。
 ---
 
 # standard-conformance
@@ -67,4 +67,4 @@ description: architecture-standard に対する対象プロジェクトの適合
 ## Non-goals
 
 - 指摘の修正やコードの書き換えは行わない（修正は `tdd-implementation` や `code-refactoring`、移行計画は `process/migration.md` に従う）。
-- 標準側の本文や規律を編集しない。
+- 標準側の本文や規律を編集しない。標準側の矛盾や不足を発見した場合は `standard-feedback` へ渡す。

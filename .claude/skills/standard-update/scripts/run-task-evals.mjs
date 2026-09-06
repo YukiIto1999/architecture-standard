@@ -6,7 +6,7 @@ import path from "node:path";
 import process from "node:process";
 
 const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-const distributedSkills = new Set(["standard-apply", "standard-conformance"]);
+const distributedSkills = new Set(["standard-apply", "standard-conformance", "standard-feedback"]);
 const args = process.argv.slice(2);
 const configuration = valueAfter("--configuration");
 const selectedSkill = valueAfter("--skill");
@@ -25,7 +25,7 @@ function skillRoot(skillName) {
 
 const skillNames = selectedSkill
   ? [selectedSkill]
-  : ["standard-apply", "standard-audit", "standard-conformance", "standard-update"];
+  : ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
 const outputRoot = process.env.SKILL_EVAL_OUTPUT_ROOT
   ? path.resolve(process.env.SKILL_EVAL_OUTPUT_ROOT)
   : path.join(repoRoot, "docs", "reviews", "skill-evals", "iteration-1");

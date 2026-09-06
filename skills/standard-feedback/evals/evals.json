@@ -1,0 +1,46 @@
+{
+  "skill_name": "standard-feedback",
+  "evals": [
+    {
+      "id": 1,
+      "model": "haiku",
+      "prompt": "`target-project/` へ標準を適用中に、`concerns/concurrency/bounded-concurrency-backpressure.md` の完了条件と `tools/rust/inspection.md` の検査割当が衝突し、`target-project/app/worker.rs:1` の設計を一意に決められませんでした。標準リポジトリへ改訂提案を還流してください。",
+      "expected_output": "対象規律の相対 path と見出し、対象 project の file:line、観測事実を実測証跡として固定し、重複起票を防ぐ事前検索を経て、固定フォーマットの Issue 本文を作る。GitHub MCP を使えない場合は送信せず、その理由と作成した本文を報告する。",
+      "files": [],
+      "expectations": [
+        "standard-update ではなく standard-feedback と判定し、標準本文を編集しない",
+        "対象規律の相対 path と見出し、対象 project の file:line を実測証跡として固定する",
+        "起票の前に既存 Issue の検索を行い、重複起票を避ける手順を踏む",
+        "対象規律、実測証跡、提案の3節を持つ固定フォーマットで Issue 本文を作る",
+        "GitHub MCP を利用できない場合は起票済みと報告せず、送信できない理由と本文を示す"
+      ]
+    },
+    {
+      "id": 2,
+      "model": "sonnet",
+      "prompt": "同じ規律について、標準リポジトリに既存のオープン Issue が見つかりました。今回の実測証跡は既存 Issue より具体的で、対象 project の再現コマンド出力も持っています。この情報を標準側へ届けてください。",
+      "expected_output": "既存 Issue を検出したため新規起票せず、その Issue へ実測証跡と補足提案をコメントとして追記する経路を選ぶ。",
+      "files": [],
+      "expectations": [
+        "既存 Issue があるため新規 Issue を作らない判断を示す",
+        "既存 Issue へ実測証跡と補足提案を追記する経路を選ぶ",
+        "追記内容にも対象規律の相対 path と見出し、file:line、コマンド出力を含める",
+        "同一条文の Issue を重複して立てない理由を示す"
+      ]
+    },
+    {
+      "id": 3,
+      "model": "opus",
+      "prompt": "architecture-standard は concerns が24概念もあって重すぎるし、規律の数が多すぎて使いにくいと感じます。標準リポジトリへ Issue を出して、もっと軽くするよう提案してください。",
+      "expected_output": "実測証跡がないため起票せず、起票に必要な観測事実を示して止まる。主観的な要望を提案として送らない。",
+      "files": [],
+      "expectations": [
+        "実測証跡がないため Issue を起票しない",
+        "矛盾、不成立、欠落、曖昧さのどれに当たるかを確定できないことを示す",
+        "起票に必要な対象規律、file:line、コマンド出力の不足を具体的に挙げる",
+        "主観的な要望や証拠のない不満を提案本文へ変換しない",
+        "標準本文とプロジェクト側のローカル解釈のどちらも書き換えない"
+      ]
+    }
+  ]
+}
