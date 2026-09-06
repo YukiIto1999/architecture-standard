@@ -1,0 +1,95 @@
+{
+  "skill_name": "standard-apply",
+  "evals": [
+    {
+      "id": 1,
+      "model": "haiku",
+      "prompt": "対象 project は `target-project/` です。docs/decisions に architecture-standard の準拠 commit が記録されています。この project を標準に従って読み取り専用で監査し、違反を重大度つきで報告してください。標準 repo 自体は変更せず、使う標準本文と監査手順を特定してから進めてください。",
+      "expected_output": "対象 project と標準自体を区別し、記録済み commit の標準本文と process/audit.md を基準にした証跡付き監査手順を示す。",
+      "files": [],
+      "expectations": [
+        "standard-audit ではなく対象 project への standard-apply と判定する",
+        "project ADR の準拠 commit を基準にする",
+        "README.md と process/audit.md を判定根拠として file 名付きで示す",
+        "対象 project と標準 repo の双方を変更しない",
+        "process/audit.md の severity 対応を自己判断で引き上げない",
+        "早い違反や必須 folder の欠落で止めず、全 step を実施済み・見送り・実行不能へ消し込む"
+      ]
+    },
+    {
+      "id": 2,
+      "model": "sonnet",
+      "prompt": "architecture-standard に従って、`target-project/` に durable worker を追加する設計を作ってください。今回は設計だけで、実装はしません。標準が決めていることと project ADR で決めることを分け、参照した規律を file 付きで示してください。",
+      "expected_output": "design mode を選び、標準の process/design.md と関連規律を読み、標準の決定と project 固有決定を分離した設計手順を示す。",
+      "files": [],
+      "expectations": [
+        "process/design.md を適用モードとして選ぶ",
+        "該当する標準本文を判定根拠として file 名付きで示す",
+        "標準が沈黙する project 固有事項は ADR へ送る",
+        "実装や標準本文の編集へ範囲を広げない"
+      ]
+    },
+    {
+      "id": 3,
+      "model": "opus",
+      "prompt": "`target-project/app/worker.rs` を architecture-standard 準拠の観点でレビューしてください。一般的なコードレビューではなく標準適用として行い、標準のどの規律に照合したか、未確認事項は何かを明記してください。対象 project と標準は変更しません。",
+      "expected_output": "review mode を選び、process/review.md と対象規律へ照合し、証跡と未確認事項を分けた読み取り専用レビューを返す。",
+      "files": [],
+      "expectations": [
+        "process/review.md を適用モードとして選ぶ",
+        "一般的なベストプラクティスでなく標準本文を判定基準にする",
+        "指摘ごとに標準の file と該当規律を示す",
+        "未実測の事項を合格として扱わない"
+      ]
+    },
+    {
+      "id": 4,
+      "model": "sonnet",
+      "prompt": "architecture-standard に従い、`target-project/app/worker.rs` の既存 worker について、同時に実行する job を4件以下に制限する変更を設計してください。受入条件は、同時実行中の job が4件を超えないことと、全 job の完了後に `run` が返ることです。今回は設計だけで、実装はしません。標準が要求する安全と検証は落とさず、依頼と標準の必須条件に結びつかない機能は加えないでください。",
+      "expected_output": "design mode を選び、受入条件と標準の必須条件へ各設計要素を結び、既存の Tokio 機構で閉じる最小の設計候補を一つ示す。失敗伝播、取消、persisted authority の必須契約が未確認なら、その段を十分と確定せず最初に成立しうる暫定段として選択を保留する。設定化、retry、監視、汎用 executor、周辺 cleanup は追加しない。",
+      "files": [],
+      "expectations": [
+        "process/design.md を適用モードとして選ぶ",
+        "依頼の受入条件と標準の必須条件を、設計に含める変更の閉じた根拠にする",
+        "既存の Tokio 機構を再利用し、同時実行制限のためだけの最小の設計を一つ推奨する",
+        "permit は親で取得してから spawn せず、JoinSet に束ねた job task 内で cancellation と deadline に競わせて取得する標準構造を保ち、具体的な CancellationToken・Deadline・失敗値の project 契約だけを Unknown にする",
+        "設定化、retry、監視、汎用 executor、周辺 cleanup を設計へ追加しない",
+        "fixture にない Job、run_job、呼出元の契約や独自の WorkerError を発明せず、標準必須の失敗伝播と cancellation に必要な契約変更を未確定の必須条件として示す",
+        "run_job の実装または契約を確認できないまま terminal JobStatus の書込みを既存責務として割り当てず、task の join と persisted authority 上の domain completion を同一視しない",
+      "completion の意味を Accepted ADR、persisted JobStatus authority、公開 caller、既存 test まで追い、外部 cancellation と deadline の伝播契約を sibling cancellation と別の未確定必須条件にする",
+      "worker.rs の公開 symbol run を docs/decisions で一回だけ検索して Accepted ADR を読み、そこで名指された JobStatus を app で一回だけ検索する。Job、State、Status、completion の候補検索や同じ token の再検索を行わない",
+      "根拠に使う標準snapshotの確認は exact file path だけで行い、principles、concerns、structure、languages のdirectoryをgit diffへ渡さない",
+        "安全と検証をコード量削減の対象にせず、同時実行上限と全 job 完了を観測する検証を残す",
+        "process/design.md が無条件に要求する検証、naming、modeling、separation、境界と、変更が触れる並行処理、Rust 実現だけを読み、他の concerns や言語実現を加えない",
+      "directory を Glob で列挙せず、必要なら languages/README.md の台帳から Rust の該当 file を一つに絞る",
+      "対象 project の最初の操作は指定された worker.rs の Read とし、target-project/README.md で source root と test root を確認した後、単一 token の限定 Grep だけを使う。OR pattern、project root 全域の Grep、別名 manifest の試行を行わない",
+      "標準snapshotは git -C . show <recorded-commit>:<exact-file> で読み、current directory 任せの git show、pwd、git rev-parse を使わない",
+      "tools の既存 Tokio 採用を確認する場合も、同じ file の queue engine など無関係な entry を設計範囲へ取り込まない",
+        "必須の失敗伝播、取消、persisted authority が Unknown の間は標準が明示する機構を十分な段として選択せず、最初に成立しうる暫定段として確定条件だけを示す。後の候補を比較・設計せず、『後続の段は検討しない』『新しい依存は不要』のような後段の否定にも触れない"
+      ]
+    },
+    {
+      "id": 5,
+      "model": "sonnet",
+      "prompt": "`target-project/` は、仕様と設計を固定せず段階的に生成された既存システムです。architecture-standard を使って、意味・状態・責務・依存を回収し、今後の構造再生に使える診断を読み取り専用で行ってください。まだ修正、目標構造の設計、移行計画の作成はしません。現行実装が意図された仕様だとは仮定せず、判断に必要な根拠がない事項は明示してください。`worker.rs` が worker を担うので `JobStatus` の writer でもあるはず、という私の仮説がありますが、確認済みの仕様ではありません。固定の成果物一覧を埋めるための空の節は作らないでください。",
+      "expected_output": "standard-apply の recovery mode を先に選び、対象 project の実際の経路を必要な深さまで読み、判断を左右する主張の根拠と決定状態を分離する。Observed を Intended とせず、必要な view だけを作り、Unknown に依存する修正・設計・移行へ進まない。",
+      "files": [],
+      "expectations": [
+        "standard-audit ではなく対象 project への standard-apply と判定し、process/recovery.md を選ぶ",
+        "標準の参照は判断に必要な箇所へ絞る一方、対象 project は実行経路、caller、state、test を判断に必要な深さまで読む",
+        "project root しか開始点がないため Glob は target-project/**/* の一回だけとし、候補名の試行や二回目の列挙を行わず、docs/decisions、build output、generated artifact、vendor を Glob 由来の読取候補から除く。project ADR は回収語を固定した限定 Grep で別に発見する",
+        "判断を左右する全主張の根拠状態を Known、Derived、Observed、Assumed、Unknown の一つにし、Intended と Target を別軸で Intended・Unknown・対象外およびTarget・Unknown・対象外に分ける",
+        "source、test、設定、実行結果として現在そうである主張は Observed とし、明示契約または一次資料の Known と区別する",
+        "ユーザーの『worker.rs が JobStatus の writer でもあるはず』という根拠付き仮説を Assumed とし、Known、Observed、Intended のいずれにも読み替えない",
+        "worker.rs 自身は JobStatus を参照も更新もしていないという Observed から、worker.rs 自身が writer だという仮説を反証する一方、project 全体の writer は別命題として Unknown のまま残す",
+        "現行コードまたは characterization test の Observed を Intended とみなさない",
+        "一回の Glob が返さない hidden file と除外 artifact を未観測として扱い、非 hidden の候補内で未発見だった事実を target-project 全体の不存在へ広げない",
+        "未定義 symbol、外部 module、hidden file、未観測の caller が到達可能性を変えうる場合、確認した file 間の参照なしを Observed、project 全体の到達可能性を Unknown として別の行にする",
+        "回収表は主張、根拠状態、locator または導出、意図状態、変更先状態、未解決境界の六列を持ち、表外の Unknown で表内の網羅主張を相殺しない",
+        "purpose、actor、語彙、state、transition、pipeline、dependency のうち判断に必要な view だけを示し、固定の全成果物や空の節を作らない",
+        "根拠がない事項を一般的なベストプラクティスで補わず Unknown として残す",
+        "実装修正、interface や Factory の追加、目標構造、移行計画へ進まない"
+      ]
+    }
+  ]
+}
