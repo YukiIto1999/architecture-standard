@@ -46,8 +46,15 @@ if (isolatedEvaluation
   reject("隔離評価では SKILL_EVAL_ISOLATED_SKILL と SKILL_EVAL_CONFIGURATION の有効な組が必要");
 }
 
+// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する standard-apply はそこが正本になる
+function skillRoot(skillName) {
+  return skillName === "standard-apply"
+    ? path.join("skills", skillName)
+    : path.join(".claude", "skills", skillName);
+}
+
 for (const skillName of skillNames) {
-  const root = path.join(".claude", "skills", skillName);
+  const root = skillRoot(skillName);
   if (!fs.existsSync(root)) {
     if (isolatedEvaluation && skillName === isolatedSkill && isolatedConfiguration === "without-skill") continue;
     reject(`${skillName}: skill directory がない`);

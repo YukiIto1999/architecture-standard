@@ -34,7 +34,7 @@ exact source path を与えられ、受入条件に completion、state、success
 6. 手順2で test root を確認できた場合だけ、公開 caller の exact symbol をその root で一回 Grep し、一致 test を読む。確認できなければ test 契約を Unknown にする。
 
 この経路で対象 project に使える探索は、各手順に明記した単一 token の限定 Grep だけである。`|` を含む OR pattern、project root 全域の Grep、Glob、別名 manifest の試行を使わない。外部 cancellation、deadline、writer、依存、設定の明示的な起点が読んだ経路になければ、不在と検索せず Unknown にする。手順外の探索で得た結果は設計根拠にせず、経路を完了と報告しない。
-対象 project の手順を閉じた後、標準本文は skill file の所在から固定した `<standard-root>` を明示して `git -C <standard-root> show <recorded-commit>:<exact-file>` で読む。skill path が repository root からの `.claude/skills/standard-apply/SKILL.md` なら `<standard-root>` は `.` であり、`git -C . show ...` とする。`pwd` や `git rev-parse` で standard root を再発見せず、`git show` を current directory 任せで実行しない。
+対象 project の手順を閉じた後、標準本文は skill file の所在から固定した `<standard-root>` を明示して `git -C <standard-root> show <recorded-commit>:<exact-file>` で読む。skill path が `skills/standard-apply/SKILL.md` なら `<standard-root>` はその二段上の親 directory（`../../`）である。`pwd` や `git rev-parse` で standard root を再発見せず、`git show` を current directory 任せで実行しない。
 設計の最終応答は、変更不要から選んだ実現段まで、または必須条件が Unknown なら最初に成立しうる暫定段までの判定だけを列挙する。それより後の候補、抽象、依存、新規実装には、未検討・不要・不採用という言及もしない。「新しい依存は不要」「独自実装は不要」「後続の段は検討しない」のような否定文も、後段への言及なので書かない。暫定段を「選択」「成立」「十分」「この段で止める」と表現せず、確定に必要な未確認契約だけを示す。依頼が設計だけなら、将来の ADR、file 作成、cleanup、別変更の指示も削除する。必須参照の途中で変更契約外の配置違反や別件を見つけても、最終応答へ付記せず、この設計の候補、risk、今後の作業へ広げない。
 
 project root だけを与えられた recovery は、最初の一回の Glob 後に、返った非 hidden の source、test、configuration だけを候補集合として読む。`standard_commit:` の準拠 ADR 探索もこの Glob より後に行う。ユーザー仮説と回収語の検証は候補集合の読取と `docs/decisions/` に限定した一語の Grep で行い、候補集合外を探す二回目の Glob、root 全域の Grep、別 pattern の再試行へ広げない。
@@ -42,7 +42,7 @@ project root だけを与えられた recovery は、最初の一回の Glob 後
 ## 前提
 
 - この skill がある repository を標準、依頼で示された repository を対象 project とする。
-- この skill の所在から標準 repository root を特定し、`<standard-root>` として固定する。対象 project を current directory にした Git 操作と混ぜない。
+- この skill の所在（`skills/standard-apply/SKILL.md`）から二段上の親 directory を `<standard-root>` として固定する。対象 project を current directory にした Git 操作や特定マシンのローカル絶対パスと混ぜない。
 - 対象 project の ADR から、準拠基準として記録された標準 commit を特定し、その commit の本文を使う。OID を特定した後は、根拠にする標準 file を全て記録した commit object から読む。作業 tree の本文を使えるのは各対象 blob が記録 commit と byte-identical だと確認した場合だけであり、OID の表示や directory 単位の diff だけで基準にしたとは扱わない。作業 tree から読んだ標準 file の exact path を内部台帳へ追加し、設計または最終判断の前に `git -C <standard-root> diff <recorded-commit> -- <exact-file-1> <exact-file-2> ...` の一回で全件を照合する。directory は引数にせず、最終応答で根拠として列挙する標準 file を一つでも引数から省かない。差分がある file または照合引数にない file に基づく判断は報告から除き、準拠照合を完了としない。既存 project に記録がなければ現行標準へ代替せず、準拠基準の欠落として報告し、監査、移行、設計、実装、構造改善、レビューを止める。新規構築は採用する現行 commit を ADR に記録してから進める。
 - 標準本文は編集しない。標準側の不備は file と該当箇所を報告し、修正は standard-update へ渡す。
 
