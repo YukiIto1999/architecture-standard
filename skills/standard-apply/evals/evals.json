@@ -58,12 +58,12 @@
         "run_job の実装または契約を確認できないまま terminal JobStatus の書込みを既存責務として割り当てず、task の join と persisted authority 上の domain completion を同一視しない",
       "completion の意味を Accepted ADR、persisted JobStatus authority、公開 caller、既存 test まで追い、外部 cancellation と deadline の伝播契約を sibling cancellation と別の未確定必須条件にする",
       "worker.rs の公開 symbol run を docs/decisions で一回だけ検索して Accepted ADR を読み、そこで名指された JobStatus を app で一回だけ検索する。Job、State、Status、completion の候補検索や同じ token の再検索を行わない",
-      "根拠に使う標準snapshotの確認は exact file path だけで行い、principles、concerns、structure、languages のdirectoryをgit diffへ渡さない",
+      "根拠に使う標準本文の確認は exact file path だけで行い、directory を網羅探索しない",
         "安全と検証をコード量削減の対象にせず、同時実行上限と全 job 完了を観測する検証を残す",
         "process/design.md が無条件に要求する検証、naming、modeling、separation、境界と、変更が触れる並行処理、Rust 実現だけを読み、他の concerns や言語実現を加えない",
       "directory を Glob で列挙せず、必要なら languages/README.md の台帳から Rust の該当 file を一つに絞る",
       "対象 project の最初の操作は指定された worker.rs の Read とし、target-project/README.md で source root と test root を確認した後、単一 token の限定 Grep だけを使う。OR pattern、project root 全域の Grep、別名 manifest の試行を行わない",
-      "標準snapshotは git -C . show <recorded-commit>:<exact-file> で読み、current directory 任せの git show、pwd、git rev-parse を使わない",
+      "標準本文は手元の <standard-root> から直接読み、current directory 任せの git show、pwd、git rev-parse を使わない",
       "tools の既存 Tokio 採用を確認する場合も、同じ file の queue engine など無関係な entry を設計範囲へ取り込まない",
         "必須の失敗伝播、取消、persisted authority が Unknown の間は標準が明示する機構を十分な段として選択せず、最初に成立しうる暫定段として確定条件だけを示す。後の候補を比較・設計せず、『後続の段は検討しない』『新しい依存は不要』のような後段の否定にも触れない"
       ]
