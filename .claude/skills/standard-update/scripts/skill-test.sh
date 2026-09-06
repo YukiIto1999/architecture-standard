@@ -93,11 +93,11 @@ printf '=== 1. skill の指示整合 ===\n'
 expect_text \
   "recovery eval はGlob回数とpatternを採点する" \
   'Glob は target-project/\*\*/\* の一回だけ' \
-  .claude/skills/standard-apply/evals/evals.json
+  skills/standard-apply/evals/evals.json
 expect_text \
   "recovery eval はADRをGlob由来の読取候補にしない" \
   'docs/decisions.*Glob 由来の読取候補から除く' \
-  .claude/skills/standard-apply/evals/evals.json
+  skills/standard-apply/evals/evals.json
 expect_text \
   "methods は一致した適用集合と双方向含意で同じ性質を判定する" \
   '同じ規範命題へ割り当てられ、そこから導いた非空の適用対象・入力集合が一致し、その集合の全要素で一方の合格が他方の合格を含意し、かつ逆方向も成り立つ' \
@@ -135,19 +135,19 @@ expect_text \
 expect_text \
   "Ponytail の一次資料を出典記録へ残す" \
   'Source: https://github\.com/DietrichGebert/ponytail/blob/main/skills/ponytail/SKILL\.md' \
-  .claude/skills/standard-apply/references/provenance.md
+  skills/standard-apply/references/provenance.md
 expect_text \
   "Ponytail のlicenseを出典記録へ残す" \
   'License: MIT \(https://raw\.githubusercontent\.com/DietrichGebert/ponytail/main/LICENSE\)' \
-  .claude/skills/standard-apply/references/provenance.md
+  skills/standard-apply/references/provenance.md
 expect_text \
   "Ponytail 由来の採用を出典記録へ残す" \
   '^\- Adopted:' \
-  .claude/skills/standard-apply/references/provenance.md
+  skills/standard-apply/references/provenance.md
 expect_text \
   "Ponytail 由来の不採用を出典記録へ残す" \
   '^\- Rejected:' \
-  .claude/skills/standard-apply/references/provenance.md
+  skills/standard-apply/references/provenance.md
 
 TEMP_BASE="${TMPDIR:-/tmp}"
 TEMP_BASE="$(cd "$TEMP_BASE" 2>/dev/null && pwd -P)" || {
@@ -191,7 +191,7 @@ package_fixture="$TEST_ROOT/package-missing-evals"
 mkdir -p "$package_fixture" || fail "package checker fixture を構築" "mkdir failed"
 cp -a .claude "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
 git -C "$package_fixture" init --quiet || fail "package checker fixture を構築" "git init failed"
-rm -rf -- "$package_fixture/.claude/skills/standard-apply/evals"
+rm -rf -- "$package_fixture/skills/standard-apply/evals"
 if package_missing_output=$(cd "$package_fixture" && bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "通常実行ではskillのeval一式欠落を拒否する" "$package_missing_output"
 elif ! printf '%s\n' "$package_missing_output" | rg -qF 'standard-apply: evals directory がない'; then
@@ -223,7 +223,7 @@ package_partial_fixture="$TEST_ROOT/package-partial-without-skill"
 mkdir -p "$package_partial_fixture" || fail "partial without-skill package fixture を構築" "mkdir failed"
 cp -a .claude "$package_partial_fixture/" || fail "partial without-skill package fixture を構築" "copy failed"
 git -C "$package_partial_fixture" init --quiet || fail "partial without-skill package fixture を構築" "git init failed"
-rm -f -- "$package_partial_fixture/.claude/skills/standard-apply/SKILL.md"
+rm -f -- "$package_partial_fixture/skills/standard-apply/SKILL.md"
 if package_partial_output=$(cd "$package_partial_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "without-skill隔離評価では選択packageの部分残存を拒否する" "$package_partial_output"
 else
@@ -318,11 +318,11 @@ expect_eval_prompt_text \
   "recovery eval はユーザー仮説をKnownから分離して測る" \
   5 \
   'worker\.rs.*JobStatus.*writer.*仮説.*確認済みの仕様ではありません' \
-  .claude/skills/standard-apply/evals/evals.json
+  skills/standard-apply/evals/evals.json
 expect_text \
   "recovery eval はユーザー仮説をAssumedとして採点する" \
   '根拠付き仮説を Assumed とし、Known、Observed、Intended のいずれにも読み替えない' \
-  .claude/skills/standard-apply/evals/evals.json
+  skills/standard-apply/evals/evals.json
 expect_text \
   "task evaluator は履歴をsanitizeしてから準拠commitを作る" \
   'const standardCommit = initializeSanitizedRepository\(fixtureRoot\);' \
@@ -499,7 +499,7 @@ fi
 fake_direct_read="$TEST_ROOT/claude-direct-read"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
-  'printf '\''%s\n'\'' '\''{"type":"assistant","message":{"content":[{"type":"tool_use","id":"read-1","name":"Read","input":{"file_path":"/tmp/fixture/.claude/skills/standard-apply/SKILL.md"}}]}}'\''' \
+  'printf '\''%s\n'\'' '\''{"type":"assistant","message":{"content":[{"type":"tool_use","id":"read-1","name":"Read","input":{"file_path":"/tmp/fixture/skills/standard-apply/SKILL.md"}}]}}'\''' \
   'printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done"}'\''' > "$fake_direct_read"
 chmod +x "$fake_direct_read" || fail "direct Read fixture を構築" "chmod failed"
 if direct_read_output=$(CLAUDE_EVAL_COMMAND="$fake_direct_read" CLAUDE_EVAL_TIMEOUT_MS=1000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 13 2>&1); then
@@ -702,8 +702,8 @@ printf '%s\n' \
   'trigger_runner=.claude/skills/standard-update/scripts/run-trigger-evals.mjs' \
   'skill_oracle=.claude/skills/standard-update/scripts/skill-test.sh' \
   'product_check=.claude/skills/standard-update/scripts/skill-package-check.sh' \
-  'skill_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL' \
-  'eval_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL/evals' \
+  'if [ "$SKILL_EVAL_ISOLATED_SKILL" = standard-apply ]; then skill_root=skills/standard-apply; else skill_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL; fi' \
+  'eval_root=$skill_root/evals' \
   'task_oracle=$eval_root/evals.json' \
   'trigger_oracle=$eval_root/trigger-evals.json' \
   'unexpected='\''情報の'\''"概観"' \

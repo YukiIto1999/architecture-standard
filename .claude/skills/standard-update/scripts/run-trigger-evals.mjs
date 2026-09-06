@@ -13,11 +13,18 @@ const claudeCommand = process.env.CLAUDE_EVAL_COMMAND || "claude";
 const timeoutMs = Number(process.env.CLAUDE_EVAL_TIMEOUT_MS || "60000");
 if (!Number.isFinite(timeoutMs) || timeoutMs < 1) throw new Error("CLAUDE_EVAL_TIMEOUT_MS must be a positive number");
 
-const sourceRoot = path.join(repoRoot, ".claude", "skills", skillName);
+const sourceRoot = path.join(repoRoot, skillRoot(skillName));
 const allQueries = JSON.parse(readFileSync(path.join(sourceRoot, "evals", "trigger-evals.json"), "utf8"));
 const selectedQuery = process.argv[3] === undefined ? null : Number(process.argv[3]);
 if (selectedQuery !== null && (!Number.isInteger(selectedQuery) || selectedQuery < 0 || selectedQuery >= allQueries.length)) {
   throw new Error(`query index must be an integer from 0 to ${allQueries.length - 1}`);
+}
+
+// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する standard-apply はそこが正本になる
+function skillRoot(skillName) {
+  return skillName === "standard-apply"
+    ? path.join("skills", skillName)
+    : path.join(".claude", "skills", skillName);
 }
 const queries = selectedQuery === null ? allQueries : allQueries.filter((_, index) => index === selectedQuery);
 const fixtureRoot = mkdtempSync(path.join(tmpdir(), `architecture-standard-trigger-${skillName}-`));
@@ -26,10 +33,11 @@ try {
   execFileSync("git", ["clone", "--quiet", "--no-hardlinks", repoRoot, fixtureRoot]);
   const skillsRoot = path.join(fixtureRoot, ".claude", "skills");
   for (const candidate of allowedSkills) {
-    const candidatePath = path.join(skillsRoot, candidate);
+    const candidateRoot = skillRoot(candidate);
+    const candidatePath = path.join(fixtureRoot, candidateRoot);
     assertInside(fixtureRoot, candidatePath);
     rmSync(candidatePath, { recursive: true, force: true });
-    cpSync(path.join(repoRoot, ".claude", "skills", candidate), candidatePath, { recursive: true, force: true });
+    cpSync(path.join(repoRoot, candidateRoot), candidatePath, { recursive: true, force: true });
   }
 
   const results = [];
