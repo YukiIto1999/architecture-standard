@@ -176,7 +176,7 @@ skill の場所が current directory にない host では、host が与える `
 - `references/evaluation.md` — product 検査の役割と model eval の範囲。
 - `scripts/verify.sh` — 標準本文の機械検査。
 - `scripts/verify-test.sh` — verifier の回帰検査。
-- `scripts/skill-package-check.sh` — 実作業用の frontmatter、3 skill の eval schema、script 構文の検査。
+- `scripts/skill-package-check.sh` — 実作業用の frontmatter、5 skill の eval schema、script 構文の検査。
 - `scripts/skill-test.sh` — 評価対象へ公開しない、期待解答と mutation を含む evaluator 回帰検査。
 - `scripts/run-task-evals.mjs` / `scripts/run-trigger-evals.mjs` — skill-creator を使えない host の隔離評価入口。
 - `scripts/discipline-sections.awk` / `scripts/naming-registry-check.mjs` / `scripts/verbatim-overlap.mjs` / `scripts/heading-citation-check.mjs` — verifier が呼び出す内部実装。個別の公開入口にはしない。

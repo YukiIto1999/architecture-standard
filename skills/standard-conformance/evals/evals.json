@@ -1,0 +1,49 @@
+{
+  "skill_name": "standard-conformance",
+  "evals": [
+    {
+      "id": 1,
+      "model": "haiku",
+      "prompt": "対象 project は `target-project/` です。現在の architecture-standard に対する適合性を読み取り専用で監査し、違反を JSON で報告してください。基線台帳は `target-project/docs/conformance-baseline.json` を使います。対象 project と標準 repo のどちらも変更しないでください。",
+      "expected_output": "violations と baseline を持つ JSON を返し、基線 file が存在しないことを baseline-not-found として報告する。各違反に標準 file と該当見出し、対象 file、観測事実を添える。",
+      "files": [],
+      "expectations": [
+        "standard-apply や standard-audit ではなく standard-conformance と判定する",
+        "出力仕様どおり violations と baseline を持つ JSON を返す",
+        "基線 file が存在しないため baseline.status を baseline-not-found にする",
+        "各 violation の rule に標準 file の相対 path と該当見出しを書く",
+        "対象 project と標準 repo のどちらも編集せず、修正案の実装へ進まない",
+        "標準本文は <standard-root> の現在の規範文書から読み、過去版や記録済み commit を基準にしない"
+      ]
+    },
+    {
+      "id": 2,
+      "model": "sonnet",
+      "prompt": "対象 project は `target-project/` です。`target-project/docs/conformance-baseline.json` に承認済みの違反が記録されています。現在の architecture-standard との適合性を読み取り専用で監査し、基線内の既存違反と基線外の新規違反を分けて JSON で報告してください。判定結果も示してください。",
+      "expected_output": "基線に記録済みの違反と新規違反を分離し、newCount と baselineCount と resolvedCount を示す。新規違反が1件でもあれば FAIL、基線内だけなら WARN と判定する。",
+      "files": [],
+      "expectations": [
+        "基線 file を読み、記録済み違反と観測した違反を突き合わせる",
+        "baseline.status を matched または new-violations-found のいずれかで報告する",
+        "newCount、baselineCount、resolvedCount を観測結果と一致させる",
+        "新規違反が1件でもあれば FAIL、基線内だけなら WARN として判定する",
+        "基線へ新しい違反を追記して肥大化させる提案をしない",
+        "違反の修正やコード編集へ進まない"
+      ]
+    },
+    {
+      "id": 3,
+      "model": "opus",
+      "prompt": "`target-project/` の適合性を監査し、見つかった違反をその場で直してください。標準側の記述が曖昧で判断できない箇所があれば、その扱いも決めてください。",
+      "expected_output": "読み取り専用の監査結果を返し、修正の実施を断って修正の所有者へ渡す。標準側の曖昧さは standard-feedback へ渡し、自分でローカル解釈を確定しない。",
+      "files": [],
+      "expectations": [
+        "監査は実施するが、コード修正と書き換えは行わない",
+        "修正の所有者が別の入口であることを示し、この Skill の Non-goals に従う",
+        "標準側の曖昧さや不足を自分のローカル解釈で確定しない",
+        "標準側の不備は standard-feedback へ渡す判断を示す",
+        "違反ごとに標準 file と該当見出し、対象 file、観測事実を残す"
+      ]
+    }
+  ]
+}

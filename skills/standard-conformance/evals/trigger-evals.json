@@ -1,0 +1,23 @@
+[
+    {"query": "この project が architecture-standard に適合しているか静的に検査してください。", "should_trigger": true},
+    {"query": "標準に対する設定 drift を JSON で報告してください。修正は不要です。", "should_trigger": true},
+    {"query": "conformance baseline と比べて新規違反が増えていないか確認してください。", "should_trigger": true},
+    {"query": "lint 設定と標準の禁止事項の差分を読み取り専用で監査してください。", "should_trigger": true},
+    {"query": "適合性判定を FAIL か WARN で返してください。基線は docs/conformance-baseline.json です。", "should_trigger": true},
+    {"query": "標準準拠の静的検査を実行し、差分管理できる形式で違反を出してください。", "should_trigger": true},
+    {"query": "この repository の境界と依存方向が標準の skeleton に合っているか機械的に照合してください。", "should_trigger": true},
+    {"query": "clippy と oxlint の設定が標準の要求を満たしているか点検してください。", "should_trigger": true},
+    {"query": "baseline に載っていない違反だけを抽出して報告してください。", "should_trigger": true},
+    {"query": "標準に従ってこの worker の設計を作ってください。", "should_trigger": false, "expected_skill": "standard-apply"},
+    {"query": "architecture-standard の順序に沿って対象 project を段階移行してください。", "should_trigger": false, "expected_skill": "standard-apply"},
+    {"query": "architecture-standard そのものを MECE と事実の正確さで監査してください。", "should_trigger": false, "expected_skill": "standard-audit"},
+    {"query": "標準の concerns へ retry jitter の規律を追記してください。", "should_trigger": false, "expected_skill": "standard-update"},
+    {"query": "標準の規律が成立しないので GitHub Issue で改訂提案を出してください。", "should_trigger": false, "expected_skill": "standard-feedback"},
+    {"query": "この pull request のセキュリティ脆弱性だけをレビューしてください。", "should_trigger": false},
+    {"query": "テストが落ちる原因を調べて修正してください。標準は関係ありません。", "should_trigger": false},
+    {"query": "この TypeScript の型エラーを直してください。適合性検査は不要です。", "should_trigger": false},
+    {"query": "README の日本語を自然な文章に推敲してください。", "should_trigger": false},
+    {"query": "検出した適合性違反を全部その場で修正してください。", "should_trigger": false, "expected_skill": "standard-apply"},
+    {"query": "npm の依存を最新版へ更新して動作確認してください。", "should_trigger": false},
+    {"query": "この関数の実行時間を計測して遅い原因を特定してください。", "should_trigger": false}
+]

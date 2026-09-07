@@ -6,6 +6,7 @@ import path from "node:path";
 import process from "node:process";
 
 const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+const distributedSkills = new Set(["standard-apply", "standard-conformance", "standard-feedback"]);
 const args = process.argv.slice(2);
 const configuration = valueAfter("--configuration");
 const selectedSkill = valueAfter("--skill");
@@ -17,7 +18,7 @@ if (!new Set(["old-skill", "without-skill", "with-skill"]).has(configuration)) {
 
 const skillNames = selectedSkill
   ? [selectedSkill]
-  : ["standard-apply", "standard-audit", "standard-update"];
+  : ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
 const outputRoot = process.env.SKILL_EVAL_OUTPUT_ROOT
   ? path.resolve(process.env.SKILL_EVAL_OUTPUT_ROOT)
   : path.join(repoRoot, "docs", "reviews", "skill-evals", "iteration-1");
@@ -277,9 +278,9 @@ function timeoutFor(model) {
   return { haiku: 600_000, sonnet: 900_000, opus: 900_000 }[model];
 }
 
-// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する standard-apply はそこが正本になる
+// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
 function skillRoot(skillName) {
-  return skillName === "standard-apply"
+  return distributedSkills.has(skillName)
     ? path.join("skills", skillName)
     : path.join(".claude", "skills", skillName);
 }
@@ -395,10 +396,27 @@ function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
   if (skillName === "standard-audit" && evalId === 4) {
     const principlesReadme = path.join(fixtureRoot, "principles", "README.md");
     replaceKnownStateOnce(principlesReadme, [
-      "要求した範囲は、受入条件、標準の必須規律、安全、互換性、必要な検証を欠かさず作り切る。",
+      "要求された機能範囲、受入条件、必須規律、安全性、互換性、必要な検証は妥協なく作り切ります。",
     ],
-      "要求した範囲は、必要な品質を適切に満たす。",
+      "要求された範囲は、必要な品質を適切に満たします。",
     );
+  }
+  // fixture-mutation:end
+
+  // fixture-mutation:start
+  if (skillName === "standard-conformance" && evalId === 2) {
+    const baselinePath = path.join(fixtureRoot, "target-project", "docs", "conformance-baseline.json");
+    writeFileSync(baselinePath, `${JSON.stringify({
+      violations: [
+        {
+          rule: "concerns/concurrency/bounded-concurrency-backpressure.md#並行度を制限し、背圧を扱う",
+          file: "app/worker.rs",
+          line: 2,
+          evidence: "spawn した job task の並行度に上限がない",
+          mechanizable: false,
+        },
+      ],
+    }, null, 2)}\n`);
   }
   // fixture-mutation:end
 

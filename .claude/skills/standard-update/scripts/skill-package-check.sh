@@ -19,7 +19,7 @@ node <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
-const skillNames = ["standard-apply", "standard-audit", "standard-update"];
+const skillNames = ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
 const allowedModels = new Set(["haiku", "sonnet", "opus"]);
 const allowedConfigurations = new Set(["old-skill", "without-skill", "with-skill"]);
 const isolatedSkill = process.env.SKILL_EVAL_ISOLATED_SKILL ?? "";
@@ -46,9 +46,10 @@ if (isolatedEvaluation
   reject("隔離評価では SKILL_EVAL_ISOLATED_SKILL と SKILL_EVAL_CONFIGURATION の有効な組が必要");
 }
 
-// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する standard-apply はそこが正本になる
+// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
+const distributedSkills = new Set(["standard-apply", "standard-conformance", "standard-feedback"]);
 function skillRoot(skillName) {
-  return skillName === "standard-apply"
+  return distributedSkills.has(skillName)
     ? path.join("skills", skillName)
     : path.join(".claude", "skills", skillName);
 }
