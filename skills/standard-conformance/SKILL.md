@@ -11,7 +11,7 @@ description: architecture-standard に対する対象プロジェクトの適合
 ## 前提
 
 - この Skill の所在（`skills/standard-conformance/SKILL.md`）から二段上の親 directory（`../../`）を `<standard-root>` として固定する。
-- 対象 project の ADR から、準拠基準として記録された標準 commit を特定し、その commit の本文を使う。OID を特定した後は、根拠にする標準 file を全て記録した commit object から読む。作業 tree の本文を使えるのは各対象 blob が記録 commit と byte-identical だと確認した場合だけであり、OID の表示や directory 単位の diff だけで基準にしたとは扱わない。作業 tree から読んだ標準 file の exact path を内部台帳へ追加し、設計または最終判断の前に `git -C <standard-root> diff <recorded-commit> -- <exact-file-1> <exact-file-2> ...` の一回で全件を照合する。directory は引数にせず、最終応答で根拠として列挙する標準 file を一つでも引数から省かない。差分がある file または照合引数にない file に基づく判断は報告から除き、準拠照合を完了としない。既存 project に記録がなければ現行標準へ代替せず、準拠基準の欠落として報告し、監査、移行、設計、実装、構造改善、レビューを止める。新規構築は採用する現行 commit を ADR に記録してから進める。
+- 標準本文は手元の `<standard-root>` 配下にある最新の規範文書（`README.md`, `process/audit.md`, `structure/`, `concerns/`, `principles/`, `tools/`）を直接参照する。
 - 監査結果は対象プロジェクト側の基線台帳（`docs/conformance-baseline.json`）と照合し、既存の承認済み違反と新規違反を明確に分離する。
 
 ## 監査手順

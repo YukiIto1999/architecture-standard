@@ -4,7 +4,7 @@
     {
       "id": 1,
       "model": "haiku",
-      "prompt": "対象 project は `target-project/` です。準拠 commit に記録した architecture-standard に対する適合性を読み取り専用で監査し、違反を JSON で報告してください。基線台帳は `target-project/docs/conformance-baseline.json` を使います。対象 project と標準 repo のどちらも変更しないでください。",
+      "prompt": "対象 project は `target-project/` です。現在の architecture-standard に対する適合性を読み取り専用で監査し、違反を JSON で報告してください。基線台帳は `target-project/docs/conformance-baseline.json` を使います。対象 project と標準 repo のどちらも変更しないでください。",
       "expected_output": "violations と baseline を持つ JSON を返し、基線 file が存在しないことを baseline-not-found として報告する。各違反に標準 file と該当見出し、対象 file、観測事実を添える。",
       "files": [],
       "expectations": [
@@ -13,13 +13,13 @@
         "基線 file が存在しないため baseline.status を baseline-not-found にする",
         "各 violation の rule に標準 file の相対 path と該当見出しを書く",
         "対象 project と標準 repo のどちらも編集せず、修正案の実装へ進まない",
-        "project ADR の準拠 commit を基準にする"
+        "標準本文は <standard-root> の現在の規範文書から読み、過去版や記録済み commit を基準にしない"
       ]
     },
     {
       "id": 2,
       "model": "sonnet",
-      "prompt": "対象 project は `target-project/` です。`target-project/docs/conformance-baseline.json` に承認済みの違反が記録されています。準拠 commit に記録した architecture-standard との適合性を読み取り専用で監査し、基線内の既存違反と基線外の新規違反を分けて JSON で報告してください。判定結果も示してください。",
+      "prompt": "対象 project は `target-project/` です。`target-project/docs/conformance-baseline.json` に承認済みの違反が記録されています。現在の architecture-standard との適合性を読み取り専用で監査し、基線内の既存違反と基線外の新規違反を分けて JSON で報告してください。判定結果も示してください。",
       "expected_output": "基線に記録済みの違反と新規違反を分離し、newCount と baselineCount と resolvedCount を示す。新規違反が1件でもあれば FAIL、基線内だけなら WARN と判定する。",
       "files": [],
       "expectations": [

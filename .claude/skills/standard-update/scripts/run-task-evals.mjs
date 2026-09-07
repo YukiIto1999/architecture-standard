@@ -16,13 +16,6 @@ if (!new Set(["old-skill", "without-skill", "with-skill"]).has(configuration)) {
   throw new Error("--configuration must be old-skill, without-skill, or with-skill");
 }
 
-// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
-function skillRoot(skillName) {
-  return distributedSkills.has(skillName)
-    ? path.join("skills", skillName)
-    : path.join(".claude", "skills", skillName);
-}
-
 const skillNames = selectedSkill
   ? [selectedSkill]
   : ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
@@ -61,8 +54,8 @@ async function runEval(skillName, item) {
     if (configuration === "without-skill") removeSkill(fixtureRoot, skillName);
     scrubFixtureMutationSource(fixtureRoot);
     hideCurrentSkillEvaluationOracles(fixtureRoot, skillName);
-    const standardCommit = initializeSanitizedRepository(fixtureRoot);
-    prepareFixture(fixtureRoot, standardCommit);
+    initializeSanitizedRepository(fixtureRoot);
+    prepareFixture(fixtureRoot);
     initializeFixtureCommit(fixtureRoot);
     prepareEvaluationChange(fixtureRoot, skillName, item.id);
 
@@ -285,6 +278,13 @@ function timeoutFor(model) {
   return { haiku: 600_000, sonnet: 900_000, opus: 900_000 }[model];
 }
 
+// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
+function skillRoot(skillName) {
+  return distributedSkills.has(skillName)
+    ? path.join("skills", skillName)
+    : path.join(".claude", "skills", skillName);
+}
+
 function overlayWorkingFiles(fixtureRoot, skillName) {
   const source = skillRoot(skillName);
   const from = path.join(repoRoot, source);
@@ -325,7 +325,7 @@ function hideCurrentSkillEvaluationOracles(fixtureRoot, skillName) {
   }
 }
 
-function prepareFixture(fixtureRoot, standardCommit) {
+function prepareFixture(fixtureRoot) {
   const targetRoot = path.join(fixtureRoot, "target-project");
   mkdirSync(path.join(targetRoot, "docs", "decisions"), { recursive: true });
   mkdirSync(path.join(targetRoot, "app"), { recursive: true });
@@ -340,7 +340,7 @@ function prepareFixture(fixtureRoot, standardCommit) {
   writeFileSync(path.join(targetRoot, "docs", "decisions", "0001-standard.md"), [
     "# architecture standard",
     "",
-    `standard_commit: ${standardCommit}`,
+    "準拠の基準は、常に現在の標準本文である。",
     "",
   ].join("\n"));
   writeFileSync(path.join(targetRoot, "docs", "decisions", "0002-worker-contract.md"), [
@@ -562,7 +562,6 @@ function initializeSanitizedRepository(fixtureRoot) {
   configureFixtureGit(fixtureRoot);
   execFileSync("git", ["add", "-A"], { cwd: fixtureRoot });
   execFileSync("git", ["commit", "--quiet", "-m", "test: create sanitized standard snapshot"], { cwd: fixtureRoot });
-  return execFileSync("git", ["rev-parse", "HEAD"], { cwd: fixtureRoot, encoding: "utf8" }).trim();
 }
 
 function initializeFixtureCommit(fixtureRoot) {

@@ -189,7 +189,7 @@ else
 fi
 package_fixture="$TEST_ROOT/package-missing-evals"
 mkdir -p "$package_fixture" || fail "package checker fixture を構築" "mkdir failed"
-cp -a .claude "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
+cp -a .claude skills "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
 git -C "$package_fixture" init --quiet || fail "package checker fixture を構築" "git init failed"
 rm -rf -- "$package_fixture/skills/standard-apply/evals"
 if package_missing_output=$(cd "$package_fixture" && bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
@@ -211,9 +211,9 @@ else
 fi
 package_without_fixture="$TEST_ROOT/package-without-skill"
 mkdir -p "$package_without_fixture" || fail "without-skill package fixture を構築" "mkdir failed"
-cp -a .claude "$package_without_fixture/" || fail "without-skill package fixture を構築" "copy failed"
+cp -a .claude skills "$package_without_fixture/" || fail "without-skill package fixture を構築" "copy failed"
 git -C "$package_without_fixture" init --quiet || fail "without-skill package fixture を構築" "git init failed"
-rm -rf -- "$package_without_fixture/.claude/skills/standard-apply"
+rm -rf -- "$package_without_fixture/skills/standard-apply"
 if package_without_output=$(cd "$package_without_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   pass "without-skill隔離評価では選択packageだけの不存在を許可する"
 else
@@ -221,7 +221,7 @@ else
 fi
 package_partial_fixture="$TEST_ROOT/package-partial-without-skill"
 mkdir -p "$package_partial_fixture" || fail "partial without-skill package fixture を構築" "mkdir failed"
-cp -a .claude "$package_partial_fixture/" || fail "partial without-skill package fixture を構築" "copy failed"
+cp -a .claude skills "$package_partial_fixture/" || fail "partial without-skill package fixture を構築" "copy failed"
 git -C "$package_partial_fixture" init --quiet || fail "partial without-skill package fixture を構築" "git init failed"
 rm -f -- "$package_partial_fixture/skills/standard-apply/SKILL.md"
 if package_partial_output=$(cd "$package_partial_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
@@ -324,16 +324,20 @@ expect_text \
   '根拠付き仮説を Assumed とし、Known、Observed、Intended のいずれにも読み替えない' \
   skills/standard-apply/evals/evals.json
 expect_text \
-  "task evaluator は履歴をsanitizeしてから準拠commitを作る" \
-  'const standardCommit = initializeSanitizedRepository\(fixtureRoot\);' \
+  "task evaluator は履歴をsanitizeしてからfixtureを作る" \
+  'initializeSanitizedRepository\(fixtureRoot\);' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_text \
   "task evaluator はclone元のGit objectを破棄する" \
   'rmSync\(path.join\(fixtureRoot, "\.git"\).*maxRetries:' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_text \
-  "task evaluator はsanitize済みcommitをADRへ記録する" \
-  '`standard_commit: \$\{standardCommit\}`' \
+  "task fixture のADRは現在の標準本文を基準にする" \
+  '準拠の基準は、常に現在の標準本文である。' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_no_text \
+  "task fixture は標準の commit を記録しない" \
+  'standard_commit' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_line \
   "task evaluator はAgent toolを明示的に禁止する" \

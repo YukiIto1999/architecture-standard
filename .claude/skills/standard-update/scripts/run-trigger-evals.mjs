@@ -20,19 +20,11 @@ const selectedQuery = process.argv[3] === undefined ? null : Number(process.argv
 if (selectedQuery !== null && (!Number.isInteger(selectedQuery) || selectedQuery < 0 || selectedQuery >= allQueries.length)) {
   throw new Error(`query index must be an integer from 0 to ${allQueries.length - 1}`);
 }
-
-// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
-function skillRoot(skillName) {
-  return distributedSkills.has(skillName)
-    ? path.join("skills", skillName)
-    : path.join(".claude", "skills", skillName);
-}
 const queries = selectedQuery === null ? allQueries : allQueries.filter((_, index) => index === selectedQuery);
 const fixtureRoot = mkdtempSync(path.join(tmpdir(), `architecture-standard-trigger-${skillName}-`));
 
 try {
   execFileSync("git", ["clone", "--quiet", "--no-hardlinks", repoRoot, fixtureRoot]);
-  const skillsRoot = path.join(fixtureRoot, ".claude", "skills");
   for (const candidate of allowedSkills) {
     const candidateRoot = skillRoot(candidate);
     const candidatePath = path.join(fixtureRoot, candidateRoot);
@@ -58,6 +50,13 @@ try {
 } finally {
   assertOwnedFixture(fixtureRoot);
   rmSync(fixtureRoot, { recursive: true, force: true });
+}
+
+// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
+function skillRoot(skillName) {
+  return distributedSkills.has(skillName)
+    ? path.join("skills", skillName)
+    : path.join(".claude", "skills", skillName);
 }
 
 function evaluateQuery(query) {
