@@ -1,0 +1,23 @@
+[
+    {"query": "標準の規律が2つの文書で衝突しているので改訂提案を還流してください。", "should_trigger": true},
+    {"query": "この言語制約では標準の完了条件を達成できません。標準側へ報告してください。", "should_trigger": true},
+    {"query": "標準に該当規定がない境界を見つけたので Issue を起票してください。", "should_trigger": true},
+    {"query": "規律の解釈が二通りに割れて判断できません。標準リポジトリへ申し立ててください。", "should_trigger": true},
+    {"query": "実測した標準の不成立を YukiIto1999/architecture-standard へ届けてください。", "should_trigger": true},
+    {"query": "docs/revision に残した改訂提案を標準側の Issue へ送ってください。", "should_trigger": true},
+    {"query": "標準の曖昧な条文について、既存 Issue があればコメントで補足してください。", "should_trigger": true},
+    {"query": "適用中に見つけた標準の欠落を、重複起票を避けて標準側へ還流してください。", "should_trigger": true},
+    {"query": "標準の矛盾を再現コマンド付きで標準リポジトリへ報告してください。", "should_trigger": true},
+    {"query": "標準の concerns へ retry jitter の規律を追記してください。", "should_trigger": false, "expected_skill": "standard-update"},
+    {"query": "標準本文の矛盾を直接修正して整合させてください。", "should_trigger": false, "expected_skill": "standard-update"},
+    {"query": "architecture-standard 全体を読み取り専用で監査してください。", "should_trigger": false, "expected_skill": "standard-audit"},
+    {"query": "標準に従ってこの worker の実装を進めてください。", "should_trigger": false, "expected_skill": "standard-apply"},
+    {"query": "この project の適合性を JSON で監査してください。修正は不要です。", "should_trigger": false, "expected_skill": "standard-conformance"},
+    {"query": "この repository の issue 一覧を取得して状況を教えてください。", "should_trigger": false},
+    {"query": "GitHub の pull request を作成して review を依頼してください。", "should_trigger": false},
+    {"query": "この bug の原因を調べて修正してください。標準は関係ありません。", "should_trigger": false},
+    {"query": "外部 library の最新版の仕様を Web で調査してください。", "should_trigger": false},
+    {"query": "commit message を staged diff から作ってください。", "should_trigger": false},
+    {"query": "この設計文書の日本語を推敲してください。標準への申し立ては不要です。", "should_trigger": false},
+    {"query": "標準の規律が気に入らないので緩めるよう交渉してください。", "should_trigger": false}
+]

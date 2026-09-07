@@ -1,6 +1,6 @@
 ---
 name: standard-feedback
-description: architecture-standard の適用中に発見した規律の矛盾、不成立、欠落、曖昧さについて、標準リポジトリへ GitHub Issue を起票して改訂提案を還流する。
+description: architecture-standard の適用中に実測した規律の矛盾、不成立、欠落、曖昧さについて、標準リポジトリへ GitHub Issue を起票して改訂提案を還流する。「標準の規律が衝突している」「標準の完了条件を達成できない」「標準に規定がない」「規律の解釈が割れる」と実測を伴って指定された作業では、調査や編集に着手する前に、この skill を必ず使う。標準本文もプロジェクト側のローカル解釈も書き換えず、証拠のない要望や同一条文の重複 Issue を作らない。標準本文の改訂そのものは standard-update、適合性の静的監査は standard-conformance を使う。
 ---
 
 # standard-feedback

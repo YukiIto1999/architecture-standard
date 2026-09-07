@@ -20,9 +20,9 @@ FAILED=0
 PASSED=0
 
 skill_root() {
-  # 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する standard-apply はそこが正本になる
+  # 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
   case "$1" in
-    standard-apply) printf 'skills/%s' "$1" ;;
+    standard-apply|standard-conformance|standard-feedback) printf 'skills/%s' "$1" ;;
     *) printf '.claude/skills/%s' "$1" ;;
   esac
 }
@@ -872,7 +872,7 @@ expect_text \
   "全 task 三条件 benchmark を release 境界へ限定する" \
   'release 前、または instruction と description の双方を横断して変更したときは、全 task の3条件比較' \
   .claude/skills/standard-update/references/evaluation.md
-for skill_name in standard-apply standard-audit standard-update; do
+for skill_name in standard-apply standard-audit standard-conformance standard-feedback standard-update; do
   expect_text \
     "$skill_name の description は調査や編集より前の利用場面を示す" \
     '^description: .*調査や編集に着手する前に、この skill を必ず使う' \
@@ -951,9 +951,9 @@ printf '\n=== 2. task eval と trigger eval の schema ===\n'
 eval_output=$(bash "$SCRIPT_DIR/skill-package-check.sh" 2>&1)
 if [ "$?" -eq 0 ]; then
   printf '%s\n' "$eval_output"
-  pass "3 skill の package 構造と eval schema が有効"
+  pass "5 skill の package 構造と eval schema が有効"
 else
-  fail "3 skill の package 構造または eval schema が無効" "$eval_output"
+  fail "5 skill の package 構造または eval schema が無効" "$eval_output"
 fi
 package_fixture="$TEST_ROOT/package-missing-evals"
 mkdir -p "$package_fixture" || fail "package checker fixture を構築" "mkdir failed"
@@ -1316,9 +1316,9 @@ printf '%s\n' \
   'printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done"}'\''' > "$fake_other_skill"
 chmod +x "$fake_other_skill" || fail "other Skill fixture を構築" "chmod failed"
 if other_skill_output=$(CLAUDE_EVAL_COMMAND="$fake_other_skill" CLAUDE_EVAL_TIMEOUT_MS=1000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 13 2>&1); then
-  pass "対象外のskillは3 skillの誤発火に数えない"
+  pass "対象外のskillは5 skillの誤発火に数えない"
 else
-  fail "対象外のskillは3 skillの誤発火に数えない" "$other_skill_output"
+  fail "対象外のskillは5 skillの誤発火に数えない" "$other_skill_output"
 fi
 
 fake_exact_skill="$TEST_ROOT/claude-exact-skill"
@@ -1494,7 +1494,7 @@ printf '%s\n' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","total_cost_usd":0,"usage":{}}'\''' \
   'fi' > "$fake_task_harness_probe"
 chmod +x "$fake_task_harness_probe" || fail "task harness probe fixture を構築" "chmod failed"
-for probe_skill in standard-apply standard-audit standard-update; do
+for probe_skill in standard-apply standard-audit standard-conformance standard-feedback standard-update; do
   for eval_configuration in with-skill old-skill without-skill; do
     if task_harness_probe_output=$(CLAUDE_EVAL_COMMAND="$fake_task_harness_probe" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/task-harness-probe-evals" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration "$eval_configuration" --skill "$probe_skill" --eval-id 1 2>&1) \
       && ! rg -q '"is_error": true' "$TEST_ROOT/task-harness-probe-evals/$probe_skill/eval-1-haiku/$eval_configuration/result.json"; then
@@ -1509,8 +1509,8 @@ fake_audit_mutation_probe="$TEST_ROOT/claude-audit-mutation-probe"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'runner=.claude/skills/standard-update/scripts/run-task-evals.mjs' \
-  'expected='\''要求した範囲は、受入条件、標準の必須規律、安全、互換性、必要な検証を欠かさず作り切る。'\''' \
-  'injected='\''要求した範囲は、必要な品質を適切に満たす。'\''' \
+  'expected='\''要求された機能範囲、受入条件、必須規律、安全性、互換性、必要な検証は妥協なく作り切ります。'\''' \
+  'injected='\''要求された範囲は、必要な品質を適切に満たします。'\''' \
   'diff_files=$(git diff --name-only)' \
   'eval_status=$(git status --short --untracked-files=all -- .claude/skills/standard-audit/evals)' \
   'if [ "$diff_files" != "principles/README.md" ] || ! rg -qF "$injected" principles/README.md; then' \

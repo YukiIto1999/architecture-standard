@@ -6,9 +6,10 @@ import path from "node:path";
 import process from "node:process";
 
 const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+const distributedSkills = new Set(["standard-apply", "standard-conformance", "standard-feedback"]);
 const skillName = process.argv[2];
-const allowedSkills = new Set(["standard-apply", "standard-audit", "standard-update"]);
-if (!allowedSkills.has(skillName)) throw new Error("skill must be standard-apply, standard-audit, or standard-update");
+const allowedSkills = new Set(["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"]);
+if (!allowedSkills.has(skillName)) throw new Error(`skill must be one of ${[...allowedSkills].join(", ")}`);
 const claudeCommand = process.env.CLAUDE_EVAL_COMMAND || "claude";
 const timeoutMs = Number(process.env.CLAUDE_EVAL_TIMEOUT_MS || "60000");
 if (!Number.isFinite(timeoutMs) || timeoutMs < 1) throw new Error("CLAUDE_EVAL_TIMEOUT_MS must be a positive number");
@@ -51,9 +52,9 @@ try {
   rmSync(fixtureRoot, { recursive: true, force: true });
 }
 
-// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する standard-apply はそこが正本になる
+// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
 function skillRoot(skillName) {
-  return skillName === "standard-apply"
+  return distributedSkills.has(skillName)
     ? path.join("skills", skillName)
     : path.join(".claude", "skills", skillName);
 }
