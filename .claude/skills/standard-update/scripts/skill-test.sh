@@ -19,6 +19,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=0
 PASSED=0
 
+skill_root() {
+  # 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する standard-apply はそこが正本になる
+  case "$1" in
+    standard-apply) printf 'skills/%s' "$1" ;;
+    *) printf '.claude/skills/%s' "$1" ;;
+  esac
+}
+
 pass() {
   printf 'PASS: %s\n' "$1"
   PASSED=$((PASSED + 1))
@@ -109,53 +117,49 @@ expect_text \
 expect_no_text \
   "apply はチェックリスト全文を応答へ転写しない" \
   'チェックリストとして応答へ転写' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "利用不能な capability の扱いを明記する" \
   '利用できない|利用不能|fallback|代替' \
-  .claude/skills/standard-apply/SKILL.md \
+  skills/standard-apply/SKILL.md \
   .claude/skills/standard-audit/SKILL.md \
   .claude/skills/standard-update/SKILL.md
 expect_text \
   "apply は pending を完了扱いしない" \
   'pending のまま完了と書かない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
-  "apply は記録 commit の snapshot だけを基準にする" \
-  '記録した commit object から読む' \
-  .claude/skills/standard-apply/SKILL.md
+  "apply は現在の標準本文を基準にする" \
+  '標準本文は常に `<standard-root>` にある現在の規範文書を参照する' \
+  skills/standard-apply/SKILL.md
 expect_text \
-  "apply はdirectory単位diffで標準snapshot確認を済ませない" \
-  'OID の表示や directory 単位の diff だけで基準にしたとは扱わない' \
-  .claude/skills/standard-apply/SKILL.md
+  "apply は標準の過去版を基準にしない" \
+  '標準の過去版を Git 履歴から掘り出して判断基準にしない' \
+  skills/standard-apply/SKILL.md
+expect_no_text \
+  "apply は準拠 commit を基準へ戻さない" \
+  'standard_commit|準拠 commit|準拠 ADR|準拠基準|recorded-commit' \
+  skills/standard-apply/SKILL.md
 expect_text \
-  "apply は根拠にした全標準fileを一回で記録commitと照合する" \
-  '設計または最終判断の前に `git -C <standard-root> diff <recorded-commit> -- <exact-file-1> <exact-file-2> ...` の一回で全件を照合する' \
-  .claude/skills/standard-apply/SKILL.md
-expect_text \
-  "apply は未照合の標準fileを根拠にしない" \
-  '差分がある file または照合引数にない file に基づく判断は報告から除き、準拠照合を完了としない' \
-  .claude/skills/standard-apply/SKILL.md
-expect_text \
-  "apply は標準 repository を cwd から分離する" \
-  'git -C <standard-root> show' \
-  .claude/skills/standard-apply/SKILL.md
+  "apply は標準rootをskillの所在から固定する" \
+  '二段上の親 directory' \
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は監査対象を読む前に基準の前処理を閉じる" \
   '対象 source の意味監査を始めない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は severity 対応を改変せず固定する" \
   'severity 対応を一字一句そのまま' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_no_text \
   "apply は現行 severity の具体値を重複固定しない" \
   '必須構成と layout の不達は major' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は証拠のない監査 step を実施済みにしない" \
   'tool output または直接の読取証拠がない step を実施済みにしない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "audit は反証を探してから指摘する" \
   '反証として探す' \
@@ -191,283 +195,275 @@ expect_text \
 expect_text \
   "apply は変更前に観測結果と必須条件を変更契約へ固定する" \
   '設計案または編集を作る前に、次を一つの変更契約として固定する' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は追加要素を変更契約へ追跡する" \
   '追加する型・抽象・設定・依存・fallback は、変更契約のいずれかの条件へ直接結びつくものだけ' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply の最小化は必須条件を削らない" \
   '受入条件、標準の必須規律、安全、互換性、必要な検証を削らず' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は隣接課題を変更へ取り込まない" \
   '隣接課題は、変更契約の成立、安全、互換性を左右する場合だけ未確定条件へ含める' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は現在modeの完了条件で止める" \
   '現在のモードで変更契約に対して実測できる条件を確かめ、未実装・未実行の条件を分けて報告した時点で止める' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は標準参照の節約を対象projectの調査不足へ転用しない" \
   'ここまでの参照制限は標準本文に適用する' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は新要素の前に変更不要と削除を判定する" \
   '変更不要、不要な既存要素の削除' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は最初の十分な段で止める" \
   '満たした最初の段で止める' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は必須条件Unknownの段を十分としない" \
   '必須条件の一つでも Unknown なら、その段を満たすと判定しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は未確定段を暫定として選択保留する" \
   '最も早く成立しうる段として暫定記録し、未確認契約が閉じるまで段の選択を保留する' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は後段を不要という否定にも触れない" \
   '「新しい依存は不要」「独自実装は不要」「後続の段は検討しない」のような否定文も、後段への言及なので書かない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は前段を退けた根拠を記録する" \
   'それより前の各段では満たせない変更契約の条件を記録' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は設計依頼で未要求の成果物を作らない" \
   'ADR、設計書、報告 file への記録を依頼されていなければ file を作らず' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はexact path指定時のGlobを完了扱いしない" \
   'Glob を使った場合は参照規律を満たしていない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はexact file指定時に対象projectのGlobを手段から外す" \
   'exact file path がある.*その file を Read で直接読む.*対象 project への Glob' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は入口をtool call前に一つ選ぶ" \
   '対象 project へ最初の tool call を行う前に、次の入口を一つだけ選ぶ' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はexact file作業で関連確認にもGlobしない" \
-  '準拠 ADR、caller、state、test の確認にも Glob を使わない' \
-  .claude/skills/standard-apply/SKILL.md
-expect_text \
-  "apply は準拠ADRを限定Grepで発見する" \
-  '`standard_commit:` を対象 project の `docs/decisions/` に限定した Grep' \
-  .claude/skills/standard-apply/SKILL.md
+  'project ADR、caller、state、test の確認にも Glob を使わない' \
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はproject契約ADRを回収語の限定Grepで発見する" \
   'authority 型または受入語のうち最も固有な一語を選び、その exact token の一回の Grep' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は設計前にADRとtestの追跡gateを閉じる" \
   '設計本文を書く前に、受入条件の意味を持つ project ADR と既存 test の追跡を gate として閉じる' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はexact pathをdirectory列挙で再発見しない" \
   '対象 project への Glob、fd、directory 一覧、`git ls-files`' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はexact pathの直読を最初の対象project操作にする" \
   '最初の対象 project 読取または探索は、表の操作でなければならない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はexact sourceの意味設計を閉じた経路で調べる" \
   'exact source path を与えられ、受入条件に completion、state、success または failure がある設計は、次の対象 project 操作だけを記載順に行う' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はexact source経路のORと全域Grepを禁止する" \
   '`\|` を含む OR pattern、project root 全域の Grep、Glob、別名 manifest の試行を使わない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はpath未指定Globを標準探索としても使わない" \
   'path 未指定の Glob は標準と対象 project の双方へ一致しうるため、標準側だけの探索としても使わない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はdirectory入口のsystem-wide作業だけ一度の限定Globを許す" \
   'system-wide な recovery または audit を要求する場合に限り、開始点の発見に Glob を一回だけ許す' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はdirectory入口のGlob patternをproject rootへ固定する" \
   'pattern は `<target-project-root>/\*\*/\*` の一つに固定' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はdirectory入口で候補名を複数回試さない" \
   '既知名の存在確認、top-level確認、source用とtest用の分割によって複数回実行しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はroot-only recoveryの最初のGlobを一意にする" \
   '最初の対象 project 探索を文字どおり `<target-project-root>/\*\*/\*` の一回にする' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "recovery eval はGlob回数とpatternを採点する" \
   'Glob は target-project/\*\*/\* の一回だけ' \
-  .claude/skills/standard-apply/evals/evals.json
+  skills/standard-apply/evals/evals.json
 expect_text \
   "apply はroot recoveryでADRより先に一回のGlobを行う" \
-  '`standard_commit:` の準拠 ADR 探索もこの Glob より後に行う' \
-  .claude/skills/standard-apply/SKILL.md
+  '`docs/decisions/` へ限定した project ADR の Grep もこの Glob より後に行う' \
+  skills/standard-apply/SKILL.md
 expect_text \
   "recovery eval はADRをGlob由来の読取候補にしない" \
   'docs/decisions.*Glob 由来の読取候補から除く' \
-  .claude/skills/standard-apply/evals/evals.json
+  skills/standard-apply/evals/evals.json
 expect_text \
-  "apply は準拠ADRGrep失敗時に列挙へfallbackしない" \
+  "apply はADRのGrep失敗時に列挙へfallbackしない" \
   'Grep が失敗した場合も find、Glob、directory 一覧へ切り替えず' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は未確定の失敗契約を疑似コードで潰さない" \
   '成功と同じ戻り値へ畳む疑似コードを書かない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は未確定の失敗契約があればcode fenceを出さない" \
   '未確定の必須失敗契約が一つでも残る設計では.*code fence を最終応答へ置かない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は検証の観測条件を具体化する" \
   '対象入力または setup、観測する値、合格となる期待結果' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は構造再生をrecoveryから始める" \
   '構造再生の複合依頼は recovery を読み取り専用で先に完了' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はrecoveryの根拠状態と決定状態を分離する" \
   '主張 / 根拠状態 / locator または導出 / 意図状態 / 変更先状態 / 未解決境界' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は意図と変更先を別の列へ置く" \
   '意図状態を `Intended`、明示的に決定した変更先を述べる主張だけは変更先状態を `Target`' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は一主張が意図と変更先を兼ねたら行を分ける" \
   '現在の意図と将来の変更先を同時に述べる場合は二行へ分ける' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は受入語のauthorityと既存testまで追う" \
   'Accepted な契約、state authority、writer、caller、既存 test を一段ずつ追い' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はtask終了とdomain completionを同一視しない" \
   'future または task の終了と、domain の terminal state または永続化された authority の更新を同じ completion とみなさない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はjoinだけでdomain completionを満たしたとしない" \
   '「全 job の完了後に返る」「completion の受入条件を満たす」と書かない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はdomain authorityの検証caseを省かない" \
   '`並行度 / task 回収 / domain authority` の三 case を必ず別々に置く' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はpermitを親で待ってからspawnしない" \
   '親が permit を取得してから task を spawn する構造へ変えない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はpermit待ちをjob task内の取消優先に保つ" \
   '`JoinSet` に束ねた job task 内で取消優先の permit 待ちを行うことを必須構造' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は既存testを公開callerと結果から探す" \
   '一段上の公開 caller の exact symbol を一回だけ、manifest または明示契約から確認した test root で Grep' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はtest rootを慣例から推測しない" \
   'test root を確認できなければ慣例から推測せず Unknown にする' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はAcceptedをOR検索して全ADRを読まない" \
   '`Status: Accepted\|<受入語>\|<authority型>` の OR 検索で全 Accepted ADR を候補にしない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は公開symbolから契約ADRとauthorityを順に追う" \
   '対象 source の公開 symbol と同じ exact token を `docs/decisions/` で一回 Grep.*ADR が authority 型を名指しする場合だけ、その exact 型名を source root で一回 Grep' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はstandard rootをrev-parseで再発見しない" \
-  '`pwd` や `git rev-parse` で standard root を再発見せず' \
-  .claude/skills/standard-apply/SKILL.md
-expect_text \
-  "apply はrepository skillのsnapshotをgit-C-dotで読む" \
-  'repository root からの `.claude/skills/standard-apply/SKILL.md` なら `<standard-root>` は `.` であり、`git -C . show ...`' \
-  .claude/skills/standard-apply/SKILL.md
+  '`pwd` や `git rev-parse` で standard root を再発見しない' \
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply の設計応答は将来のartifact指示を足さない" \
   '依頼が設計だけなら、将来の ADR、file 作成、cleanup、別変更の指示も削除する' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はcallerとstateのOR検索でtestを広げない" \
   'caller、状態、型の OR 検索や対象 project root 全域の Grep で無関係な test を候補にしない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は内部関数名だけで公開callerのtest不在を判定しない" \
   '変更対象の内部関数名だけを検索語にして公開 caller の test を不在と判定しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は外部cancellationをsibling取消と分ける" \
   'caller からの cancellation または deadline を子へ伝播する契約を別々の必須条件' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は未観測関数へ既存責務を発明しない" \
   '未観測の関数または module に、state authority の更新、失敗翻訳、cleanup などの責務を割り当てない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は全recovery行へ根拠状態を一つ要求する" \
   '根拠状態 cell は `Known`、`Derived`、`Observed`、`Assumed`、`Unknown` の語だけ' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はsourceの現在値をObservedにする" \
   'source、test、設定、実行結果として現在そうである主張を `Observed`' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はユーザーの仮説をKnownにしない" \
   'ユーザー入力でも、質問、提案、仮説、記憶、不確かさを伴う説明、調査してほしい候補は `Known` にせず' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はユーザー仮説をAssumedの独立行に残す" \
   'ユーザーが示した仮説は、その仮説自体を `Assumed` の独立した行に残す' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はGlob未発見をproject全体の不存在へ広げない" \
   'Glob が返した非 hidden の候補内で未発見だったことまでであり.*project 全体に存在しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は未観測範囲が残る到達可能性をUnknownにする" \
   '未定義の symbol、除外した artifact、未観測の呼出元または実装が一つでも残る場合.*project 全体での定義または到達可能性が `Unknown`' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はrecovery表の未解決境界列を省略しない" \
   '回収表は `主張 / 根拠状態 / locator または導出 / 意図状態 / 変更先状態 / 未解決境界` の六列を省略しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は一回のGlob範囲をproject全域と呼ばない" \
   '対象範囲を `target-project 全域` または `全 file` と表記せず' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はdecision軸の対象外とUnknownを分ける" \
   '主張がその軸を扱わない場合は `対象外`、扱うが根拠がない場合は `Unknown`' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はrecoveryの根拠状態を混合しない" \
   '一つの根拠状態欄へ `Known \+ Observed` のように複数値を書かない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はrecoveryの診断をDerivedへ分類する" \
   '診断は、根拠行から導いた `Derived` の独立した行' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は最終応答前に複合evidence cellを分割する" \
   '五つの許可語との完全一致でない cell が一つでもあれば、注記を他列へ移すか行を分割するまで完了しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は表外の要約でもUnknownを網羅否定へ変えない" \
   '表で Unknown とした範囲を、表外で「実装のどこにもない」「実現されていない」「writer は存在しない」と断定しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "audit は指摘をevidenceと規範と帰結で絞る" \
   '観測した evidence、違反する規範または明示契約、準拠と違反を分ける帰結' \
@@ -487,47 +483,47 @@ expect_text \
 expect_text \
   "apply は判断に使う直接参照だけを読む" \
   'その判断を変えうる直接の参照先だけを読み、答えを得た参照経路はそこで止める' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は既知のexact pathを再発見しない" \
-  'exact file path を与えられた作業では、準拠 ADR、caller、state、test の確認にも Glob を使わない' \
-  .claude/skills/standard-apply/SKILL.md
+  'exact file path を与えられた作業では、project ADR、caller、state、test の確認にも Glob を使わない' \
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はprocessの無条件linkを必須条件として読む" \
   'process が現在のモードの順序または確認点として無条件に `従う` と定める link は、変更契約の必須条件として読む' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はconcern間linkを変更契約なしに再帰しない" \
   '読んだ concern から別 concern への link も無条件に再帰しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はprocess stepの消込と条件付きlink全読取を混同しない" \
   'process の全 step を消し込むことと、条件付き link を全て読むことを混同しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はdirectory linkから同階層を列挙しない" \
   'directory への link は同階層の列挙を許可しない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply はdirectory READMEを一度だけ台帳にする" \
   'その directory の `README.md` を台帳として一度だけ読み、一つに絞る' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は未観測の契約を補って設計しない" \
   '具体的な独自型や失敗値を発明せず、必要な契約変更と確認対象を未確定の必須条件として残す' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は受入条件にない標準の安全条件を削らない" \
   '受入条件にないことを理由に標準の安全条件を削ったり、既存契約を維持できると仮定したりしない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply の設計は未観測の分岐や隣接migrationへ広げない" \
   '未観測の契約に依存する分岐や、隣接する migration の設計へ広げない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "apply は最終応答から変更契約に不要な要素を除く" \
   '失われないものは応答から除く' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 expect_text \
   "update は所有者候補の確定前にreferenceを読まない" \
   '開始時は `references/` を読まない' \
@@ -866,11 +862,11 @@ for skill_name in standard-apply standard-audit standard-update; do
   expect_text \
     "$skill_name の description は調査や編集より前の利用場面を示す" \
     '^description: .*調査や編集に着手する前に、この skill を必ず使う' \
-    ".claude/skills/$skill_name/SKILL.md"
+    "$(skill_root "$skill_name")/SKILL.md"
   expect_no_text \
     "$skill_name の description に内部tool順序を書かない" \
     '^description: .*Read・Grep・Bash・Agent より先に Skill tool' \
-    ".claude/skills/$skill_name/SKILL.md"
+    "$(skill_root "$skill_name")/SKILL.md"
 done
 expect_no_text \
   "audit の description は標準の変更依頼と競合しない" \
@@ -887,23 +883,23 @@ expect_no_text \
 expect_text \
   "Ponytail の一次資料を出典記録へ残す" \
   'Source: https://github\.com/DietrichGebert/ponytail/blob/main/skills/ponytail/SKILL\.md' \
-  .claude/skills/standard-apply/references/provenance.md
+  skills/standard-apply/references/provenance.md
 expect_text \
   "Ponytail のlicenseを出典記録へ残す" \
   'License: MIT \(https://raw\.githubusercontent\.com/DietrichGebert/ponytail/main/LICENSE\)' \
-  .claude/skills/standard-apply/references/provenance.md
+  skills/standard-apply/references/provenance.md
 expect_text \
   "Ponytail 由来の採用を出典記録へ残す" \
   '^\- Adopted:' \
-  .claude/skills/standard-apply/references/provenance.md
+  skills/standard-apply/references/provenance.md
 expect_text \
   "Ponytail 由来の不採用を出典記録へ残す" \
   '^\- Rejected:' \
-  .claude/skills/standard-apply/references/provenance.md
+  skills/standard-apply/references/provenance.md
 expect_text \
   "出典記録を実行時参照から外す" \
   '実行時には読まない' \
-  .claude/skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md
 
 TEMP_BASE="${TMPDIR:-/tmp}"
 TEMP_BASE="$(cd "$TEMP_BASE" 2>/dev/null && pwd -P)" || {
@@ -945,9 +941,9 @@ else
 fi
 package_fixture="$TEST_ROOT/package-missing-evals"
 mkdir -p "$package_fixture" || fail "package checker fixture を構築" "mkdir failed"
-cp -a .claude "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
+cp -a .claude skills "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
 git -C "$package_fixture" init --quiet || fail "package checker fixture を構築" "git init failed"
-rm -rf -- "$package_fixture/.claude/skills/standard-apply/evals"
+rm -rf -- "$package_fixture/skills/standard-apply/evals"
 if package_missing_output=$(cd "$package_fixture" && bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "通常実行ではskillのeval一式欠落を拒否する" "$package_missing_output"
 elif ! printf '%s\n' "$package_missing_output" | rg -qF 'standard-apply: evals directory がない'; then
@@ -967,9 +963,9 @@ else
 fi
 package_without_fixture="$TEST_ROOT/package-without-skill"
 mkdir -p "$package_without_fixture" || fail "without-skill package fixture を構築" "mkdir failed"
-cp -a .claude "$package_without_fixture/" || fail "without-skill package fixture を構築" "copy failed"
+cp -a .claude skills "$package_without_fixture/" || fail "without-skill package fixture を構築" "copy failed"
 git -C "$package_without_fixture" init --quiet || fail "without-skill package fixture を構築" "git init failed"
-rm -rf -- "$package_without_fixture/.claude/skills/standard-apply"
+rm -rf -- "$package_without_fixture/skills/standard-apply"
 if package_without_output=$(cd "$package_without_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   pass "without-skill隔離評価では選択packageだけの不存在を許可する"
 else
@@ -977,9 +973,9 @@ else
 fi
 package_partial_fixture="$TEST_ROOT/package-partial-without-skill"
 mkdir -p "$package_partial_fixture" || fail "partial without-skill package fixture を構築" "mkdir failed"
-cp -a .claude "$package_partial_fixture/" || fail "partial without-skill package fixture を構築" "copy failed"
+cp -a .claude skills "$package_partial_fixture/" || fail "partial without-skill package fixture を構築" "copy failed"
 git -C "$package_partial_fixture" init --quiet || fail "partial without-skill package fixture を構築" "git init failed"
-rm -f -- "$package_partial_fixture/.claude/skills/standard-apply/SKILL.md"
+rm -f -- "$package_partial_fixture/skills/standard-apply/SKILL.md"
 if package_partial_output=$(cd "$package_partial_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "without-skill隔離評価では選択packageの部分残存を拒否する" "$package_partial_output"
 else
@@ -1074,22 +1070,26 @@ expect_eval_prompt_text \
   "recovery eval はユーザー仮説をKnownから分離して測る" \
   5 \
   'worker\.rs.*JobStatus.*writer.*仮説.*確認済みの仕様ではありません' \
-  .claude/skills/standard-apply/evals/evals.json
+  skills/standard-apply/evals/evals.json
 expect_text \
   "recovery eval はユーザー仮説をAssumedとして採点する" \
   '根拠付き仮説を Assumed とし、Known、Observed、Intended のいずれにも読み替えない' \
-  .claude/skills/standard-apply/evals/evals.json
+  skills/standard-apply/evals/evals.json
 expect_text \
-  "task evaluator は履歴をsanitizeしてから準拠commitを作る" \
-  'const standardCommit = initializeSanitizedRepository\(fixtureRoot\);' \
+  "task evaluator は履歴をsanitizeしてからfixtureを作る" \
+  'initializeSanitizedRepository\(fixtureRoot\);' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_text \
   "task evaluator はclone元のGit objectを破棄する" \
   'rmSync\(path.join\(fixtureRoot, "\.git"\).*maxRetries:' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_text \
-  "task evaluator はsanitize済みcommitをADRへ記録する" \
-  '`standard_commit: \$\{standardCommit\}`' \
+  "task fixture のADRは現在の標準本文を基準にする" \
+  '準拠の基準は、常に現在の標準本文である。' \
+  .claude/skills/standard-update/scripts/run-task-evals.mjs
+expect_no_text \
+  "task fixture は標準の commit を記録しない" \
+  'standard_commit' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_line \
   "task evaluator はAgent toolを明示的に禁止する" \
@@ -1255,7 +1255,7 @@ fi
 fake_direct_read="$TEST_ROOT/claude-direct-read"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
-  'printf '\''%s\n'\'' '\''{"type":"assistant","message":{"content":[{"type":"tool_use","id":"read-1","name":"Read","input":{"file_path":"/tmp/fixture/.claude/skills/standard-apply/SKILL.md"}}]}}'\''' \
+  'printf '\''%s\n'\'' '\''{"type":"assistant","message":{"content":[{"type":"tool_use","id":"read-1","name":"Read","input":{"file_path":"/tmp/fixture/skills/standard-apply/SKILL.md"}}]}}'\''' \
   'printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done"}'\''' > "$fake_direct_read"
 chmod +x "$fake_direct_read" || fail "direct Read fixture を構築" "chmod failed"
 if direct_read_output=$(CLAUDE_EVAL_COMMAND="$fake_direct_read" CLAUDE_EVAL_TIMEOUT_MS=1000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 13 2>&1); then
@@ -1458,8 +1458,8 @@ printf '%s\n' \
   'trigger_runner=.claude/skills/standard-update/scripts/run-trigger-evals.mjs' \
   'skill_oracle=.claude/skills/standard-update/scripts/skill-test.sh' \
   'product_check=.claude/skills/standard-update/scripts/skill-package-check.sh' \
-  'skill_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL' \
-  'eval_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL/evals' \
+  'if [ "$SKILL_EVAL_ISOLATED_SKILL" = standard-apply ]; then skill_root=skills/standard-apply; else skill_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL; fi' \
+  'eval_root=$skill_root/evals' \
   'task_oracle=$eval_root/evals.json' \
   'trigger_oracle=$eval_root/trigger-evals.json' \
   'unexpected='\''情報の'\''"概観"' \

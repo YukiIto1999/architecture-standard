@@ -25,7 +25,7 @@ const claudeCommand = process.env.CLAUDE_EVAL_COMMAND || "claude";
 let hadError = false;
 
 for (const skillName of skillNames) {
-  const evalPath = path.join(repoRoot, ".claude", "skills", skillName, "evals", "evals.json");
+  const evalPath = path.join(repoRoot, skillRoot(skillName), "evals", "evals.json");
   const data = JSON.parse(readFileSync(evalPath, "utf8"));
   if (data.skill_name !== skillName) throw new Error(`${evalPath}: skill_name mismatch`);
 
@@ -53,8 +53,8 @@ async function runEval(skillName, item) {
     if (configuration === "without-skill") removeSkill(fixtureRoot, skillName);
     scrubFixtureMutationSource(fixtureRoot);
     hideCurrentSkillEvaluationOracles(fixtureRoot, skillName);
-    const standardCommit = initializeSanitizedRepository(fixtureRoot);
-    prepareFixture(fixtureRoot, standardCommit);
+    initializeSanitizedRepository(fixtureRoot);
+    prepareFixture(fixtureRoot);
     initializeFixtureCommit(fixtureRoot);
     prepareEvaluationChange(fixtureRoot, skillName, item.id);
 
@@ -69,7 +69,7 @@ async function runEval(skillName, item) {
       "この隔離評価では subagent は利用できません。skill が独立 reviewer を明示的に要求する場合だけ、その fallback として同じ session で scoped self-audit を行い、Agent や background task を起動して待たないでください。skill が要求しない self-audit は追加せず、閉じた経路が tool または file を制限する場合は fallback でもその範囲を広げないでください。",
       configuration === "without-skill"
         ? "この評価では project skill を使わずに実行してください。"
-        : `これは発火評価ではありません。最初に Read tool で .claude/skills/${skillName}/SKILL.md を全文読み、その指示に従ってください。Skill(...) のような呼出し文字列を応答するだけで終えないでください。参照 resource は SKILL.md が必要としたものだけを読んでください。`,
+        : `これは発火評価ではありません。最初に Read tool で ${skillRoot(skillName)}/SKILL.md を全文読み、その指示に従ってください。Skill(...) のような呼出し文字列を応答するだけで終えないでください。参照 resource は SKILL.md が必要としたものだけを読んでください。`,
       item.prompt,
     ].join("\n\n");
 
@@ -277,8 +277,15 @@ function timeoutFor(model) {
   return { haiku: 600_000, sonnet: 900_000, opus: 900_000 }[model];
 }
 
+// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する standard-apply はそこが正本になる
+function skillRoot(skillName) {
+  return skillName === "standard-apply"
+    ? path.join("skills", skillName)
+    : path.join(".claude", "skills", skillName);
+}
+
 function overlayWorkingFiles(fixtureRoot, skillName) {
-  const source = path.join(".claude", "skills", skillName);
+  const source = skillRoot(skillName);
   const from = path.join(repoRoot, source);
   const to = path.join(fixtureRoot, source);
   const baselineEvals = path.join(fixtureRoot, ".git", `baseline-evals-${skillName}`);
@@ -297,7 +304,7 @@ function overlayWorkingFiles(fixtureRoot, skillName) {
 }
 
 function removeSkill(fixtureRoot, skillName) {
-  const target = path.join(fixtureRoot, ".claude", "skills", skillName);
+  const target = path.join(fixtureRoot, skillRoot(skillName));
   const prefix = path.resolve(fixtureRoot) + path.sep;
   if (!path.resolve(target).startsWith(prefix)) throw new Error(`skill path outside fixture: ${target}`);
   rmSync(target, { recursive: true, force: true });
@@ -306,7 +313,7 @@ function removeSkill(fixtureRoot, skillName) {
 function hideCurrentSkillEvaluationOracles(fixtureRoot, skillName) {
   const prefix = path.resolve(fixtureRoot) + path.sep;
   const targets = [
-    path.join(fixtureRoot, ".claude", "skills", skillName, "evals"),
+    path.join(fixtureRoot, skillRoot(skillName), "evals"),
     path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "run-task-evals.mjs"),
     path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "run-trigger-evals.mjs"),
     path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "skill-test.sh"),
@@ -317,7 +324,7 @@ function hideCurrentSkillEvaluationOracles(fixtureRoot, skillName) {
   }
 }
 
-function prepareFixture(fixtureRoot, standardCommit) {
+function prepareFixture(fixtureRoot) {
   const targetRoot = path.join(fixtureRoot, "target-project");
   mkdirSync(path.join(targetRoot, "docs", "decisions"), { recursive: true });
   mkdirSync(path.join(targetRoot, "app"), { recursive: true });
@@ -332,7 +339,7 @@ function prepareFixture(fixtureRoot, standardCommit) {
   writeFileSync(path.join(targetRoot, "docs", "decisions", "0001-standard.md"), [
     "# architecture standard",
     "",
-    `standard_commit: ${standardCommit}`,
+    "準拠の基準は、常に現在の標準本文である。",
     "",
   ].join("\n"));
   writeFileSync(path.join(targetRoot, "docs", "decisions", "0002-worker-contract.md"), [
@@ -554,7 +561,6 @@ function initializeSanitizedRepository(fixtureRoot) {
   configureFixtureGit(fixtureRoot);
   execFileSync("git", ["add", "-A"], { cwd: fixtureRoot });
   execFileSync("git", ["commit", "--quiet", "-m", "test: create sanitized standard snapshot"], { cwd: fixtureRoot });
-  return execFileSync("git", ["rev-parse", "HEAD"], { cwd: fixtureRoot, encoding: "utf8" }).trim();
 }
 
 function initializeFixtureCommit(fixtureRoot) {

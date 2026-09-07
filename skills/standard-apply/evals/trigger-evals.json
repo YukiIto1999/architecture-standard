@@ -6,7 +6,7 @@
     {"query": "この project を標準の migration 手順に沿って段階移行してください。", "should_trigger": true},
     {"query": "標準準拠で認証機能を実装し、照合した規律を報告してください。", "should_trigger": true},
     {"query": "structure の標準に合わせて対象 project の root 構成を改善してください。", "should_trigger": true},
-    {"query": "この project の準拠 commit を基準に architecture-standard の review をしてください。", "should_trigger": true},
+    {"query": "現在の標準を基準に architecture-standard の review をしてください。", "should_trigger": true},
     {"query": "標準を適用して新しい TypeScript viewer project の設計と実装を進めてください。", "should_trigger": true},
     {"query": "対象 repository の refactoring を architecture-standard の順序で実行してください。", "should_trigger": true},
     {"query": "architecture-standard そのものを MECE と事実の正確さで監査してください。", "should_trigger": false, "expected_skill": "standard-audit"},
