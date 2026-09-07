@@ -20,16 +20,7 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 
 ## 参照経路
 
-### 検証の重複と割当の固定経路
-
-入力の候補が、検証手段を「同じ性質」とみなして重複排除する言語非依存の判定基準を追加または変更し、特定言語の実現 file 自体の変更を依頼していない場合に限り、次の順序を使う。この固定経路は、その候補の所有者裁定についてだけ下の一般経路より優先する。特定の `tools/*/inspection.md`、tool、または複数の明示 target への変更依頼は、主張と所有者を分けて一般経路で扱う。
-
-1. `README.md`、`structure/tests/methods.md`、`structure/tests/layout.md` を、この順に exact path の Read で直接読む。一つでも読めなければ止める。三つの Read が tool evidence に揃う前に reference または編集へ進まない。
-2. 手順1の三つを読んだことを確認してから、`.claude/skills/standard-update/references/normative-quality.md` を exact path で読む。layout を未読のまま reference を読んだ場合は、後から補って編集を続けず、この経路を未完了として止める。
-3. 裁定が段4なら、`tools/README.md`、`tools/rust/inspection.md`、`tools/csharp/inspection.md`、`tools/typescript/inspection.md` を、この順に exact path の Read で直接読む。文章上の定義変更または実現機構を変えない変更でも省略しない。各 inspection について `有効な metric / 無効な metric / 無効にする理由 / 上位規範が必須検証へ割り当てた metric` を内部台帳へ記録し、四項目を本文から埋められない file は一致確認済みとしない。二つの metric を別の性質と明記しながら、重複、二重測定、または一本化を理由に片方を無効化している記述は上位判定と矛盾する。たとえば cyclomatic complexity と cognitive complexity を別物と書いた直後に「二重に測らないため cognitive complexity へ一本化する」と続ける文は矛盾であり、同じ指標の重複だと読み替えない。片方だけが標準の表で必須検証へ割り当てられているなら、非採用理由は「他方は標準の必須検証へ割り当てられていない」とだけ書く。その metric が誤判定する、劣る、不要であるという未検証の品質判断へ置き換えず、別性質であるだけで両方を必須化しない。同じ規律の行動に「複雑度を一つへ一本化する」のような総称が残る場合も、採用した具体的な metric だけを測る文へ同期する。最終報告では各言語を「同一指標だった」と一括せず、編集要否を決めた metric と現行理由を file ごとに示す。
-4. 上位の判定基準を変更するなら `structure/tests/methods.md` を編集する。reference だけにある用語を持ち込まず、編集前に同じ節で使われていた標準本文の語彙で書く。本文には、要求・禁止事項から導く非空の全適用集合、集合の一致と合否の双方向含意、不一致・適用不能・一方だけ不合格なら両方を残すこと、反例未発見だけでは同一にしないこと、実装欠陥・更新漏れだけでは別性質にしないことを全て明記する。一つでも欠ければ編集を完了としない。手順3で下位実現との矛盾を確認した場合だけ、矛盾する exact inspection file も同じ変更契約で同期する。矛盾がなければ下位 file を編集しない。編集後は `structure/tests/methods.md` と、編集した場合だけその exact inspection file を Read し直し、用語の存在確認にも Grep を使わない。次に `git diff -- structure/tests/methods.md` を一回実行し、inspection file も編集した場合だけ同じ command の末尾にその exact path を加える。この exact diff を最終 reviewer へ渡す差分とする。最後に exact path の `.claude/skills/standard-update/scripts/verify.sh` を実行する。最終報告の変更先も `structure/tests/methods.md` と正確に書き、path を組み替えない。
-
-この経路では開始から最終報告まで Glob と Grep、`principles/verification.md`、`references/structure.md`、script directory の列挙を使わない。段1から4の途中と検証後に記載外の標準 file を読まず、所有者確定後の重複検索や repository-wide な自己監査を行わない。後述する最終の standard-audit / 独立 reviewer は免除しないが、reviewer の入力を変更差分、手順1から3で読んだ exact files、`verify.sh` の結果だけに固定し、新しい repository 探索を許可しない。subagent が利用できない場合は、同じ既読証拠だけで自己照合し、Grep、Glob、Bash、追加の Read を呼ばない。禁止した tool または file を使った場合は、経路を満たしたと報告しない。最終報告には、意図した読みと、それより弱く遵守判定を変える合理的な読みを、それぞれ一つの具体例で対比する。
+入力の候補が、検証手段を「同じ性質」とみなして重複排除する言語非依存の判定基準を追加または変更し、特定言語の実現 file 自体の変更を依頼していない場合は、下の一般経路より先に [verification duplication](references/verification-duplication.md) を読み、その固定経路だけを使う。
 
 開始時は `references/` を読まない。入力が既存の正本 file を明示する場合、または入力の主題が上の領域一覧と領域の台帳から具体的な正本 file へ一意に対応し、配置や所有者を変える候補でない場合は、その標準本文を直接読む。明示された path を Glob や path 未指定の Grep で再発見せず、より一般的な語を持つ principles または concerns を検索して所有者候補を増やさない。具体的な正本 file へ一意に対応しない場合だけ root `README.md` を先に読み、候補の所有者になりうる標準本文を一つに絞る。
 配置または領域書式の判断が必要になった時点で、分解した一つの主張につき、対応する `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/{principles,concerns,structure,tools,process}.md` を一つだけ読む。
@@ -154,17 +145,7 @@ bash "${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/scripts/verify-test.sh
 bash "${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/scripts/skill-package-check.sh"
 ```
 
-`skill-package-check.sh` は実作業へ公開する product 検査であり、frontmatter、3 skill の eval 定義、script 構文を検査する。`run-task-evals.mjs` が `SKILL_EVAL_ISOLATED_SKILL` と `SKILL_EVAL_CONFIGURATION` の有効な組を渡した隔離評価だけは、選択中 skill の隠された `evals/` を欠落としない。configuration が `without-skill` なら、選択中 skill directory 全体の不存在だけを許可し、directory の一部が残る状態は失敗にする。通常実行や片方だけの指定では、skill または eval 一式がなければ失敗する。`skill-test.sh` は期待する解答と mutation を検査する外側の evaluator 回帰検査であり、評価対象 agent へ公開せず、実作業の完了条件にも使わない。
-
-変更の種類に応じて model eval の範囲を決める。
-
-- `scripts/*` または `references/*.md` だけを変更し、SKILL.md と eval を変えない場合は、上の回帰検査だけを行い、model eval は実行しない。
-- SKILL.md の instruction を変更した場合は、skill-creator の評価手順を使う。変更した instruction の入力と観測可能な結果を prompt と expectation が直接使う task だけを `old-skill` と `with-skill` の2条件で隔離実行する。変更された file を監査対象に含むだけの task や、同じ skill を使うだけの task は選ばない。expectation、最終応答、tool event、diff、tracked / ignored status、実行 error、時間、token を比較する。新規 skill で旧版がない場合だけ `without-skill` を比較対象にする。
-- `evals/evals.json` だけを変更した場合は、変更した task を `with-skill` で実行する。現行 instruction の不足が失敗として再現した後に instruction を変更し、その段階で `old-skill` と `with-skill` を比較する。
-- description または `evals/trigger-evals.json` を変更した場合は、`scripts/run-trigger-evals.mjs` で `trigger-evals.json` の全 query を実行する。3 skill を同時に置いた条件で expected skill または非発火を測り、Skill tool の完全な入力、観測中の実行 error、発火先を記録する。
-- release 前、または instruction と description の双方を横断して変更したときは、全 task の3条件比較と full trigger eval の両方を行う。それ以外は変更面ごとの上記範囲に限定する。instruction と `evals/trigger-evals.json` の変更を組み合わせた場合は、影響 task の2条件比較と full trigger eval をそれぞれ行い、全 task や `without-skill` へ広げない。
-
-task eval は本 task の完遂を、trigger eval は発火先だけを測る。起動成功を PASS とせず、別 context の grader が expectation ごとの成否と event または成果物の根拠を `grading.json` に残す。複数条件を比較した場合は、対象 task の集計を `benchmark.json` に残す。隔離 evaluator が実行できなければ model eval 完了とは扱わず、阻害要因を報告する。
+`skill-package-check.sh` の役割と、変更面ごとの model eval の範囲は [evaluation](references/evaluation.md) に従う。
 
 最後に変更 file を standard-audit の scoped audit で照合する。
 subagent が利用できれば変更の経緯を持たない reviewer に依頼し、利用できなければ独立 session、どちらも利用できなければ自己監査へ代替する。代替時は独立監査済みと主張しない。
@@ -191,6 +172,8 @@ skill の場所が current directory にない host では、host が与える `
 
 - `references/{principles,concerns,structure,tools,process}.md` — 領域固有の配置、根拠、書式、MECE 点検。
 - `references/normative-quality.md` — 充足済み、文章のリファクタリング、意味の拡張を分ける局所的な裁定。
+- `references/verification-duplication.md` — 検証手段の重複排除を扱う候補の固定経路。
+- `references/evaluation.md` — product 検査の役割と model eval の範囲。
 - `scripts/verify.sh` — 標準本文の機械検査。
 - `scripts/verify-test.sh` — verifier の回帰検査。
 - `scripts/skill-package-check.sh` — 実作業用の frontmatter、3 skill の eval schema、script 構文の検査。
