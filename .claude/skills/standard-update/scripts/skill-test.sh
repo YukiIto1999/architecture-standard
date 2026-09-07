@@ -101,7 +101,9 @@ printf '=== 1. skill の指示整合 ===\n'
 expect_no_text \
   "全領域へ6節を一律要求しない" \
   '^6節で書く。要求・根拠・完了条件・禁止事項・行動・例。$' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/SKILL.md \
+  .claude/skills/standard-update/references/verification-duplication.md \
+  .claude/skills/standard-update/references/evaluation.md
 expect_text \
   "structure の layout 書式を本体で分岐する" \
   'structure:.*layout 書式' \
@@ -117,7 +119,11 @@ expect_text \
 expect_no_text \
   "apply はチェックリスト全文を応答へ転写しない" \
   'チェックリストとして応答へ転写' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md \
+  skills/standard-apply/references/target-scoping.md \
+  skills/standard-apply/references/change-contract.md \
+  skills/standard-apply/references/recovery.md \
+  skills/standard-apply/references/audit-review.md
 expect_text \
   "利用不能な capability の扱いを明記する" \
   '利用できない|利用不能|fallback|代替' \
@@ -127,19 +133,23 @@ expect_text \
 expect_text \
   "apply は pending を完了扱いしない" \
   'pending のまま完了と書かない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/audit-review.md
 expect_text \
   "apply は現在の標準本文を基準にする" \
-  '標準本文は常に `<standard-root>` にある現在の規範文書を参照する' \
+  '標準本文は常に `<standard-root>` にある現在の規範文書' \
   skills/standard-apply/SKILL.md
 expect_text \
   "apply は標準の過去版を基準にしない" \
-  '標準の過去版を Git 履歴から掘り出して判断基準にしない' \
+  '標準の過去版を Git 履歴から掘り出して判断基準に' \
   skills/standard-apply/SKILL.md
 expect_no_text \
   "apply は準拠 commit を基準へ戻さない" \
   'standard_commit|準拠 commit|準拠 ADR|準拠基準|recorded-commit' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md \
+  skills/standard-apply/references/target-scoping.md \
+  skills/standard-apply/references/change-contract.md \
+  skills/standard-apply/references/recovery.md \
+  skills/standard-apply/references/audit-review.md
 expect_text \
   "apply は標準rootをskillの所在から固定する" \
   '二段上の親 directory' \
@@ -147,19 +157,23 @@ expect_text \
 expect_text \
   "apply は監査対象を読む前に基準の前処理を閉じる" \
   '対象 source の意味監査を始めない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/audit-review.md
 expect_text \
   "apply は severity 対応を改変せず固定する" \
   'severity 対応を一字一句そのまま' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/audit-review.md
 expect_no_text \
   "apply は現行 severity の具体値を重複固定しない" \
   '必須構成と layout の不達は major' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/SKILL.md \
+  skills/standard-apply/references/target-scoping.md \
+  skills/standard-apply/references/change-contract.md \
+  skills/standard-apply/references/recovery.md \
+  skills/standard-apply/references/audit-review.md
 expect_text \
   "apply は証拠のない監査 step を実施済みにしない" \
   'tool output または直接の読取証拠がない step を実施済みにしない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/audit-review.md
 expect_text \
   "audit は反証を探してから指摘する" \
   '反証として探す' \
@@ -195,23 +209,23 @@ expect_text \
 expect_text \
   "apply は変更前に観測結果と必須条件を変更契約へ固定する" \
   '設計案または編集を作る前に、次を一つの変更契約として固定する' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は追加要素を変更契約へ追跡する" \
   '追加する型・抽象・設定・依存・fallback は、変更契約のいずれかの条件へ直接結びつくものだけ' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply の最小化は必須条件を削らない" \
   '受入条件、標準の必須規律、安全、互換性、必要な検証を削らず' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は隣接課題を変更へ取り込まない" \
   '隣接課題は、変更契約の成立、安全、互換性を左右する場合だけ未確定条件へ含める' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は現在modeの完了条件で止める" \
   '現在のモードで変更契約に対して実測できる条件を確かめ、未実装・未実行の条件を分けて報告した時点で止める' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は標準参照の節約を対象projectの調査不足へ転用しない" \
   'ここまでの参照制限は標準本文に適用する' \
@@ -219,31 +233,31 @@ expect_text \
 expect_text \
   "apply は新要素の前に変更不要と削除を判定する" \
   '変更不要、不要な既存要素の削除' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は最初の十分な段で止める" \
   '満たした最初の段で止める' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は必須条件Unknownの段を十分としない" \
   '必須条件の一つでも Unknown なら、その段を満たすと判定しない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は未確定段を暫定として選択保留する" \
   '最も早く成立しうる段として暫定記録し、未確認契約が閉じるまで段の選択を保留する' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は後段を不要という否定にも触れない" \
   '「新しい依存は不要」「独自実装は不要」「後続の段は検討しない」のような否定文も、後段への言及なので書かない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は前段を退けた根拠を記録する" \
   'それより前の各段では満たせない変更契約の条件を記録' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は設計依頼で未要求の成果物を作らない" \
   'ADR、設計書、報告 file への記録を依頼されていなければ file を作らず' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はexact path指定時のGlobを完了扱いしない" \
   'Glob を使った場合は参照規律を満たしていない' \
@@ -263,11 +277,11 @@ expect_text \
 expect_text \
   "apply はproject契約ADRを回収語の限定Grepで発見する" \
   'authority 型または受入語のうち最も固有な一語を選び、その exact token の一回の Grep' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は設計前にADRとtestの追跡gateを閉じる" \
   '設計本文を書く前に、受入条件の意味を持つ project ADR と既存 test の追跡を gate として閉じる' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はexact pathをdirectory列挙で再発見しない" \
   '対象 project への Glob、fd、directory 一覧、`git ls-files`' \
@@ -279,11 +293,11 @@ expect_text \
 expect_text \
   "apply はexact sourceの意味設計を閉じた経路で調べる" \
   'exact source path を与えられ、受入条件に completion、state、success または failure がある設計は、次の対象 project 操作だけを記載順に行う' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/target-scoping.md
 expect_text \
   "apply はexact source経路のORと全域Grepを禁止する" \
   '`\|` を含む OR pattern、project root 全域の Grep、Glob、別名 manifest の試行を使わない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/target-scoping.md
 expect_text \
   "apply はpath未指定Globを標準探索としても使わない" \
   'path 未指定の Glob は標準と対象 project の双方へ一致しうるため、標準側だけの探索としても使わない' \
@@ -311,7 +325,7 @@ expect_text \
 expect_text \
   "apply はroot recoveryでADRより先に一回のGlobを行う" \
   '`docs/decisions/` へ限定した project ADR の Grep もこの Glob より後に行う' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "recovery eval はADRをGlob由来の読取候補にしない" \
   'docs/decisions.*Glob 由来の読取候補から除く' \
@@ -323,15 +337,15 @@ expect_text \
 expect_text \
   "apply は未確定の失敗契約を疑似コードで潰さない" \
   '成功と同じ戻り値へ畳む疑似コードを書かない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は未確定の失敗契約があればcode fenceを出さない" \
   '未確定の必須失敗契約が一つでも残る設計では.*code fence を最終応答へ置かない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は検証の観測条件を具体化する" \
   '対象入力または setup、観測する値、合格となる期待結果' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は構造再生をrecoveryから始める" \
   '構造再生の複合依頼は recovery を読み取り専用で先に完了' \
@@ -339,55 +353,55 @@ expect_text \
 expect_text \
   "apply はrecoveryの根拠状態と決定状態を分離する" \
   '主張 / 根拠状態 / locator または導出 / 意図状態 / 変更先状態 / 未解決境界' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply は意図と変更先を別の列へ置く" \
   '意図状態を `Intended`、明示的に決定した変更先を述べる主張だけは変更先状態を `Target`' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply は一主張が意図と変更先を兼ねたら行を分ける" \
   '現在の意図と将来の変更先を同時に述べる場合は二行へ分ける' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply は受入語のauthorityと既存testまで追う" \
   'Accepted な契約、state authority、writer、caller、既存 test を一段ずつ追い' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はtask終了とdomain completionを同一視しない" \
   'future または task の終了と、domain の terminal state または永続化された authority の更新を同じ completion とみなさない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はjoinだけでdomain completionを満たしたとしない" \
   '「全 job の完了後に返る」「completion の受入条件を満たす」と書かない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はdomain authorityの検証caseを省かない" \
   '`並行度 / task 回収 / domain authority` の三 case を必ず別々に置く' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はpermitを親で待ってからspawnしない" \
   '親が permit を取得してから task を spawn する構造へ変えない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はpermit待ちをjob task内の取消優先に保つ" \
   '`JoinSet` に束ねた job task 内で取消優先の permit 待ちを行うことを必須構造' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は既存testを公開callerと結果から探す" \
   '一段上の公開 caller の exact symbol を一回だけ、manifest または明示契約から確認した test root で Grep' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はtest rootを慣例から推測しない" \
   'test root を確認できなければ慣例から推測せず Unknown にする' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はAcceptedをOR検索して全ADRを読まない" \
   '`Status: Accepted\|<受入語>\|<authority型>` の OR 検索で全 Accepted ADR を候補にしない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は公開symbolから契約ADRとauthorityを順に追う" \
   '対象 source の公開 symbol と同じ exact token を `docs/decisions/` で一回 Grep.*ADR が authority 型を名指しする場合だけ、その exact 型名を source root で一回 Grep' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/target-scoping.md
 expect_text \
   "apply はstandard rootをrev-parseで再発見しない" \
   '`pwd` や `git rev-parse` で standard root を再発見しない' \
@@ -395,75 +409,75 @@ expect_text \
 expect_text \
   "apply の設計応答は将来のartifact指示を足さない" \
   '依頼が設計だけなら、将来の ADR、file 作成、cleanup、別変更の指示も削除する' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はcallerとstateのOR検索でtestを広げない" \
   'caller、状態、型の OR 検索や対象 project root 全域の Grep で無関係な test を候補にしない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は内部関数名だけで公開callerのtest不在を判定しない" \
   '変更対象の内部関数名だけを検索語にして公開 caller の test を不在と判定しない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は外部cancellationをsibling取消と分ける" \
   'caller からの cancellation または deadline を子へ伝播する契約を別々の必須条件' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は未観測関数へ既存責務を発明しない" \
   '未観測の関数または module に、state authority の更新、失敗翻訳、cleanup などの責務を割り当てない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は全recovery行へ根拠状態を一つ要求する" \
   '根拠状態 cell は `Known`、`Derived`、`Observed`、`Assumed`、`Unknown` の語だけ' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply はsourceの現在値をObservedにする" \
   'source、test、設定、実行結果として現在そうである主張を `Observed`' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply はユーザーの仮説をKnownにしない" \
   'ユーザー入力でも、質問、提案、仮説、記憶、不確かさを伴う説明、調査してほしい候補は `Known` にせず' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply はユーザー仮説をAssumedの独立行に残す" \
   'ユーザーが示した仮説は、その仮説自体を `Assumed` の独立した行に残す' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply はGlob未発見をproject全体の不存在へ広げない" \
   'Glob が返した非 hidden の候補内で未発見だったことまでであり.*project 全体に存在しない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply は未観測範囲が残る到達可能性をUnknownにする" \
   '未定義の symbol、除外した artifact、未観測の呼出元または実装が一つでも残る場合.*project 全体での定義または到達可能性が `Unknown`' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply はrecovery表の未解決境界列を省略しない" \
   '回収表は `主張 / 根拠状態 / locator または導出 / 意図状態 / 変更先状態 / 未解決境界` の六列を省略しない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply は一回のGlob範囲をproject全域と呼ばない" \
   '対象範囲を `target-project 全域` または `全 file` と表記せず' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply はdecision軸の対象外とUnknownを分ける" \
   '主張がその軸を扱わない場合は `対象外`、扱うが根拠がない場合は `Unknown`' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply はrecoveryの根拠状態を混合しない" \
   '一つの根拠状態欄へ `Known \+ Observed` のように複数値を書かない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply はrecoveryの診断をDerivedへ分類する" \
   '診断は、根拠行から導いた `Derived` の独立した行' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply は最終応答前に複合evidence cellを分割する" \
   '五つの許可語との完全一致でない cell が一つでもあれば、注記を他列へ移すか行を分割するまで完了しない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "apply は表外の要約でもUnknownを網羅否定へ変えない" \
   '表で Unknown とした範囲を、表外で「実装のどこにもない」「実現されていない」「writer は存在しない」と断定しない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/recovery.md
 expect_text \
   "audit は指摘をevidenceと規範と帰結で絞る" \
   '観測した evidence、違反する規範または明示契約、準拠と違反を分ける帰結' \
@@ -511,19 +525,19 @@ expect_text \
 expect_text \
   "apply は未観測の契約を補って設計しない" \
   '具体的な独自型や失敗値を発明せず、必要な契約変更と確認対象を未確定の必須条件として残す' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は受入条件にない標準の安全条件を削らない" \
   '受入条件にないことを理由に標準の安全条件を削ったり、既存契約を維持できると仮定したりしない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply の設計は未観測の分岐や隣接migrationへ広げない" \
   '未観測の契約に依存する分岐や、隣接する migration の設計へ広げない' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は最終応答から変更契約に不要な要素を除く" \
   '失われないものは応答から除く' \
-  skills/standard-apply/SKILL.md
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "update は所有者候補の確定前にreferenceを読まない" \
   '開始時は `references/` を読まない' \
@@ -559,39 +573,39 @@ expect_text \
 expect_text \
   "update はmethodsの段4を三言語のinspectionへ直接照合する" \
   '`tools/README.md`、`tools/rust/inspection.md`、`tools/csharp/inspection.md`、`tools/typescript/inspection.md` を、この順に exact path の Read' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update は別metricの非採用と重複排除を混同しない" \
   '二つの metric を別の性質と明記しながら、重複、二重測定、または一本化を理由に片方を無効化している記述は上位判定と矛盾する' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update は未採用metricの品質判断を発明しない" \
   '非採用理由は「他方は標準の必須検証へ割り当てられていない」とだけ書く' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update はmethodsの段4でprinciplesへ参照を広げない" \
   'この経路では開始から最終報告まで Glob と Grep、`principles/verification.md`、`references/structure.md`、script directory の列挙を使わない' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update はmethods編集後もGrepで自己監査しない" \
   '編集後は `structure/tests/methods.md` と、編集した場合だけその exact inspection file を Read し直し、用語の存在確認にも Grep を使わない' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update は固定経路のreview差分をexact pathだけで作る" \
   '`git diff -- structure/tests/methods.md` を一回実行し、inspection file も編集した場合だけ同じ command の末尾にその exact path を加える' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update は固定経路でも独立reviewを免除しない" \
   '最終の standard-audit / 独立 reviewer は免除しない' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update は固定経路のfallback reviewで探索を増やさない" \
   'subagent が利用できない場合は、同じ既読証拠だけで自己照合し、Grep、Glob、Bash、追加の Read を呼ばない' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update はmethods本文に同一性の全境界を要求する" \
   '不一致・適用不能・一方だけ不合格なら両方を残すこと、反例未発見だけでは同一にしないこと、実装欠陥・更新漏れだけでは別性質にしないことを全て明記する' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update は変更artifactを変更契約へ追跡する" \
   '変更する file、規律、reference、script、eval は、この変更契約へ直接結びつくものだけ' \
@@ -679,35 +693,35 @@ expect_text \
 expect_text \
   "update は検証手段の割当をmethodsへ直接routeする" \
   '検証手段を「同じ性質」とみなして重複排除する言語非依存の判定基準を追加または変更し、特定言語の実現 file 自体の変更を依頼していない場合に限り' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update のmethods固定経路は明示された下位targetを奪わない" \
   '特定の `tools/\*/inspection.md`、tool、または複数の明示 target への変更依頼は、主張と所有者を分けて一般経路で扱う' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update はmethods意味変更で矛盾する下位実現だけ同期する" \
   '下位実現との矛盾を確認した場合だけ、矛盾する exact inspection file も同じ変更契約で同期する' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update はmethodsのowner判定をrootとlayoutで閉じる" \
   '`README.md`、`structure/tests/methods.md`、`structure/tests/layout.md` を、この順に exact path の Read' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update はmethodsの三つの読取証拠なしに編集しない" \
   '三つの Read が tool evidence に揃う前に reference または編集へ進まない' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update はlayout未読を後追いで正当化しない" \
   'layout を未読のまま reference を読んだ場合は、後から補って編集を続けず、この経路を未完了として止める' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update はmethods三fileをGlobせず直接読む" \
   'exact path の Read で直接読む' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "update はmethods所有者確定後に全域Grepしない" \
   '所有者確定後の重複検索や repository-wide な自己監査を行わない' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/verification-duplication.md
 expect_text \
   "規範文の裁定は弱い読みと強い読みで反証する" \
   '弱い読みと強い読みを具体例で作る' \
@@ -817,19 +831,19 @@ expect_text \
 expect_text \
   "instruction 変更の task eval は影響する task と旧版比較へ限定する" \
   '変更した instruction の入力と観測可能な結果を prompt と expectation が直接使う task だけ' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/evaluation.md
 expect_text \
   "eval 定義だけの変更は変更 task の新版だけを実行する" \
   '`evals/evals.json` だけを変更した場合は、変更した task を `with-skill`' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/evaluation.md
 expect_text \
   "description 変更だけが full trigger eval を要求する" \
   'description または `evals/trigger-evals.json` を変更した場合.*全 query' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/evaluation.md
 expect_text \
   "script と reference だけの変更は model eval を要求しない" \
   '`scripts/\*` または `references/\*\.md` だけを変更し.*model eval は実行しない' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/evaluation.md
 expect_text \
   "標準のコード例は説明コメントを生成しない" \
   '差と帰結はコードフェンス外の本文へ置き、コード例へ説明のコメントを足さない' \
@@ -857,7 +871,7 @@ expect_text \
 expect_text \
   "全 task 三条件 benchmark を release 境界へ限定する" \
   'release 前、または instruction と description の双方を横断して変更したときは、全 task の3条件比較' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/references/evaluation.md
 for skill_name in standard-apply standard-audit standard-update; do
   expect_text \
     "$skill_name の description は調査や編集より前の利用場面を示す" \
@@ -879,7 +893,9 @@ expect_text \
 expect_no_text \
   "skill 変更の実作業は外側の評価oracleを完了条件にしない" \
   'bash "\$\{CLAUDE_SKILL_DIR:-\.claude/skills/standard-update\}/scripts/skill-test\.sh"' \
-  .claude/skills/standard-update/SKILL.md
+  .claude/skills/standard-update/SKILL.md \
+  .claude/skills/standard-update/references/verification-duplication.md \
+  .claude/skills/standard-update/references/evaluation.md
 expect_text \
   "Ponytail の一次資料を出典記録へ残す" \
   'Source: https://github\.com/DietrichGebert/ponytail/blob/main/skills/ponytail/SKILL\.md' \
