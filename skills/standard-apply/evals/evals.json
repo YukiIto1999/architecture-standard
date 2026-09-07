@@ -4,12 +4,12 @@
     {
       "id": 1,
       "model": "haiku",
-      "prompt": "対象 project は `target-project/` です。docs/decisions に architecture-standard の準拠 commit が記録されています。この project を標準に従って読み取り専用で監査し、違反を重大度つきで報告してください。標準 repo 自体は変更せず、使う標準本文と監査手順を特定してから進めてください。",
-      "expected_output": "対象 project と標準自体を区別し、記録済み commit の標準本文と process/audit.md を基準にした証跡付き監査手順を示す。",
+      "prompt": "対象 project は `target-project/` です。この project を現在の architecture-standard に従って読み取り専用で監査し、違反を重大度つきで報告してください。標準 repo 自体は変更せず、使う標準本文と監査手順を特定してから進めてください。",
+      "expected_output": "対象 project と標準自体を区別し、現在の標準本文と process/audit.md を基準にした証跡付き監査手順を示す。",
       "files": [],
       "expectations": [
         "standard-audit ではなく対象 project への standard-apply と判定する",
-        "project ADR の準拠 commit を基準にする",
+        "現在の標準本文を基準にし、過去版や記録済み commit を基準にしない",
         "README.md と process/audit.md を判定根拠として file 名付きで示す",
         "対象 project と標準 repo の双方を変更しない",
         "process/audit.md の severity 対応を自己判断で引き上げない",
