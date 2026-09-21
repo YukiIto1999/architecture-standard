@@ -186,7 +186,7 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | sqlx | 書き込みパス | 構造検査(store が transaction の begin・commit を持たないことの検査) |
 | sqlx | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証済み actor、匿名の安定した opaque scope、logical system actor の分離、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
 | sqlx | durable inbox | 構造検査(scope・event ID の複合一意制約)+実行テスト(payload commit 前後の停止と upstream delivery ack、処理結果・処理済み記録 commit 前後の停止と inbox processing completion、前段の source 再配送、後段の item 再処理、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視出力) |
-| fred | 一時データ | 構造検査(DB と Valkey のクレート分離)+レビュー |
+| redis | 一時データ | 構造検査(DB と Valkey のクレート分離)+レビュー |
 | tokio | runtime | 構造検査(Cargo 依存の単一 runtime 検査) |
 | tokio | 構造化並行 | 構造検査(Semaphore の permit 必須を並行 job task に限定し、単一の owner task を対象外にすること)+実行テスト(並行 job task が Semaphore の permit 数を越えて走らないこと、permit 待ち中の CancellationToken 取消では permit を取得しないこと、業務の Err と JoinError のどちらでも JoinSet::shutdown が残りを取り消して drain すること、permit を持たない単一の owner task が親の JoinSet へ合流すること)+レビュー(全 task の scope 所属) |
 | tokio-util | 取り消し | 構造検査(request、message、job の境界より内側にある全 async API が同じ `Deadline` と CancellationToken を受け取り、`Deadline` の生成を境界へ限定し、各 hop の局所 timeout が `deadline.remaining(clock.now())` から作られ、下流へ相対値でなく元の `Deadline` が渡ることを検査)+実行テスト(複数 hop で待っても時間枠が引き直されず、局所 timeout が子の CancellationToken を cancel すること、job task と run_blocking の permit 待ち中の親取消で即座に終了し permit を取得しないこと)+レビュー(cancellation safety の判断) |
