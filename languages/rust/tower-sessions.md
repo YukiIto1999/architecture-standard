@@ -3,10 +3,10 @@
 ## BFF の token 管理
 
 用途は、BFF が保持する token の交換と更新を担う機構である。
-採用は、Rust は tower-sessions のサーバー側セッションと openidconnect のトークンエンドポイントクライアントである。
+採用は、Rust は tower-sessions のサーバー側セッション、redis の Valkey client と openidconnect のトークンエンドポイントクライアントである。
 トークンエンドポイントクライアントの分担は [openidconnect](./openidconnect.md) が受け持つ。
-判断基準は、token set と expiry を server 側に保持し、期限前の更新で得た token set を同じ session へ置き換えられることである。
-撤回条件は、判断基準を満たさなくなることであり、ライセンス、リリースポリシー、session と token endpoint の互換性の変化を再評価のトリガーとする。
+判断基準は、token set と expiry を server 側に保持し、期限前の更新で得た token set を同じ session へ置き換えられることである。公開された session store の実装に依存せず、redis を使う SessionStore を bff の session の adapter として実装できることを含む。
+撤回条件は、判断基準を満たさなくなることであり、公開版の組合せ、ライセンス、リリースポリシー、session と token endpoint の互換性の変化を再評価のトリガーとする。
 
 ## BFF の session 管理
 
@@ -18,7 +18,7 @@
 ## BFF
 
 ### 要求
-session は tower-sessions で扱い、store は fred で Valkey に保持する。
+session は tower-sessions で扱い、store は bff の session の adapter として実装した SessionStore から redis で Valkey に保持する。
 OIDC の code・PKCE・token の交換と更新は、openidconnect を使う。
 CSRF の検査は、session に保持した token と専用 header の一致を検査する CSRF middleware で行う([structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) に従う)。
 access token と refresh token は server 側の session に保持し、ブラウザへは session を指す cookie だけを渡す。
@@ -40,7 +40,7 @@ BFF の route は、actor と境界で検証した入力を、埋め込んだ co
 BFF が token を server 側で保持し、ブラウザへ session を指す cookie だけを渡せば、token がブラウザに出ず、持ち出しの面が消える。
 `__Host-` で始まる cookie を Secure、Path=/、Domain 未設定にすれば、host 全体に限定した session cookie を別の domain や狭い path から上書きできない。
 HttpOnly は script からの cookie の読み取りを防ぎ、SameSite=Strict は cross-site の要求へ cookie を送らない。
-session の store を fred で Valkey に保持すれば、複数のプロセスの間で session の状態が一致し、[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) が定めるプロセス外の共有ストアへの保持を満たす。
+session の store を bff の session の adapter から redis で Valkey に保持すれば、複数のプロセスの間で session の状態が一致し、[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) が定めるプロセス外の共有ストアへの保持を満たす。
 OIDC の ID Token で nonce を検証し、at_hash がある場合に access token との対応を検証すれば、token のすり替えを防げる。
 openidconnect で token の交換と更新を同じ OIDC client に閉じれば、protocol の検証と更新経路が分かれない。
 認証の成功時と権限の変更時に session ID を再生成すれば、認証前に固定された ID を認証後へ持ち越さない。
@@ -55,7 +55,7 @@ principal を認証境界で actor へ写せば、core は token と認証方式
 route が埋め込んだ core の公開 API を呼べば、認証境界と業務処理を同じ process の型付き呼出で接続できる。
 
 ### 完了条件
-session が tower-sessions で扱われ、fred で Valkey に保持されている。
+session が tower-sessions で扱われ、bff の session の adapter として実装した SessionStore から redis で Valkey に保持されている。
 OIDC の code・PKCE・token の交換と更新が openidconnect で行われ、ID Token の nonce と、at_hash がある場合の access token との対応が検証されている。
 access token・refresh token が server 側の session に保持され、ブラウザへ token が出ていない。
 session cookie の名前が、`__Host-` で始まっている。
@@ -92,7 +92,7 @@ token または未検証の principal を、core へ渡すこと。
 ### 行動
 openidconnect で OIDC の code と PKCE を server で終端し、token を交換・更新して、ID Token の nonce と、at_hash がある場合の access token との対応を検証する。
 token を server 側の session に保持し、ブラウザへは session を指す cookie だけを渡す。
-session の store を fred backed の実装に差し、Valkey に保持する。
+session の store を bff の session の adapter に実装した SessionStore に差し、redis で Valkey に保持する。
 SessionManagerLayer の builder で、cookie の名前、Secure、HttpOnly、SameSite、Path を明示する。
 SessionManagerLayer の builder では、Domain を設定しない。
 認証の成功時と権限の変更時に、session ID を再生成する。

@@ -2,8 +2,8 @@
 
 csharp の言語としての採用と、実現規律、採用物を置く。
 言語の採用は、.NET 10 と C# 14 である。
-判断基準は、言語ごとの実現規律と検証方法を標準本文で完結して定められることである。
-撤回条件は、判断基準を満たさなくなることであり、基盤版の保守終了または実現規律の欠落を再評価のトリガーとする。
+判断基準は、言語ごとの実現規律と検証方法を標準本文で完結して定められることと、この ecosystem の採用物が target できる最新の release であることである。
+撤回条件は、判断基準を満たさなくなることであり、次の .NET の release の GA、基盤版の保守終了、実現規律の欠落を再評価のトリガーとする。
 実現軸と書式は、[languages の README](../README.md) の言語 ecosystem に従う。
 
 ## 実現軸
@@ -38,7 +38,7 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [microsoft-testing-extensions-code-coverage](./microsoft-testing-extensions-code-coverage.md) | テストが実行していない箇所を見つけるカバレッジ計測である | C# は Microsoft.Testing.Extensions.CodeCoverage である |
 | [npgsql](./npgsql.md) | PostgreSQL へ接続し、transaction の確定と制約違反の判別を担う data provider である | C# は Npgsql である |
 | [nswag](./nswag.md) | 契約から C# の client と型を生成し、drift・conformance の検査に使う道具である | C# は NSwag である |
-| [photino](./photino.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が C# のときは desktop は Photino.NET である |
+| [photinox](./photinox.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が C# のときは desktop は PhotinoX である |
 | [reqnroll](./reqnroll.md) | 業務語彙の executable spec を実行する道具である | C# は Reqnroll である |
 | [roslyn-documentation-comment-analyzer](./roslyn-documentation-comment-analyzer.md) | ドキュメントコメントの存在、構文、宣言と tag の機械判定できる対応、最初の一行と句読点を検査する道具である | C# は Roslyn の documentation-comment analyzer である |
 | [sonaranalyzer-csharp](./sonaranalyzer-csharp.md) | 規則の違反をビルドで止める linter である | C# は SonarAnalyzer.CSharp である |

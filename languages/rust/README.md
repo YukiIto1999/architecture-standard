@@ -1,9 +1,9 @@
 # rust ecosystem
 
 rust の言語としての採用と、実現規律、採用物を置く。
-言語の採用は、Rust edition 2024 である。
-判断基準は、言語ごとの実現規律と検証方法を標準本文で完結して定められることである。
-撤回条件は、判断基準を満たさなくなることであり、基盤版の保守終了または実現規律の欠落を再評価のトリガーとする。
+言語の採用は、Rust の最新の stable toolchain と edition 2024 である。
+判断基準は、言語ごとの実現規律と検証方法を標準本文で完結して定められることと、[tools](../../tools/README.md) の選定の共通基準が定める最新の系への追随を満たすことである。
+撤回条件は、判断基準を満たさなくなることであり、新しい edition の安定化、実現規律の欠落、採用物が最新の stable toolchain で動かなくなることを再評価のトリガーとする。
 実現軸と書式は、[languages の README](../README.md) の言語 ecosystem に従う。
 
 ## 実現軸
@@ -33,9 +33,9 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [clap](./clap.md) | CLI の surface の骨格である | Rust は clap である |
 | [clippy](./clippy.md) | 規則の違反をビルドで止める linter である | Rust は clippy である |
 | [cucumber](./cucumber.md) | 業務語彙の executable spec を実行する道具である | Rust は cucumber の Rust 実装である |
-| [fred](./fred.md) | Valkey へ接続する client である | Rust は fred である |
-| [reqwest](./reqwest.md) | 外部 HTTP API を呼び出す非同期 client |
-| [openidconnect](./openidconnect.md) | BFF の token 管理・OIDC クライアント | Rust は tower-sessions のサーバー側セッションと openidconnect のトークンエンドポイントクライアントである |
+| [redis](./redis.md) | Valkey へ接続する client である | Rust は redis である |
+| [openidconnect](./openidconnect.md) | BFF の OIDC code・PKCE・token 管理 | Rust は openidconnect である |
+| [reqwest](./reqwest.md) | 外部 HTTP API を呼び出す非同期 client である | Rust は reqwest (TLS は rustls)である |
 | [proptest](./proptest.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | Rust は proptest である |
 | [rustfmt](./rustfmt.md) | 表記を道具の既定で一意に揃える formatter である | Rust は rustfmt である |
 | [serde](./serde.md) | 値を wire 形式と相互に直列化・逆直列化する機構である | Rust は serde である |
@@ -47,7 +47,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [tokio-util](./tokio-util.md) | 協調的な取り消しを、処理の木へ伝える token の機構である | Rust は tokio-util である |
 | [tokio](./tokio.md) | 非同期の実行を担う runtime である | Rust は Tokio である |
 | [tower-lsp-server](./tower-lsp-server.md) | 言語サービスの公開・extension が接続する core への JSON-RPC | tower-lsp-server である |
-| [tower-sessions](./tower-sessions.md) | BFF の token 管理・BFF の session 管理 | Rust は tower-sessions のサーバー側セッションと openidconnect のトークンエンドポイントクライアントである |
+| [tower-sessions](./tower-sessions.md) | BFF の token 管理・BFF の session 管理 | Rust は tower-sessions のサーバー側セッション、redis の共有 store client と openidconnect のトークンエンドポイントクライアントである |
 | [tower](./tower.md) | HTTP の経路の横断処理を、層として合成する機構である | Rust は tower と tower-http である |
 
 ## 言語機構で満たす用途

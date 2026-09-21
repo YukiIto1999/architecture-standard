@@ -186,12 +186,12 @@ libs の analyzer project に、Result の派生型への cast を検出する a
 | coordination | 資源解放 | 型(using/await using、IDisposable、引数なしの IAsyncDisposable.DisposeAsync)+analyzer(Roslyn analyzer。AcquireRelease release と DisposeAsync を CancellationToken の必須規則から除外し、元の Deadline を保持する非取消の後始末として識別)+実行テスト(取消後も DisposeAsync が一度完了すること) |
 | aspnet-core | server | 構造検査(middleware の順序と core 公開 API への ClaimsPrincipal・token・claim 型の流入禁止)+実行テスト(検証済み ClaimsPrincipal から actor への写像、actor と検証済み入力による core 公開 API 呼出、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー |
 | aspnet-core | BFF | 構造検査(request-scoped ActorRequestContext から Actor を DI すること、ActorMapper 呼出を認証 middleware に限定すること、route の ClaimsPrincipal 参照と actor 再構築を拒否すること、route が埋め込んだ core の公開 API だけを呼ぶこと)+実行テスト(cookie 属性、認証 middleware が ActorRequestContext へ格納した actor と route に注入された Actor の一致、actor と検証済み入力による core 公開 API 呼出) |
-| consoleappframework | console | 型(ConsoleAppFramework の constructor injection) |
 | wolverine | worker | 構造検査(Wolverine の永続化設定・IMessageBus の constructor injection の検出)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(CancellationToken の伝播) |
 | 全域 | cast allowlist | analyzer(Roslyn analyzer。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
-| photino | desktop の host | レビュー |
+| photinox | desktop の host | レビュー |
 | maui-hybridwebview | mobile の host | レビュー |
 | streamjsonrpc | extension の接続 | 型(StreamJsonRpc の型付き proxy)+レビュー |
+| consoleappframework | console | 型(ConsoleAppFramework の constructor injection) |
 | publication | 可視性 | 型(internal・file 修飾子) |
 
 | banned-api-analyzers | 直読と自由文出力を禁止 API で止める | analyzer/lint(BannedApiAnalyzers の禁止一覧を検証入口でエラー化) |
