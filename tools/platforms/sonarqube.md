@@ -19,7 +19,7 @@
 ### 要求
 認知的複雑さは、セルフホストした SonarQube の cognitive complexity(S3776)を quality gate で測る。
 SonarQube の profile は cognitive complexity(S3776)に絞り、各言語のローカル lint と同目的の規則を重ねない。
-しきい値を既定から緩める変更は、project の ADR に明記する。
+しきい値を既定から緩める変更は、project の決定の記録に明記する。
 
 ### 根拠
 cognitive complexity は switch や match の構造化を一度だけ加点し、分岐の数に比例しないので、閉じた直和の網羅的な分岐を罰しない。
@@ -29,7 +29,7 @@ profile を絞れば、ローカル linter が既に検査する規則を SonarQ
 ### 完了条件
 認知的複雑さが、SonarQube の quality gate だけで測られている。
 SonarQube の profile が、cognitive complexity に絞られている。
-緩和が、project の ADR に明記されている。
+緩和が、project の決定の記録に明記されている。
 
 ### 禁止事項
 cognitive complexity を、ローカル lint と SonarQube の両方で有効にすること。

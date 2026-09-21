@@ -101,7 +101,7 @@ tsconfig は strict を有効にし、型検査と lint の警告を検証入口
 tsc は型検査の専用に使い、JS への変換は build 基盤に委ねる。
 tsconfig は strict に加え、noUncheckedIndexedAccess と exactOptionalPropertyTypes も有効にする。
 linter は oxlint を使い、型認識の検査は tsgolint による oxlint の type-aware 実行で行う。
-ファイル・関数の大きさとネストの深さのしきい値は oxlint の max-lines(ファイル)・max-lines-per-function(関数)・max-depth(ネスト)の規則として定め、既定値から緩める変更は project の ADR に明記する。
+ファイル・関数の大きさとネストの深さのしきい値は oxlint の max-lines(ファイル)・max-lines-per-function(関数)・max-depth(ネスト)の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 環境変数の直読は、TypeScript compiler API による構造検査で process.env と import.meta.env の参照を設定の parse を持つ組立点だけに限る。
 認知的複雑さの測り方は、[sonarqube](../platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、oxlint 側の複雑度の規則(complexity)は有効にしない。
 
@@ -113,7 +113,7 @@ oxlint は、tsgolint の type-aware 実行により floating promise や unsafe
 max-lines・max-lines-per-function・max-depth は、ファイル・関数の大きさとネストの深さを早く気づかせる。
 oxlint の complexity 規則が測る cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない。標準が必須の検証へ割り当てる複雑度は cognitive complexity であり、cyclomatic complexity は必須の検証へ割り当てていないため、oxlint の complexity 規則は有効にしない。
 採用済みの oxlint に環境変数の直読を禁止する native の規則がないため、compiler API の構造検査で補い、[single-config-source](../../concerns/configuration/single-config-source.md) の「定めた源からまとめて読む」を機械の gate にする。
-既定から緩める判断を ADR に残せば、緩和の理由が追える。
+既定から緩める判断を決定の記録に残せば、緩和の理由が追える。
 tsc の emit は build 基盤の変換と重複し、二重の変換経路を生む。
 
 ### 完了条件
@@ -123,7 +123,7 @@ tsconfig の noUncheckedIndexedAccess と exactOptionalPropertyTypes が、stric
 oxlint が linter として使われ、型認識の検査が tsgolint で行われている。
 ファイル・関数の大きさとネストの深さのしきい値が、max-lines・max-lines-per-function・max-depth の規則として定められている。
 process.env と import.meta.env の参照が、設定の parse を持つ組立点に限られている。
-緩和が、project の ADR に明記されている。
+緩和が、project の決定の記録に明記されている。
 oxlint の complexity 規則が、有効になっていない。
 tsc が型検査の専用に設定され、JS への変換が build 基盤に委ねられている。
 

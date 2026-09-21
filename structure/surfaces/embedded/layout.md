@@ -33,7 +33,7 @@ endpoint は、業務判断を持たず、入力の解析と operation の呼び
 protocol の要求から operation を識別して endpoint へ振り分ける dispatch は、composition が持つ。
 認証境界は、要求に含まれる資格情報の発行元、対象、完全性、有効性を検証して actor を一度だけ構築する。
 endpoint は、振り分け済みの単一 operation と actor を受け取る。
-資格情報が protocol の接続から自明な場合も、接続のどの証拠を検証して actor を構築するかを project の ADR に明記する。
+資格情報が protocol の接続から自明な場合も、接続のどの証拠を検証して actor を構築するかを project の決定の記録に明記する。
 endpoint と core の公開 API へ資格情報、principal、token、claim、protocol の認証方式の型を渡さない。
 公開する protocol の binding は [contracts/protocol](../../contracts/protocol.md) に従う。
 

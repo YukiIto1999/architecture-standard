@@ -56,4 +56,4 @@ cache は、unsafe method への non-error response を受けたとき、その 
 http は、request と response の往復を既定とし、状態の変化は client からの再取得で反映する。
 push(server から client への配信)は、標準外とする。
 片方向の push は SSE、双方向の push は WebSocket とする。
-push を採る project は、標準の単一性([README](../../README.md))に従い project の ADR に記録する。
+push を採る project は、標準の単一性([README](../../README.md))に従い project の決定の記録に残す。

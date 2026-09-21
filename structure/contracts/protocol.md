@@ -16,5 +16,5 @@ protocol は、言語非依存の単一の形式に従う。
 
 ## 機構
 
-具体の protocol は標準に固定せず、project が単一の採用を ADR に明記する。
-失敗の形式も、protocol の採用とあわせて ADR に明記する。HTTP と違い、ローカル protocol には problem+json のような単一の標準形式が定まらないためである。
+具体の protocol は標準に固定せず、project が単一の採用を決定の記録に明記する。
+失敗の形式も、protocol の採用とあわせて決定の記録に明記する。HTTP と違い、ローカル protocol には problem+json のような単一の標準形式が定まらないためである。
