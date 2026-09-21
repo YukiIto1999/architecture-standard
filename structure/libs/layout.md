@@ -118,4 +118,3 @@ target は、取り込む機構の origin、exact commit、`libs/<mechanism>` �
 独立した機構リポジトリの git は、製品であるコード、テスト、消費側文書と、arch test の入力となる製品メタデータであるルートの `spec.md` を管理し、clone に含める。
 target は、取り込んだ同じ製品メタデータを `libs/<mechanism>/spec.md` で参照できるようにする。
 clean clone で bootstrap を実行すると、同じコードと spec.md を同じ path に解決する。
-設計中の検討と決定の作業メモは、git 管理外の docs/ に置く。

@@ -16,6 +16,6 @@ recovery では、判断を動かす主張を `主張 / 根拠状態 / locator �
 到達不能、writer 不在、参照なしを `Derived` にする前に、その主張を変えうる定義、生成物、外部 module、hidden file が観測範囲に残っていないことを示す。未定義の symbol、除外した artifact、未観測の呼出元または実装が一つでも残る場合は、確認した file 間の辺がないという `Observed` と、project 全体での定義または到達可能性が `Unknown` であるという行へ分ける。未定義 symbol を複数まとめる場合も、候補集合内で定義を確認できない `Observed` 行と、集合外を含む project-wide な定義・到達可能性の `Unknown` 行を表内で対にし、表外の要約だけで後者を代用しない。
 最終応答の回収表は `主張 / 根拠状態 / locator または導出 / 意図状態 / 変更先状態 / 未解決境界` の六列を省略しない。各行の未解決境界には、その主張の真偽を変えうる未観測範囲を具体的に書き、なければ `対象外` とする。表外で Unknown を後置しても、表内の網羅主張または過剰な Derived は相殺されない。
 Executive Diagnosis、要約、結論にも回収表と同じ観測境界を適用する。表で Unknown とした範囲を、表外で「実装のどこにもない」「実現されていない」「writer は存在しない」と断定しない。
-一回の Glob で始めた報告は、対象範囲を `target-project 全域` または `全 file` と表記せず、`Glob が返した非 hidden の候補と、限定 Grep で読んだ ADR` のように観測集合を列挙する。未解決境界にも「他に資料がない」と書かず、観測集合内で未発見であることと、集合外に存在する可能性を分ける。
+一回の Glob で始めた報告は、対象範囲を `target-project 全域` または `全 file` と表記せず、`Glob が返した非 hidden の候補と、限定 Grep で読んだ決定の記録` のように観測集合を列挙する。未解決境界にも「他に資料がない」と書かず、観測集合内で未発見であることと、集合外に存在する可能性を分ける。
 読み取り専用の recovery は、意味、状態、責務、依存の診断で止める。修正、目標構造、移行順序、新しい抽象、将来の拡張を提案または作成しない。
-project root だけを与えられた recovery は、最初の一回の Glob 後に、返った非 hidden の source、test、configuration だけを候補集合として読む。`docs/decisions/` へ限定した project ADR の Grep もこの Glob より後に行う。ユーザー仮説と回収語の検証は候補集合の読取と `docs/decisions/` に限定した一語の Grep で行い、候補集合外を探す二回目の Glob、root 全域の Grep、別 pattern の再試行へ広げない。
+project root だけを与えられた recovery は、最初の一回の Glob 後に、返った非 hidden の source、test、configuration だけを候補集合として読む。決定の記録の置き場は、その後に target project root の `README.md` を exact path で読んで宣言を確認し、宣言が無ければ `docs/decisions/` とする。その置き場へ限定した決定の記録の Grep もこの Glob より後に行う。ユーザー仮説と回収語の検証は候補集合の読取とその置き場に限定した一語の Grep で行い、候補集合外を探す二回目の Glob、root 全域の Grep、別 pattern の再試行へ広げない。

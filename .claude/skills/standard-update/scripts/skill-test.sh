@@ -95,7 +95,7 @@ expect_text \
   'Glob は target-project/\*\*/\* の一回だけ' \
   skills/standard-apply/evals/evals.json
 expect_text \
-  "recovery eval はADRをGlob由来の読取候補にしない" \
+  "recovery eval は決定の記録をGlob由来の読取候補にしない" \
   'docs/decisions.*Glob 由来の読取候補から除く' \
   skills/standard-apply/evals/evals.json
 expect_text \
@@ -332,7 +332,7 @@ expect_text \
   'rmSync\(path.join\(fixtureRoot, "\.git"\).*maxRetries:' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_text \
-  "task fixture のADRは現在の標準本文を基準にする" \
+  "task fixture の決定の記録は現在の標準本文を基準にする" \
   '準拠の基準は、常に現在の標準本文である。' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_no_text \

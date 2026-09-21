@@ -404,6 +404,23 @@ function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
   // fixture-mutation:end
 
   // fixture-mutation:start
+  if (skillName === "standard-conformance" && evalId === 2) {
+    const baselinePath = path.join(fixtureRoot, "target-project", "docs", "conformance-baseline.json");
+    writeFileSync(baselinePath, `${JSON.stringify({
+      violations: [
+        {
+          rule: "concerns/concurrency/bounded-concurrency-backpressure.md#並行度を制限し、背圧を扱う",
+          file: "app/worker.rs",
+          line: 2,
+          evidence: "spawn した job task の並行度に上限がない",
+          mechanizable: false,
+        },
+      ],
+    }, null, 2)}\n`);
+  }
+  // fixture-mutation:end
+
+  // fixture-mutation:start
   if (skillName === "standard-update" && evalId === 1) {
     const principlesReadme = path.join(fixtureRoot, "principles", "README.md");
     const injectedTypo = ["## 情報の", "概観"].join("");

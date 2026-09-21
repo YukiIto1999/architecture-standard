@@ -42,7 +42,7 @@ description: architecture-standard 自体を読み取り専用で監査し、重
 - **B 文章**: 冗長、曖昧、一文多義、進捗語、不要な記号がないか。
 - **C 書式**: 標準本文は、principles と concerns が概念フォルダの README(リードまたは概要と規律台帳)と規律ファイルの必須5節、tools の言語 ecosystem が概要・必須5節・参照、structure が layout 書式、tools の採用 file が4行 entry、process が手順書式か。skill は frontmatter と実行手順が host で成立するか。
 - **D 整合性**: folder 内の重複、矛盾、参照方向の逆転がないか。
-- **E 単一標準**: 標準側へ条件分岐や例外を作らず、逸脱を project ADR へ送っているか。
+- **E 単一標準**: 標準側へ条件分岐や例外を作らず、逸脱を project の決定の記録へ送っているか。
 - **F 層間 MECE**: principles=なぜ、concerns=言語非依存の概念、structure=一つの部の境界と中身、tools=採用と言語ごとの実現、process=順序と確認点に分かれているか。
 - **G 自己充足**: 要求、完了条件、禁止事項と参照だけで遵守を判定できるか。
 - **H 作り切り**: 要求範囲の欠落、または未要求の投機がないか。

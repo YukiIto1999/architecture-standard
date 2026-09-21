@@ -4,7 +4,7 @@ mobile は、[viewer](../../surfaces/viewer/layout.md) を mobile の shell で�
 viewer の ui port を mobile の API で実装する。
 viewer を起動する。
 viewer を共有しない native の UI は、標準外とする。
-採る project は、ADR に明記する。
+採る project は、決定の記録に明記する。
 mobile は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成

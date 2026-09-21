@@ -19,7 +19,7 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 | project root だけで system-wide recovery または audit | 後述の条件を満たす場合だけ `<target-project-root>/**/*` を一回 Glob する | 二回目の Glob、別の列挙手段 |
 
 選択直後の最初の対象 project 読取または探索は、表の操作でなければならない。標準本文は手元の `<standard-root>` にある現在の規範文書を根拠とし、対象 project の入口を再発見する `README.md` や `target-project/*` の Glob、`pwd`、directory 一覧は使わない。
-exact file path を与えられた作業では、project ADR、caller、state、test の確認にも Glob を使わない。path 未指定の Glob は標準と対象 project の双方へ一致しうるため、標準側だけの探索としても使わない。先に Glob してから exact path へ戻っても、この開始ゲートを満たしたことにならず、調査または設計を完了と報告しない。
+exact file path を与えられた作業では、project の決定の記録、caller、state、test の確認にも Glob を使わない。path 未指定の Glob は標準と対象 project の双方へ一致しうるため、標準側だけの探索としても使わない。先に Glob してから exact path へ戻っても、この開始ゲートを満たしたことにならず、調査または設計を完了と報告しない。
 project root だけを与えられた system-wide recovery または audit では、最初の対象 project 探索を文字どおり `<target-project-root>/**/*` の一回にする。`README.md` や `<target-project-root>/*` を先に試してはならない。二回目を実行した場合は後の結果を正当化に使わず、調査を完了と報告しない。
 
 ### 閉じた対象調査経路
@@ -46,9 +46,9 @@ process が現在のモードの順序または確認点として無条件に `�
 process の全 step を消し込むことと、条件付き link を全て読むことを混同しない。変更契約から不適用と判断できる条件付き step は、process 本文と観測した対象を根拠に見送り、参照先を読んで見送りを補強しない。
 directory への link は同階層の列挙を許可しない。具体的な file の特定が必要なら、その directory の `README.md` を台帳として一度だけ読み、一つに絞る。台帳から絞れなければ推測で探索せず未確認事項にする。
 ここまでの参照制限は標準本文に適用する。対象 project は、選んだ process の判断に必要な実行経路、caller、consumer、state、設定、テスト、実測結果を根拠が揃うまで読み、一つの file や検索結果で全体を代表させない。
-依頼が対象 project root だけを示し、exact file path、symbol、manifest のいずれからも開始点を固定できず、選んだ process が system-wide な recovery または audit を要求する場合に限り、開始点の発見に Glob を一回だけ許す。pattern は `<target-project-root>/**/*` の一つに固定し、既知名の存在確認、top-level確認、source用とtest用の分割によって複数回実行しない。結果から `.git`、build output、generated artifact、vendor、`docs/decisions/` を Glob 由来の読取候補から除き、必要な source、test、configuration の開始点を固定する。project ADR が system purpose、語彙、state authority または契約を持つ場合は、Glob の結果で発見したことにせず、回収した語を固定した Grep を `docs/decisions/` に限定して別に行い、一致した file だけを読む。二回目の Glob、find、fd、`git ls-files` へ進まず、一回の結果で特定できない関係は未確認にする。Glob 自体が失敗した場合も別の列挙手段へ切り替えない。
+依頼が対象 project root だけを示し、exact file path、symbol、manifest のいずれからも開始点を固定できず、選んだ process が system-wide な recovery または audit を要求する場合に限り、開始点の発見に Glob を一回だけ許す。pattern は `<target-project-root>/**/*` の一つに固定し、既知名の存在確認、top-level確認、source用とtest用の分割によって複数回実行しない。結果から `.git`、build output、generated artifact、vendor、決定の記録の置き場を Glob 由来の読取候補から除き、必要な source、test、configuration の開始点を固定する。project の決定の記録が system purpose、語彙、state authority または契約を持つ場合は、Glob の結果で発見したことにせず、回収した語を固定した Grep を、target project root の `README.md` が宣言した置き場(宣言が無ければ `docs/decisions/`)に限定して別に行い、一致した file だけを読む。二回目の Glob、find、fd、`git ls-files` へ進まず、一回の結果で特定できない関係は未確認にする。Glob 自体が失敗した場合も別の列挙手段へ切り替えない。
 対象 project で exact path が分かる入口は直接読む。そこから一度に広域探索せず、現在の主張を確定する caller、consumer、state authority、effect、test の関係を一つ選び、その関係を順方向または逆方向へ一段ずつ追う。変更契約または意味回収の判断を変えない directory、script、隣接 module は列挙しない。
-依頼が exact source path を示す場合、対象 project 全体への Glob は使わない。source を直接読み、必要な関係は確認する symbol または参照先を固定した Grep で一つずつ探す。特定できない関係は探索範囲を広げて推測せず未確認にする。project ADR の探索も上で定めた限定 Grep だけを使い、find、Glob、directory 一覧を代替にしない。
+依頼が exact source path を示す場合、対象 project 全体への Glob は使わない。source を直接読み、必要な関係は確認する symbol または参照先を固定した Grep で一つずつ探す。特定できない関係は探索範囲を広げて推測せず未確認にする。project の決定の記録の探索も上で定めた限定 Grep だけを使い、find、Glob、directory 一覧を代替にしない。
 exact source path がある条件で Glob を使った場合は参照規律を満たしていないため、その結果で調査または設計を完了せず、exact path からやり直す。
 
 ## 作業境界
@@ -64,7 +64,7 @@ exact source path がある条件で Glob を使った場合は参照規律を�
    設計では `process/design.md` の順序1から8と確認点を省略しない。番号付き step または確認点が `従う` と定める直接参照は、対象が小さくても読んで照合する。directory 参照はその `README.md` から一つに絞る。
    並行処理を設計する場合は、子処理の失敗伝播と cancellation を、依頼の受入条件に列挙がなくても標準の必須条件として変更契約へ残す。現行契約が不明なら具体的な継続・停止・戻り値を決めず、未確定の必須条件にする。受入条件外の別件として落とさない。
 3. process の順序と確認点を内部チェックリストとして管理し、変更契約を固定する。応答へ全文を転写せず、依頼に関係する進捗、見送り、未確認事項だけを報告する。
-4. 標準が決めている事項と project 固有の決定を分ける。標準が沈黙する事項や逸脱は、一般則で埋めず、採用理由、撤回条件、単一採用、置き換える規律、技術的制約の実証を project ADR に残す。
+4. 標準が決めている事項と project 固有の決定を分ける。標準が沈黙する事項や逸脱は、一般則で埋めず、採用理由、撤回条件、単一採用、置き換える規律、技術的制約の実証を project の決定の記録に残す。
 5. 変更契約が許可する作業と focused check を実行する。読み取り専用の監査やレビューでは、報告を応答で返し、依頼されていない報告 file を作らない。判定や変更ごとに、根拠とした標準の file と該当規律を記録する。標準内の矛盾は root README の裁定規則に従い、黙って読み替えない。
 6. 実装または構造改善では、完了前に変更の経緯を持たない独立した reviewer context で照合する。subagent が利用できなければ新しい独立 session を使う。どちらも利用できない場合は自己照合を行うが、独立レビュー済みとは主張せず、その制約を報告する。
 
