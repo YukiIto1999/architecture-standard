@@ -189,7 +189,7 @@ libs の analyzer project に、Result の派生型への cast を検出する a
 | consoleappframework | console | 型(ConsoleAppFramework の constructor injection) |
 | wolverine | worker | 構造検査(Wolverine の永続化設定・IMessageBus の constructor injection の検出)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(CancellationToken の伝播) |
 | 全域 | cast allowlist | analyzer(Roslyn analyzer。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
-| photino | desktop の host | レビュー |
+| photinox | desktop の host | レビュー |
 | maui-hybridwebview | mobile の host | レビュー |
 | streamjsonrpc | extension の接続 | 型(StreamJsonRpc の型付き proxy)+レビュー |
 | publication | 可視性 | 型(internal・file 修飾子) |
