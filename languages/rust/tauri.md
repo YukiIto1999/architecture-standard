@@ -46,3 +46,40 @@ fn place_order(state: State<AppState>, request: OrderRequest) -> Result<OrderId,
     state.core.place_order(actor, request.try_into()?)
 }
 ```
+
+## desktop の自動更新
+
+### 要求
+desktop の自動更新は Tauri の updater plugin で行い、Tauri CLI で生成した公開鍵を設定に置いて updater bundle の signature を検証する。
+Tauri CLI で生成した秘密鍵を `TAURI_SIGNING_PRIVATE_KEY` から読み、`bundle.createUpdaterArtifacts` を有効にして updater bundle と signature を生成する。
+生成した updater bundle と signature を、TLS の endpoint から配布する。
+updater signature の秘密鍵は [concerns/secrets](../../concerns/secrets/README.md) に従って扱う。
+release 成果物そのものの署名と provenance だけを [tools/build/cosign](../../tools/build/cosign.md) に従って扱う。
+
+### 根拠
+updater plugin は Tauri CLI の鍵で生成した signature を検証し、署名検証を無効化できない。
+`bundle.createUpdaterArtifacts` は updater bundle と signature の生成を有効にし、`TAURI_SIGNING_PRIVATE_KEY` は build 時の秘密鍵を供給する。
+updater bundle の signature と release 成果物の署名・provenance を別の検証物として既存の正本へ委ねれば、Cosign の責務を updater signature へ誤って広げない。
+
+### 完了条件
+desktop の自動更新が、Tauri の updater plugin で行われている。
+更新成果物の検証に使う公開鍵が、設定に置かれている。
+`bundle.createUpdaterArtifacts` が有効で、`TAURI_SIGNING_PRIVATE_KEY` を使う build が updater bundle と signature を生成している。
+updater bundle と signature が、TLS の endpoint から配布され、設定した公開鍵で signature が updater bundle を検証できる。
+更新の endpoint が、TLS である。
+非 HTTPS の endpoint を許す設定が、置かれていない。
+release 成果物の署名と provenance だけが、Cosign の定める検証を満たしている。
+
+### 禁止事項
+署名を生成せず、または Tauri updater の signature 検証を伴わない経路で、更新を配布すること。
+非 HTTPS の endpoint を許す設定を、置くこと。
+updater signature の秘密鍵を、成果物や設定へ同梱すること。
+Cosign の release 成果物の署名または provenance を、updater bundle の signature の代わりに使うこと。
+
+### 行動
+updater plugin を導入し、Tauri CLI で生成した公開鍵を設定に置く。
+`TAURI_SIGNING_PRIVATE_KEY` を build 環境へ供給し、`bundle.createUpdaterArtifacts` を有効にして updater bundle と signature を生成する。
+updater bundle と signature を同じ TLS endpoint から配る。
+endpoint を TLS に限り、非 HTTPS を許す設定を置かない。
+release 成果物の署名と provenance だけを Cosign の採用に従って生成し、検証する。
+
