@@ -18,7 +18,7 @@
 
 構造を確定する前に、principles の modeling・separation の完了条件・禁止事項と、変更が触れる concerns の完了条件・禁止事項に照合する。
 採用する道具は、[tools](../tools/) の採用に従う。
-決定は、project の ADR に記録する([principles/documentation](../principles/documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」に従う)。
+決定は、project の決定の記録に残す([principles/documentation](../principles/documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」に従う)。
 アクターと処理の図示は、設計の時点と、実装を書いた後の検証の両方で行い、[principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」の完了条件に照合する。
 新しい型・抽象・設定・依存を選んだ場合は、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の完了条件と禁止事項に照合する。
 

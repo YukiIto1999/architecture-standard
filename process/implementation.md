@@ -43,6 +43,7 @@
 変更したコードを、[principles/legibility](../principles/legibility/code-as-documentation.md) の「コードを第一級の文書として明瞭に書く」の完了条件と禁止事項に照合する。
 コメントを、[principles/comment](../principles/comment/README.md) の各規律の完了条件と禁止事項に照合する。
 テストの技法と有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
+作業単位の終わりに、読み手がその作業単位の中だけにいた文書が残っていないことを、[principles/documentation](../principles/documentation/separate-document-types.md) の「文書の種別を分け、読み手を定める」の完了条件に照合する。
 
 ## 範囲外
 

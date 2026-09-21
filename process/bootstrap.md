@@ -3,7 +3,7 @@
 新規構築は、境界の決定から内部の実装まで、外から内へ進める。
 境界の正本は [structure/skeleton](../structure/skeleton.md)、判断の照合先は [principles](../principles/) と [concerns](../concerns/) に従う。
 設計判断の都度、[design](./design.md) の順序で進め、principles と関係する concerns の完了条件・禁止事項に照合する。
-決定は、project の ADR に記録しながら進める。
+決定は、project の決定の記録に残しながら進める。
 
 ## 順序
 

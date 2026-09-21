@@ -256,7 +256,7 @@ expect_text \
   skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は設計依頼で未要求の成果物を作らない" \
-  'ADR、設計書、報告 file への記録を依頼されていなければ file を作らず' \
+  '決定の記録、設計書、報告 file への記録を依頼されていなければ file を作らず' \
   skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はexact path指定時のGlobを完了扱いしない" \
@@ -272,15 +272,15 @@ expect_text \
   skills/standard-apply/SKILL.md
 expect_text \
   "apply はexact file作業で関連確認にもGlobしない" \
-  'project ADR、caller、state、test の確認にも Glob を使わない' \
+  'project の決定の記録、caller、state、test の確認にも Glob を使わない' \
   skills/standard-apply/SKILL.md
 expect_text \
-  "apply はproject契約ADRを回収語の限定Grepで発見する" \
+  "apply はproject契約の記録を回収語の限定Grepで発見する" \
   'authority 型または受入語のうち最も固有な一語を選び、その exact token の一回の Grep' \
   skills/standard-apply/references/change-contract.md
 expect_text \
-  "apply は設計前にADRとtestの追跡gateを閉じる" \
-  '設計本文を書く前に、受入条件の意味を持つ project ADR と既存 test の追跡を gate として閉じる' \
+  "apply は設計前に決定の記録とtestの追跡gateを閉じる" \
+  '設計本文を書く前に、受入条件の意味を持つ project の決定の記録と既存 test の追跡を gate として閉じる' \
   skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はexact pathをdirectory列挙で再発見しない" \
@@ -323,15 +323,15 @@ expect_text \
   'Glob は target-project/\*\*/\* の一回だけ' \
   skills/standard-apply/evals/evals.json
 expect_text \
-  "apply はroot recoveryでADRより先に一回のGlobを行う" \
-  '`docs/decisions/` へ限定した project ADR の Grep もこの Glob より後に行う' \
+  "apply はroot recoveryで決定の記録より先に一回のGlobを行う" \
+  'その置き場へ限定した決定の記録の Grep もこの Glob より後に行う' \
   skills/standard-apply/references/recovery.md
 expect_text \
-  "recovery eval はADRをGlob由来の読取候補にしない" \
+  "recovery eval は決定の記録をGlob由来の読取候補にしない" \
   'docs/decisions.*Glob 由来の読取候補から除く' \
   skills/standard-apply/evals/evals.json
 expect_text \
-  "apply はADRのGrep失敗時に列挙へfallbackしない" \
+  "apply は決定の記録のGrep失敗時に列挙へfallbackしない" \
   'Grep が失敗した場合も find、Glob、directory 一覧へ切り替えず' \
   skills/standard-apply/SKILL.md
 expect_text \
@@ -395,20 +395,24 @@ expect_text \
   'test root を確認できなければ慣例から推測せず Unknown にする' \
   skills/standard-apply/references/change-contract.md
 expect_text \
-  "apply はAcceptedをOR検索して全ADRを読まない" \
-  '`Status: Accepted\|<受入語>\|<authority型>` の OR 検索で全 Accepted ADR を候補にしない' \
+  "apply はAcceptedをOR検索して全記録を読まない" \
+  '`Status: Accepted\|<受入語>\|<authority型>` の OR 検索で全 Accepted な記録を候補にしない' \
   skills/standard-apply/references/change-contract.md
 expect_text \
-  "apply は公開symbolから契約ADRとauthorityを順に追う" \
-  '対象 source の公開 symbol と同じ exact token を `docs/decisions/` で一回 Grep.*ADR が authority 型を名指しする場合だけ、その exact 型名を source root で一回 Grep' \
+  "apply は公開symbolから契約の記録とauthorityを順に追う" \
+  '決定の記録の契約は、手順2で確認した置き場に限定して.*記録が authority 型を名指しする場合だけ、その exact 型名を source root で一回 Grep' \
   skills/standard-apply/references/target-scoping.md
+expect_text \
+  "apply は決定の記録の置き場をREADMEの宣言から決める" \
+  '`README.md` が宣言した置き場\(宣言が無ければ `docs/decisions/`\)' \
+  skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はstandard rootをrev-parseで再発見しない" \
   '`pwd` や `git rev-parse` で standard root を再発見しない' \
   skills/standard-apply/SKILL.md
 expect_text \
   "apply の設計応答は将来のartifact指示を足さない" \
-  '依頼が設計だけなら、将来の ADR、file 作成、cleanup、別変更の指示も削除する' \
+  '依頼が設計だけなら、将来の決定の記録、file 作成、cleanup、別変更の指示も削除する' \
   skills/standard-apply/references/change-contract.md
 expect_text \
   "apply はcallerとstateのOR検索でtestを広げない" \
@@ -500,7 +504,7 @@ expect_text \
   skills/standard-apply/SKILL.md
 expect_text \
   "apply は既知のexact pathを再発見しない" \
-  'exact file path を与えられた作業では、project ADR、caller、state、test の確認にも Glob を使わない' \
+  'exact file path を与えられた作業では、project の決定の記録、caller、state、test の確認にも Glob を使わない' \
   skills/standard-apply/SKILL.md
 expect_text \
   "apply はprocessの無条件linkを必須条件として読む" \
@@ -1100,7 +1104,7 @@ expect_text \
   'rmSync\(path.join\(fixtureRoot, "\.git"\).*maxRetries:' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_text \
-  "task fixture のADRは現在の標準本文を基準にする" \
+  "task fixture の決定の記録は現在の標準本文を基準にする" \
   '準拠の基準は、常に現在の標準本文である。' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_no_text \

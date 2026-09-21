@@ -119,7 +119,7 @@ while let Some(result) = set.join_next().await {
 
 ### 要求
 spawn_blocking に委ねるのは、実行時間が短く、同時実行数に上限を置ける処理に限る。
-project は、spawn_blocking に渡す処理の最大実行時間と permit 数を ADR に記録する。
+project は、spawn_blocking に渡す処理の最大実行時間と permit 数を決定の記録に残す。
 spawn_blocking は、Semaphore の permit を先に取得する共通 wrapper からだけ呼ぶ。
 共通 wrapper の permit 待ちは、CancellationToken の取消を先頭に置いた biased な select! で、期限付きの permit 取得と競わせる。
 permit 取得後にも CancellationToken を再確認し、取り消されていれば spawn_blocking を開始せず permit を解放する。
@@ -140,7 +140,7 @@ permit 取得後に取消を再確認すれば、select! の完了直後に成�
 
 ### 完了条件
 spawn_blocking の処理が、短く、同時実行数に上限を持っている。
-最大実行時間と permit 数が、project の ADR に記録されている。
+最大実行時間と permit 数が、project の決定の記録に残されている。
 全ての spawn_blocking が、permit を取得する共通 wrapper から呼ばれている。
 共通 wrapper の permit 待ちが、CancellationToken の取消を先頭に置いた biased な select! で期限付き permit 取得と競わされている。
 permit 取得後に CancellationToken が再確認され、取り消されていれば spawn_blocking が開始されず permit が解放されている。
@@ -153,14 +153,14 @@ permit 取得後に CancellationToken が再確認され、取り消されてい
 ### 禁止事項
 非同期のタスクの中で、同期の I/O を直接呼ぶこと。
 共通 wrapper の外から、spawn_blocking を直接呼ぶこと。
-ADR に記録した permit 数を経由せず、ブロッキング処理を起動すること。
+決定の記録に残した permit 数を経由せず、ブロッキング処理を起動すること。
 共通 wrapper の permit 待ちを期限だけで囲い、CancellationToken の取消と競わせないこと。
 permit 取得後に CancellationToken を再確認せず、spawn_blocking を開始すること。
 長く走る処理や同時実行数を制限できない処理を、spawn_blocking に渡すこと。
 開始済みのブロッキング処理を、abort で停止できると扱うこと。
 
 ### 行動
-spawn_blocking に渡す処理の最大実行時間と permit 数を、project の ADR に記録する。
+spawn_blocking に渡す処理の最大実行時間と permit 数を、project の決定の記録に残す。
 Semaphore の permit を取得してから spawn_blocking を呼ぶ共通 wrapper を一つ作る。
 共通 wrapper の permit 待ちは、CancellationToken の取消を先頭に置いた biased な select! で期限付き permit 取得と競わせる。
 permit 取得後に CancellationToken を再確認し、取り消されていれば permit を解放して終了する。

@@ -18,7 +18,7 @@
 9. 各段で安全網の緑を確かめてから次へ進み、不可逆点の手前では観測の期間を置く。
 10. 新しい正本への昇格を確認してから、旧い正本への write と旧い経路を落とす。
 11. 標準へ揃える移行は、[structure/skeleton](../structure/skeleton.md) の境界から内側の core へ向かって進める。
-12. 揃えられない箇所は、標準の単一性の定めに従い、project の ADR に逸脱として記録する。
+12. 揃えられない箇所は、標準の単一性の定めに従い、project の決定の記録に逸脱として残す。
 
 ## 確認点
 
@@ -30,7 +30,7 @@ schema migration の artifact は、[concerns/migration](../concerns/migration/e
 別 datastore の確定は、[concerns/transaction](../concerns/transaction/state-event-atomicity.md) の「状態とイベントを同一パスで記録する」の完了条件と禁止事項に照合する。
 別 datastore の data 移送と cutover は、[concerns/migration](../concerns/migration/datastore-cutover.md) の「別 datastore の移行を同じ時点で検証して切り替える」の完了条件と禁止事項に照合する。
 outbox の再配送と失敗後の回復は、[concerns/resilience](../concerns/resilience/README.md) と [concerns/observability](../concerns/observability/README.md) の完了条件に照合する。
-標準へ揃える移行の完了は、[audit](./audit.md) の順序の再実行で判定し、残る差分の全てが project の ADR に逸脱として記録されていることを確かめる。
+標準へ揃える移行の完了は、[audit](./audit.md) の順序の再実行で判定し、残る差分の全てが project の決定の記録に逸脱として残されていることを確かめる。
 基盤と契約の移行の完了は、適用した concerns の完了条件、旧い経路の削除、安全網の緑で判定する。
 
 ## 範囲外
