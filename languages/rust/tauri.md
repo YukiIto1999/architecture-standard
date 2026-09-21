@@ -3,7 +3,7 @@
 用途は、被ホストの viewer と core を利用者の端末で動かす host である。
 採用は、core が Rust のときは desktop・mobile ともに Tauri である。
 判断基準は、OS 内蔵の webview に同じ viewer を載せ、core を host の back-end に置けることである。
-撤回条件は、判断基準を満たさなくなることであり、webview と OS の対応状況の変化を再評価のトリガーとする。
+撤回条件は、判断基準を満たさなくなることであり、webview と OS の対応状況の変化と、Tauri の次の系が機能の追加を終えて残る変更が不具合の修正に限られる段階へ達することを再評価のトリガーとする。
 
 ## desktop と mobile の host
 
