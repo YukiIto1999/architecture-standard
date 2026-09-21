@@ -189,6 +189,7 @@ libs の analyzer project に、Result の派生型への cast を検出する a
 | wolverine | worker | 構造検査(Wolverine の永続化設定・IMessageBus の constructor injection の検出)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(CancellationToken の伝播) |
 | 全域 | cast allowlist | analyzer(Roslyn analyzer。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | photinox | desktop の host | レビュー |
+| netsparkle-updater | desktop の自動更新 | 構造検査(production の配線が `Ed25519Checker(SecurityMode.Strict, ...)` と固定した検証公開鍵を使い、`SecurityMode.Unsafe` と署名検証を迂回する `IAppCastHandler` がなく、feed・package の配布設定が HTTPS であることを照合)+artifact 検査(実配布 app cast の署名ファイルと package の `sparkle:signature` が固定した検証公開鍵で検証でき、Cosign の release 成果物の署名と provenance が検証でき、配布成果物に更新署名の秘密鍵がないことを照合)+実行テスト(正しい app cast・package 署名を受理し、署名欠落・不正署名を拒否する) |
 | maui-hybridwebview | mobile の host | レビュー |
 | streamjsonrpc | extension の接続 | 型(StreamJsonRpc の型付き proxy)+レビュー |
 | consoleappframework | console | 型(ConsoleAppFramework の constructor injection) |
