@@ -27,8 +27,11 @@ architecture-standard は、ソフトウェアアーキテクチャの標準そ�
            │             各部をどう組むか
      [ structure ]       骨格・境界・レイヤー・配置
       ▲         ▲
-      │         │        何を、どう選び、どう使うか
-   [ tools ]    │        言語 ecosystem・採用技術・開発道具
+      │         │        何を、どう選ぶか
+   [ tools ]    │        言語横断の開発道具・自運用基盤・外部サービスの採用
+      ▲         │
+      │         │        どの言語機構で満たすか
+ [ languages ]  │        rust・csharp・typescript の実現と採用物
                 │
            [ process ]   どの順で作り、どこで確かめるか / 作業順序と確認点
 ```
@@ -40,14 +43,15 @@ architecture-standard は、ソフトウェアアーキテクチャの標準そ�
 | [principles](./principles/) | なぜ | 設計判断の土台となる言語非依存の原則。構成・規律・表現の3群 |
 | [concerns](./concerns/) | 全体を貫く規律は何か | システム全体を通す概念ごとの規律。24概念 |
 | [structure](./structure/) | 各部をどう組むか | ターゲットプロジェクトの骨格と各部の構造 |
-| [tools](./tools/) | 何を、どう選び、どう使うか | 採用と言語ごとの実現。rust・csharp・typescript の言語 ecosystem と、build・platforms・services の区分 |
+| [tools](./tools/) | 何を、どう選ぶか | 言語横断の採用と判断基準。build・platforms・services の3区分 |
+| [languages](./languages/) | どの言語機構で満たすか | 言語ごとの実現軸の規律と、その ecosystem の採用物。rust・csharp・typescript |
 | [process](./process/) | どの順で作り、どこで確かめるか | 作業の種別ごとの順序と確認点。10単位 |
 
 ### 参照と依存の規則
 
-領域間の参照は、具象から抽象への一方向に保ちます。tools は structure、concerns、principles に従い、structure は concerns、principles に従い、concerns は principles に従います。
+領域間の参照は、具象から抽象への一方向に保ちます。languages は tools、structure、concerns、principles に従い、tools は structure、concerns、principles に従い、structure は concerns、principles に従い、concerns は principles に従います。
 
-process は principles と concerns に従い、作業順序の入力および確認点の照合先として structure と tools を指します。process は順序と確認点だけを所有し、性質の規範を再定義しません。
+process は principles と concerns に従い、作業順序の入力および確認点の照合先として structure、tools、languages を指します。process は順序と確認点だけを所有し、性質の規範を再定義しません。
 
 具象の側から、より抽象の側への参照は常に適法です。逆に、抽象の側は機構の置き場として具象の側を指すだけであり、具象の内容に依存しません。具象の側は、抽象が定めた規律を再定義しません。
 
@@ -62,7 +66,7 @@ process は principles と concerns に従い、作業順序の入力および�
 ### 新規にプロジェクトを立ち上げる場合
 1. [process/bootstrap.md](./process/bootstrap.md) で全体の立ち上げ手順を確認します。
 2. [structure/skeleton.md](./structure/skeleton.md) でリポジトリ全体の骨格と境界を定義します。
-3. [tools/](./tools/) で言語ごとの ecosystem と採用ツールを選定します。
+3. [tools/](./tools/) で言語横断の道具と基盤を、[languages/](./languages/) で言語ごとの ecosystem と採用物を選定します。
 
 ### 日常の設計や実装を進める場合
 1. [process/design.md](./process/design.md) および [process/implementation.md](./process/implementation.md) の順序と確認点に従います。
@@ -82,7 +86,7 @@ process は principles と concerns に従い、作業順序の入力および�
 ### 矛盾の解決
 
 記述が層をまたいで矛盾したときは、抽象側の記述を正とします。
-優先順位は principles、concerns、structure、tools の順です。
+優先順位は principles、concerns、structure、tools、languages の順です。
 process の記述が他の層と食い違うときは、他の層を正とします。
 
 同じ層の中の矛盾は、その層の README が正本と指すファイルを正とします。root の構成は skeleton が、各部の内部は各 layout が、概念の規律は当該概念のフォルダの規律ファイルが、言語の機構は該当する実現軸のファイルが正本です。
@@ -124,10 +128,11 @@ process の記述が他の層と食い違うときは、他の層を正としま
 2. 各関心は、その変更理由が及ぶ最も広いスコープに一度だけ配置する。より狭い層はそれを参照するのみとし、再定義しない。
 3. 配置先は以下の順で判定し、最初に合致した領域へ配置する。
    1. なぜや判断基準となる価値は principles へ配置する。
-   2. 技術の採用と判断基準、特定言語での実現は tools へ配置する。
-   3. 作業の手順と確認点は process へ配置する。
-   4. 単一のモジュールの境界や中身は structure へ配置する。
-   5. 複数のモジュールにまたがる、または全域に適用される規律は concerns へ配置する。
+   2. 特定言語での実現と、その言語 ecosystem に属する採用物は languages へ配置する。
+   3. 言語横断の道具、自運用基盤、外部サービスの採用と判断基準は tools へ配置する。
+   4. 作業の手順と確認点は process へ配置する。
+   5. 単一のモジュールの境界や中身は structure へ配置する。
+   6. 複数のモジュールにまたがる、または全域に適用される規律は concerns へ配置する。
 
 ## 運用と判定
 
@@ -146,15 +151,15 @@ AI エージェントおよび開発者は、すべての作業モードにお�
 
 規律への遵守判定は、領域ごとの枠組みに従って厳密に行います。
 
-- principles と concerns では、要求で意図を捉え、完了条件と禁止事項に照らして判定します。機械検証可能な規範命題は structure/tests や tools の inspection に割り当て、残りは process の確認点照合が担います。
+- principles と concerns では、要求で意図を捉え、完了条件と禁止事項に照らして判定します。機械検証可能な規範命題は structure/tests や languages の inspection に割り当て、残りは process の確認点照合が担います。
 - structure では、構成、依存方向、各 layout の固有規律への合致で判定します。
-- tools では、採用と判断基準、採用機構と各規律の完了条件および禁止事項への合致で判定します。
+- tools と languages では、採用と判断基準、採用機構と各規律の完了条件および禁止事項への合致で判定します。
 - process では、手順の順序遵守と確認点の照合有無で判定します。
 
 監査における severity は、上記で得た違反を以下のように分類します。
 
-- critical: principles や concerns の禁止事項違反、structure の依存方向または明示された禁止への違反、tools の明示された禁止への違反。
-- major: principles や concerns の完了条件の不達、structure の必須構成または layout の不達、tools の採用機構・完了条件・判断基準の不達、process の順序不遵守または確認点の未照合。
+- critical: principles や concerns の禁止事項違反、structure の依存方向または明示された禁止への違反、tools や languages の明示された禁止への違反。
+- major: principles や concerns の完了条件の不達、structure の必須構成または layout の不達、tools や languages の採用機構・完了条件・判断基準の不達、process の順序不遵守または確認点の未照合。
 - minor: 判定の枠に明記されていない表現や構造の改善提案。違反には数えない。
 
 同一の箇所が critical と major の双方に該当する場合は、critical のみを報告に含めます。

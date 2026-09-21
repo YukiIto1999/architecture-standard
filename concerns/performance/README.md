@@ -15,4 +15,4 @@ principles の [construction](../../principles/construction/README.md) が定め
 単純な形の既定と投機の排除は、principles の [construction](../../principles/construction/simplicity-by-default.md) の「単純な形を既定にする」と、[no-speculation](../../principles/construction/no-speculation.md) の「投機的で説明できない要素を作らない」に従う。
 永続データの物理の最適化への適用は [persistence](../persistence/README.md)、並行の構造は [concurrency](../concurrency/README.md) に従う。
 永続化の改善も、計測した制約を一つずつ解消するこの規律に従う。
-言語別の機構は [tools](../tools/) が定める。
+言語別の機構は [languages](../languages/) が定める。

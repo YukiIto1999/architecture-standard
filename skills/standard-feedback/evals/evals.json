@@ -4,7 +4,7 @@
     {
       "id": 1,
       "model": "haiku",
-      "prompt": "`target-project/` へ標準を適用中に、`concerns/concurrency/bounded-concurrency-backpressure.md` の完了条件と `tools/rust/inspection.md` の検査割当が衝突し、`target-project/app/worker.rs:1` の設計を一意に決められませんでした。標準リポジトリへ改訂提案を還流してください。",
+      "prompt": "`target-project/` へ標準を適用中に、`concerns/concurrency/bounded-concurrency-backpressure.md` の完了条件と `languages/rust/inspection.md` の検査割当が衝突し、`target-project/app/worker.rs:1` の設計を一意に決められませんでした。標準リポジトリへ改訂提案を還流してください。",
       "expected_output": "対象規律の相対 path と見出し、対象 project の file:line、観測事実を実測証跡として固定し、重複起票を防ぐ事前検索を経て、固定フォーマットの Issue 本文を作る。GitHub MCP を使えない場合は送信せず、その理由と作成した本文を報告する。",
       "files": [],
       "expectations": [

@@ -48,6 +48,7 @@ make_fixture() {
     "$REPO_ROOT/concerns" \
     "$REPO_ROOT/structure" \
     "$REPO_ROOT/tools" \
+    "$REPO_ROOT/languages" \
     "$REPO_ROOT/process" \
     "$fixture/" || return 1
   cp -a \
@@ -147,7 +148,7 @@ expect_fail "非単位節の除外を該当する領域だけに限定する" "$
 fixture=$(make_fixture process-count)
 printf '# extra\n' > "$fixture/process/extra.md"
 sed -i '/^| \[migration\]/a | [extra](./extra.md) | 検査用の追加単位 |' "$fixture/process/README.md"
-expect_fail "process の台帳と実ファイルが10単位であることを検査する" "$fixture" "process の単位数が不一致"
+expect_fail "process の台帳と実ファイルが11単位であることを検査する" "$fixture" "process の単位数が不一致"
 
 fixture=$(make_fixture process-table-scope)
 printf '\n## 補助表\n\n| ファイル | 用途 |\n|---|---|\n| [audit](./audit.md) | 既存単位への補助参照 |\n' >> "$fixture/process/README.md"
@@ -173,46 +174,50 @@ printf '# extra\n用途は、検査用である。\n採用は、Extra である�
 expect_fail "台帳に無いツール file を検出する" "$fixture" "tools/platforms の台帳と実ファイルが不一致"
 
 fixture=$(make_fixture languages-count)
-cp "$fixture/tools/rust/formation.md" "$fixture/tools/rust/extra.md"
-expect_fail "ecosystem の台帳に無い file を検出する" "$fixture" "tools/rust の台帳と実ファイルが不一致"
+cp "$fixture/languages/rust/formation.md" "$fixture/languages/rust/extra.md"
+expect_fail "languages ecosystem の台帳に無い file を検出する" "$fixture" "languages/rust の台帳と実ファイルが不一致"
+
+fixture=$(make_fixture languages-top-stray)
+printf '# extra\n' > "$fixture/languages/extra.md"
+expect_fail "languages 直下の README 以外の file を検出する" "$fixture" "languages 直下に README 以外の file がある"
 
 fixture=$(make_fixture language-discipline-table-missing)
-sed -i '/^| connection | 効果を言語の効果型で表す |/d' "$fixture/tools/rust/inspection.md"
-expect_fail "language 本文の規律が対応表から欠落した場合を検査する" "$fixture" "tools/rust の規律対応表に欠落"
+sed -i '/^| connection | 効果を言語の効果型で表す |/d' "$fixture/languages/rust/inspection.md"
+expect_fail "languages 本文の規律が対応表から欠落した場合を検査する" "$fixture" "languages/rust の規律対応表に欠落"
 
 fixture=$(make_fixture language-discipline-table-extra)
-sed -i '/^## 参照$/i | connection | 存在しない規律 | 検査用の対応 |\n' "$fixture/tools/csharp/inspection.md"
-expect_fail "language 本文にない規律が対応表へ混入した場合を検査する" "$fixture" "tools/csharp の規律対応表に余分"
+sed -i '/^## 参照$/i | connection | 存在しない規律 | 検査用の対応 |\n' "$fixture/languages/csharp/inspection.md"
+expect_fail "languages 本文にない規律が対応表へ混入した場合を検査する" "$fixture" "languages/csharp の規律対応表に余分"
 
 fixture=$(make_fixture language-discipline-table-duplicate)
-sed -i '/^| valibot | unknown で受けて一度だけ parse する |/p' "$fixture/tools/typescript/inspection.md"
-expect_fail "language 規律の対応表への重複登録を検査する" "$fixture" "tools/typescript の規律対応表に重複"
+sed -i '/^| valibot | unknown で受けて一度だけ parse する |/p' "$fixture/languages/typescript/inspection.md"
+expect_fail "languages 規律の対応表への重複登録を検査する" "$fixture" "languages/typescript の規律対応表に重複"
 
 fixture=$(make_fixture language-discipline-body-fence)
-sed -i '/^## 参照$/i ````text\n## fence 内の規律ではない見出し\n````\n' "$fixture/tools/rust/connection.md"
-expect_pass "language 本文の fenced code 内にある H2 を規律として扱わない" "$fixture"
+sed -i '/^## 参照$/i ````text\n## fence 内の規律ではない見出し\n````\n' "$fixture/languages/rust/connection.md"
+expect_pass "languages 本文の fenced code 内にある H2 を規律として扱わない" "$fixture"
 
 fixture=$(make_fixture language-discipline-table-fence)
-sed -i '/^## 規則と検証機構の対応$/a ~~~~text\n| connection | fence 内の規律ではない行 | 検査対象外 |\n## fence 内の H2\n~~~~' "$fixture/tools/csharp/inspection.md"
-expect_pass "language 対応表の fenced code 内にある pipe と H2 を無視して後続の実表を読む" "$fixture"
+sed -i '/^## 規則と検証機構の対応$/a ~~~~text\n| connection | fence 内の規律ではない行 | 検査対象外 |\n## fence 内の H2\n~~~~' "$fixture/languages/csharp/inspection.md"
+expect_pass "languages 対応表の fenced code 内にある pipe と H2 を無視して後続の実表を読む" "$fixture"
 
 fixture=$(make_fixture tool-entry-h2-not-unit)
-printf '\n## 検査用の用途\n\n用途は、検査で使う追加の用途である。\n採用は、Rust は sqlx である。\n判断基準は、検査で使うことである。\n撤回条件は、検査が終わることである。\n' >> "$fixture/tools/rust/sqlx.md"
-expect_pass "5節マーカーを持たないツール file の H2 を規律に数えない" "$fixture"
+printf '\n## 検査用の用途\n\n用途は、検査で使う追加の用途である。\n採用は、Rust は sqlx である。\n判断基準は、検査で使うことである。\n撤回条件は、検査が終わることである。\n' >> "$fixture/languages/rust/sqlx.md"
+expect_pass "languages のツール file で5節マーカーを持たない H2 を規律に数えない" "$fixture"
 
 fixture=$(make_fixture tool-rule-sections-broken)
-printf '\n## 検査用の壊れた規律\n\n### 要求\n\n検査用の要求である。\n' >> "$fixture/tools/rust/sqlx.md"
-expect_fail "ツール file の規律単位の必須節欠落を検出する" "$fixture" "必須節が不正"
+printf '\n## 検査用の壊れた規律\n\n### 要求\n\n検査用の要求である。\n' >> "$fixture/languages/rust/sqlx.md"
+expect_fail "languages のツール file の規律単位の必須節欠落を検出する" "$fixture" "必須節が不正"
 
 fixture=$(make_fixture tool-rule-move)
-printf '\n## 検査用の移設規律\n\n### 要求\n\n検査用の要求である。\n\n### 根拠\n\n検査用の根拠である。\n\n### 完了条件\n\n検査用の完了条件である。\n\n### 禁止事項\n\n検査用の禁止である。\n\n### 行動\n\n検査用の行動である。\n' >> "$fixture/tools/rust/sqlx.md"
-sed -i '/^## 参照$/i | sqlx | 検査用の移設規律 | 検査用の対応 |\n' "$fixture/tools/rust/inspection.md"
-expect_pass "ツール file の規律と対応表のツール stem 行を一対一で照合する" "$fixture"
+printf '\n## 検査用の移設規律\n\n### 要求\n\n検査用の要求である。\n\n### 根拠\n\n検査用の根拠である。\n\n### 完了条件\n\n検査用の完了条件である。\n\n### 禁止事項\n\n検査用の禁止である。\n\n### 行動\n\n検査用の行動である。\n' >> "$fixture/languages/rust/sqlx.md"
+sed -i '/^## 参照$/i | sqlx | 検査用の移設規律 | 検査用の対応 |\n' "$fixture/languages/rust/inspection.md"
+expect_pass "languages のツール file の規律と対応表の stem 行を一対一で照合する" "$fixture"
 
 fixture=$(make_fixture language-discipline-large-set)
 large_body="$fixture/language-discipline-large-body"
 large_table="$fixture/language-discipline-large-table"
-large_inspection="$fixture/tools/typescript/inspection.md.new"
+large_inspection="$fixture/languages/typescript/inspection.md.new"
 padding=$(head -c 2048 /dev/zero | tr '\0' x)
 : > "$large_body"
 : > "$large_table"
@@ -224,7 +229,7 @@ for ((index = 1; index <= 100; index++)); do
 done
 while IFS= read -r line || [ -n "$line" ]; do
   printf '%s\n' "$line"
-done < "$large_body" >> "$fixture/tools/typescript/translation.md"
+done < "$large_body" >> "$fixture/languages/typescript/translation.md"
 awk -v rows="$large_table" '
   $0 == "## 参照" {
     while ((getline row < rows) > 0) print row
@@ -232,9 +237,9 @@ awk -v rows="$large_table" '
     print ""
   }
   { print }
-' "$fixture/tools/typescript/inspection.md" > "$large_inspection"
-mv -- "$large_inspection" "$fixture/tools/typescript/inspection.md"
-expect_pass "大きな language 規律集合を同一集合として照合する" "$fixture"
+' "$fixture/languages/typescript/inspection.md" > "$large_inspection"
+mv -- "$large_inspection" "$fixture/languages/typescript/inspection.md"
+expect_pass "大きな languages 規律集合を同一集合として照合する" "$fixture"
 
 fixture=$(make_fixture concerns-product-leakage)
 printf '\nPlaywright で表示を計測する。\n' >> "$fixture/concerns/experience/decision-simplicity.md"
@@ -313,8 +318,8 @@ sed -i 's/^- \[個人情報は最小化して載せ、期限で消す\](\.\/mini
 expect_fail "検証手段を欠く台帳行を検出する" "$fixture" "概念フォルダの台帳が不一致"
 
 fixture=$(make_fixture tool-entry-line-missing)
-sed -i '/^撤回条件は、/d' "$fixture/tools/rust/sqlx.md"
-expect_fail "ツール file の entry 4行の欠落を検出する" "$fixture" "entry の4行を欠くツール file あり"
+sed -i '/^撤回条件は、/d' "$fixture/languages/rust/sqlx.md"
+expect_fail "languages のツール file の entry 4行の欠落を検出する" "$fixture" "entry の4行を欠くツール file あり"
 
 printf '\nテスト: %d passed, %d failed\n' "$passed" "$failed"
 if [ "$failed" -eq 0 ]; then

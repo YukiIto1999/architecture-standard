@@ -11,7 +11,7 @@ description: architecture-standard に対する対象プロジェクトの適合
 ## 前提
 
 - この Skill の所在（`skills/standard-conformance/SKILL.md`）から二段上の親 directory（`../../`）を `<standard-root>` として固定する。
-- 標準本文は手元の `<standard-root>` 配下にある最新の規範文書（`README.md`, `process/audit.md`, `structure/`, `concerns/`, `principles/`, `tools/`）を直接参照する。
+- 標準本文は手元の `<standard-root>` 配下にある最新の規範文書（`README.md`, `principles/`, `concerns/`, `structure/`, `tools/`, `languages/`, `process/audit.md`）を直接参照する。
 - 監査結果は対象プロジェクト側の基線台帳（`docs/conformance-baseline.json`）と照合し、既存の承認済み違反と新規違反を明確に分離する。
 
 ## 監査手順
@@ -28,7 +28,7 @@ description: architecture-standard に対する対象プロジェクトの適合
 4. **横断的関心事と原則の照合**:
    `<standard-root>/concerns/`（並行処理、回復性、エラー設計等）および `<standard-root>/principles/` の完了条件・禁止事項に照合する。
 5. **言語・ツール固有規律の照合**:
-   `<standard-root>/tools/` に定義された言語固有の実現規律に照合する。
+   `<standard-root>/tools/` に定義された言語横断の採用規律と、`<standard-root>/languages/` に定義された言語ごとの実現規律に照合する。
 
 ## 出力仕様
 
