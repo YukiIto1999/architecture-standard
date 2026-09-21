@@ -202,7 +202,7 @@ print_record_sources() {
 is_non_product_token() {
   # 採用行に併記される言語名・規格名・機構の一般語だけを除き、製品名の候補は行から毎回導出する。
   case "$1" in
-    "ADR"|"API"|"HTTP"|"Build"|"C#"|"CI"|"CSS"|"Community"|"Core"|"JSON"|"JSON-RPC"|"Minimal"|"NET"|"OpenAPI"|"Rust"|"S3776"|"SPDX"|"TypeScript"|\
+    "API"|"HTTP"|"Build"|"C#"|"CI"|"CSS"|"Community"|"Core"|"JSON"|"JSON-RPC"|"Minimal"|"NET"|"OpenAPI"|"Rust"|"S3776"|"SPDX"|"TypeScript"|\
     "analyzer"|"backend"|"client"|"ID"|"cognitive"|"collector"|"commit"|"tree"|"companion"|"complexity"|"cookie"|"core"|"coverage"|"desktop"|"for"|"framing"|"gate"|"generation"|"generator"|"handler"|"library"|"mobile"|"node"|"one-time"|"plugin"|"project"|"provider"|"quality"|"queue"|"record"|"root"|"runtime"|"rust"|"schema"|"script"|"sealed"|"source"|"tests/"|"tools"|"type-aware"|"union"|"up"|"v1"|"v8")
       return 0
       ;;
@@ -496,7 +496,7 @@ fi
 
 echo
 echo "=== 14. 統一済み語彙の旧表記が残っていないか ==="
-if rg -nP '真実の所在|詰め替え|二次の読みモデル|期限の正本|単方向|コンテキストの自己完結|明快さ|境界面|ドメインモデル|value object|ドメインの型|domain の型|業務の型|なぜを決定の記録に残す' principles concerns structure tools process README.md; then
+if rg -nP '真実の所在|詰め替え|二次の読みモデル|期限の正本|単方向|コンテキストの自己完結|明快さ|境界面|ドメインモデル|value object|ドメインの型|domain の型|業務の型|なぜを決定の記録に残す|ADR' principles concerns structure tools languages process README.md; then
   fail "統一済み語彙の旧表記が残っている(正へ揃える)"
 else
   pass "統一済み語彙の旧表記なし"

@@ -101,7 +101,7 @@ tsconfig は strict を有効にし、型検査と lint の警告を検証入口
 tsc は型検査の専用に使い、JS への変換は build 基盤に委ねる。
 tsconfig は strict に加え、noUncheckedIndexedAccess と exactOptionalPropertyTypes も有効にする。
 linter は oxlint を使い、型認識の検査は tsgolint による oxlint の type-aware 実行で行う。
-ファイル・関数の大きさとネストの深さのしきい値は oxlint の max-lines(ファイル)・max-lines-per-function(関数)・max-depth(ネスト)の規則として定め、既定値から緩める変更は project の ADR に明記する。
+ファイル・関数の大きさとネストの深さのしきい値は oxlint の max-lines(ファイル)・max-lines-per-function(関数)・max-depth(ネスト)の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 環境変数の直読は、TypeScript compiler API による構造検査で process.env と import.meta.env の参照を設定の parse を持つ組立点だけに限る。
 認知的複雑さの測り方は、[sonarqube](../platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、oxlint 側の複雑度の規則(complexity)は有効にしない。
 
@@ -113,7 +113,7 @@ oxlint は、tsgolint の type-aware 実行により floating promise や unsafe
 max-lines・max-lines-per-function・max-depth は、ファイル・関数の大きさとネストの深さを早く気づかせる。
 oxlint の complexity 規則が測る cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない。標準が必須の検証へ割り当てる複雑度は cognitive complexity であり、cyclomatic complexity は必須の検証へ割り当てていないため、oxlint の complexity 規則は有効にしない。
 採用済みの oxlint に環境変数の直読を禁止する native の規則がないため、compiler API の構造検査で補い、[single-config-source](../../concerns/configuration/single-config-source.md) の「定めた源からまとめて読む」を機械の gate にする。
-既定から緩める判断を ADR に残せば、緩和の理由が追える。
+既定から緩める判断を決定の記録に残せば、緩和の理由が追える。
 tsc の emit は build 基盤の変換と重複し、二重の変換経路を生む。
 
 ### 完了条件
@@ -123,7 +123,7 @@ tsconfig の noUncheckedIndexedAccess と exactOptionalPropertyTypes が、stric
 oxlint が linter として使われ、型認識の検査が tsgolint で行われている。
 ファイル・関数の大きさとネストの深さのしきい値が、max-lines・max-lines-per-function・max-depth の規則として定められている。
 process.env と import.meta.env の参照が、設定の parse を持つ組立点に限られている。
-緩和が、project の ADR に明記されている。
+緩和が、project の決定の記録に明記されている。
 oxlint の complexity 規則が、有効になっていない。
 tsc が型検査の専用に設定され、JS への変換が build 基盤に委ねられている。
 
@@ -180,7 +180,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | vscode | extension の保持状態 | 型(state port・secret port)+レビュー |
 | coordination | 非同期 | レビュー |
 | coordination | 取り消し | 型(Effect 専用 withDeadlineEffect が ResultAsync<T, E &#124; DeadlineExceeded> を返すこと)+構造検査(TypeScript compiler API。設定に列挙した外部 I/O と待機の symbol と、callee expression の nominal brand または branded Effect への代入可能性で識別した下流 Effect を withDeadlineEffect の operation からだけ呼び、wrapper 内の window と document の直接参照を拒否すること)+実行テスト(host ごとの ResumeSource、wall-clock の絶対期限の伝播、非同期境界の前後と再開時の期限確認、購読解除後の判定、解決済み Err の保持と overrun 診断、期限 reason と同一または cause chain に持つ rejection の DeadlineExceeded Err 変換、wrapper 開始前から親取消と期限超過が同時に成立した場合に AbortSignal.any が選んだ親 reason の保持、別 defect の保持と期限超過診断、Ok 後の期限超過を DeadlineExceeded Err にすること、AbortSignal.timeout が active time の局所補助であること、親 signal と期限用 controller の AbortSignal.any 合成) |
-| coordination | 並行の組 | 構造検査(TypeScript compiler API。Promise.all または Promise.allSettled に渡す並行 task collection を生成する箇所では、branded Effect を開始する withDeadlineEffect の呼出しを、project の ADR で固定した単一 limiter の需要枠 callback 内へ限定)+実行テスト(最初の Err と最初の rejection の各経路で abort、controller 由来の sibling cancellation rejection の除外、allSettled で全兄弟へ合流、rejection defect が無い場合は最初に観測した Err を Result で返すこと、Err と独立した rejection が同時に成立した場合は drain 後に rejection defect を優先して送出すること、実行中の Effect が ADR の上限を越えない最大同時実行数) |
+| coordination | 並行の組 | 構造検査(TypeScript compiler API。Promise.all または Promise.allSettled に渡す並行 task collection を生成する箇所では、branded Effect を開始する withDeadlineEffect の呼出しを、project の決定の記録で固定した単一 limiter の需要枠 callback 内へ限定)+実行テスト(最初の Err と最初の rejection の各経路で abort、controller 由来の sibling cancellation rejection の除外、allSettled で全兄弟へ合流、rejection defect が無い場合は最初に観測した Err を Result で返すこと、Err と独立した rejection が同時に成立した場合は drain 後に rejection defect を優先して送出すること、実行中の Effect が決定の記録の上限を越えない最大同時実行数) |
 | coordination | メインスレッドを塞がない | レビュー(重い同期計算の特定と退避の判断) |
 | coordination | 後始末 | レビュー(onCleanup 登録漏れの判断) |
 | solidjs | viewer | レビュー(props の分割代入の禁止) |

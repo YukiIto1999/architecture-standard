@@ -25,7 +25,7 @@
       "expectations": [
         "process/design.md を適用モードとして選ぶ",
         "該当する標準本文を判定根拠として file 名付きで示す",
-        "標準が沈黙する project 固有事項は ADR へ送る",
+        "標準が沈黙する project 固有事項は決定の記録へ送る",
         "実装や標準本文の編集へ範囲を広げない"
       ]
     },
@@ -56,8 +56,8 @@
         "設定化、retry、監視、汎用 executor、周辺 cleanup を設計へ追加しない",
         "fixture にない Job、run_job、呼出元の契約や独自の WorkerError を発明せず、標準必須の失敗伝播と cancellation に必要な契約変更を未確定の必須条件として示す",
         "run_job の実装または契約を確認できないまま terminal JobStatus の書込みを既存責務として割り当てず、task の join と persisted authority 上の domain completion を同一視しない",
-      "completion の意味を Accepted ADR、persisted JobStatus authority、公開 caller、既存 test まで追い、外部 cancellation と deadline の伝播契約を sibling cancellation と別の未確定必須条件にする",
-      "worker.rs の公開 symbol run を docs/decisions で一回だけ検索して Accepted ADR を読み、そこで名指された JobStatus を app で一回だけ検索する。Job、State、Status、completion の候補検索や同じ token の再検索を行わない",
+      "completion の意味を Accepted な決定の記録、persisted JobStatus authority、公開 caller、既存 test まで追い、外部 cancellation と deadline の伝播契約を sibling cancellation と別の未確定必須条件にする",
+      "target-project/README.md に決定の記録の置き場の宣言が無いことを確認し、worker.rs の公開 symbol run を docs/decisions で一回だけ検索して Accepted な記録を読み、そこで名指された JobStatus を app で一回だけ検索する。Job、State、Status、completion の候補検索や同じ token の再検索を行わない",
       "根拠に使う標準本文の確認は exact file path だけで行い、directory を網羅探索しない",
         "安全と検証をコード量削減の対象にせず、同時実行上限と全 job 完了を観測する検証を残す",
         "process/design.md が無条件に要求する検証、naming、modeling、separation、境界と、変更が触れる並行処理、Rust 実現だけを読み、他の concerns や言語実現を加えない",
@@ -77,7 +77,7 @@
       "expectations": [
         "standard-audit ではなく対象 project への standard-apply と判定し、process/recovery.md を選ぶ",
         "標準の参照は判断に必要な箇所へ絞る一方、対象 project は実行経路、caller、state、test を判断に必要な深さまで読む",
-        "project root しか開始点がないため Glob は target-project/**/* の一回だけとし、候補名の試行や二回目の列挙を行わず、docs/decisions、build output、generated artifact、vendor を Glob 由来の読取候補から除く。project ADR は回収語を固定した限定 Grep で別に発見する",
+        "project root しか開始点がないため Glob は target-project/**/* の一回だけとし、候補名の試行や二回目の列挙を行わず、docs/decisions、build output、generated artifact、vendor を Glob 由来の読取候補から除く。project の決定の記録は回収語を固定した限定 Grep で別に発見する",
         "判断を左右する全主張の根拠状態を Known、Derived、Observed、Assumed、Unknown の一つにし、Intended と Target を別軸で Intended・Unknown・対象外およびTarget・Unknown・対象外に分ける",
         "source、test、設定、実行結果として現在そうである主張は Observed とし、明示契約または一次資料の Known と区別する",
         "ユーザーの『worker.rs が JobStatus の writer でもあるはず』という根拠付き仮説を Assumed とし、Known、Observed、Intended のいずれにも読み替えない",

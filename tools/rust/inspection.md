@@ -38,14 +38,14 @@ runtime の成果物を構成する依存 closure に build または test の e
 rustc と clippy の警告は、`[workspace.lints.rust]` の `warnings = "deny"` で検証入口のエラーとして扱う。
 lint は clippy を `[workspace.lints.clippy]` で強制し、unwrap_used・expect_used を deny にする。
 テストの unwrap・expect は、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可する。
-大きさとネストのしきい値は too_many_lines・excessive_nesting の lint の規則として定め、既定値から緩める変更は project の ADR に明記する。
-excessive_nesting は既定のしきい値を持たないため、project が clippy.toml にしきい値を定め、ADR に記録する。
+大きさとネストのしきい値は too_many_lines・excessive_nesting の lint の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
+excessive_nesting は既定のしきい値を持たないため、project が clippy.toml にしきい値を定め、決定の記録に残す。
 認知的複雑さの測り方は、[sonarqube](../platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、clippy 側に複雑度の規則を重ねて持たせない。
 識別子の汎用名は、clippy.toml の disallowed-names で禁止する。
 環境変数の直読は、clippy.toml の disallowed-methods で std::env::var と std::env::var_os を禁止し、設定の読み込みを設定の parse を持つ組立点だけに許可する。
 標準出力への自由文出力は、print_stdout・print_stderr の deny で禁止し、console surface の出力層だけに `#[allow]` を付ける。
 unsafe の使用は `[workspace.lints.rust]` の `unsafe_code = "deny"` で既定禁止にする。
-unsafe を要する project は理由を ADR に記録し、`#[allow(unsafe_code)]` を unsafe を含む最小の item に付ける。
+unsafe を要する project は理由を決定の記録に残し、`#[allow(unsafe_code)]` を unsafe を含む最小の item に付ける。
 同じ理由を共有する複数の item に限り、それらを収める最小の module に `#[allow(unsafe_code)]` を付ける。
 
 ### 根拠
@@ -53,7 +53,7 @@ unsafe を要する project は理由を ADR に記録し、`#[allow(unsafe_code
 lint を workspace の lints で強制すれば、規則が全体に一律に効く。
 unwrap_used・expect_used を deny にすれば、想定された失敗を握り潰すコードがビルドで止まる。
 `unsafe_code = "deny"` を workspace の lints に設定すれば、unsafe の使用が既定でビルドを止め、無秩序な混入を防ぐ。
-unsafe が要る最小の item に `#[allow(unsafe_code)]` を付け、理由を ADR に残せば、逸脱が可視化されたまま最小に保たれる。
+unsafe が要る最小の item に `#[allow(unsafe_code)]` を付け、理由を決定の記録に残せば、逸脱が可視化されたまま最小に保たれる。
 同じ理由を共有する item だけを最小の module にまとめれば、同じ allow の重複を避けても許可範囲を広げずに済む。
 clippy の lint 属性は crate 全体と item の単位に付けられ(文・式への属性は stable Rust では安定化されていない stmt_expr_attributes を要するため使えない)、Cargo.toml の `[lints]` はターゲット単位の上書きを持たないため、テストの除外は clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で行う。
 too_many_lines と excessive_nesting は、関数の肥大化とネストの深さを早く気づかせる。
@@ -61,22 +61,22 @@ data・info・temp のような汎用名は生成時に混入しやすく、disa
 環境変数の直読は [single-config-source](../../concerns/configuration/single-config-source.md) の「定めた源からまとめて読む」に反する散在を作るため、disallowed-methods がビルドで止める。
 自由文の標準出力は [structured-events](../../concerns/observability/structured-events.md) の「事実をイベントとして表し、構造化して出す」を素通りするため、print 系 lint で止める。
 clippy 自身の cognitive_complexity lint は、原典と異なる clippy 固有のヒューリスティックで実装され、clippy 公式が測定ツールとしての使用を推奨していないため採用しない。
-既定から緩める判断を ADR に残せば、緩和の理由が追える。
+既定から緩める判断を決定の記録に残せば、緩和の理由が追える。
 
 ### 完了条件
 `[workspace.lints.rust]` に `warnings = "deny"` が設定され、rustc と clippy の警告が検証入口でエラーとして扱われている。
 workspace の lints に、unwrap_used・expect_used の deny の設定がある。
 テストの unwrap・expect が、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可されている。
 大きさとネストのしきい値が、too_many_lines・excessive_nesting の lint の規則として定められている。
-excessive_nesting のしきい値が、project の clippy.toml に定められ ADR に記録されている。
-緩和が、project の ADR に明記されている。
+excessive_nesting のしきい値が、project の clippy.toml に定められ決定の記録に残されている。
+緩和が、project の決定の記録に明記されている。
 clippy.toml に disallowed-names の一覧が定められている。
 std::env::var・std::env::var_os が disallowed-methods に登録され、許可が設定の組立点に限られている。
 print_stdout・print_stderr が deny になっており、許可が console surface の出力層に限られている。
 `[workspace.lints.rust]` に `unsafe_code = "deny"` が設定されている。
 unsafe を要する箇所では、`#[allow(unsafe_code)]` が unsafe を含む最小の item に付いている。
 同じ理由を共有する複数の item に module 単位で許可する場合は、それらを収める最小の module に限られている。
-unsafe を許可する理由が、project の ADR に記録されている。
+unsafe を許可する理由が、project の決定の記録に残されている。
 
 ### 禁止事項
 警告を、検証入口でエラーとして扱わず黙って通過させること。
@@ -88,9 +88,9 @@ cognitive complexity を、clippy の cognitive_complexity lint で測ること�
 ### 行動
 `[workspace.lints.rust]` に `warnings = "deny"` を設定する。
 `[workspace.lints.clippy]` に unwrap_used・expect_used を deny で設定し、clippy.toml に allow-unwrap-in-tests・allow-expect-in-tests を設定する。
-too_many_lines・excessive_nesting を有効にし、excessive_nesting のしきい値と緩和は project の ADR に明記する。
+too_many_lines・excessive_nesting を有効にし、excessive_nesting のしきい値と緩和は project の決定の記録に明記する。
 `[workspace.lints.rust]` に `unsafe_code = "deny"` を設定する。
-unsafe を含む最小の item に `#[allow(unsafe_code)]` を付け、同じ理由を共有する複数の item は最小の module にまとめて許可し、その理由を ADR に記録する。
+unsafe を含む最小の item に `#[allow(unsafe_code)]` を付け、同じ理由を共有する複数の item は最小の module にまとめて許可し、その理由を決定の記録に残す。
 
 ### 例
 `Cargo.toml` の workspace lint は、警告、unsafe、対象の clippy lint を次のように設定する。

@@ -340,8 +340,8 @@ controller の abort が兄弟に生じさせた rejection は、独立した de
 全兄弟への合流後に独立した rejection defect があれば、`Err` より優先して最初の defect を送出する。
 独立した rejection defect が無ければ、最初に観測した `Err` を Result のまま返す。
 `Err` と独立した rejection が同時に成立した場合も、観測順にかかわらず rejection defect を優先する。
-並行度の上限を固定する機構は、標準が固定せず project が単一の採用を ADR に明記する。
-各 Effect は、ADR で固定した単一の limiter が需要枠を与えた callback の内側で開始する。
+並行度の上限を固定する機構は、標準が固定せず project が単一の採用を決定の記録に明記する。
+各 Effect は、決定の記録で固定した単一の limiter が需要枠を与えた callback の内側で開始する。
 
 ### 根拠
 ResultAsync の `Err` は Promise の解決値なので、task 自体を Promise.all に渡すだけでは兄弟を abort できない。
@@ -349,7 +349,7 @@ ResultAsync の `Err` は Promise の解決値なので、task 自体を Promise
 abort 後に観測用 Promise へ Promise.allSettled で合流すれば、未完了の兄弟を範囲の外へ残さない。
 controller 由来の rejection を除外すれば、`Err` による sibling abort を新しい defect と取り違えない。
 独立した rejection defect を `Err` より優先すれば、回復不能な欠陥を想定内失敗として返さない。
-JavaScript の標準実行環境は並行度を上限で絞る組み込みの機構を持たないので、上限を固定する具体の機構は project の ADR に単一採用を明記させる。
+JavaScript の標準実行環境は並行度を上限で絞る組み込みの機構を持たないので、上限を固定する具体の機構は project の決定の記録に単一採用を明記させる。
 Effect の生成と開始を分け、limiter の callback 内で `withDeadlineEffect` を呼べば、需要枠を得る前に外部 I/O を開始しない。
 
 ### 完了条件
@@ -361,8 +361,8 @@ controller 由来の sibling cancellation rejection が、独立した defect �
 全兄弟への合流後に独立した rejection defect があれば、最初の `Err` より優先して最初の defect が送出されている。
 独立した rejection defect が無ければ、最初に観測した `Err` が Result として返されている。
 `Err` と独立した rejection が同時に成立した場合も、rejection defect が優先されている。
-並行度の上限を固定する機構が、project の ADR に明記されている。
-全ての Effect が、ADR で固定した単一の limiter の需要枠内で開始されている。
+並行度の上限を固定する機構が、project の決定の記録に明記されている。
+全ての Effect が、決定の記録で固定した単一の limiter の需要枠内で開始されている。
 
 ### 禁止事項
 一つが失敗しても、束ねた残りの実行を走らせ続けること。
@@ -378,7 +378,7 @@ limiter の需要枠を得る前に `withDeadlineEffect` を呼び、Effect を�
 controller 由来の sibling cancellation rejection を独立した defect から除外する。
 観測用 Promise に Promise.allSettled で合流してから、独立した rejection defect、最初に観測した `Err`、成功値の順に結果を決める。
 `Err` と独立した rejection が同時に成立した場合は、観測順にかかわらず rejection defect を優先する。
-project の ADR で固定した単一の limiter を使い、その callback の内側で `withDeadlineEffect` を呼ぶ。
+project の決定の記録で固定した単一の limiter を使い、その callback の内側で `withDeadlineEffect` を呼ぶ。
 
 ### 例
 通信を branded Effect として遅延し、期限 wrapper の内側だけで開始する。
@@ -392,7 +392,7 @@ const requestUrl = (url: URL): Effect<HasHttp, RequestError, Response> =>
     )());
 ```
 
-最初の `Err` または rejection で abort し、全兄弟へ合流してから結果を決める。limiter は project の ADR で一つに固定し、その需要枠の内側で初めて Effect を開始する。
+最初の `Err` または rejection で abort し、全兄弟へ合流してから結果を決める。limiter は project の決定の記録で一つに固定し、その需要枠の内側で初めて Effect を開始する。
 
 ```typescript
 const controller = new AbortController();
