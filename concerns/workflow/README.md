@@ -17,4 +17,4 @@ event の契約と配送・消費は [messaging](../messaging/README.md) に従�
 確定点は [transaction](../transaction/README.md) に従う。
 再開の記録と配置は [structure/core/application](../../structure/core/application.md) が定める。
 打ち消す事実の追記の形は [data](../../principles/data/README.md) に従う。
-言語別の実現は [tools](../tools/) が定める。
+言語別の実現は [languages](../languages/) が定める。

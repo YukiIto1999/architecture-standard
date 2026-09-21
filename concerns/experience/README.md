@@ -25,4 +25,4 @@ principles の [legibility](../../principles/legibility/README.md) が定める�
 ## 参照
 明瞭さは [legibility](../../principles/legibility/README.md)、責務の境界は [separation](../../principles/separation/README.md)、不正状態の排除は [modeling](../../principles/modeling/README.md)、境界での parse は [types](../types/README.md)、語彙の統一は [naming](../../principles/naming/README.md) に従う。
 利用者面の可達性と識別性は [accessibility](../accessibility/README.md) に従う。
-viewer の構造は [structure/surfaces/viewer](../../structure/surfaces/viewer/layout.md)、見た目と機構は [tools](../tools/) が定める。
+viewer の構造は [structure/surfaces/viewer](../../structure/surfaces/viewer/layout.md)、見た目と機構は [languages](../languages/) が定める。

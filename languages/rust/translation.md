@@ -51,7 +51,7 @@ match run(input).await {
 ## 生成した契約を使い、drift を検査の gate にする
 
 ### 要求
-contracts/generated の Rust の client と型は、[tools/build/typespec](../build/typespec.md) が採用した経路で生成する。
+contracts/generated の Rust の client と型は、[tools/build/typespec](../../tools/build/typespec.md) が採用した経路で生成する。
 
 ### 根拠
 契約を手で書き写すと、契約と実装がずれる。

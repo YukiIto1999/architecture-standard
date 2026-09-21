@@ -14,4 +14,4 @@ principles の [separation](../../principles/separation/README.md) と [data](..
 ## 参照
 起動時の検証は [configuration](../configuration/README.md)、取り消しの協調は [concurrency](../concurrency/README.md) に従う。
 確定点は [transaction](../transaction/README.md)、冪等性と再実行・過負荷の抑制は [resilience](../resilience/README.md)、再配送は [messaging](../messaging/README.md) に従う。
-面の構造は [structure](../structure/)、言語別の機構は [tools](../tools/) が定める。
+面の構造は [structure](../structure/)、言語別の機構は [languages](../languages/) が定める。

@@ -147,7 +147,7 @@
       "expectations": [
         "配置や所有者を変える候補ではないため root README.md を先回りして読まず、concerns/resilience.md を最初の所有者候補として確認する",
         "配置や領域書式を変えないため references/concerns.md は読まず、既存規律の充足裁定に references/normative-quality.md だけを使う",
-        "references/principles.md、languages.md、structure.md、tools.md、process.md を先回りして読まない",
+        "references/principles.md、structure.md、tools.md、process.md を先回りして読まない。languages の配置・書式は tools.md が所有する",
         "reference directory の列挙や、判断に使わない reference の一括読みを行わない",
         "充足済みで意味を変えず下位実現も変更しないため、repository 全域の Grep や Glob で一致箇所を探さない",
         "現行規律が候補を自己充足的に要求していると確認できた場合は本文を変更しない",

@@ -52,7 +52,7 @@ local の接続は、host が要求する場合に限って使う。
 server の API を、この接続で置き換えない。
 extension は、注入された client または protocol の operation を呼び、業務判断を持たない。
 接続の依存は [skeleton](../../skeleton.md) に従う。
-接続の機構は [tools](../../../tools/) が定める。
+接続の機構は [languages](../../../languages/) が定める。
 
 ## 配布
 
