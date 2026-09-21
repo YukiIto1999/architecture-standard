@@ -30,5 +30,5 @@ telemetry を経ない自由文の console 出力を業務コードに置くこ�
 
 ### 行動
 BannedSymbols.txt へ禁止 API を登録し、違反箇所は設定の注入と telemetry の port へ直す。
-許可が要る project には、範囲を絞った BannedSymbols.txt を置き、理由を project の ADR に記録する。
+許可が要る project には、範囲を絞った BannedSymbols.txt を置き、理由を project の決定の記録に残す。
 
