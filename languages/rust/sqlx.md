@@ -9,19 +9,21 @@
 
 ### 要求
 永続化は sqlx で書き、`query!`・`query_as!` のコンパイル時検証を使う。
-リポジトリの検証入口は offline の検証データで検証し、フル ORM を使わない。
-schema の変更は sqlx-cli の `sqlx migrate` で、forward-only の migration として適用する。
+sqlx の `offline` feature を有効化し、リポジトリの検証入口は offline の検証データで検証する。
+`sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化し、migration table 名と migration hash の無視文字は既定から変更しない。
 
 ### 根拠
 sqlx はコンパイル時に開発の DB へ接続し、SQL を DB 自身に検証させる。
 SQL を隠す抽象を入れないので、事実の形がそのまま型に写る。
-offline の検証データをリポジトリの検証入口で照合すれば、スキーマと SQL のずれがビルドで止まる。
+sqlx の `offline` feature を有効化して offline の検証データをリポジトリの検証入口で照合すれば、スキーマと SQL のずれがビルドで止まる。
 sqlx-cli の `sqlx migrate add` は既定で forward-only の migration ファイルを生成し、`sqlx migrate run` が適用済みの履歴を DB 側で追跡する。
+`sqlx.toml` の migration table 名と migration hash の無視文字を既定から変えなければ、sqlx と sqlx-cli の設定差で検証対象と適用履歴がずれない。
 forward-only の規律そのものは [structure/core/infrastructure](../../structure/core/infrastructure.md) に従う。
 
 ### 完了条件
 永続化が sqlx で書かれ、`query!`・`query_as!` のコンパイル時検証が効いている。
-リポジトリの検証入口が、offline の検証データで検証している。
+sqlx の `offline` feature が有効で、リポジトリの検証入口が offline の検証データで検証している。
+`sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature が有効で、migration table 名と migration hash の無視文字が既定から変更されていない。
 フル ORM を使っていない。
 schema の変更が、sqlx-cli の `sqlx migrate` で forward-only の migration として適用されている。
 
@@ -30,7 +32,8 @@ schema の変更が、sqlx-cli の `sqlx migrate` で forward-only の migration
 SQL の値を、文字列の連結で組み立てること。
 
 ### 行動
-SQL を `query!`・`query_as!` で書き、`cargo sqlx prepare` の検証データをリポジトリの検証入口で照合する。
+SQL を `query!`・`query_as!` で書き、sqlx の `offline` feature を有効化して、`cargo sqlx prepare` の検証データをリポジトリの検証入口で照合する。
+`sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化し、migration table 名と migration hash の無視文字を既定から変更しない。
 schema の変更は `sqlx migrate add` で migration ファイルを作り、`sqlx migrate run` で適用する。
 
 ### 例

@@ -154,7 +154,8 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | knip | 未使用 | analyzer/lint(knip で未使用のファイル・export・依存を検出し検証入口で失敗) |
 | stryker-js | 有効性 | mutation(StrykerJS の totalUndetected または Survived+NoCoverage が0件の gate と対象件数0の失敗) |
 | inspection | 構造 | 構造検査(TypeScript compiler API と dependency-cruiser が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
-| inspection | 予防 | analyzer/lint(tsc・oxlint・tsgolint・SonarQube の設定と診断を検証入口でエラー化) |
+| typescript-compiler-api | 構造検査 | 構造検査(@typescript/typescript6 6.0.2 の compiler API による call expression の symbol・callee expression の型・parameter の initializer・destructuring の binding element の取得と規則照合) |
+| inspection | 予防 | analyzer/lint(tsc・oxlint・`oxlint --type-aware`・`oxlint-tsgolint`・SonarQube の設定と診断を検証入口でエラー化) |
 | tsdoc | ドキュメントコメントの検査 | 構造検査(TypeScript compiler API と `@microsoft/tsdoc`)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | valibot | 業務の値を型に封じる | 型(valibot の brand・safeParse)+実行テスト(factory の単体テスト) |
 | formation | 不正な状態を構築できなくする | 型(判別子つき union・never 網羅) |
@@ -166,7 +167,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | 全域 | branch coverage | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定) |
 | valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・境界の parse の単体テスト) |
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |
-| typespec | 契約の型を生成する | 実行テスト(drift 検査の検証入口の判定) |
+| typespec | 契約の型を生成する | 実行テスト(生成器 toolchain が openapi-typescript の peer dependency に適合する TypeScript を使うこと、製品の TypeScript toolchain と分離した生成、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
 | translation | 生成型を型としてのみ使い、通信を port に通す | 構造検査(dependency-cruiser での runtime の import の検出)+型(import type) |
 | neverthrow | 効果を遅延した関数で表す | 構造検査(TypeScript compiler API。Effect が unique symbol の nominal brand を持ち、deferEffect だけが branded value を構築し、全ての公開 Effect factory に parameter initializer がなく、本体が実行用の関数リテラルを deferEffect へ直接渡すこと)+実行テスト(deferEffect の構築時は副作用0件で、返した Effect の呼出後にだけ開始すること)+型(Effect の nominal brand・環境・AbortSignal・wall-clock の絶対期限・ResultAsync のシグネチャ) |
 | neverthrow | 想定内失敗を Result で返す | 型(neverthrow の Result・判別子つき union) |
@@ -186,7 +187,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | solidjs | viewer | レビュー(props の分割代入の禁止) |
 | opentelemetry-js | viewer の telemetry | 型(ui port の型)+レビュー(SDK の adapter への隔離の判断) |
 | tailwind | styling | レビュー |
-| vite | web の host | レビュー |
+| vite | web の host | レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
 | publication | extension | 型(port の interface) |
 | vscode | ide の host | 型(判別子つき union の schema・safeParse)+実行テスト(postMessage 受信の単体テスト) |
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |

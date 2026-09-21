@@ -118,7 +118,7 @@ const loginResult = await withDeadlineEffect(
 以後の remote 読み出しも Effect を期限 wrapper から実行する。
 
 ```typescript
-const [session] = createResource(() =>
+const session = createMemo(() =>
   withDeadlineEffect(
     env,
     loadSession(),

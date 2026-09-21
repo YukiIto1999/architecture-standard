@@ -36,7 +36,6 @@ host を Tauri にし、IPC を型付きの command で一元化する。
 desktop と mobile の各 IPC の入口で host の認証 adapter の資格情報を検証し、actor を構築する。
 actor と検証済み入力だけを core の公開 API へ渡す。
 認証の資格情報を host の認証 adapter に、業務の secret と判断を core に置く。
-
 ### 例
 資格情報は host 側で actor へ写し、frontend の入力と actor だけを core へ渡す。
 
