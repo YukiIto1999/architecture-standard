@@ -155,7 +155,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | stryker-js | 有効性 | mutation(StrykerJS の totalUndetected または Survived+NoCoverage が0件の gate と対象件数0の失敗) |
 | inspection | 構造 | 構造検査(TypeScript compiler API と dependency-cruiser が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
 | typescript-compiler-api | 構造検査 | 構造検査(@typescript/typescript6 6.0.2 の compiler API による call expression の symbol・callee expression の型・parameter の initializer・destructuring の binding element の取得と規則照合) |
-| inspection | 予防 | analyzer/lint(tsc・oxlint・tsgolint・SonarQube の設定と診断を検証入口でエラー化) |
+| inspection | 予防 | analyzer/lint(tsc・oxlint・`oxlint --type-aware`・`oxlint-tsgolint`・SonarQube の設定と診断を検証入口でエラー化) |
 | tsdoc | ドキュメントコメントの検査 | 構造検査(TypeScript compiler API と `@microsoft/tsdoc`)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | valibot | 業務の値を型に封じる | 型(valibot の brand・safeParse)+実行テスト(factory の単体テスト) |
 | formation | 不正な状態を構築できなくする | 型(判別子つき union・never 網羅) |
@@ -187,7 +187,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | solidjs | viewer | レビュー(props の分割代入の禁止) |
 | opentelemetry-js | viewer の telemetry | 型(ui port の型)+レビュー(SDK の adapter への隔離の判断) |
 | tailwind | styling | レビュー |
-| vite | web の host | レビュー |
+| vite | web の host | レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
 | publication | extension | 型(port の interface) |
 | vscode | ide の host | 型(判別子つき union の schema・safeParse)+実行テスト(postMessage 受信の単体テスト) |
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |
