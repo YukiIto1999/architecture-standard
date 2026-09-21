@@ -1,8 +1,8 @@
 # principles
 
 principles は、ソフトウェア設計におけるすべての判断の土台となる言語非依存の原則群です。
-下位の全領域である concerns、structure、tools、process は、この原則の上に立ちます。
-言語ごとの固有の実現は tools が、システム全体を貫く関心ごとの規律は concerns が担います。
+下位の全領域 (concerns・structure・tools・languages・process) は、この原則の上に立ちます。
+言語ごとの固有の実現は languages が、システム全体を貫く関心ごとの規律は concerns が担います。
 
 ## 目的
 

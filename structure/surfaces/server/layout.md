@@ -65,7 +65,7 @@ CSRF token を cookie、URL、ログへ載せず、照合に失敗した要求�
 Web BFF を server に置く範囲の根拠には、[OAuth 2.0 for Browser-Based Applications draft v27](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-browser-based-apps-27) を draft として用いる。
 この draft は BFF の配置範囲だけを支え、規律の唯一の根拠にしない。
 authorization code と PKCE の安全要件は [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html)、ID Token の検証は [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)、cookie、session、CSRF の要件は OWASP の [Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) と [CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html) にも従う。
-資格情報から actor までの共通契約は [concerns/authentication](../../../concerns/authentication/README.md)、session store の採用は [concerns/persistence](../../../concerns/persistence/README.md)、言語別の機構は [tools](../../../tools/) が定める。
+資格情報から actor までの共通契約は [concerns/authentication](../../../concerns/authentication/README.md)、session store の採用は [concerns/persistence](../../../concerns/persistence/README.md)、言語別の機構は [languages](../../../languages/) が定める。
 
 ## 安全の境界
 

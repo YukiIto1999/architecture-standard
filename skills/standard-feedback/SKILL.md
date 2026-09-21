@@ -19,7 +19,7 @@ description: architecture-standard の適用中に実測した規律の矛盾、
 ## 前提
 
 - 標準本文の直接編集は行わない。
-- プロジェクト側の `docs/revision` への記録は従来どおり行い、本 Skill はその記録を標準側へ届ける送信路として動作する。
+- プロジェクト側の成果物に提案を残さず、実測証跡から直接 Issue を起票する。
 - 起票・検索には GitHub MCP（`github-operations`）を使用する。
 
 ## 手順

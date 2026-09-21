@@ -30,7 +30,7 @@ exact source path を与えられ、受入条件に completion、state、success
 
 - この skill がある repository を標準、依頼で示された repository を対象 project とする。
 - この skill の所在（`skills/standard-apply/SKILL.md`）から二段上の親 directory を `<standard-root>` として固定する。`pwd` や `git rev-parse` で standard root を再発見しない。対象 project を current directory にした Git 操作や特定マシンのローカル絶対パスと混ぜない。
-- 標準本文は常に `<standard-root>` にある現在の規範文書（`README.md`、`principles/`、`concerns/`、`process/`、`structure/`、`tools/`）を参照する。標準の過去版を Git 履歴から掘り出して判断基準にせず、対象 project に記録された標準の版も基準にしない。
+- 標準本文は常に `<standard-root>` にある現在の規範文書（`README.md`、`principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/`）を参照する。標準の過去版を Git 履歴から掘り出して判断基準にせず、対象 project に記録された標準の版も基準にしない。
 - 標準本文は編集しない。標準側の不備は file と該当箇所を報告し、修正は standard-update へ渡す。
 
 ## 参照経路

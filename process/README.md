@@ -2,7 +2,7 @@
 
 process は、ソフトウェア開発ライフサイクルにおけるどの順で作るかという作業順序と、どこで確かめるかという確認点を定めます。
 
-性質や品質の規範そのものは [principles](../principles/) と [concerns](../concerns/) に従い、順序の入力や確認点の照合先として [structure](../structure/) と [tools](../tools/) を指します。process 自体は作業順序と確認点のみを所有し、アーキテクチャの性質規範を再定義しません。
+性質や品質の規範そのものは [principles](../principles/) と [concerns](../concerns/) に従い、順序の入力や確認点の照合先として [structure](../structure/)、[tools](../tools/)、[languages](../languages/) を指します。process 自体は作業順序と確認点のみを所有し、アーキテクチャの性質規範を再定義しません。
 
 ## 開発ライフサイクルの全体フロー
 

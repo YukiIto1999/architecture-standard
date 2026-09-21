@@ -36,7 +36,7 @@ composition は、viewer が公開する起動の入口に依存する。
 desktop は、viewer の内部へ踏み込まない。
 desktop 固有の処理は、adapters と composition に置く。
 viewer の中に、native や desktop の分岐を置かない。
-具体の API の機構は [tools](../../../tools/) が定める。
+具体の API の機構は [languages](../../../languages/) が定める。
 
 ## 組み立てと起動
 
@@ -48,4 +48,4 @@ host がプロセス内に core を抱けるなら、composition が core を埋
 別プロセスや別言語で抱けないなら、embedded surface を同梱起動し、protocol で繋ぐ。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 desktop は、署名を検証する自動更新で配布し、検証を無効化しない。
-shell・bundler・更新の機構は [tools](../../../tools/) が定める。
+shell・bundler・更新の機構は [languages](../../../languages/) が定める。

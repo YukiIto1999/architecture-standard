@@ -49,5 +49,5 @@ record 型は、`persistence/` の中だけに置く。
 domain と record の写像は store ファイル内に、domain と wire 型の写像は外部システムのファイル内に置く。
 domain、application、composition は、record 型と外部システムの wire 型を参照しない。
 論理の型と名前で区別する。
-型名の接尾辞の規約は [tools](../../tools/) が定める。
+型名の接尾辞の規約は [languages](../../languages/) が定める。
 型の分離は [concerns/types](../../concerns/types/README.md) に従う。

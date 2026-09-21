@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-// concerns・structure・languages の製品名指しが tools のエントリに登録済みかを機械照合する。goal-25・goal-26(languages を追加)。
+// concerns・structure・languages の製品名指しが、tools と languages の採用エントリに登録済みかを機械照合する。goal-25・goal-26。
 //
 // 手法:
-//   1. tools/{language,stack,build,inspection,services,platforms}.md の各 `## 見出し` エントリから、
-//      見出しテキストと「採用は、」で始まる行を抽出し、名指し語(Latin token)の registry を作る。
+//   1. tools と languages の各ツール file の `# 見出し`・`## 見出し` と「採用は、」で始まる行から、
+//      名指し語(Latin token)の registry を作る。
 //      「判断基準」欄は却下・比較の記述を含みうるため、registry の抽出対象にしない。
-//   2. concerns/*.md・structure/**/*.md・tools/**/*.md の、fenced code と inline code(`...`)を
-//      除いた本文のうち「である。」で終わる行(tools の採用行と同じ宣言文型)から、
+//   2. concerns/**/*.md・structure/**/*.md・languages の軸 file の、fenced code と inline code(`...`)を
+//      除いた本文のうち「である。」で終わる行(採用行と同じ宣言文型)から、
 //      大文字で始まり内部に小文字を含む token を候補として抽出する。
 //      `*.md` で終わる token(標準内の自己参照ファイル名)は候補から除く。
 //      inline code を除くのは、言語の型・API 名(`Effect`・`Drop` 等)を製品名と区別するためである。
-//   3. 候補が registry に無ければ、tools に未登録の製品名指しとして報告する。
+//   3. 候補が registry に無ければ、未登録の製品名指しとして報告する。
 //
 // 限界: 「…である。」の宣言文型に絞った検出であり、あらゆる言い回しを機械的に網羅する
 //   汎用の固有名詞抽出ではない。HTTP・API のような一般的な頭字語(小文字を含まない token)は
@@ -29,6 +29,7 @@ function extractRegistry() {
   const ECOSYSTEMS = new Set(["rust", "csharp", "typescript"]);
   const files = [];
   walk(path.join(ROOT, "tools"), files);
+  walk(path.join(ROOT, "languages"), files);
   const tokenRe = /[A-Za-z][A-Za-z0-9_.#+@/-]*/g;
   const registry = new Set();
   for (const file of files) {
@@ -101,14 +102,14 @@ walk(path.join(ROOT, "concerns"), files);
 walk(path.join(ROOT, "structure"), files);
 for (const language of ["rust", "csharp", "typescript"]) {
   for (const axis of ["formation", "translation", "connection", "coordination", "publication", "inspection", "conventions"]) {
-    files.push(path.join(ROOT, "tools", language, `${axis}.md`));
+    files.push(path.join(ROOT, "languages", language, `${axis}.md`));
   }
 }
 
 const candidates = findCandidates(files);
 const violations = candidates.filter((c) => !registry.has(c.token));
 
-console.log(`tools registry size: ${registry.size}`);
+console.log(`adoption registry size: ${registry.size}`);
 console.log(`violations: ${violations.length}`);
 for (const v of violations) {
   console.log(`${v.file}:${v.line}\t${v.token}\t"${v.text}"`);

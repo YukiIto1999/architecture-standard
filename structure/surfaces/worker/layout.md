@@ -43,7 +43,7 @@ worker は、派生読みモデルの定常・定期の再構築 workflow を jo
 queue runner は、queue から実行可能な job を取り出して起動する。
 schedule runner は、定期実行の時点に達した job を起動する。
 長期にわたる stateful な workflow は、標準の対象外とする。
-queue と schedule の engine は、project の選択の対象でなく、[tools](../../../tools/) が固定する。
+queue と schedule の engine は、project の選択の対象でなく、[languages](../../../languages/) が固定する。
 並行度、順序、排他、背圧、durable receipt、ack、processing completion、冪等な確定、再配送、失敗の隔離は、[concerns/concurrency](../../../concerns/concurrency/README.md)、[concerns/messaging](../../../concerns/messaging/README.md)、[concerns/resilience](../../../concerns/resilience/README.md)、[concerns/transaction](../../../concerns/transaction/README.md) に従う。
 
 ## 組み立てと起動
@@ -57,4 +57,4 @@ lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle/README.m
 観測の規律は [concerns/observability](../../../concerns/observability/README.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration/README.md) に従う。
-queue と schedule の機構は [tools](../../../tools/) が定める。
+queue と schedule の機構は [languages](../../../languages/) が定める。
