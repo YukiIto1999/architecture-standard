@@ -33,7 +33,7 @@ command は、引数を core API の operation へ写像する。
 command は、業務判断を持たず、入力の解析と operation の呼び出しだけを行う。
 console は wire の binding を持たず、外部へ面を公開しない。
 console は、派生読みモデルの臨時・手動の再構築 workflow を command として起動する役割を担う。
-引数の解析の機構は [tools](../../../tools/) が定める。
+引数の解析の機構は [languages](../../../languages/) が定める。
 
 ## 配布
 

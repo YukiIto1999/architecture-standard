@@ -40,7 +40,7 @@ lint は clippy を `[workspace.lints.clippy]` で強制し、unwrap_used・expe
 テストの unwrap・expect は、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可する。
 大きさとネストのしきい値は too_many_lines・excessive_nesting の lint の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 excessive_nesting は既定のしきい値を持たないため、project が clippy.toml にしきい値を定め、決定の記録に残す。
-認知的複雑さの測り方は、[sonarqube](../platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、clippy 側に複雑度の規則を重ねて持たせない。
+認知的複雑さの測り方は、[sonarqube](../../tools/platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、clippy 側に複雑度の規則を重ねて持たせない。
 識別子の汎用名は、clippy.toml の disallowed-names で禁止する。
 環境変数の直読は、clippy.toml の disallowed-methods で std::env::var と std::env::var_os を禁止し、設定の読み込みを設定の parse を持つ組立点だけに許可する。
 標準出力への自由文出力は、print_stdout・print_stderr の deny で禁止し、console surface の出力層だけに `#[allow]` を付ける。

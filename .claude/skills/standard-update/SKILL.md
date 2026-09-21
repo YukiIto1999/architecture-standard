@@ -6,16 +6,17 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 # standard-update
 
 標準の単一性と層間 MECE を保って更新する。
-入力をそのまま転写せず、所有者、根拠、書式、参照、検証を一つの変更として閉じる。
-この skill は標準の5領域と材料置き場 docs を更新する運用入口であり、`process/` の標準本文ではない。下の領域別書式は更新対象の標準本文だけに適用する。
+入力をそのまま転記せず、所有者、根拠、書式、参照、検証を一つの変更として閉じる。
+この skill は標準の6領域と材料置き場 docs を更新する運用入口であり、`process/` の標準本文ではない。下の領域別書式は更新対象の標準本文だけに適用する。
 
 ## 領域
 
 - `principles/` — 言語に依存しない設計原則。なぜを所有する。
 - `concerns/` — 言語非依存の24概念。effect・concurrency・dependency・types・context-propagation・persistence・caching・migration・transaction・messaging・workflow・authentication・authorization・privacy・security・secrets・audit-trail・observability・configuration・resilience・performance・lifecycle・experience・accessibility。複数の部または全層へ効く規律を所有する。
 - `structure/` — 一つの部の境界、中身、依存方向を所有する。検証技法の選択、性質から型・静的検査・実行テスト・計測への割当、mutation・coverage・実行範囲は `structure/tests/methods.md` が所有する。
-- `tools/` — csharp・rust・typescript の言語 ecosystem と、build・platforms・services の区分で、採用と言語ごとの実現を所有する。
-- `process/` — bootstrap・recovery・design・implementation・refactoring・review・audit・migration・verification・release・drill の順序と確認点を所有する。
+- `tools/` — 言語横断の開発道具(build)、自運用基盤(platforms)、外部 Web サービス(services)の採用と共通基準を所有する。
+- `languages/` — rust・csharp・typescript の言語 ecosystem。6実現軸の規律、全域規律 conventions、その言語 ecosystem の採用物を所有する。
+- `process/` — bootstrap・recovery・design・implementation・refactoring・review・audit・migration・verification・release・drill の順序と確認点を横断的に所有する。
 - `docs/` — 調査と判断の材料であり、標準本文には含めない。
 
 ## 参照経路
@@ -23,7 +24,7 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 入力の候補が、検証手段を「同じ性質」とみなして重複排除する言語非依存の判定基準を追加または変更し、特定言語の実現 file 自体の変更を依頼していない場合は、下の一般経路より先に [verification duplication](references/verification-duplication.md) を読み、その固定経路だけを使う。
 
 開始時は `references/` を読まない。入力が既存の正本 file を明示する場合、または入力の主題が上の領域一覧と領域の台帳から具体的な正本 file へ一意に対応し、配置や所有者を変える候補でない場合は、その標準本文を直接読む。明示された path を Glob や path 未指定の Grep で再発見せず、より一般的な語を持つ principles または concerns を検索して所有者候補を増やさない。具体的な正本 file へ一意に対応しない場合だけ root `README.md` を先に読み、候補の所有者になりうる標準本文を一つに絞る。
-配置または領域書式の判断が必要になった時点で、分解した一つの主張につき、対応する `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/{principles,concerns,structure,tools,process}.md` を一つだけ読む。
+配置または領域書式の判断が必要になった時点で、分解した一つの主張につき、対応する `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/{principles,concerns,structure,tools,process}.md` を一つだけ読む。languages の配置・書式・MECE 点検は `references/tools.md` が tools とともに所有する。
 既存規律がある候補について、充足済み、意味を保った文章のリファクタリング、意味の拡張のいずれかを裁定するときだけ `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/normative-quality.md` を読む。
 各 reference を読む前に、その reference が変えうる判断を一つ記録する。答えを得たらその参照経路を止め、reference directory の列挙、他領域 reference の一括読取、将来の判断に備えた先回り読取は行わない。
 一つの入力が複数領域へ分かれる場合は、先に主張と所有者を分け、それぞれの判断を始める時点で対応する reference を読む。
@@ -38,14 +39,14 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 候補を一般化できることだけを理由に上位領域へ昇格させず、既存規律との照合後に採用、不採用、限定、文章のリファクタリングを裁定する。
 候補ごとに、要求する遵守結果、現行本文の不足、変更が必要ならその配線と検証を変更契約として固定する。変更する file、規律、reference、script、eval は、この変更契約へ直接結びつくものだけにする。
 作業中に見つけた隣接課題は変更へ取り込まず、現在の裁定を妨げる場合だけ未確認事項として報告する。
-project の `docs/revision/` を回収する場合は提案ごとに採否を裁定する。
+標準の保守窓口へ届いた project の改訂提案を回収する場合は、提案ごとに採否を裁定する。
 一次本文がなく内容を確定できない外部主張は、配置と調査課題までに留める。
 typo、リンク、見出し、registry の機械修正では、変更前の Git 履歴、参照先の正本、または既存 registry から期待値を特定してから編集する。自然言語としてもっともらしい類義語を推測して置き換えない。候補が一致しなければ無変更とし、曖昧さを報告する。
 
 ### 2. 所有者を決める
 
 root `README.md` の領域表を正本にする。
-値・なぜは principles、複数の部に効く言語非依存の規律は concerns、特定言語の実現は tools の言語 ecosystem、一つの部の境界と中身は structure、採用と判断基準は tools、作業の順序と確認点は process へ置く。
+値・なぜは principles、複数の部に効く言語非依存の規律は concerns、特定言語の実現は languages、一つの部の境界と中身は structure、言語横断の採用と判断基準は tools、作業の順序と確認点は process へ置く。
 
 次の順序で所有者と裁定を固定する。
 
@@ -93,7 +94,7 @@ context7 と web-researcher のいずれかが利用できなければ、利用�
 
 - principles: 原則ごとのフォルダ。README は H1 直下のリードと `## 規律` の台帳、規律ファイルは規律の H2 と `要求/根拠/完了条件/禁止事項/行動`、必要な場合だけ例。README に `## 概要` と `## 参照` は置かない。
 - concerns: 概念ごとのフォルダ。README は `## 概要`・`## 規律` の台帳・`## 参照`、規律ファイルは規律の H2 と必須5節、必要な場合だけ例。
-- tools の言語 ecosystem の軸 file: `## 概要`、規律ごとの必須5節、必要な場合だけ例、末尾の `## 参照`。
+- languages の軸 file: `## 概要`、規律ごとの必須5節、必要な場合だけ例、末尾の `## 参照`。
 - structure: 導入の参照文、folder tree、単位表または依存方向表、topical な見出しからなる layout 書式。必須5節を持ち込まない。詳細は `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/structure.md` に従う。
 - tools: 用途、採用、判断基準、撤回条件の4行 entry。
 - process: 導入の参照文、`## 順序`、`## 確認点`、`## 範囲外`。必須5節を持ち込まない。
@@ -101,7 +102,7 @@ context7 と web-researcher のいずれかが利用できなければ、利用�
 要求、完了条件、禁止事項は判定可能な表現にする。
 例は次の順で書く。
 
-1. 例の言語を特定し、その言語の `tools/<language>/conventions.md` を読む。擬似コードなら言語固有の構文を使わない。
+1. 例の言語を特定し、その言語の `languages/<language>/conventions.md` を読む。擬似コードなら言語固有の構文を使わない。
 2. 編集前に、意図的に違反させる項目と、例に表示する規律対象の構文を特定する。
 3. 差と帰結はコードフェンス外の本文へ置き、コード例へ説明のコメントを足さない。ドキュメントコメント、採らなかった理由、禁止するコメントそのものを示す例では、規律の対象であるコメントだけをコード内に残す。
 4. コード例は判定に必要な部分だけを示す断片とする。例の主題でない import、ドキュメントコメント、周辺の宣言は表示を省けるが、実コードで不要であるとは示さない。表示する構文は、意図的な違反を除き、conventions の規律を例の中でも満たす。
@@ -114,7 +115,7 @@ context7 と web-researcher のいずれかが利用できなければ、利用�
 
 concerns を横断規律の正本、structure を参照側にする。
 概念の増減では root `README.md`、`concerns/README.md`、`.claude/skills/standard-update/SKILL.md`、`scripts/verify.sh` を同期する。
-tools の分割や採用名を変えた場合は `tools/README.md`、`.claude/skills/standard-update/SKILL.md` の領域一覧、該当 reference を同期し、`scripts/naming-registry-check.mjs` の動的 registry で検査する。永続する別の registry file は作らない。
+tools の区分や採用名を変えた場合は `tools/README.md`、languages の言語 ecosystem や採用物を変えた場合は `languages/README.md` と該当 ecosystem の台帳を同期する。いずれも領域一覧と該当 reference を同期し、`scripts/naming-registry-check.mjs` の動的 registry で検査する。永続する別の registry file は作らない。
 
 ### 7. 検証して閉じる
 
@@ -170,7 +171,7 @@ skill の場所が current directory にない host では、host が与える `
 
 ## 関連
 
-- `references/{principles,concerns,structure,tools,process}.md` — 領域固有の配置、根拠、書式、MECE 点検。
+- `references/{principles,concerns,structure,tools,process}.md` — 領域固有の配置、根拠、書式、MECE 点検。`tools.md` は tools と languages の両方を所有する。
 - `references/normative-quality.md` — 充足済み、文章のリファクタリング、意味の拡張を分ける局所的な裁定。
 - `references/verification-duplication.md` — 検証手段の重複排除を扱う候補の固定経路。
 - `references/evaluation.md` — product 検査の役割と model eval の範囲。
