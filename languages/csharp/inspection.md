@@ -147,7 +147,7 @@ libs の analyzer project に、Result の派生型への cast を検出する a
 | cscheck | 性質 | 実行テスト(CsCheck の生成・縮小・stateful property と回帰 seed の再実行) |
 | reqnroll | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(Reqnroll.TUnit を実装と同じ検証入口で実行) |
 | testcontainers | 実依存 | 実行テスト(Testcontainers for .NET の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(TUnit `--list-tests` の tree node ID を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。Reqnroll scenario は同じ TUnit discovery の ID を使う) |
-| stryker-net | 有効性 | mutation(Stryker.NET の未検出 mutant 0件 gate と発見件数0の失敗) |
+| mutation-dotnet | 有効性 | mutation(mutation-dotnet の未検出 mutant 0件 gate、変異生成0件の失敗、テスト発見0件の失敗) |
 | archunit-net | 構造 | 構造検査(ArchUnitNET が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
 | sonaranalyzer-csharp | 予防 | analyzer/lint(SonarAnalyzer.CSharp・BannedApiAnalyzers・Roslyn analyzer の設定と診断を検証入口でエラー化) |
 | inspection | ドキュメントコメントの検査 | analyzer/lint(CS1591 と Roslyn analyzer)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |

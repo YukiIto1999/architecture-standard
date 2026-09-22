@@ -36,6 +36,7 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [grate](./grate.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | C# は grate の up の one-time script である |
 | [maui-hybridwebview](./maui-hybridwebview.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が C# のときは mobile は .NET MAUI の HybridWebView である |
 | [microsoft-testing-extensions-code-coverage](./microsoft-testing-extensions-code-coverage.md) | テストが実行していない箇所を見つけるカバレッジ計測である | C# は Microsoft.Testing.Extensions.CodeCoverage である |
+| [mutation-dotnet](./mutation-dotnet.md) | テストが振る舞いを固定しているかを測る mutation 検査である | C# は mutation-dotnet である |
 | [netsparkle-updater](./netsparkle-updater.md) | 配布した desktop の成果物を、署名を検証しながら自動で更新する機構である | C# は NetSparkleUpdater である |
 | [npgsql](./npgsql.md) | PostgreSQL へ接続し、transaction の確定と制約違反の判別を担う data provider である | C# は Npgsql である |
 | [nswag](./nswag.md) | 契約から C# の client と型を生成し、drift・conformance の検査に使う道具である | C# は NSwag である |
@@ -45,7 +46,6 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [sonaranalyzer-csharp](./sonaranalyzer-csharp.md) | 規則の違反をビルドで止める linter である | C# は SonarAnalyzer.CSharp である |
 | [stackexchange-redis](./stackexchange-redis.md) | Valkey へ接続する client である | C# は StackExchange.Redis である |
 | [streamjsonrpc](./streamjsonrpc.md) | extension が接続する core のプロセスとの間で、JSON-RPC の小さい契約だけを外へ出す機構である | C# は StreamJsonRpc である |
-| [stryker-net](./stryker-net.md) | テストが振る舞いを固定しているかを測る mutation 検査である | C# は Stryker.NET の MTP runner(preview)である |
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | C# は Testcontainers for .NET である |
 | [tunit](./tunit.md) | 単体・性質・結合のテストの実行系である | C# は TUnit である |
 | [wolverine](./wolverine.md) | 背景処理と定期実行の daemon の骨格である | C# は Wolverine であり、PostgreSQL を backend にした queue に限って使う |
