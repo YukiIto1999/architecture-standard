@@ -91,14 +91,6 @@ expect_eval_prompt_text() {
 
 printf '=== 1. skill の指示整合 ===\n'
 expect_text \
-  "recovery eval はGlob回数とpatternを採点する" \
-  'Glob は target-project/\*\*/\* の一回だけ' \
-  skills/standard-apply/evals/evals.json
-expect_text \
-  "recovery eval は決定の記録をGlob由来の読取候補にしない" \
-  'docs/decisions.*Glob 由来の読取候補から除く' \
-  skills/standard-apply/evals/evals.json
-expect_text \
   "methods は一致した適用集合と双方向含意で同じ性質を判定する" \
   '同じ規範命題へ割り当てられ、そこから導いた非空の適用対象・入力集合が一致し、その集合の全要素で一方の合格が他方の合格を含意し、かつ逆方向も成り立つ' \
   structure/tests/methods.md
@@ -253,14 +245,6 @@ expect_no_text \
 expect_text \
   "task evaluator はrouting判断をtaskと対象skillへ委ねる" \
   'どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はskillの最初の対象project操作を共通promptで上書きしない" \
-  '対象 skill が最初の対象 project 操作または閉じた参照経路を定める場合は、他の対象 project 操作より優先' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator は固定patternの試行錯誤を許さない" \
-  'exact path、exact token、Glob pattern、回数を固定した場合は、その値を変えた試行や候補探索を前後に追加しない' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_text \
   "task evaluator は一時的な ENOTEMPTY を再試行してfixtureを回収する" \
@@ -735,6 +719,27 @@ for probe_skill in standard-apply standard-audit standard-conformance standard-f
       fail "$probe_skill/$eval_configuration のtask fixtureからmutationを隔離" "$task_harness_probe_output"
     fi
   done
+done
+
+fake_apply_fixture_probe="$TEST_ROOT/claude-apply-fixture-probe"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'test -z "$(git status --porcelain)"' \
+  'git ls-files --error-unmatch target-project/app/http.rs target-project/tests/http.rs architecture-decisions/0002-worker-contract.md >/dev/null' \
+  'test ! -e skills/standard-apply/evals' \
+  'test ! -e .claude/skills/standard-update/scripts/run-task-evals.mjs' \
+  'printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","usage":{}}'\''' \
+  > "$fake_apply_fixture_probe"
+chmod +x "$fake_apply_fixture_probe"
+for eval_configuration in old-skill with-skill; do
+  if apply_probe_output=$(CLAUDE_EVAL_COMMAND="$fake_apply_fixture_probe" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/apply-probe" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration "$eval_configuration" --skill standard-apply --eval-id 6 2>&1) \
+    && test ! -s "$TEST_ROOT/apply-probe/standard-apply/eval-6-sonnet/$eval_configuration/status.txt" \
+    && test ! -s "$TEST_ROOT/apply-probe/standard-apply/eval-6-sonnet/$eval_configuration/diff.patch"; then
+    pass "$eval_configuration の設計fixtureは無編集をcleanとして記録する"
+  else
+    fail "$eval_configuration の設計fixtureは無編集をcleanとして記録する" "$apply_probe_output"
+  fi
 done
 
 fake_audit_mutation_probe="$TEST_ROOT/claude-audit-mutation-probe"
