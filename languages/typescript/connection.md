@@ -3,7 +3,7 @@
 ## 概要
 connection は、TypeScript で副作用と依存の渡し方を扱う実現軸である。
 concerns の [effect](../../concerns/effect/README.md) が定める効果システムを、viewer・extension・host の軽い役割に合わせて満たす。
-効果の表現と Result の規律は [neverthrow](./neverthrow.md) が持つ。
+効果の表現と Result の規律は [ts-results-es](./ts-results-es.md) が持つ。
 [separation](../../principles/separation/README.md) の依存の向きと [dependency](../../concerns/dependency/inward-dependencies.md) の「依存を内側へ一方向に向ける」の規律に従う。
 
 ## 依存を環境で受け、host の能力を port で宣言する

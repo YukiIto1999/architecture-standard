@@ -121,4 +121,4 @@ function findUser(id: UserId): User { /* ... */ }
 ## 参照
 業務意味の型封入は [modeling](../../principles/modeling/README.md)、型の規律は [types](../../concerns/types/README.md) に従う。
 命名と整形、ドキュメントコメントの体裁は [conventions](./conventions.md) に従う。
-境界での外部表現の変換は [translation](./translation.md)、Result の機構は [neverthrow](./neverthrow.md) に従う。
+境界での外部表現の変換は [translation](./translation.md)、Result の機構は [ts-results-es](./ts-results-es.md) に従う。

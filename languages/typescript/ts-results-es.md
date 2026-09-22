@@ -1,14 +1,14 @@
-# neverthrow
+# ts-results-es
 
 用途は、viewer・extension・host の軽い役割に見合う、副作用と想定内失敗を型で表す機構である。
-採用は、TypeScript は neverthrow である。
-判断基準は、軽量な Result 型を提供し、要求チャネル・依存注入・fiber runtime を持ち込まないことである。
+採用は、TypeScript は ts-results-es である。
+判断基準は、軽量な Result 型を提供して要求チャネル・依存注入・fiber runtime を持ち込まず、同期の throw と Promise の rejection を同じ一箇所で Result へ写し、error mapper が再送出した欠陥を元の error のまま呼出側へ伝えることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## 効果を遅延した関数で表す
 
 ### 要求
-副作用を伴う計算は、環境、AbortSignal、wall-clock の絶対期限を受け取り ResultAsync を返す遅延した関数で表す。
+副作用を伴う計算は、環境、AbortSignal、wall-clock の絶対期限を受け取り AsyncResult を返す遅延した関数で表す。
 Effect は、`unique symbol` の nominal brand を持つ callable な値にする。
 Effect の brand は、`deferEffect` だけが構築する。
 全ての公開 Effect factory は、共通の `deferEffect` constructor に実行用の関数リテラルを渡す。
@@ -21,7 +21,7 @@ Effect の brand は、`deferEffect` だけが構築する。
 関数は呼ぶまで動かない遅延した値なので、合成し、取り消し、差し替えても、その時点では副作用が起きない。
 関数型だけでは、factory の本体が Effect を返す前に副作用を起動していないことを保証できない。
 構造だけが同じ関数から Effect を区別するには、callee の型に固有の nominal brand が要る。
-Effect の呼出結果は ResultAsync なので、call expression の戻り値だけでは Effect の呼出かを判定できない。
+Effect の呼出結果は AsyncResult なので、call expression の戻り値だけでは Effect の呼出かを判定できない。
 default parameter と destructuring の binding initializer は、factory 本体へ入る前に評価される。
 全ての公開 factory を `deferEffect` へ限定すれば、副作用を開始できる箇所を実行用の関数リテラルの内側へ集約できる。
 環境を引数に受けると、計算が要求する能力が型に出て、テストで差し替えられる。
@@ -31,7 +31,7 @@ wall-clock の絶対期限を通すと、[coordination](./coordination.md) の E
 viewer・extension・host は server の効果と永続化を持たないので、重い効果型を作らず、この軽い形で足りる。
 
 ### 完了条件
-副作用を伴う計算が、環境、AbortSignal、wall-clock の絶対期限を受け ResultAsync を返す遅延した関数になっている。
+副作用を伴う計算が、環境、AbortSignal、wall-clock の絶対期限を受け AsyncResult を返す遅延した関数になっている。
 Effect の callable な型が、`unique symbol` の nominal brand を持っている。
 `deferEffect` だけが、Effect の brand を持つ値を構築している。
 全ての公開 Effect factory が、副作用を実行しない本体から実行用の関数リテラルを `deferEffect` へ渡している。
@@ -51,7 +51,7 @@ Effect の callable な型が、`unique symbol` の nominal brand を持って�
 viewer・extension・host に、server 側の重い効果型を持ち込むこと。
 
 ### 行動
-副作用を、環境、AbortSignal、wall-clock の絶対期限を受け ResultAsync を返す実行用の関数リテラルにする。
+副作用を、環境、AbortSignal、wall-clock の絶対期限を受け AsyncResult を返す実行用の関数リテラルにする。
 Effect の callable な型へ `unique symbol` の brand を加える。
 Effect の brand は、`deferEffect` の実装内だけで構築する。
 TypeScript compiler API による AST 構造検査で、brand の値参照と Effect への type assertion を `deferEffect` の実装内へ限定する。
@@ -73,11 +73,11 @@ const user = fetchUser(id);
 ```typescript
 const effectBrand: unique symbol = Symbol("Effect");
 type Effect<Env, E, A> = {
-  (env: Env, signal: AbortSignal, deadlineAt: number): ResultAsync<A, E>;
+  (env: Env, signal: AbortSignal, deadlineAt: number): AsyncResult<A, E>;
   readonly [effectBrand]: true;
 };
 const deferEffect = <Env, E, A>(
-  run: (env: Env, signal: AbortSignal, deadlineAt: number) => ResultAsync<A, E>,
+  run: (env: Env, signal: AbortSignal, deadlineAt: number) => AsyncResult<A, E>,
 ): Effect<Env, E, A> => {
   const effect = (env: Env, signal: AbortSignal, deadlineAt: number) =>
     run(env, signal, deadlineAt);
@@ -113,14 +113,14 @@ export const loadUser = (userId: UserId): Effect<HasUsers, LoadError, User> =>
 ## 想定内失敗を Result で返す
 
 ### 要求
-想定された失敗は neverthrow の Result・ResultAsync で返し、error は判別子つきの union で分類する。
+想定された失敗は ts-results-es の Result・AsyncResult で返し、error は判別子つきの union で分類する。
 
 ### 根拠
 想定された失敗を Result にすれば、失敗が型に現れ、呼び出し側が扱いを強制される。
 error を判別子つきの union にすれば、失敗の種別を網羅で扱える。
 
 ### 完了条件
-想定された失敗が、Result・ResultAsync で返されている。
+想定された失敗が、Result・AsyncResult で返されている。
 error が、判別子つきの union で分類されている。
 
 ### 禁止事項
@@ -128,7 +128,7 @@ error が、判別子つきの union で分類されている。
 error を、種別の判別できない単一の型で表すこと。
 
 ### 行動
-想定された失敗を Result・ResultAsync にし、error を判別子つきの union で分類する。
+想定された失敗を Result・AsyncResult にし、error を判別子つきの union で分類する。
 
 ### 例
 想定内失敗を throw すると型に現れず、呼び出し側の捕捉も強制されない。
@@ -141,42 +141,52 @@ async function find(id: Id): Promise<User> { throw new Error("not found"); }
 
 ```typescript
 type FindError = { kind: "notFound" } | { kind: "unavailable" };
-function find(id: Id): ResultAsync<User, FindError> { /* ... */ }
+function find(id: Id): AsyncResult<User, FindError> { /* ... */ }
 ```
 
-## 非同期 API の送出を ResultAsync へ変換する
+## 非同期 API の送出を AsyncResult へ変換する
 
 ### 要求
-Promise を返し、Promise を返す前にも同期で throw し得る API は、呼出式を関数リテラルに入れて `ResultAsync.fromThrowable` で受ける。
-`ResultAsync.fromThrowable` が返す関数を呼び、同期の throw と Promise の rejection を同じ一箇所で変換する。
+Promise を返し、Promise を返す前にも同期で throw し得る API は、呼出式を関数リテラルに入れて `Result.wrapAsync` へ渡す。
+`Result.wrapAsync` が返す Promise へ `mapErr` を繋ぎ、同期の throw と Promise の rejection を同じ一箇所で変換する。
+その Promise を `new AsyncResult` で包み、AsyncResult として返す。
+`Result.wrapAsync` の error の型引数は `unknown` のままにし、判別子つきの error は `mapErr` だけが与える。
 想定された失敗だけを error mapper で判別子つきの error へ写し、回復できない欠陥は再 throw する。
 取り消しの AbortError は error へ写さず再 throw し、境界の殻が取り消しとして扱う。
 
 ### 根拠
-`ResultAsync.fromPromise(operation(), mapper)` は `operation()` を先に評価するため、Promise を返す前の同期の throw を捕捉しない。
-`ResultAsync.fromThrowable` は関数の呼出しを内側で行い、同期の throw と返された Promise の rejection の両方を ResultAsync の error mapper へ渡す。
+`Result.wrapAsync` は関数リテラルの呼出しを内側で行い、同期の throw と返された Promise の rejection の両方を同じ Err へ集める。
+呼出式を関数リテラルの外で評価すると、Promise を返す前の同期の throw が変換境界を抜ける。
+`mapErr` は Err のときだけ mapper を呼ぶので、成功値は素通りし、失敗だけが判別子つきの error になる。
+mapper が再送出した欠陥は包んだ Promise の rejection になり、AsyncResult を待つ呼出側へ元の error のまま届く。
+`Result.wrapAsync` は捕捉した値を error の型引数へ無検査で当てるため、`unknown` 以外を与えると型が実体と食い違う。
 想定された失敗だけを error にすれば、欠陥と取り消しを業務上の失敗として回復しない。
 
 ### 完了条件
-Promise を返す境界 API の呼出式が、`ResultAsync.fromThrowable` に渡す関数リテラルの内側にある。
+Promise を返す境界 API の呼出式が、`Result.wrapAsync` に渡す関数リテラルの内側にある。
 同期の throw と Promise の rejection が、同じ error mapper で想定された失敗へ変換されている。
-`ResultAsync.fromThrowable` が返した関数が呼ばれ、ResultAsync が返されている。
-回復できない欠陥と AbortError が、ResultAsync の error に混ざらず再 throw されている。
+`Result.wrapAsync` の結果に `mapErr` が繋がり、`new AsyncResult` で包まれた AsyncResult が返されている。
+`Result.wrapAsync` の error の型引数が `unknown` である。
+回復できない欠陥と AbortError が、AsyncResult の error に混ざらず元の error のまま再 throw されている。
 
 ### 禁止事項
-同期で throw し得る関数の呼出結果を、`ResultAsync.fromPromise` の第一引数へ直接渡すこと。
-`ResultAsync.fromThrowable` が返す関数を呼ばず、関数自体を ResultAsync とみなすこと。
+境界 API の呼出式を、`Result.wrapAsync` の関数リテラルの外で評価すること。
+`Result.wrapAsync` の結果に `mapErr` を繋がず、`unknown` の error を持つ Result を境界の外へ出すこと。
+`Result.wrapAsync` の error の型引数に、`unknown` 以外を与えること。
 回復できない欠陥または AbortError を、想定された失敗の error へ変換すること。
 
 ### 行動
-Promise を返す API 呼出しを、`ResultAsync.fromThrowable(() => operation(), mapper)()` の形で ResultAsync へ変換する。
+Promise を返す API 呼出しを、`new AsyncResult(Result.wrapAsync(() => operation()).then((received) => received.mapErr(mapper)))` の形で AsyncResult へ変換する。
 mapper は想定された失敗だけを変換し、欠陥と AbortError を再 throw する。
 
 ### 例
-呼出式を `ResultAsync.fromPromise` の引数に直接置くと、同期の throw が変換境界を抜ける。
+呼出式を関数リテラルの外で評価すると、同期の throw が変換境界を抜ける。
 
 ```typescript
-const unsafe = ResultAsync.fromPromise(operation(), mapper);
+const promise = operation();
+const unsafe = new AsyncResult(
+  Result.wrapAsync<Response, unknown>(() => promise).then((received) => received.mapErr(mapper)),
+);
 ```
 
 error mapper は想定内失敗だけを変換する。
@@ -194,46 +204,52 @@ const toRequestError = (error: unknown): RequestError => {
 関数リテラルの呼出しと `Promise` の完了を同じ境界で受ける。
 
 ```typescript
-const result = await ResultAsync.fromThrowable(
-  () => operation(),
-  toRequestError,
-)();
+const result = await new AsyncResult(
+  Result.wrapAsync<Response, unknown>(() => operation()).then(
+    (received) => received.mapErr(toRequestError),
+  ),
+);
 ```
 
 ## 同期 API の送出を Result へ変換する
 
 ### 要求
-同期で完了し throw し得る DOM API と postMessage は、呼出式を関数リテラルに入れて `Result.fromThrowable` で受ける。
-想定された失敗だけを error mapper で判別子つきの error へ写し、回復できない欠陥は再 throw する。
+同期で完了し throw し得る DOM API と postMessage は、呼出式を関数リテラルに入れて `Result.wrap` へ渡す。
+`Result.wrap` が返す Result へ `mapErr` を繋ぎ、想定された失敗だけを判別子つきの error へ写す。
+`Result.wrap` の error の型引数は `unknown` のままにする。
+回復できない欠陥は再 throw する。
 
 ### 根拠
-同期 API は Promise を返さないので、ResultAsync で非同期の形へ変える必要がない。
-`Result.fromThrowable` が返す関数を呼べば、同期の戻り値と throw を Result の二経路へ変換できる。
+同期 API は Promise を返さないので、AsyncResult で非同期の形へ変える必要がない。
+`Result.wrap` は関数リテラルを内側で呼び、同期の戻り値と throw を Result の二経路へ分ける。
+`mapErr` は Err のときだけ同期で mapper を呼ぶので、mapper が再送出した欠陥はその場で呼出側へ伝わる。
+`Result.wrap` は捕捉した値を error の型引数へ無検査で当てるため、`unknown` 以外を与えると型が実体と食い違う。
 同期と非同期の境界を分けると、戻り値の実体と検査する送出経路が一致する。
 
 ### 完了条件
-throw し得る同期 DOM API と postMessage の呼出式が、`Result.fromThrowable` に渡す関数リテラルの内側にある。
-`Result.fromThrowable` が返した関数が呼ばれ、Result が返されている。
-想定された失敗だけが Result の error へ変換され、回復できない欠陥が再 throw されている。
+throw し得る同期 DOM API と postMessage の呼出式が、`Result.wrap` に渡す関数リテラルの内側にある。
+`Result.wrap` の結果に `mapErr` が繋がり、判別子つきの error を持つ Result が返されている。
+`Result.wrap` の error の型引数が `unknown` である。
+想定された失敗だけが Result の error へ変換され、回復できない欠陥が元の error のまま再 throw されている。
 
 ### 禁止事項
-同期 DOM API または postMessage を、`ResultAsync.fromPromise` で受けること。
+同期 DOM API または postMessage を、`Result.wrapAsync` で受けること。
 同期 API を Promise で包み、同期の throw の変換を非同期境界へ先送りすること。
+`Result.wrap` の結果に `mapErr` を繋がず、`unknown` の error を持つ Result を境界の外へ出すこと。
+`Result.wrap` の error の型引数に、`unknown` 以外を与えること。
 回復できない欠陥を、想定された失敗の error へ変換すること。
 
 ### 行動
-同期 API 呼出しを、`Result.fromThrowable(() => operation(), mapper)()` の形で Result へ変換する。
+同期 API 呼出しを、`Result.wrap(() => operation()).mapErr(mapper)` の形で Result へ変換する。
 DOM API と postMessage の mapper は想定された DOMException だけを変換し、それ以外を再 throw する。
 
 ### 例
 ```typescript
-const element = Result.fromThrowable(
+const element = Result.wrap<Element | null, unknown>(
   () => document.querySelector(selector),
-  toSelectorError,
-)();
+).mapErr(toSelectorError);
 
-const posted = Result.fromThrowable(
+const posted = Result.wrap<void, unknown>(
   () => targetWindow.postMessage(message, targetOrigin),
-  toPostMessageError,
-)();
+).mapErr(toPostMessageError);
 ```

@@ -52,7 +52,7 @@ type Email = v.InferOutput<typeof EmailSchema>;
 type EmailError = { kind: "invalidEmail" };
 function toEmail(value: string): Result<Email, EmailError> {
   const result = v.safeParse(EmailSchema, value);
-  return result.success ? ok(result.output) : err({ kind: "invalidEmail" });
+  return result.success ? Ok(result.output) : Err({ kind: "invalidEmail" });
 }
 ```
 
@@ -99,7 +99,7 @@ const UserSchema = v.object({ email: EmailSchema });
 type User = v.InferOutput<typeof UserSchema>;
 const raw: unknown = await response.json();
 const result = v.safeParse(UserSchema, raw);
-if (!result.success) return err(result.issues);
+if (!result.success) return Err(result.issues);
 const user = result.output;
 ```
 
@@ -142,7 +142,7 @@ status と problem+json の組を operation の契約 schema で parse する。
 応答 status の範囲だけで分類すると、契約に無い応答まで想定された失敗に変わる。
 
 ```typescript
-if (response.status >= 400 && response.status < 500) return err(await response.json());
+if (response.status >= 400 && response.status < 500) return Err(await response.json());
 ```
 
 status と body の組を operation 契約で検証し、宣言された failure だけを返す。
@@ -151,5 +151,5 @@ status と body の組を operation 契約で検証し、宣言された failure
 const raw: unknown = { status: response.status, body: await response.json() };
 const result = v.safeParse(PlaceOrderErrorResponseSchema, raw);
 if (!result.success) throw new ContractViolation(result.issues);
-return err(placeOrderFailureMapper(result.output));
+return Err(placeOrderFailureMapper(result.output));
 ```
