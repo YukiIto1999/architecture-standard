@@ -31,7 +31,7 @@
 空配列を許す型で受けると、失敗が型に現れない部分関数になる。
 
 ```ts
-function head<T>(xs: T[]): T { if (xs.length === 0) throw Error("empty"); return xs[0]; }
+function head<T>(xs: T[]): T { if (xs.length === 0) throw Error("empty"); return xs[0]!; }
 ```
 
 引数を空でない配列の型へ狭めれば、すべての入力で先頭要素を返せる。
