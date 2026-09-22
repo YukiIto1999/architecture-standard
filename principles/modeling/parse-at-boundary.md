@@ -46,4 +46,4 @@ send(email);
 ```
 
 検証の失敗は、送出でなく値として返す。
-失敗しうる変換の連なりの形は、concerns の [effect](../../concerns/effect/README.md) が具象化する。
+失敗しうる変換の連なりの形は、concerns の [effect](../../concerns/effect/README.md) が定める。
