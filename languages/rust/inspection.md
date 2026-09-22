@@ -122,12 +122,14 @@ crate ルートに `#![deny(missing_docs)]` を置き、`pub` な要素のドキ
 非公開の要素は `clippy::missing_docs_in_private_items` を deny にし、ドキュメントコメントの欠落を検出する。
 `# Errors`・`# Panics`・`# Safety` の節の欠落は、`clippy::missing_errors_doc`・`clippy::missing_panics_doc`・`clippy::missing_safety_doc` を deny にして検出する。
 最初の一行が [conventions](./conventions.md) の体裁(一行の体言止め・句読点なし)を満たしているかは、構造検査で確かめる。
+非公開要素の `# Errors` と `# Panics` の節の有無は、syn の構造検査で確かめる。
 ドキュメントコメントが、公開要素では可視境界の利用側への外部契約を、非公開要素では同一境界内の呼び出し側への内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致しているかは、レビューで確かめる。
 
 ### 根拠
 missing_docs は rustc 組み込みの allow-by-default の lint で、deny にしなければ欠落が検出されない。
 missing_docs は `pub` な要素だけを対象にし、非公開の要素のドキュメントコメントの欠落は検出しないので、`clippy::missing_docs_in_private_items` を別に deny にして非公開の要素を埋める。
 clippy の missing_errors_doc・missing_panics_doc は Result を返す・panic しうる `pub fn` に節の記述を求め、missing_safety_doc は `pub unsafe fn` に `# Safety` を求めるので、conventions が要求する節の網羅を公開要素の範囲で機械検査に載せられる。
+clippy の節の lint は公開要素だけを見るため、非公開要素の節は syn が取得する signature と属性から確かめる。
 最初の一行の体言止めと句読点の有無は構造として判定できるため、構造検査へ載せられる。
 可視性に応じた外部契約または内部契約を述べ、名前や実装の言い換えでなく、統一した語彙に一致しているかの判断は意味を読む必要があり、機械化できない。
 
@@ -135,6 +137,7 @@ clippy の missing_errors_doc・missing_panics_doc は Result を返す・panic 
 crate ルートに `#![deny(missing_docs)]` があり、`pub` な要素のドキュメントコメントの欠落がビルドの失敗になっている。
 非公開の要素のドキュメントコメントの欠落が、`clippy::missing_docs_in_private_items` で検出されている。
 公開要素の `# Errors`・`# Panics`・`# Safety` の欠落が、clippy の missing_errors_doc・missing_panics_doc・missing_safety_doc で検出されている。
+非公開要素の `# Errors` と `# Panics` の節の欠落が、構造検査で検出されている。
 最初の一行の体裁が、構造検査で確かめられている。
 ドキュメントコメントが、公開要素では外部契約を、非公開要素では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致していることが、レビューで確かめられている。
 
@@ -145,7 +148,7 @@ crate ルートに `#![deny(missing_docs)]` があり、`pub` な要素のドキ
 ### 行動
 crate ルートに `#![deny(missing_docs)]` を置く。
 `[workspace.lints.clippy]` に `missing_docs_in_private_items`・`missing_errors_doc`・`missing_panics_doc`・`missing_safety_doc` を deny で設定する。
-最初の一行の体裁を、構造検査で確かめる。
+最初の一行の体裁と、非公開要素の節の有無を、構造検査で確かめる。
 ドキュメントコメントが、公開要素では外部契約を、非公開要素では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致していることをレビューする。
 
 ## 型消去の cast allowlist
@@ -192,14 +195,14 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` から得た実際の edge と照合し、runtime 成果物への build・test edge 混入を失敗にする) |
 | syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(rustc・clippy・SonarQube の設定と診断を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
-| inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、統一した語彙) |
+| inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | formation | 業務の値を型に封じる | 型(newtype・非公開フィールド・Rust の可視性機構) |
 | formation | 不正な状態を構築できなくする | 型(enum・網羅 match・コンパイラの網羅性検査) |
 | formation | 不変の束縛と共有参照を既定にする | 型(所有権・不変束縛・共有参照・排他借用) |
 | formation | 意味と単位を型で区別する | 型(newtype) |
 | formation | 生成と検証の macro を libs の proc-macro crate に分ける | 構造検査(proc-macro crate 境界)+型(proc-macro crate type の compiler 制約) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(rustfmt --check、rustc の non_snake_case 系 lint) |
-| conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、統一した語彙) |
+| conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(命名照合) |
 | cargo-llvm-cov | カバレッジ | 計測(stable toolchain の `cargo llvm-cov nextest` が region と line を数え、`--fail-under-regions` と `--fail-under-lines` を与えた終了値で project 記録の下限を検証入口で判定し、`--json` の出力を記録に残す) |
 | serde | 境界で一度だけ parse してドメイン型へ移す | 型(TryFrom)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
