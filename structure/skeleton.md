@@ -31,7 +31,7 @@ surfaces は、対話様式というアクターの軸で束ねており、技�
 
 上は、実行時とビルドのコード境界の最大構成である。
 core・contracts・tests は、常に置く。
-contracts は canonical を常に持ち、http・protocol・generated は通信の関心があるときに置く。
+contracts は canonical を常に持ち、http・protocol は通信の関心があるときに、generated は canonical の契約を code から使うときに置く。
 server・console・worker・viewer・extension の surface は、surfaces の直下に、対応する関心があるときに置く。
 runtimes・deploy は、対応する関心があるときに置く。
 libs は、対応する機構があるときに置く。
