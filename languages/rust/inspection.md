@@ -179,6 +179,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
 標準 repository の verifier は、ecosystem の全ファイルの規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
+検証手段は、型・構造検査・analyzer/lint・計測・mutation・runner 検査・artifact 検査・実行テスト・レビューの語で書き、複数の手段は + で連ねる。
+レビューは、括弧に判断の対象を書く。
 
 | ファイル | 規律 | 検証手段 |
 |---|---|---|
@@ -207,17 +209,17 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | connection | 失敗を Result に、欠陥を panic にする | analyzer/lint(clippy unwrap_used・expect_used deny)+型(Result) |
 | connection | 要求する依存を能力の trait bound で型に出す | 型(trait bound) |
 | connection | port を trait で宣言する | 型(trait)+構造検査(依存方向) |
-| connection | 配線を組立点に置き、境界で実行する | 構造検査(composition root 外の具象生成の検出)+レビュー |
+| connection | 配線を組立点に置き、境界で実行する | 構造検査(composition root 外の具象生成の検出)+レビュー(組立点に置く依存の粒度の判断) |
 | sqlx | 型付き SQL | 型/実行テスト(sqlx の `query!` コンパイル時検証・検証入口の offline 照合) |
 | sqlx | 並行更新の表面 | 実行テスト(結合テストでの競合検出) |
 | sqlx | 書き込みパス | 構造検査(store が transaction の begin・commit を持たないことの検査) |
 | sqlx | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証済み actor、匿名の安定した opaque scope、logical system actor の分離、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
 | sqlx | durable inbox | 構造検査(scope・event ID の複合一意制約)+実行テスト(payload commit 前後の停止と upstream delivery ack、処理結果・処理済み記録 commit 前後の停止と inbox processing completion、前段の source 再配送、後段の item 再処理、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視出力) |
-| redis | 一時データ | 構造検査(DB と Valkey のクレート分離)+レビュー |
+| redis | 一時データ | 構造検査(DB と Valkey のクレート分離)+レビュー(一時データとして扱える範囲の判断) |
 | tokio | runtime | 構造検査(Cargo 依存の単一 runtime 検査) |
 | tokio | 構造化並行 | 構造検査(Semaphore の permit 必須を並行 job task に限定し、単一の owner task を対象外にすること)+実行テスト(並行 job task が Semaphore の permit 数を越えて走らないこと、permit 待ち中の CancellationToken 取消では permit を取得しないこと、業務の Err と JoinError のどちらでも JoinSet::shutdown が残りを取り消して drain すること、permit を持たない単一の owner task が親の JoinSet へ合流すること)+レビュー(全 task の scope 所属) |
 | tokio-util | 取り消し | 構造検査(request、message、job の境界より内側にある全 async API が同じ `Deadline` と CancellationToken を受け取り、`Deadline` の生成を境界へ限定し、各 hop の局所 timeout が `deadline.remaining(clock.now())` から作られ、下流へ相対値でなく元の `Deadline` が渡ることを検査)+実行テスト(複数 hop で待っても時間枠が引き直されず、局所 timeout が子の CancellationToken を cancel すること、job task と run_blocking の permit 待ち中の親取消で即座に終了し permit を取得しないこと)+レビュー(cancellation safety の判断) |
-| tokio | ブロッキング | analyzer/lint(clippy::disallowed_methods で wrapper 外の直接呼び出しを拒否)+構造検査(許可する共通 wrapper の限定、run_blocking の permit 待ちで CancellationToken を先頭に置く biased な select! と permit 取得後の取消再確認)+実行テスト(permit 数の上限、permit 待ち中の親取消で即座に終了して permit を取得しないこと、permit 取得直後の取消で spawn_blocking を開始せず permit を解放すること)+計測テスト(最大実行時間)+レビュー(process 分離と chunk の停止点) |
+| tokio | ブロッキング | analyzer/lint(clippy::disallowed_methods で wrapper 外の直接呼び出しを拒否)+構造検査(許可する共通 wrapper の限定、run_blocking の permit 待ちで CancellationToken を先頭に置く biased な select! と permit 取得後の取消再確認)+実行テスト(permit 数の上限、permit 待ち中の親取消で即座に終了して permit を取得しないこと、permit 取得直後の取消で spawn_blocking を開始せず permit を解放すること)+計測(最大実行時間)+レビュー(process 分離と chunk の停止点) |
 | tokio | 共有状態 | 構造検査(bounded mpsc と単一所有 task)+レビュー(更新経路の単一性) |
 | coordination | 資源の解放 | 型(Drop) |
 | axum | server | 構造検査(認証 layer の位置と core 公開 API への principal・token・claim 型の流入禁止)+実行テスト(検証済み principal から actor への写像、actor と検証済み入力による core 公開 API 呼出、IntoResponse と CatchPanicLayer の応答、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー |
@@ -228,7 +230,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | inspection | 型消去の cast allowlist | 構造検査(reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | tauri | desktop と mobile の host | レビュー |
 | tauri | desktop の自動更新 | 構造検査(updater 設定の公開鍵・`bundle.createUpdaterArtifacts`・TLS endpoint・非 HTTPS 設定なしの照合)+artifact 検査(updater bundle と signature の存在と配布を照合し、設定した公開鍵で signature が bundle を検証できることを確認)+レビュー(Cosign は release 成果物の署名と provenance だけを扱い、updater signature と混同しないこと) |
-| tower-lsp-server | extension の接続 | 型(tower-lsp-server の LanguageServer 実装と custom method)+レビュー |
+| tower-lsp-server | extension の接続 | 型(tower-lsp-server の LanguageServer 実装と custom method)+レビュー(custom method が公開面を広げていないことの判断) |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
 | connection | FFI を安全な境界に閉じる | analyzer/lint(unsafe_code の deny と allow の所在)+構造検査(FFI module 外の unsafe 不在)+レビュー(不変条件のコメント) |
 
