@@ -4,6 +4,7 @@
 translation は、Rust で外部表現とドメイン型の変換を扱う実現軸である。
 principles の [separation](../../principles/separation/README.md) が定める境界での変換と、concerns の [types](../../concerns/types/README.md) が定める境界での parse・[security](../../concerns/security/README.md) が定める境界の不信・[effect](../../concerns/effect/README.md) が定めるエラーモデルを、Rust の機構で満たす。
 境界での parse の実現は [serde](./serde.md) が持つ。
+契約生成と drift 検査の規律は [progenitor](./progenitor.md) が持つ。
 
 ## 終了を surface の境界表現へ写す
 
@@ -47,25 +48,6 @@ match run(input).await {
     Err(failure) => surface.publish_expected_failure(failure),
 }
 ```
-
-## 生成した契約を使い、drift を検査の gate にする
-
-### 要求
-contracts/generated の Rust の client と型は、[tools/build/typespec](../../tools/build/typespec.md) が採用した経路で生成する。
-
-### 根拠
-契約を手で書き写すと、契約と実装がずれる。
-契約から生成すれば、client と型が契約に従う。
-生成経路を tools の採用へ一本化すれば、言語文書は生成物の使い方だけを所有できる。
-
-### 完了条件
-client と型が、TypeSpec から `@typespec/openapi3` を経て openapi-generator の rust generator で生成されている。
-
-### 禁止事項
-契約から生成する client と型を手で書き写すこと、または tools と別の generator を選ぶこと。
-
-### 行動
-TypeSpec から `@typespec/openapi3` で OpenAPI を出力し、openapi-generator の rust generator(library=reqwest)で client と型を生成する。
 
 ## 参照
 境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect/README.md)、未知フィールドの残存と収縮は [evolution](../../principles/evolution/README.md)、契約の生成物の置き場と drift 検査は [structure/contracts/generated](../../structure/contracts/generated.md)、契約の置き場は [structure/contracts](../../structure/contracts/layout.md) に従う。

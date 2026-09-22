@@ -175,7 +175,7 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | cargo-llvm-cov | カバレッジ | 計測(stable toolchain の `cargo llvm-cov nextest` が region と line を数え、`--fail-under-regions` と `--fail-under-lines` を与えた終了値で project 記録の下限を検証入口で判定し、`--json` の出力を記録に残す) |
 | serde | 境界で一度だけ parse してドメイン型へ移す | 型(TryFrom)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | translation | 終了を surface の境界表現へ写す | 実行テスト(surface ごとの成功・想定内失敗・欠陥・取り消しの写像) |
-| translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
+| progenitor | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
 | connection | 効果を言語の効果型で表す | 型(Future・Result)+レビュー(domain の同期性の判断) |
 | connection | 失敗を Result に、欠陥を panic にする | analyzer/lint(clippy unwrap_used・expect_used deny)+型(Result) |
 | connection | 要求する依存を能力の trait bound で型に出す | 型(trait bound) |
