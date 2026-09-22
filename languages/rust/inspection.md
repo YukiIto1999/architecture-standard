@@ -8,7 +8,8 @@ principles の [verification](../../principles/verification/README.md) が定め
 
 ### 要求
 依存方向は workspace の crate 依存で強制し、crate 依存に乗らない規則は root の tests/ に置く構造検査で検証する。
-検査は import の走査で、層の参照禁止・公開面・配置の文法を確かめる。
+検査は syn の構文木を走査する import の照合で、層の参照禁止・公開面・配置の文法を確かめる。
+phase ごとの実際の edge は、`cargo metadata` の `dep_kinds` が返す normal・dev・build から得る。
 root の構造検査は、skeleton の実行時表と build・test-only 表から runtime・build・test phase の許可 edge を生成する。
 root の構造検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
 
@@ -29,7 +30,7 @@ build または test の edge が runtime の成果物へ混入した場合に�
 ### 行動
 skeleton の境界を workspace の crate で分け、依存方向を Cargo の依存で強制する。
 残りの規則を root の tests/ の構造検査で確かめる。
-skeleton の両表を読み、runtime・build・test phase の許可 edge を生成して実際の crate 依存と照合する。
+skeleton の両表を読み、runtime・build・test phase の許可 edge を生成して、`cargo metadata` の `dep_kinds` から得た実際の crate 依存と照合する。
 runtime の成果物を構成する依存 closure に build または test の edge があれば失敗させる。
 
 ## 予防
@@ -161,7 +162,8 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | cucumber | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber を実装と同じ検証入口で実行) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`cargo nextest list --message-format json` の binary と test name の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。doctest と cucumber scenario は各実行入口の native ID を同じ集合へ加える) |
 | cargo-mutants | 有効性 | mutation(cargo-mutants の未検出 mutant 0件 gate と対象件数0の失敗) |
-| inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
+| inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` から得た実際の edge と照合し、runtime 成果物への build・test edge 混入を失敗にする) |
+| syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(rustc・clippy・SonarQube の設定と診断を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
 | inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、統一した語彙) |
 | formation | 業務の値を型に封じる | 型(newtype・非公開フィールド・Rust の可視性機構) |

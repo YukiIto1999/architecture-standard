@@ -43,6 +43,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [serde](./serde.md) | 値を wire 形式と相互に直列化・逆直列化する機構である | Rust は serde である |
 | [sqlx-cli](./sqlx-cli.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | Rust は sqlx-cli である |
 | [sqlx](./sqlx.md) | SQL を型で扱いながら書く永続化アクセス層である | Rust は sqlx である |
+| [syn](./syn.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | Rust は syn(`parsing` と `full` の feature)である |
 | [tauri](./tauri.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が Rust のときは desktop・mobile ともに Tauri であり、webview の runtime は wry の runtime crate を選ぶ |
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | Rust は testcontainers である |
 | [thiserror](./thiserror.md) | 責務の単位でエラー型を宣言し表示と変換を導出する機構である | Rust は thiserror である |
@@ -61,6 +62,6 @@ rust の言語としての採用と、実現規律、採用物を置く。
 |---|---|---|
 | viewer・extension・host の効果の表現 | 言語機構(Future・Result)で表し、外部ライブラリを採らない | [connection](./connection.md) |
 | API の禁止 | clippy の disallowed_methods で満たし、専用の道具を置かない | [clippy](./clippy.md) |
-| 構造検査 | root の tests/ に置く自作の構造検査で満たし、道具を置かない | [inspection](./inspection.md) |
+| crate 依存の phase の区別 | `cargo metadata` の `dep_kinds` が返す normal・dev・build で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | 未使用コードの検出 | コンパイラと lint の到達可能性に基づく検出で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | UI の accessibility 検査 | viewer を TypeScript に委ねるため採用を持たない | — |
