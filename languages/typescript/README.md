@@ -26,7 +26,6 @@ typescript の言語としての採用と、実現規律、採用物を置く。
 |---|---|---|
 | [axe-core-playwright](./axe-core-playwright.md) | UI の E2E で、自動判定できる accessibility の違反を検出する道具である | TypeScript は @axe-core/playwright である |
 | [cucumber-js](./cucumber-js.md) | 業務語彙の executable spec を実行する道具である | TypeScript は cucumber-js である |
-| [dependency-cruiser](./dependency-cruiser.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | TypeScript は依存方向に dependency-cruiser である |
 | [fast-check](./fast-check.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | TypeScript は fast-check である |
 | [knip](./knip.md) | エントリーポイントからの到達可能性で、未使用のファイル・エクスポート・依存を見つける道具である | TypeScript は knip である |
 | [kobalte](./kobalte.md) | 見た目を持たない振る舞いだけの UI component を提供する機構である | @kobalte/core の SolidJS 2.0 対応版である |
