@@ -232,7 +232,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | apalis | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(Data extractor による依存注入の判断) |
 | inspection | 型消去の cast allowlist | 構造検査(reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | tauri | desktop と mobile の host | 構造検査(Cargo 依存の単一 webview runtime crate、IPC の command の引数に actor と資格情報の型が現れないこと)+実行テスト(認証 adapter の資格情報から actor への写像、actor と検証済み入力による core 公開 API の呼出、frontend 由来の actor と資格情報の拒否)+レビュー(業務の secret と判断が frontend に出ていないことの判断) |
-| tauri | desktop の自動更新 | 構造検査(updater 設定の公開鍵・`bundle.createUpdaterArtifacts`・TLS endpoint・非 HTTPS 設定なしの照合)+artifact 検査(updater bundle と signature の存在と配布を照合し、設定した公開鍵で signature が bundle を検証できることを確認)+レビュー(Cosign は release 成果物の署名と provenance だけを扱い、updater signature と混同しないこと) |
+| tauri | desktop の自動更新 | 構造検査(updater 設定の公開鍵・`bundle.createUpdaterArtifacts`・TLS endpoint・非 HTTPS 設定なしの照合)+artifact 検査(updater bundle と signature の存在と配布を照合し、設定した公開鍵で signature が bundle を検証できることを確認)+実行テスト(設定した公開鍵を与えた updater が、正しい signature の bundle を受理し、signature の欠落と改竄した bundle を拒否すること)+レビュー(Cosign は release 成果物の署名と provenance だけを扱い、updater signature と混同しないことの判断) |
 | tower-lsp-server | extension の接続 | 型(tower-lsp-server の LanguageServer 実装と custom method)+レビュー(custom method が公開面を広げていないことの判断) |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
 | connection | FFI を安全な境界に閉じる | analyzer/lint(unsafe_code の deny と allow の所在)+構造検査(FFI module 外の unsafe 不在)+レビュー(不変条件のコメント) |
