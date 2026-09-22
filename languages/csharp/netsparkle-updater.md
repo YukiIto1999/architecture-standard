@@ -30,6 +30,7 @@ production の配線に、署名検証を迂回する `IAppCastHandler` が存�
 更新 feed と更新 package が project 管理の HTTPS 配布先から取得されている。
 更新署名の秘密鍵が desktop と配布する成果物に含まれていない。
 成果物の署名と provenance が [tools/build/cosign](../../tools/build/cosign.md) の定める検証を満たしている。
+成果物の署名と provenance が、更新署名と混同されずに扱われている。
 
 ### 禁止事項
 `SecurityMode.Unsafe` を使うこと。
