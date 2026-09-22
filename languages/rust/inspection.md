@@ -45,6 +45,7 @@ excessive_nesting は既定のしきい値を持たないため、project が cl
 識別子の汎用名は、clippy.toml の disallowed-names で禁止する。
 環境変数の直読は、clippy.toml の disallowed-methods で std::env::var と std::env::var_os を禁止し、設定の読み込みを設定の parse を持つ組立点だけに許可する。
 標準出力への自由文出力は、print_stdout・print_stderr の deny で禁止し、console surface の出力層だけに `#[allow]` を付ける。
+未使用の要素と未使用の crate 依存は、rustc の dead_code と unused_crate_dependencies の deny で検出する。
 unsafe の使用は `[workspace.lints.rust]` の `unsafe_code = "deny"` で既定禁止にする。
 unsafe を要する project は理由を決定の記録に残し、`#[allow(unsafe_code)]` を unsafe を含む最小の item に付ける。
 同じ理由を共有する複数の item に限り、それらを収める最小の module に `#[allow(unsafe_code)]` を付ける。
@@ -194,7 +195,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | cargo-mutants | 有効性 | mutation(cargo-mutants の未検出 mutant 0件 gate、変異生成0件の失敗、baseline のテストが走らない実行の失敗) |
 | inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` から得た実際の edge と照合し、runtime 成果物への build・test edge 混入を失敗にする) |
 | syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
-| inspection | 予防 | analyzer/lint(rustc・clippy・SonarQube の設定と診断を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
+| inspection | 予防 | analyzer/lint(rustc・clippy・SonarQube の設定と診断、未使用の要素と crate 依存の検出を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
 | inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | formation | 業務の値を型に封じる | 型(newtype・非公開フィールド・Rust の可視性機構) |
 | formation | 不正な状態を構築できなくする | 型(enum・網羅 match・コンパイラの網羅性検査) |

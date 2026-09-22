@@ -176,7 +176,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | testcontainers | 実依存 | 実行テスト(Testcontainers for .NET の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(TUnit `--list-tests` の tree node ID を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。Reqnroll scenario は同じ TUnit discovery の ID を使う) |
 | mutation-dotnet | 有効性 | mutation(mutation-dotnet の未検出 mutant 0件 gate、変異生成0件の失敗、テスト発見0件の失敗) |
 | archunit-net | 構造 | 構造検査(ArchUnitNET が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
-| sonaranalyzer-csharp | 予防 | analyzer/lint(SonarAnalyzer.CSharp・BannedApiAnalyzers・Roslyn analyzer の設定と診断を検証入口でエラー化) |
+| sonaranalyzer-csharp | 予防 | analyzer/lint(SonarAnalyzer.CSharp・BannedApiAnalyzers・Roslyn analyzer の設定と診断、未使用の要素と参照の検出を検証入口でエラー化) |
 | inspection | ドキュメントコメントの検査 | analyzer/lint(CS1591 と Roslyn analyzer)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | formation | 業務の値を型に封じる | 型(record・非公開 constructor・static factory) |
 | formation | 不正な状態を構築できなくする | 型(sealed record 階層)+analyzer(Roslyn suppressor・網羅の警告のエラー化)+構造検査(ArchUnitNET。階層外派生の検出) |

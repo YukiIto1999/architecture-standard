@@ -18,7 +18,7 @@ principles は、ソフトウェア設計におけるすべての判断の土台
 | 構成 | [separation](./separation/README.md) | 分割と依存。変更理由での分割、サブドメインと設計投資、コンテキスト間の関係、分類軸と粒度、関心の隠蔽、結合度、依存方向、副作用の隔離、正本の独立 |
 | 構成 | [modeling](./modeling/README.md) | 型と意味。業務意味の型封入、不正状態の排除、論理と物理の分離 |
 | 構成 | [data](./data/README.md) | データと状態。整合性と集約、事実と状態の分類、履歴の保全 |
-| 構成 | [construction](./construction/README.md) | 実装の構成。不変性、構造化プログラミング、パターンの統一 |
+| 構成 | [construction](./construction/README.md) | 実装の構成。不変性、全域関数、判断と集合の構造化、パターンの統一 |
 | 規律 | [requirements](./requirements/README.md) | 要件の確定。目的からの導出、根拠と決定状態、検証可能な定義 |
 | 規律 | [verification](./verification/README.md) | 検証。機械検証と実行可能な仕様、テストの設計と安全網、信頼性の確保 |
 | 規律 | [evolution](./evolution/README.md) | 変更の作法。段階的な変更、影響の波及制御、構造改善、決定の先送り |
@@ -37,7 +37,7 @@ principles は、ソフトウェア設計におけるすべての判断の土台
 | 外から観測できる振る舞い | テスト本体とテスト名 | [verification](./verification/README.md)、[naming](./naming/README.md) |
 | 公開宣言の外部契約、非公開宣言の内部契約 | ドキュメントコメント | [comment](./comment/README.md) |
 | 自然に見える実装を採らなかった理由 | 実装コメント | [comment](./comment/README.md) |
-| 変更を行う直接の目的 | コミットログ | [documentation](./documentation/README.md) |
+| 変更を行う直接の目的 | commit log | [documentation](./documentation/README.md) |
 | 構造に影響する判断の文脈、代替案、帰結 | 決定の記録 | [documentation](./documentation/README.md) |
 
 変更履歴や使われなくなった古いコードは、現在のソースコード内にコメントアウト等で残さず、版管理の履歴に委ねます。

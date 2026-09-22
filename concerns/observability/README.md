@@ -3,7 +3,7 @@
 ## 概要
 observability は、外部の出力から内部の状態を推し量れる状態を全系で統べる規律である。
 principles の [separation](../../principles/separation/README.md) が定める副作用の境界隔離を全系の観測として具象化し、未知の原因を運用しながら絞り込めるようにする。
-carrier の正本は [context-propagation](../context-propagation/README.md) であり、observability は trace と観測 event への付与を書く。
+trace と観測 event への付与の扱いは、[参照](#参照) が示す正本に従う。
 
 ## 規律
 

@@ -61,7 +61,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | 用途 | 満たし方 | 置き場 |
 |---|---|---|
 | viewer・extension・host の効果の表現 | 言語機構(Future・Result)で表し、外部ライブラリを採らない | [connection](./connection.md) |
-| API の禁止 | clippy の disallowed_methods で満たし、専用の道具を置かない | [clippy](./clippy.md) |
+| API の禁止 | clippy の disallowed_methods で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | crate 依存の phase の区別 | `cargo metadata` の `dep_kinds` が返す normal・dev・build で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | 未使用コードの検出 | コンパイラと lint の到達可能性に基づく検出で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | UI の accessibility 検査 | viewer を TypeScript に委ねるため採用を持たない | — |
