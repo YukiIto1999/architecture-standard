@@ -4,6 +4,7 @@
 publication は、TypeScript で外部公開面と host を扱う実現軸である。
 principles の [separation](../../principles/separation/README.md) が定める境界と依存の向きと、concerns の [authorization](../../concerns/authorization/README.md) が定める入口での評価・[security](../../concerns/security/README.md) が定める攻撃面の最小化を、TypeScript の機構で満たす。
 surface ごとの規律は、[solidjs](./solidjs.md)・[tailwind](./tailwind.md)・[opentelemetry-js](./opentelemetry-js.md)・[vite](./vite.md)・[vscode](./vscode.md)・[vscode-jsonrpc](./vscode-jsonrpc.md) が持つ。
+browser の store へ置かない規律は [connection](./connection.md) が持つ。
 
 ## extension
 
@@ -63,70 +64,6 @@ package の公開面を exports で宣言し、内部の path を外へ出さな
 
 ```jsonc
 { "exports": { ".": "./dist/index.js", "./ports": "./dist/ports/index.js" } }
-```
-
-## 保存の禁止
-
-### 要求
-認証の token を localStorage・sessionStorage・メモリの store に置かない。
-API の呼び出しは、session cookie と、状態を変える要求の CSRF token の専用 header だけを送る。
-CSRF token は、専用 header で返すためだけに保持し、localStorage・sessionStorage に置かない。
-
-### 根拠
-localStorage・sessionStorage・メモリの store はいずれも JavaScript から読めるので、XSS で token が持ち出される。
-CSRF token は応答で受け取り header で返す設計なので JavaScript から扱うが、永続の保管に置くと有効な期間が session を越えて残る。
-Web BFF が token をブラウザへ公開しない理由と、CSRF の方式は [structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) に従う。
-
-### 完了条件
-認証の token が、localStorage・sessionStorage・メモリの store に置かれていない。
-API の呼び出しが、session cookie と CSRF token の専用 header だけを送っている。
-CSRF token が、localStorage・sessionStorage に置かれていない。
-
-### 禁止事項
-認証の token を、localStorage・sessionStorage・メモリの store に置くこと。
-CSRF token を、localStorage・sessionStorage に置くこと。
-
-### 行動
-認証の token をブラウザの store に置かず、API の呼び出しを session cookie と CSRF token の header だけにする。
-Web BFF の token・session・CSRF の規律は [structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) に従う。
-
-### 例
-token を web storage に置くと、XSS から読み取れる。
-
-```typescript
-localStorage.setItem("access_token", response.accessToken);
-```
-
-通信は branded Effect に遅延し、BFF adapter が session cookie と CSRF header を扱う。
-
-```typescript
-const submitLogin = (body: LoginBody): Effect<HasBff, LoginError, Session> =>
-  deferEffect((env, signal, deadlineAt) =>
-    new AsyncResult(
-      Result.wrapAsync<LoginResponse, unknown>(
-        () => env.bff.login(body, signal, deadlineAt),
-      ).then((received) => received.mapErr(toLoginError)),
-    ));
-const loginResult = await withDeadlineEffect(
-  env,
-  submitLogin(body),
-  deadlinePolicy.createAt(),
-  parentSignal,
-  resumeSource,
-);
-```
-
-以後の remote 読み出しも Effect を期限 wrapper から実行する。
-
-```typescript
-const session = createMemo(() =>
-  withDeadlineEffect(
-    env,
-    loadSession(),
-    deadlinePolicy.createAt(),
-    parentSignal,
-    resumeSource,
-  ));
 ```
 
 ## 参照

@@ -201,7 +201,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・境界の parse の単体テスト) |
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |
 | http-client-js | 生成した契約を使い、drift を検査の gate にする | 実行テスト(契約からの生成、再生成の差分、判別付き直和の判別子つき union と網羅の型検査、生成 client への transport の注入、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
-| translation | 生成型を型としてのみ使い、通信を port に通す | 構造検査(TypeScript compiler API。viewer からの生成 client の import と runtime の import の検出、生成 client の import を ui port の実装へ限定)+型(import type) |
+| connection | 生成型を型としてのみ使い、通信を port に通す | 構造検査(TypeScript compiler API。viewer からの生成 client の import と runtime の import の検出、生成 client の import を ui port の実装へ限定)+型(import type) |
 | ts-results-es | 効果を遅延した関数で表す | 構造検査(TypeScript compiler API。Effect が unique symbol の nominal brand を持ち、deferEffect だけが branded value を構築し、全ての公開 Effect factory に parameter initializer がなく、本体が実行用の関数リテラルを deferEffect へ直接渡すこと)+実行テスト(deferEffect の構築時は副作用0件で、返した Effect の呼出後にだけ開始すること)+型(Effect の nominal brand・環境・AbortSignal・wall-clock の絶対期限・AsyncResult のシグネチャ) |
 | ts-results-es | 想定内失敗を Result で返す | 型(ts-results-es の Result・判別子つき union) |
 | ts-results-es | 非同期 API の送出を AsyncResult へ変換する | 構造検査(TypeScript compiler API。設定した Promise を返す境界 API の呼出しを `Result.wrapAsync` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(関数呼出時の同期 throw と返した Promise の rejection を同じ mapper が Err にし、欠陥と AbortError は元の error のまま rejection になること) |
@@ -210,7 +210,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | inspection | 型消去の cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | solidjs | 状態の機構 | レビュー(structure の分類に対応する remote/URL/横断/一時 の機構の選択) |
 | solidjs | remote の規律 | レビュー(local の横断 store への複製禁止の判断) |
-| publication | 保存の禁止 | analyzer/lint(oxlint の no-restricted-properties で localStorage・sessionStorage の直呼びを禁止) |
+| connection | 保存の禁止 | analyzer/lint(oxlint の no-restricted-properties で localStorage・sessionStorage の直呼びを禁止) |
 | vscode | extension の保持状態 | 型(state port・secret port)+レビュー(保持する状態の範囲と secret の扱いの判断) |
 | coordination | 非同期 | 構造検査(TypeScript compiler API。公開非同期 API の戻り型と、domain の関数に非同期が現れないことの照合)+レビュー(domain の純粋性の判断) |
 | coordination | 取り消し | 型(Effect 専用 withDeadlineEffect が AsyncResult<T, E &#124; DeadlineExceeded> を返すこと)+構造検査(TypeScript compiler API。設定に列挙した外部 I/O と待機の symbol と、callee expression の nominal brand または branded Effect への代入可能性で識別した下流 Effect を withDeadlineEffect の operation からだけ呼び、wrapper 内の window と document の直接参照を拒否すること)+実行テスト(host ごとの ResumeSource、wall-clock の絶対期限の伝播、非同期境界の前後と再開時の期限確認、購読解除後の判定、解決済み Err の保持と overrun 診断、期限 reason と同一または cause chain に持つ rejection の DeadlineExceeded Err 変換、wrapper 開始前から親取消と期限超過が同時に成立した場合に AbortSignal.any が選んだ親 reason の保持、別 defect の保持と期限超過診断、Ok 後の期限超過を DeadlineExceeded Err にすること、AbortSignal.timeout が active time の局所補助であること、親 signal と期限用 controller の AbortSignal.any 合成) |
