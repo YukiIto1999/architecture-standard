@@ -2,7 +2,7 @@
 
 用途は、配布した desktop の成果物を、署名を検証しながら自動で更新する機構である。
 採用は、C# は NetSparkleUpdater である。
-判断基準は、PhotinoX と組み合わせて Windows・macOS・Linux の成果物を採用している .NET の版から更新でき、Ed25519 の app cast と更新 package の署名を Strict で検証できることである。
+判断基準は、PhotinoX と組み合わせて [desktop](../../structure/runtimes/desktop/layout.md) が定める対象の OS の成果物を採用している .NET の版から更新でき、Ed25519 の app cast と更新 package の署名を Strict で検証できることである。
 撤回条件は、署名検証を必須にできなくなること、PhotinoX または採用している .NET の版の対象外となること、上流の保守停止、または同じ用途を満たす機構の出現であり、次の .NET の GA と上流の安定版到達を再評価のトリガーとする。
 
 ## desktop の自動更新
