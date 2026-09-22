@@ -218,7 +218,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | coordination | 後始末 | レビュー(onCleanup 登録漏れの判断) |
 | solidjs | viewer | レビュー(props の分割代入の禁止) |
 | opentelemetry-js | viewer の telemetry | 型(ui port の型)+レビュー(SDK の adapter への隔離の判断) |
-| tailwind | styling | レビュー |
+| tailwind | styling | 構造検査(design token の定義が `@theme` に限られることの照合)+レビュー(token の粒度と命名の判断) |
 | vite | viewer を載せる host の entry と build | レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
 | publication | extension | 型(port の interface) |
 | vscode | ide の host | 型(判別子つき union の schema・safeParse)+実行テスト(postMessage 受信の単体テスト) |
