@@ -188,7 +188,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | proptest | 性質 | 実行テスト(proptest の生成・縮小・stateful property と回帰 seed の再実行) |
 | cucumber | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber を実装と同じ検証入口で実行) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`cargo nextest list --message-format json` の binary と test name の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。doctest と cucumber scenario は各実行入口の native ID を同じ集合へ加える) |
-| cargo-mutants | 有効性 | mutation(cargo-mutants の未検出 mutant 0件 gate と対象件数0の失敗) |
+| cargo-mutants | 有効性 | mutation(cargo-mutants の未検出 mutant 0件 gate、変異生成0件の失敗、baseline のテストが走らない実行の失敗) |
 | inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` から得た実際の edge と照合し、runtime 成果物への build・test edge 混入を失敗にする) |
 | syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(rustc・clippy・SonarQube の設定と診断を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
