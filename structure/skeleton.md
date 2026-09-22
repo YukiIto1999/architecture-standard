@@ -109,7 +109,7 @@ build と test にだけ存在してよい root またぎ依存は、次の表�
 | root tests・各境界内の test package | libs の mechanism testing package |
 
 core と surface の公開 API は libs の型(Result・Effect)を運ぶため、それらを消費する境界は libs へも依存する。
-canonical operation を HTTP へ束ねる写像の正本は自己ホスト surface の routes であり、core を埋め込む runtime はそれを参照し、同じ写像を二重に作らない。
+canonical operation を HTTP へ束ねる写像の正本は contracts の http であり、自己ホスト surface の routes はその写像を実装する。core を埋め込む runtime は routes を参照し、同じ写像を二重に作らない。
 同梱起動は、起動する成果物への依存として実行時依存表で扱い、設定の path だけで表さない。
 実行時依存表と build・test-only 依存表が、root またぎ依存の機械検証の唯一の駆動元である。
 両表に無い参照元から参照先への root またぎ依存は、すべて禁止とする。
