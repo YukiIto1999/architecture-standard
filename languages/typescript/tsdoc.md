@@ -3,7 +3,7 @@
 用途は、ドキュメントコメントの存在、構文、宣言と tag の機械判定できる対応、最初の一行と句読点を検査する道具である。
 採用は、採用している TypeScript の構造検査で @typescript/typescript6 の compiler API と @microsoft/tsdoc を使う。
 判断基準は、comment の存在と構文、宣言と tag の対応、最初の一行と句読点を一律に検査し、違反をリポジトリの検証入口で止められることである。
-撤回条件は、判断基準を満たさなくなることであり、Roslyn、TypeScript compiler API、`@microsoft/tsdoc` の互換性の変化を再評価のトリガーとする。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止と、`@microsoft/tsdoc` と採用している TypeScript の compiler API の互換性の変化を再評価のトリガーとする。
 
 ## ドキュメントコメントの検査
 
