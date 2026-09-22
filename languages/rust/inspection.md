@@ -203,8 +203,8 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | tauri | desktop の自動更新 | 構造検査(updater 設定の公開鍵・`bundle.createUpdaterArtifacts`・TLS endpoint・非 HTTPS 設定なしの照合)+artifact 検査(updater bundle と signature の存在と配布を照合し、設定した公開鍵で signature が bundle を検証できることを確認)+レビュー(Cosign は release 成果物の署名と provenance だけを扱い、updater signature と混同しないこと) |
 | tower-lsp-server | extension の接続 | 型(tower-lsp-server の LanguageServer 実装と custom method)+レビュー |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
-
 | connection | FFI を安全な境界に閉じる | analyzer/lint(unsafe_code の deny と allow の所在)+構造検査(FFI module 外の unsafe 不在)+レビュー(不変条件のコメント) |
+
 ## 参照
 検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification/README.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。
