@@ -2,7 +2,7 @@
 
 用途は、被ホストの viewer と core を利用者の端末で動かす host である。
 採用は、core が C# のときは desktop は PhotinoX である。
-判断基準は、OS 内蔵の webview に同じ viewer を載せ、core を host の back-end に置き、採用している .NET の版を target し、web の host と同じ viewer の成果物を custom scheme でそのまま配信できることである。
+判断基準は、[desktop](../../structure/runtimes/desktop/layout.md) が定める対象の OS すべてで内蔵 webview に同じ viewer を載せ、core を host の back-end に置き、採用している .NET の版を target し、web の host と同じ viewer の成果物を custom scheme でそのまま配信できることである。
 撤回条件は、判断基準を満たさなくなることであり、webview と OS の対応状況の変化、保守の停止、採用している .NET の版を target しなくなること、保守が単独の保守者に依存する状態の継続、同じ判断基準を満たす複数保守者の機構の出現を再評価のトリガーとする。
 
 ## desktop の host

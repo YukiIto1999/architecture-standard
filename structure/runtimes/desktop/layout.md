@@ -5,6 +5,14 @@ viewer の ui port を native の API で実装する。
 viewer を起動する。
 desktop は [skeleton](../../skeleton.md) の依存と命名に従う。
 
+## 対象の OS
+
+desktop を持つ project は、対象の OS を [決定の記録](../../../principles/documentation/decision-records.md) へ明記する。
+対象の OS すべてで、同じ viewer と同じ core を動かす。
+OS ごとに viewer や core を分岐させず、差は adapters と composition に閉じる。
+対象の OS のいずれかで動かせない shell・bundler・更新の機構は、採らない。
+対象の OS を満たす shell・bundler・更新の機構は [languages](../../../languages/) が定める。
+
 ## フォルダ構成
 
 ```
