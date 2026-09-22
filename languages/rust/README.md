@@ -24,7 +24,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 
 | ファイル | 用途 | 採用 |
 |---|---|---|
-| [apalis](./apalis.md) | 背景処理と定期実行の daemon の骨格である | Rust は apalis であり、PostgreSQL を backend にした queue に限って使う |
+| [apalis](./apalis.md) | 背景処理と定期実行の daemon の骨格である | Rust は apalis と apalis-postgres であり、PostgreSQL を backend にした queue に限って使う |
 | [async-trait](./async-trait.md) | 実行時に差し替える非同期の port を動的ディスパッチで扱う機構である | Rust は async-trait である |
 | [axum](./axum.md) | HTTP の API を公開する surface の骨格である | Rust は axum である |
 | [cargo-llvm-cov](./cargo-llvm-cov.md) | テストが実行していない箇所を見つけるカバレッジ計測である | Rust は cargo-llvm-cov である |
@@ -43,7 +43,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [serde](./serde.md) | 値を wire 形式と相互に直列化・逆直列化する機構である | Rust は serde である |
 | [sqlx-cli](./sqlx-cli.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | Rust は sqlx-cli である |
 | [sqlx](./sqlx.md) | SQL を型で扱いながら書く永続化アクセス層である | Rust は sqlx である |
-| [tauri](./tauri.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が Rust のときは desktop・mobile ともに Tauri である |
+| [tauri](./tauri.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が Rust のときは desktop・mobile ともに Tauri であり、webview の runtime は wry の runtime crate を選ぶ |
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | Rust は testcontainers である |
 | [thiserror](./thiserror.md) | 責務の単位でエラー型を宣言し表示と変換を導出する機構である | Rust は thiserror である |
 | [tokio-util](./tokio-util.md) | 協調的な取り消しを、処理の木へ伝える token の機構である | Rust は tokio-util である |

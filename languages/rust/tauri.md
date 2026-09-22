@@ -1,14 +1,15 @@
 # Tauri
 
 用途は、被ホストの viewer と core を利用者の端末で動かす host である。
-採用は、core が Rust のときは desktop・mobile ともに Tauri である。
-判断基準は、[desktop](../../structure/runtimes/desktop/layout.md) が定める対象の OS すべてと mobile で内蔵 webview に同じ viewer を載せ、core を host の back-end に置けることである。
-撤回条件は、判断基準を満たさなくなることであり、webview と OS の対応状況の変化と、Tauri の次の系が機能の追加を終えて残る変更が不具合の修正に限られる段階へ達することを再評価のトリガーとする。
+採用は、core が Rust のときは desktop・mobile ともに Tauri であり、webview の runtime は wry の runtime crate を選ぶ。
+判断基準は、[desktop](../../structure/runtimes/desktop/layout.md) が定める対象の OS すべてと mobile で内蔵 webview に同じ viewer を載せ、core を host の back-end に置け、host と runtime と updater plugin の版を同時に成立する一組へ固定できることである。
+撤回条件は、判断基準を満たさなくなることであり、webview と OS の対応状況の変化、保守の停止、採用する系の安定版の到達を再評価のトリガーとする。
 
 ## desktop と mobile の host
 
 ### 要求
 Rust の core を持つ desktop と mobile の host は Tauri とし、同じ viewer と同じ core を desktop と mobile の shell で共有する。
+webview の runtime は、host の組立点で一つだけ選ぶ。
 desktop と mobile の各 shell は、host の認証 adapter が保持する資格情報を IPC の認証境界で検証して actor を構築する。
 IPC の command は actor と資格情報を frontend から受け取らず、認証境界が構築した actor と検証済み入力だけを core へ渡す。
 認証の資格情報は host の認証 adapter に置き、業務の secret と判断は core に置いて frontend に出さない。
@@ -21,6 +22,7 @@ host が保持する資格情報から IPC の認証境界で actor を構築す
 
 ### 完了条件
 desktop と mobile の host が、Tauri である。
+webview の runtime が、host の組立点で一つだけ選ばれている。
 同じ viewer と core が、両方の shell で共有されている。
 desktop と mobile の各 IPC の認証境界が、host の認証 adapter の資格情報を検証して actor を構築している。
 core の公開 API が、actor と検証済み入力だけを受け取っている。
@@ -33,6 +35,7 @@ actor または資格情報を、frontend から IPC の command へ渡すこと
 
 ### 行動
 host を Tauri にし、IPC を型付きの command で一元化する。
+host の組立点で webview の runtime を一つ選び、その runtime crate を依存に置く。
 desktop と mobile の各 IPC の入口で host の認証 adapter の資格情報を検証し、actor を構築する。
 actor と検証済み入力だけを core の公開 API へ渡す。
 認証の資格情報を host の認証 adapter に、業務の secret と判断を core に置く。

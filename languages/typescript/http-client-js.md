@@ -3,7 +3,7 @@
 用途は、契約から TypeScript の client と型を生成し、drift・conformance の検査に使う道具である。
 採用は、TypeScript は `@typespec/http-client-js` である。
 判断基準は、契約から contracts/generated の client と型を生成でき、判別付き直和が判別子つきの union になり、生成した client が transport の実装を引数で受け取り、同じ入力と同じ版から同じ出力を得て drift をリポジトリの検証入口の gate にできることである。生成物が製品が採用する TypeScript の型検査を通ることと、生成器が製品の型検査 toolchain へ版の制約を広げないことを含む。
-撤回条件は、判断基準を満たさなくなることであり、保守の停止、transport の注入点の廃止、生成物が製品が採用する TypeScript の型検査を通らなくなること、出力を変える機能の追加が再び続く段階へ戻ることを再評価のトリガーとする。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止、transport の注入点の廃止、生成物が製品が採用する TypeScript の型検査を通らなくなること、安定版の到達を再評価のトリガーとする。
 
 ## 生成した契約を使い、drift を検査の gate にする
 

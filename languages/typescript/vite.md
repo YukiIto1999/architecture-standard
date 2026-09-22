@@ -3,7 +3,7 @@
 用途は、viewer を載せる host の entry と bundler である。
 採用は、Vite と @solidjs/vite-plugin である。
 判断基準は、index.html を entry として扱え、採用している viewer の機構と bundler plugin の peer を同時に満たし、build の設定をテストと共有できることである。
-撤回条件は、判断基準を満たさなくなることであり、Vite、SolidJS 2.0、@solidjs/vite-plugin の各安定版の到達を再評価のトリガーとする。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止と、採用している viewer の機構と bundler plugin の安定版の到達を再評価のトリガーとする。
 
 ## viewer を載せる host の entry と build
 
