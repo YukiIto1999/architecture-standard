@@ -40,4 +40,4 @@ function head<T>(xs: T[]): T { if (xs.length === 0) throw Error("empty"); return
 function head<T>(xs: NonEmpty<T>): T { return xs[0]; }
 ```
 
-Rust では先頭要素を型で保証する構造体、C# では要素数をコンストラクタで検証する型で、同じ絞り込みができる。
+空でないことを型か構築時の検証で保証できる機構であれば、同じ絞り込みができる。

@@ -16,4 +16,4 @@ principles の [modeling](../../principles/modeling/README.md) が定める、�
 ## 参照
 封入と分類の原則は [modeling](../../principles/modeling/README.md)、語彙は [naming](../../principles/naming/README.md) に従う。
 境界での検証に伴う効果の実行は [effect](../effect/README.md) に従う。
-言語別の型機構は [languages](../languages/) が定める。
+言語別の型機構は [languages](../../languages/) が定める。

@@ -45,5 +45,5 @@ if (email instanceof Error) return reject(email);
 send(email);
 ```
 
-Rust と C# では Result 型で、検証の失敗を値として返す。
+検証の失敗は、送出でなく値として返す。
 失敗しうる変換の連なりの形は、concerns の [effect](../../concerns/effect/README.md) が具象化する。

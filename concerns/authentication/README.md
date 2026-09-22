@@ -11,4 +11,4 @@ authentication は資格情報の検証と actor の構築を扱い、構築済�
 
 ## 参照
 「関心を境界の内に隠す」は [separation](../../principles/separation/information-hiding.md)、構築済みの actor の権限評価は [authorization](../authorization/README.md)、安全の姿勢は [security](../security/README.md) に従う。
-認証境界の surface ごとの配置は [structure/surfaces](../structure/surfaces/)、言語別の実現は [languages](../languages/) が定める。
+認証境界の surface ごとの配置は [structure/surfaces](../../structure/surfaces/)、言語別の実現は [languages](../../languages/) が定める。

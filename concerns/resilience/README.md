@@ -17,5 +17,5 @@ principles の [data](../../principles/data/README.md) が定める事実の追�
 - [再試行の出口を持つ](./dead-letter-exit.md) — 機械(methods表 行き止まり)
 
 ## 参照
-port の構造は [structure/core/application](../../structure/core/application.md)、言語別の機構は [languages](../languages/) が定める。
+port の構造は [structure/core/application](../../structure/core/application.md)、言語別の機構は [languages](../../languages/) が定める。
 時間上限の合成と期限の伝播は [concurrency](../concurrency/README.md)、過負荷の中での健全性の応答の優先は [lifecycle](../lifecycle/README.md) に従う。

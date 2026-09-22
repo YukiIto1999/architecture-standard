@@ -63,4 +63,4 @@ type ContactInfo =
   | { kind: "emailAndPostal"; email: EmailAddress; postal: Address };
 ```
 
-Rust ではデータを持つ enum、C# では sealed な階層型とパターンマッチで、同じ排他表現ができる。
+データを持つ直和と、それを分岐で扱う機構があれば、同じ排他表現ができる。

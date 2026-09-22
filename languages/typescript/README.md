@@ -45,8 +45,8 @@ typescript の言語としての採用と、実現規律、採用物を置く。
 | [tsgolint](./tsgolint.md) | 規則の違反をビルドで止める linter である | TypeScript は `oxlint --type-aware` と `oxlint-tsgolint` の組である |
 | [typescript-compiler-api](./typescript-compiler-api.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | TypeScript は @typescript/typescript6 6.0.2 の compiler API を使う AST 構造検査である |
 | [valibot](./valibot.md) | 外部入力を schema で検証し、検証済みの値だけに型を名乗らせる機構である | TypeScript は valibot である |
-| [vite](./vite.md) | web の host の entry と bundler である | Vite と @solidjs/vite-plugin である |
-| [vitest](./vitest.md) | 単体・性質・結合のテストの実行系である | TypeScript は Vitest である |
+| [vite](./vite.md) | viewer を載せる host の entry と bundler である | Vite と @solidjs/vite-plugin である |
+| [vitest](./vitest.md) | 単体・性質・結合のテストの実行系と、テストが実行していない箇所を見つけるカバレッジ計測である | TypeScript は Vitest と Vitest の coverage(v8 provider)である |
 | [vscode-jsonrpc](./vscode-jsonrpc.md) | extension が接続する core のプロセスとの間で、JSON-RPC の小さい契約だけを外へ出す機構である | TypeScript は vscode-jsonrpc である |
 | [vscode](./vscode.md) | extension の surface を動かす ide の host である | VSCode である |
 

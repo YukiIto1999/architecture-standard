@@ -15,4 +15,4 @@ authorization は認証境界による構築済みの actor の権限評価を�
 ## 参照
 分離の原則は [separation](../../principles/separation/README.md)、request context の伝播は [context-propagation](../context-propagation/README.md)、安全の姿勢は [security](../security/README.md) に従う。
 外部へ公開するエラーの形は [effect](../effect/README.md) に従う。
-資格情報の検証と actor の構築は [authentication](../authentication/README.md)、認証境界の surface ごとの構造は [surfaces](../structure/surfaces/)、言語別の実現は [languages](../languages/) が定める。
+資格情報の検証と actor の構築は [authentication](../authentication/README.md)、認証境界の surface ごとの構造は [surfaces](../../structure/surfaces/)、言語別の実現は [languages](../../languages/) が定める。

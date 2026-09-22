@@ -194,14 +194,12 @@ libs の analyzer project に、Result の派生型への cast を検出する a
 | streamjsonrpc | extension の接続 | 型(StreamJsonRpc の型付き proxy)+レビュー |
 | consoleappframework | console | 型(ConsoleAppFramework の constructor injection) |
 | publication | 可視性 | 型(internal・file 修飾子) |
-
 | banned-api-analyzers | 直読と自由文出力を禁止 API で止める | analyzer/lint(BannedApiAnalyzers の禁止一覧を検証入口でエラー化) |
-
 | inspection | nullable と警告を検証入口でエラーにする | analyzer/lint(nullable reference types と WarningsAsErrors の compiler 設定) |
 | inspection | 非同期の形と期限の伝播を analyzer で検査する | 構造検査(自作 Roslyn analyzer を検証入口で実行) |
-
 | inspection | 汎用名を自作 analyzer で禁止する | analyzer/lint(自作 Roslyn analyzer の denylist を検証入口でエラー化) |
 | inspection | Result の非網羅な取り出しを analyzer で禁止する | analyzer/lint(自作 Roslyn analyzer の cast 検出を検証入口でエラー化) |
+
 ## 参照
 検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification/README.md) に従う。
 配置は [structure/tests](../../structure/tests/layout.md)、技法は [structure/tests/methods](../../structure/tests/methods.md) に従う。
