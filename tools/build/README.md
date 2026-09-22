@@ -14,5 +14,4 @@ build は、task の編成、共有ライブラリの取得、契約と release 
 | 契約駆動の fuzz | Schemathesis | [schemathesis.md](./schemathesis.md) |
 | SBOM の既知脆弱性検査 | OSV-Scanner | [osv-scanner.md](./osv-scanner.md) |
 
-task の定義と実行の正本は Nx に一本化し、recipe runner や環境ツールへ task の定義を並置しない。環境の供給は task の正本を持たない。
 認知的複雑さの検査と quality gate は、[platforms/sonarqube](../platforms/sonarqube.md) の採用で満たす。
