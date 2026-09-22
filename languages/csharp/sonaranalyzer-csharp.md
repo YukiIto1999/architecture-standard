@@ -12,6 +12,7 @@ linter は SonarAnalyzer.CSharp を使い、その警告を検証入口でエラ
 規則の重大度は .editorconfig を正本とし、SonarAnalyzer の規則のしきい値 parameter だけを SonarLint.xml に置く。同じ関心を両方のファイルへ書かない。
 ファイル・関数の大きさとネストの深さのしきい値は SonarAnalyzer.CSharp の S104(ファイル)・S138(関数)・S134(ネスト)の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 集合の添字による裸ループは、S3267 で検出し、LINQ の名前のある操作へ直す。
+未使用の要素と未使用の参照は、コンパイラと analyzer の到達可能性の診断を検証入口でエラーとして扱い検出する。
 認知的複雑さの測り方は、[sonarqube](../../tools/platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、SonarAnalyzer.CSharp のビルド時 lint 側では複雑度の規則を重ねて有効にしない。
 
 ### 根拠
@@ -23,6 +24,7 @@ S3267 は [named-collection-operations](../../principles/construction/named-coll
 SonarAnalyzer.CSharp が、linter として使われている。
 ファイル・関数の大きさとネストの深さのしきい値が、S104・S138・S134 の規則として定められている。
 S3267 が有効で、違反が検証入口でエラーとして扱われている。
+未使用の要素と未使用の参照の診断が、検証入口でエラーとして扱われている。
 緩和が、project の決定の記録に明記されている。
 SonarAnalyzer.CSharp のビルド時 lint 側で、複雑度の規則が有効になっていない。
 
