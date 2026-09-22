@@ -240,7 +240,7 @@ fi
 
 echo
 echo "=== 3. concerns への言語機構/方言の漏れ(あってはならない) ==="
-if rg -nP '\b(sqlx|tokio|axum|tower|serde|Dapper|Npgsql|EF Core|zod|valibot|neverthrow|SolidJS|Tailwind|Vite|VSCode|fred|apalis|PGMQ|clap|NSwag|Wolverine|Photino|MAUI|Kobalte|ON CONFLICT|ON DUPLICATE|StreamJsonRpc|vscode-jsonrpc|createResource|createSignal|actor framework|Playwright|TypeScript|compiler API)\b' concerns; then
+if rg -nP '\b(sqlx|tokio|axum|tower|serde|Dapper|Npgsql|EF Core|zod|valibot|ts-results-es|SolidJS|Tailwind|Vite|VSCode|fred|apalis|PGMQ|clap|NSwag|Wolverine|Photino|MAUI|Kobalte|ON CONFLICT|ON DUPLICATE|StreamJsonRpc|vscode-jsonrpc|createResource|createSignal|actor framework|Playwright|TypeScript|compiler API)\b' concerns; then
   fail "concerns に言語機構/方言が漏れている(中立化するか languages へ移すこと)"
 else
   pass "concerns に言語機構/方言の漏れなし"
