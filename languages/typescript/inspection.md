@@ -142,18 +142,46 @@ strict を有効にし、型検査と lint の警告を検証入口でエラー�
 noUncheckedIndexedAccess と exactOptionalPropertyTypes を strict と併記して有効にする。
 oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max-lines-per-function・max-depth のしきい値を定める。
 
+## 型消去の cast allowlist
+
+### 要求
+TypeScript compiler API の構造検査で、reporting boundary の型消去の symbol と、検証を完結する converter または factory の型構築の symbol を、別の allowlist として照合する。
+集合の外の assertion と cast、および種類の一致しない cast を拒否する。
+型消去と型構築の扱いは、[concerns/types](../../concerns/types/audited-type-loss.md) の「型の情報を失う箇所を監査する」に従う。
+
+### 根拠
+型消去と型構築を同じ集合で扱うと、検証を経ない型構築が報告の型消去に紛れる。
+allowlist を分けて照合すれば、どちらの種類の cast かを機械で判定できる。
+
+### 完了条件
+型消去の symbol と型構築の symbol が、別の allowlist で管理されている。
+allowlist の集合外の cast と、種類の一致しない cast が、検証入口で拒否されている。
+converter または factory が、検証を終えた後だけ型を構築していることが実行テストで確かめられている。
+
+### 禁止事項
+型消去と型構築を、一つの allowlist へまとめること。
+allowlist に載せずに cast を書くこと。
+
+### 行動
+reporting boundary の型消去と、検証を完結する型構築の symbol を、別々の allowlist へ列挙する。
+構造検査で allowlist と照合し、集合外と種類不一致を失敗させる。
+converter と factory が検証後だけ型を構築することを、実行テストで確かめる。
+
 ## 規則と検証機構の対応
 
 この言語 ecosystem の全規律を、検証手段へ写像する。
-規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。
+規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
 標準 repository の verifier は、ecosystem の全ファイルの規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
+検証手段は、型・構造検査・analyzer/lint・計測・mutation・runner 検査・artifact 検査・実行テスト・レビューの語で書き、複数の手段は + で連ねる。
+レビューは、括弧に判断の対象を書く。
 
 | ファイル | 規律 | 検証手段 |
 |---|---|---|
 | vitest | 実行 | 実行テスト(Vitest の単体・性質・結合を検証入口で実行し、発見件数0を失敗にする) |
 | fast-check | 性質 | 実行テスト(fast-check の生成・縮小・stateful property と回帰 seed の再実行) |
-| playwright-bdd | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift、baseline metadata と environment fingerprint の照合)+実行テスト(cucumber-js を実装と同じ検証入口で実行し、Playwright で状態・feedback・progress の表示時間を測定し、fingerprint 一致時だけ screenshot 差分を実行)+実行テスト・レビュー(baseline 画像と metadata の原子的な更新と明示承認) |
+| cucumber-js | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber-js を実装と同じ検証入口で実行) |
+| playwright-bdd | UI smoke の Gherkin を Playwright の test へ変換する | 実行テスト(playwright-bdd が変換した test を Playwright の runner で実装と同じ検証入口から実行)+レビュー(executable spec と UI の E2E smoke・visual を代替に並べていないことの判断) |
 | axe-core-playwright | accessibility | 実行テスト(@axe-core/playwright による自動判定可能な違反、Playwright による keyboard 操作・pointer target の bounding box・WCAG 2.2 Level AA の text/non-text contrast と例外記録の照合)+レビュー(自動判定できない WCAG 2.2 Level AA の確認) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`vitest list --json` と Playwright `--list` が返す project・file・suite・test の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。cucumber-js scenario は URI・line・name の組を同じ集合へ加える) |
 | knip | 未使用 | analyzer/lint(knip で未使用のファイル・export・依存を検出し検証入口で失敗) |
@@ -169,7 +197,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+構造検査(TypeScript compiler API による型・値の PascalCase・camelCase の命名照合) |
 | conventions | ドキュメントコメントを書く | 構造検査(TypeScript compiler API と @microsoft/tsdoc。存在・構文・宣言と tag の対応・`@throws {@link ErrorType} 条件`・外へ伝播する直接の throw の型と link・try/catch で吸収される throw の除外・先頭行の一行と句読点)+レビュー(実効的な可視境界に応じた外部契約または内部契約、call/rejected Promise から伝播する欠陥と @throws、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(TypeScript compiler API による命名照合) |
-| 全域 | branch coverage | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定) |
+| vitest | カバレッジ | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定) |
 | valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・境界の parse の単体テスト) |
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |
 | http-client-js | 生成した契約を使い、drift を検査の gate にする | 実行テスト(契約からの生成、再生成の差分、判別付き直和の判別子つき union と網羅の型検査、生成 client への transport の注入、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
@@ -179,26 +207,27 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | ts-results-es | 非同期 API の送出を AsyncResult へ変換する | 構造検査(TypeScript compiler API。設定した Promise を返す境界 API の呼出しを `Result.wrapAsync` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(関数呼出時の同期 throw と返した Promise の rejection を同じ mapper が Err にし、欠陥と AbortError は元の error のまま rejection になること) |
 | ts-results-es | 同期 API の送出を Result へ変換する | 構造検査(TypeScript compiler API。設定した同期 DOM API と postMessage の呼出しを `Result.wrap` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(同期の戻り値と throw、想定外の欠陥の再送出) |
 | connection | 依存を環境で受け、host の能力を port で宣言する | 型(環境の型・ui port の型)+レビュー(singleton を作らないことの判断) |
-| 全域 | cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
+| inspection | 型消去の cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | solidjs | 状態の機構 | レビュー(structure の分類に対応する remote/URL/横断/一時 の機構の選択) |
 | solidjs | remote の規律 | レビュー(local の横断 store への複製禁止の判断) |
 | publication | 保存の禁止 | analyzer/lint(oxlint の no-restricted-properties で localStorage・sessionStorage の直呼びを禁止) |
-| vscode | extension の保持状態 | 型(state port・secret port)+レビュー |
-| coordination | 非同期 | レビュー |
+| vscode | extension の保持状態 | 型(state port・secret port)+レビュー(保持する状態の範囲と secret の扱いの判断) |
+| coordination | 非同期 | 構造検査(TypeScript compiler API。公開非同期 API の戻り型と、domain の関数に非同期が現れないことの照合)+レビュー(domain の純粋性の判断) |
 | coordination | 取り消し | 型(Effect 専用 withDeadlineEffect が AsyncResult<T, E &#124; DeadlineExceeded> を返すこと)+構造検査(TypeScript compiler API。設定に列挙した外部 I/O と待機の symbol と、callee expression の nominal brand または branded Effect への代入可能性で識別した下流 Effect を withDeadlineEffect の operation からだけ呼び、wrapper 内の window と document の直接参照を拒否すること)+実行テスト(host ごとの ResumeSource、wall-clock の絶対期限の伝播、非同期境界の前後と再開時の期限確認、購読解除後の判定、解決済み Err の保持と overrun 診断、期限 reason と同一または cause chain に持つ rejection の DeadlineExceeded Err 変換、wrapper 開始前から親取消と期限超過が同時に成立した場合に AbortSignal.any が選んだ親 reason の保持、別 defect の保持と期限超過診断、Ok 後の期限超過を DeadlineExceeded Err にすること、AbortSignal.timeout が active time の局所補助であること、親 signal と期限用 controller の AbortSignal.any 合成) |
 | coordination | 並行の組 | 構造検査(TypeScript compiler API。Promise.all または Promise.allSettled に渡す並行 task collection を生成する箇所では、branded Effect を開始する withDeadlineEffect の呼出しを、project の決定の記録で固定した単一 limiter の需要枠 callback 内へ限定)+実行テスト(最初の Err と最初の rejection の各経路で abort、controller 由来の sibling cancellation rejection の除外、allSettled で全兄弟へ合流、rejection defect が無い場合は最初に観測した Err を Result で返すこと、Err と独立した rejection が同時に成立した場合は drain 後に rejection defect を優先して送出すること、実行中の Effect が決定の記録の上限を越えない最大同時実行数) |
 | coordination | メインスレッドを塞がない | レビュー(重い同期計算の特定と退避の判断) |
 | coordination | 後始末 | レビュー(onCleanup 登録漏れの判断) |
 | solidjs | viewer | レビュー(props の分割代入の禁止) |
 | opentelemetry-js | viewer の telemetry | 型(ui port の型)+レビュー(SDK の adapter への隔離の判断) |
-| tailwind | styling | レビュー |
+| tailwind | styling | 構造検査(design token の定義が `@theme` に限られることの照合)+レビュー(token の粒度と命名の判断) |
 | vite | viewer を載せる host の entry と build | レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
 | publication | extension | 型(port の interface) |
 | vscode | ide の host | 型(判別子つき union の schema・safeParse)+実行テスト(postMessage 受信の単体テスト) |
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |
-| publication | 可視性 | 構造検査(package.json の exports フィールドの検査) |
+| publication | 可視性 | 構造検査(package.json の exports フィールドの検査と、exports に無い path への import の拒否) |
 | oxlint | 汎用名と裸ループと自由文出力を lint で止める | analyzer/lint(id-denylist・typescript/prefer-for-of・no-console をエラー化) |
-| playwright | baseline 画像と環境指紋を一つの更新単位で版管理する | 構造検査(fingerprint 照合を比較前に実行)+レビュー(画像と metadata の一組更新) |
+| playwright | 表示までの時間を E2E で測る | 実行テスト(Playwright の E2E で入力時刻・状態または feedback の表示時刻・progress の表示時刻・完了時刻を測定し、experience の閾値と継続条件へ照合) |
+| playwright | baseline 画像と環境指紋を一つの更新単位で版管理する | 構造検査(baseline metadata と実行環境の environment fingerprint を screenshot の比較前に照合)+実行テスト(fingerprint 一致時だけ `toHaveScreenshot` で screenshot 差分を実行し、画像と metadata の生成が片方だけ確定しないこと)+レビュー(画像と metadata の一組更新の明示承認) |
 
 ## 参照
 検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification/README.md) に従う。

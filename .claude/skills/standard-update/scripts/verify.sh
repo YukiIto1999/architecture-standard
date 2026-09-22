@@ -151,7 +151,7 @@ language_inspection_discipline_records() {
       split($0, columns, "|")
       axis = trim(columns[2])
       discipline = trim(columns[3])
-      if (axis == "" || axis == "ファイル" || axis == "全域" || axis ~ /^-+$/) {
+      if (axis == "" || axis == "ファイル" || axis ~ /^-+$/) {
         next
       }
       printf "%s | %s\t%s:%d\n", axis, discipline, FILENAME, FNR

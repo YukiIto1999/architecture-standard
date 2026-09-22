@@ -134,12 +134,39 @@ Result の派生型へ cast して、不成功の分岐を検査せずに値を�
 libs の analyzer project に、Result の派生型への cast を検出する analyzer を実装する。
 違反箇所は、網羅的な switch か全域の combinator へ直す。
 
+## 型消去の cast allowlist
+
+### 要求
+Roslyn analyzer で、reporting boundary の型消去の symbol と、検証を完結する converter または factory の型構築の symbol を、別の allowlist として照合する。
+集合の外の cast と、種類の一致しない cast を拒否する。
+型消去と型構築の扱いは、[concerns/types](../../concerns/types/audited-type-loss.md) の「型の情報を失う箇所を監査する」に従う。
+
+### 根拠
+型消去と型構築を同じ集合で扱うと、検証を経ない型構築が報告の型消去に紛れる。
+allowlist を分けて照合すれば、どちらの種類の cast かを機械で判定できる。
+
+### 完了条件
+型消去の symbol と型構築の symbol が、別の allowlist で管理されている。
+allowlist の集合外の cast と、種類の一致しない cast が、検証入口で拒否されている。
+converter または factory が、検証を終えた後だけ型を構築していることが実行テストで確かめられている。
+
+### 禁止事項
+型消去と型構築を、一つの allowlist へまとめること。
+allowlist に載せずに cast を書くこと。
+
+### 行動
+reporting boundary の型消去と、検証を完結する型構築の symbol を、別々の allowlist へ列挙する。
+構造検査で allowlist と照合し、集合外と種類不一致を失敗させる。
+converter と factory が検証後だけ型を構築することを、実行テストで確かめる。
+
 ## 規則と検証機構の対応
 
 この言語 ecosystem の全規律を、検証手段へ写像する。
-規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。
+規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
 標準 repository の verifier は、ecosystem の全ファイルの規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
+検証手段は、型・構造検査・analyzer/lint・計測・mutation・runner 検査・artifact 検査・実行テスト・レビューの語で書き、複数の手段は + で連ねる。
+レビューは、括弧に判断の対象を書く。
 
 | ファイル | 規律 | 検証手段 |
 |---|---|---|
@@ -160,7 +187,7 @@ libs の analyzer project に、Result の派生型への cast を検出する a
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、production の SonarAnalyzer.CSharp 命名規則、test project では Sonar の method 命名規則だけを抑止して命名 analyzer で test attribute 付き entry の snake_case とその他 method の .NET 命名を検査) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化。公開要素のコメント欠落)+analyzer(Roslyn analyzer。全宣言のコメント存在・param/typeparam/returns/value・先頭行・当該宣言内で機械判定できる欠陥の exception)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET の命名照合) |
-| 全域 | branch coverage | 計測(branch を数える設定は `--coverlet` で有効にする coverlet.MTP の cobertura 出力であり、その `branches-covered` と `branches-valid` から project 記録の branch 下限を検証入口で判定) |
+| coverlet-mtp | カバレッジ | 計測(branch を数える設定は `--coverlet` で有効にする coverlet.MTP の cobertura 出力であり、その `branches-covered` と `branches-valid` から project 記録の branch 下限を検証入口で判定) |
 | translation | 境界で一度だけ parse してドメイン型へ移す | 型(JsonSerializerContext・required・JsonExtensionData)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | aspnet-core | 公開するエラーを境界で problem+json へ写す | 実行テスト(ProblemDetails の単体テスト) |
 | nswag | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
@@ -170,30 +197,30 @@ libs の analyzer project に、Result の派生型への cast を検出する a
 | connection | 要求する依存を型に出す | 型(IEffectRequirements・generic constraints)+analyzer(Roslyn analyzer。NoRequirements への迂回の検出) |
 | connection | 効果を境界で実行し analyzer と generator で縛る | analyzer と source generator(internal の EffectRuntime.Run に実行境界を限定し、Deadline と CancellationToken の伝播、ValueTask の戻り値、R の合成環境の生成、Bind 連鎖の要求包含、原始効果の閉じ込め、NoRequirements への迂回を検査)+実行テスト(`UninitializedEffectException` を Defected へ写すこと) |
 | connection | port を interface で宣言する | 型(interface) |
-| connection | 配線を composition root に限る | 構造検査(IServiceProvider の直接解決の検出)+レビュー |
+| connection | 配線を composition root に限る | 構造検査(IServiceProvider の直接解決の検出)+レビュー(組立点に置く依存の粒度の判断) |
 | dapper | 型付き SQL | analyzer(DapperAOT の DAP214・DAP236)+実行テスト(型・nullable の照合テスト) |
 | npgsql | 並行更新の表面 | 実行テスト(結合テストでの競合検出) |
 | npgsql | 書き込みパス | 構造検査(store が transaction の begin・commit を持たないことの検査) |
 | npgsql | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証済み actor、匿名の安定した opaque scope、logical system actor の分離、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
 | npgsql | durable inbox | 構造検査(scope・event ID の複合一意制約)+実行テスト(payload commit 前後の停止と upstream delivery ack、処理結果・処理済み記録 commit 前後の停止と inbox processing completion、前段の source 再配送、後段の item 再処理、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視出力) |
-| stackexchange-redis | 一時データ | 構造検査(DB と Valkey の project 分離)+レビュー |
+| stackexchange-redis | 一時データ | 構造検査(DB と Valkey の project 分離)+レビュー(一時データとして扱える範囲の判断) |
 | coordination | 非同期 | analyzer/lint(SonarAnalyzer.CSharp の async void 検出規則)+analyzer(Roslyn analyzer。surface と host の公開非同期 API は Task または Task<T>、Effect 内部の Run、Try body、AcquireRelease release は ValueTask または ValueTask<T> に限定)+レビュー(domain の純粋性の判断) |
 | coordination | 取り消し | analyzer(Roslyn analyzer。request、message、job の境界より内側の非同期 API が、非取消の後始末である AcquireRelease release と IAsyncDisposable.DisposeAsync を除いて Deadline と CancellationToken を必須引数に持ち、Deadline の生成を境界へ限定し、各 hop の局所 timeout が `deadline.Remaining(timeProvider)` から作られ、下流へ remaining でなく同じ Deadline が渡ることを検査。release は同じ Deadline を受けて CancellationToken を受け取らず、DisposeAsync は引数を持たないことを検査)+実行テスト(複数 hop で時間枠が引き直されず、局所 timeout が linked token で下流へ伝播すること、取消後も release と DisposeAsync が非取消で完了すること) |
 | coordination | 並行の組 | 構造検査(Roslyn analyzer。個別 job の RunAsync 呼出しを SemaphoreSlim の permit 保持区間へ限定)+実行テスト(実行中の job が SemaphoreSlim の上限を越えない最大同時実行数)+レビュー(Task.WhenAny の失敗検知、兄弟用 CancellationTokenSource の取消、cancel callback 例外の収集、Task.WhenAll の drain、task と callback と外部取消の集約) |
 | coordination | blocking 禁止 | analyzer/lint(Microsoft.CodeAnalysis.BannedApiAnalyzers) |
-| coordination | 共有状態 | レビュー |
+| coordination | 共有状態 | 構造検査(Roslyn analyzer。可変な静的状態と共有 instance の検出)+レビュー(共有が必要な範囲の判断) |
 | coordination | ライブラリの作法 | analyzer/lint(SonarAnalyzer.CSharp の ConfigureAwait 関連規則) |
 | coordination | 資源解放 | 型(using/await using、IDisposable、引数なしの IAsyncDisposable.DisposeAsync)+analyzer(Roslyn analyzer。AcquireRelease release と DisposeAsync を CancellationToken の必須規則から除外し、元の Deadline を保持する非取消の後始末として識別)+実行テスト(取消後も DisposeAsync が一度完了すること) |
-| aspnet-core | server | 構造検査(middleware の順序と core 公開 API への ClaimsPrincipal・token・claim 型の流入禁止)+実行テスト(検証済み ClaimsPrincipal から actor への写像、actor と検証済み入力による core 公開 API 呼出、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー |
+| aspnet-core | server | 構造検査(middleware の順序と core 公開 API への ClaimsPrincipal・token・claim 型の流入禁止)+実行テスト(検証済み ClaimsPrincipal から actor への写像、actor と検証済み入力による core 公開 API 呼出、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー(認証方式ごとの principal の妥当性の判断) |
 | aspnet-core | BFF | 構造検査(request-scoped ActorRequestContext から Actor を DI すること、ActorMapper 呼出を認証 middleware に限定すること、route の ClaimsPrincipal 参照と actor 再構築を拒否すること、route が埋め込んだ core の公開 API だけを呼ぶこと)+実行テスト(cookie 属性、認証 middleware が ActorRequestContext へ格納した actor と route に注入された Actor の一致、actor と検証済み入力による core 公開 API 呼出) |
 | wolverine | worker | 構造検査(Wolverine の永続化設定・IMessageBus の constructor injection の検出)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(CancellationToken の伝播) |
-| 全域 | cast allowlist | analyzer(Roslyn analyzer。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
-| photinox | desktop の host | レビュー |
+| inspection | 型消去の cast allowlist | analyzer(Roslyn analyzer。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
+| photinox | desktop の host | 構造検査(bridge の引数に actor と資格情報の型が現れないこと、core の公開 API 呼出が認証境界の構築した actor を受けること)+実行テスト(認証 adapter の資格情報から actor への写像、actor と検証済み入力による core 公開 API の呼出、viewer 由来の actor と資格情報の拒否)+レビュー(native の widget を別に作っていないことの判断) |
 | netsparkle-updater | desktop の自動更新 | 構造検査(production の配線が `Ed25519Checker(SecurityMode.Strict, ...)` と固定した検証公開鍵を使い、`SecurityMode.Unsafe` と署名検証を迂回する `IAppCastHandler` がなく、feed・package の配布設定が HTTPS であることを照合)+artifact 検査(実配布 app cast の署名ファイルと package の `sparkle:signature` が固定した検証公開鍵で検証でき、Cosign の release 成果物の署名と provenance が検証でき、配布成果物に更新署名の秘密鍵がないことを照合)+実行テスト(正しい app cast・package 署名を受理し、署名欠落・不正署名を拒否する) |
-| maui-hybridwebview | mobile の host | レビュー |
-| streamjsonrpc | extension の接続 | 型(StreamJsonRpc の型付き proxy)+レビュー |
+| maui-hybridwebview | mobile の host | 構造検査(bridge の引数に actor と資格情報の型が現れないこと、core の公開 API 呼出が認証境界の構築した actor を受けること)+実行テスト(認証 adapter の資格情報から actor への写像、actor と検証済み入力による core 公開 API の呼出、viewer 由来の actor と資格情報の拒否)+レビュー(native の widget を別に作っていないことの判断) |
+| streamjsonrpc | extension の接続 | 型(StreamJsonRpc の型付き proxy)+レビュー(custom method が公開面を広げていないことの判断) |
 | consoleappframework | console | 型(ConsoleAppFramework の constructor injection) |
-| publication | 可視性 | 型(internal・file 修飾子) |
+| publication | 可視性 | 型(internal・file 修飾子)+構造検査(`InternalsVisibleTo` の宛先が同じコンテキストの tests の assembly に限られることの照合) |
 | banned-api-analyzers | 直読と自由文出力を禁止 API で止める | analyzer/lint(BannedApiAnalyzers の禁止一覧を検証入口でエラー化) |
 | inspection | nullable と警告を検証入口でエラーにする | analyzer/lint(nullable reference types と WarningsAsErrors の compiler 設定) |
 | inspection | 非同期の形と期限の伝播を analyzer で検査する | 構造検査(自作 Roslyn analyzer を検証入口で実行) |
