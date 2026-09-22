@@ -52,47 +52,41 @@ function Greeting(raw: { name: string; greeting?: string; class?: string }) {
 ## 状態の機構
 
 ### 要求
-状態は、権威が server にある remote と、権威が実行中の surface または host にある local に分ける。
+状態の分類は、[structure/surfaces/viewer/state](../../structure/surfaces/viewer/state.md) の「権威と寿命による分離」に従う。
 remote の状態は、async computation の createMemo と Loading で扱う。
-local の状態は寿命と共有範囲で URL、横断 UI、一時 UI に分ける。
 URL の状態は、router の params と search params で扱う。
-横断 UI の状態は、createStore と Context で扱う。
-一時 UI の状態は、createSignal で扱う。
+横断の状態は、createStore と Context で扱う。
+一時の状態は、createSignal で扱う。
 派生の値は createMemo で表し、第2引数は options として扱う。
 書込可能な派生の値は、関数形式の createSignal で表す。
 
 ### 根拠
-権威の所在を先に分けると、server が正本の値を local の正本として複製しない。
 remote は server が権威で、async computation が取得し、Loading が初回の未準備状態を表示する。
-URL は遷移と共有で寿命が決まり、router が params と search params で持つ。
-横断 UI は複数の UI 範囲が共有し、createStore と Context が細かい反応性で配る。
-一時 UI は一つの UI 範囲の寿命に閉じるので、createSignal で足りる。
-横断 UI は local 状態の共有範囲による下位分類であり、[structure/surfaces/viewer/layout](../../structure/surfaces/viewer/layout.md) が定める shared 層(host 非依存の primitive と ui port を置く層)とは別の概念である。
+URL の状態は、router が params と search params で持つ。
+横断の状態は、createStore と Context が細かい反応性で配る。
+一時の状態は一つの component に閉じるので、createSignal で足りる。
 派生の値を createMemo にすれば、元の状態から一意に導かれ、二重に持たない。
 
 ### 完了条件
-状態が、権威の所在で remote と local に分かれている。
+状態の分類が、structure の「権威と寿命による分離」に従っている。
 remote が、async computation の createMemo と Loading で扱われている。
-local が、寿命と共有範囲で URL、横断 UI、一時 UI に分かれている。
 URL が、router で扱われている。
-横断 UI が、createStore と Context で扱われている。
-一時 UI が、createSignal で扱われている。
+横断が、createStore と Context で扱われている。
+一時が、createSignal で扱われている。
 派生の値が、createMemo で表され、第2引数が options として扱われている。
 書込可能な派生の値が、関数形式の createSignal で表されている。
 
 ### 禁止事項
-remote と local を、寿命だけで分類すること。
-URL、横断 UI、一時 UI を、remote と並ぶ権威の分類として扱うこと。
+structure の分類と異なる分け方で、状態を分類すること。
 createMemo の第2引数へ、派生値の初期値を渡すこと。
 
 ### 行動
-状態を権威の所在で remote と local に分ける。
-local を寿命と共有範囲で URL、横断 UI、一時 UI に分ける。
-remote は async computation の createMemo と Loading、URL は router、横断 UI は createStore と Context、一時 UI は createSignal で扱う。
+状態を structure の「権威と寿命による分離」に従って分類する。
+remote は async computation の createMemo と Loading、URL は router、横断は createStore と Context、一時は createSignal で扱う。
 派生は createMemo で表し、書込可能な派生は関数形式の createSignal で表す。
 
 ### 例
-一時 UI は createSignal の範囲に閉じ、server が権威を持つ remote は async computation の createMemo と Loading で扱う。派生値は createMemo で元の値から導く。
+一時の状態は createSignal の範囲に閉じ、server が権威を持つ remote は async computation の createMemo と Loading で扱う。派生値は createMemo で元の値から導く。
 
 ```typescript
 const [count, setCount] = createSignal(0);
@@ -106,10 +100,10 @@ const total = createMemo(() => items().reduce(sum, 0));
 ### 要求
 remote の状態は async computation の createMemo の単位で扱い、初回の未準備状態を Loading で表示する。
 remote の読み口を createMemo に限り、再計算と無効化は refresh で行う。
-remote の値を、local の横断 UI store へ複製しない。
+remote の値を、local の横断 store へ複製しない。
 
 ### 根拠
-remote の値を local の横断 UI store へ複製すると、server から再取得した値と local の複製がずれる。
+remote の値を local の横断 store へ複製すると、server から再取得した値と local の複製がずれる。
 async computation の createMemo に remote の読み口を限れば、取得と reactive な読み出しが一箇所で揃う。
 Loading は初回の未準備状態を表示し、refresh は derived read を再計算する。
 
@@ -117,10 +111,10 @@ Loading は初回の未準備状態を表示し、refresh は derived read を�
 remote の取得と reactive な読み出しが、async computation の createMemo の単位で扱われている。
 remote の初回の未準備状態が、Loading で表示されている。
 remote の再計算と無効化が、refresh で行われている。
-remote の値が、local の横断 UI store へ複製されていない。
+remote の値が、local の横断 store へ複製されていない。
 
 ### 禁止事項
-remote の値を、local の横断 UI store へ複製すること。
+remote の値を、local の横断 store へ複製すること。
 remote の読み口を、createMemo と Loading の外へ分散すること。
 
 ### 行動
