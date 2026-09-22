@@ -148,10 +148,35 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 最初の一行の体裁を、構造検査で確かめる。
 ドキュメントコメントが、公開要素では外部契約を、非公開要素では内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致していることをレビューする。
 
+## 型消去の cast allowlist
+
+### 要求
+構造検査で、reporting boundary の型消去の symbol と、検証を完結する converter または factory の型構築の symbol を、別の allowlist として照合する。
+集合の外の cast と、種類の一致しない cast を拒否する。
+型消去と型構築の扱いは、[concerns/types](../../concerns/types/audited-type-loss.md) の「型の情報を失う箇所を監査する」に従う。
+
+### 根拠
+型消去と型構築を同じ集合で扱うと、検証を経ない型構築が報告の型消去に紛れる。
+allowlist を分けて照合すれば、どちらの種類の cast かを機械で判定できる。
+
+### 完了条件
+型消去の symbol と型構築の symbol が、別の allowlist で管理されている。
+allowlist の集合外の cast と、種類の一致しない cast が、検証入口で拒否されている。
+converter または factory が、検証を終えた後だけ型を構築していることが実行テストで確かめられている。
+
+### 禁止事項
+型消去と型構築を、一つの allowlist へまとめること。
+allowlist に載せずに cast を書くこと。
+
+### 行動
+reporting boundary の型消去と、検証を完結する型構築の symbol を、別々の allowlist へ列挙する。
+構造検査で allowlist と照合し、集合外と種類不一致を失敗させる。
+converter と factory が検証後だけ型を構築することを、実行テストで確かめる。
+
 ## 規則と検証機構の対応
 
 この言語 ecosystem の全規律を、検証手段へ写像する。
-規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。
+規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
 標準 repository の verifier は、ecosystem の全ファイルの規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 
@@ -200,7 +225,7 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | jsonwebtoken | logout token の検証 | 実行テスト(jwks_uri の JWKS から構築した鍵での署名検証、未知の kid での JWKS 再取得と拒否、許可外 algorithm の拒否、alg が none の token の拒否、`typ` が `logout+jwt` でない token の拒否、issuer・audience・期限の判定、iat・jti・events の欠落の拒否、nonce を持つ token の拒否、sid と sub のいずれも無い token の拒否、理解できない claim の無視) |
 | clap | console | 型(clap の derive) |
 | apalis | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(Data extractor による依存注入の判断) |
-| 全域 | cast allowlist | 構造検査(reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
+| inspection | 型消去の cast allowlist | 構造検査(reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | tauri | desktop と mobile の host | レビュー |
 | tauri | desktop の自動更新 | 構造検査(updater 設定の公開鍵・`bundle.createUpdaterArtifacts`・TLS endpoint・非 HTTPS 設定なしの照合)+artifact 検査(updater bundle と signature の存在と配布を照合し、設定した公開鍵で signature が bundle を検証できることを確認)+レビュー(Cosign は release 成果物の署名と provenance だけを扱い、updater signature と混同しないこと) |
 | tower-lsp-server | extension の接続 | 型(tower-lsp-server の LanguageServer 実装と custom method)+レビュー |

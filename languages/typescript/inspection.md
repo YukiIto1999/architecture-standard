@@ -142,10 +142,35 @@ strict を有効にし、型検査と lint の警告を検証入口でエラー�
 noUncheckedIndexedAccess と exactOptionalPropertyTypes を strict と併記して有効にする。
 oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max-lines-per-function・max-depth のしきい値を定める。
 
+## 型消去の cast allowlist
+
+### 要求
+TypeScript compiler API の構造検査で、reporting boundary の型消去の symbol と、検証を完結する converter または factory の型構築の symbol を、別の allowlist として照合する。
+集合の外の assertion と cast、および種類の一致しない cast を拒否する。
+型消去と型構築の扱いは、[concerns/types](../../concerns/types/audited-type-loss.md) の「型の情報を失う箇所を監査する」に従う。
+
+### 根拠
+型消去と型構築を同じ集合で扱うと、検証を経ない型構築が報告の型消去に紛れる。
+allowlist を分けて照合すれば、どちらの種類の cast かを機械で判定できる。
+
+### 完了条件
+型消去の symbol と型構築の symbol が、別の allowlist で管理されている。
+allowlist の集合外の cast と、種類の一致しない cast が、検証入口で拒否されている。
+converter または factory が、検証を終えた後だけ型を構築していることが実行テストで確かめられている。
+
+### 禁止事項
+型消去と型構築を、一つの allowlist へまとめること。
+allowlist に載せずに cast を書くこと。
+
+### 行動
+reporting boundary の型消去と、検証を完結する型構築の symbol を、別々の allowlist へ列挙する。
+構造検査で allowlist と照合し、集合外と種類不一致を失敗させる。
+converter と factory が検証後だけ型を構築することを、実行テストで確かめる。
+
 ## 規則と検証機構の対応
 
 この言語 ecosystem の全規律を、検証手段へ写像する。
-規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。
+規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
 標準 repository の verifier は、ecosystem の全ファイルの規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 
@@ -169,7 +194,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+構造検査(TypeScript compiler API による型・値の PascalCase・camelCase の命名照合) |
 | conventions | ドキュメントコメントを書く | 構造検査(TypeScript compiler API と @microsoft/tsdoc。存在・構文・宣言と tag の対応・`@throws {@link ErrorType} 条件`・外へ伝播する直接の throw の型と link・try/catch で吸収される throw の除外・先頭行の一行と句読点)+レビュー(実効的な可視境界に応じた外部契約または内部契約、call/rejected Promise から伝播する欠陥と @throws、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(TypeScript compiler API による命名照合) |
-| 全域 | branch coverage | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定) |
+| vitest | カバレッジ | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定) |
 | valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・境界の parse の単体テスト) |
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |
 | http-client-js | 生成した契約を使い、drift を検査の gate にする | 実行テスト(契約からの生成、再生成の差分、判別付き直和の判別子つき union と網羅の型検査、生成 client への transport の注入、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
@@ -179,7 +204,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | ts-results-es | 非同期 API の送出を AsyncResult へ変換する | 構造検査(TypeScript compiler API。設定した Promise を返す境界 API の呼出しを `Result.wrapAsync` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(関数呼出時の同期 throw と返した Promise の rejection を同じ mapper が Err にし、欠陥と AbortError は元の error のまま rejection になること) |
 | ts-results-es | 同期 API の送出を Result へ変換する | 構造検査(TypeScript compiler API。設定した同期 DOM API と postMessage の呼出しを `Result.wrap` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(同期の戻り値と throw、想定外の欠陥の再送出) |
 | connection | 依存を環境で受け、host の能力を port で宣言する | 型(環境の型・ui port の型)+レビュー(singleton を作らないことの判断) |
-| 全域 | cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
+| inspection | 型消去の cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | solidjs | 状態の機構 | レビュー(structure の分類に対応する remote/URL/横断/一時 の機構の選択) |
 | solidjs | remote の規律 | レビュー(local の横断 store への複製禁止の判断) |
 | publication | 保存の禁止 | analyzer/lint(oxlint の no-restricted-properties で localStorage・sessionStorage の直呼びを禁止) |
