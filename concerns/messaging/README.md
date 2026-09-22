@@ -3,7 +3,7 @@
 ## 概要
 messaging は、イベントによる連携を全系で統べる規律である。
 principles の [data](../../principles/data/README.md) が定める複数集約の結果整合性と、[separation](../../principles/separation/README.md) が定める契約の独立を、全系のイベント連携として具象化する。
-手順の所有と補償の正本は [workflow](../workflow/README.md) であり、messaging は event の契約と配送・消費を書く。
+event の契約と配送・消費の扱いは、[参照](#参照) が示す正本に従う。
 
 ## 規律
 
