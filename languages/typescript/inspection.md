@@ -223,7 +223,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | publication | extension | 型(port の interface) |
 | vscode | ide の host | 型(判別子つき union の schema・safeParse)+実行テスト(postMessage 受信の単体テスト) |
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |
-| publication | 可視性 | 構造検査(package.json の exports フィールドの検査) |
+| publication | 可視性 | 構造検査(package.json の exports フィールドの検査と、exports に無い path への import の拒否) |
 | oxlint | 汎用名と裸ループと自由文出力を lint で止める | analyzer/lint(id-denylist・typescript/prefer-for-of・no-console をエラー化) |
 | playwright | baseline 画像と環境指紋を一つの更新単位で版管理する | 構造検査(fingerprint 照合を比較前に実行)+レビュー(画像と metadata の一組更新) |
 
