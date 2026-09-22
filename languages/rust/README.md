@@ -35,7 +35,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [cucumber](./cucumber.md) | 業務語彙の executable spec を実行する道具である | Rust は cucumber の Rust 実装である |
 | [jsonwebtoken](./jsonwebtoken.md) | OIDC の back-channel logout token を検証する JWT の検証機構である | Rust は jsonwebtoken(暗号の provider は `aws_lc_rs`)である |
 | [redis](./redis.md) | Valkey へ接続する client である | Rust は redis である |
-| [openidconnect](./openidconnect.md) | BFF の OIDC code・PKCE・token 管理 | Rust は openidconnect である |
+| [openidconnect](./openidconnect.md) | OIDC の code と PKCE のフローを終端し ID Token を検証するクライアントである | Rust は openidconnect である |
 | [progenitor](./progenitor.md) | 契約から Rust の client と型を生成し、drift・conformance の検査に使う道具である | Rust は progenitor である |
 | [reqwest](./reqwest.md) | 外部 HTTP API を呼び出す非同期 client である | Rust は reqwest (TLS は rustls)である |
 | [proptest](./proptest.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | Rust は proptest である |
@@ -51,7 +51,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [typify](./typify.md) | HTTP を持たない契約の JSON Schema から Rust の型を生成する道具である | Rust は typify である |
 | [tokio](./tokio.md) | 非同期の実行を担う runtime である | Rust は Tokio である |
 | [tower-lsp-server](./tower-lsp-server.md) | 言語サービスの公開・extension が接続する core への JSON-RPC | tower-lsp-server である |
-| [tower-sessions](./tower-sessions.md) | BFF の token 管理・BFF の session 管理 | Rust は tower-sessions のサーバー側セッション、redis の共有 store client と openidconnect のトークンエンドポイントクライアントである |
+| [tower-sessions](./tower-sessions.md) | BFF の token 管理・BFF の session 管理 | Rust は tower-sessions のサーバー側セッション、redis の Valkey client と openidconnect のトークンエンドポイントクライアントである |
 | [tower](./tower.md) | HTTP の経路の横断処理を、層として合成する機構である | Rust は tower と tower-http である |
 
 ## 言語機構で満たす用途
