@@ -22,9 +22,11 @@ host が保持する資格情報から IPC の認証境界で actor を構築す
 
 ### 完了条件
 desktop と mobile の host が、Tauri である。
-webview の runtime が、host の組立点で一つだけ選ばれている。
+webview の runtime が、host の組立点で一つだけ選ばれ、その単一性が Cargo 依存の検査で確かめられている。
 同じ viewer と core が、両方の shell で共有されている。
 desktop と mobile の各 IPC の認証境界が、host の認証 adapter の資格情報を検証して actor を構築している。
+IPC の command の引数に actor と資格情報の型が現れないことが、構造検査で確かめられている。
+資格情報から actor への写像と、actor と検証済み入力による core の公開 API の呼出が、実行テストで確かめられている。
 core の公開 API が、actor と検証済み入力だけを受け取っている。
 認証の資格情報が host の認証 adapter に、業務の secret と判断が core に置かれ、frontend に出ていない。
 
