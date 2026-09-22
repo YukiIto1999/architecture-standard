@@ -220,7 +220,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | maui-hybridwebview | mobile の host | 構造検査(bridge の引数に actor と資格情報の型が現れないこと、core の公開 API 呼出が認証境界の構築した actor を受けること)+実行テスト(認証 adapter の資格情報から actor への写像、actor と検証済み入力による core 公開 API の呼出、viewer 由来の actor と資格情報の拒否)+レビュー(native の widget を別に作っていないことの判断) |
 | streamjsonrpc | extension の接続 | 型(StreamJsonRpc の型付き proxy)+レビュー(custom method が公開面を広げていないことの判断) |
 | consoleappframework | console | 型(ConsoleAppFramework の constructor injection) |
-| publication | 可視性 | 型(internal・file 修飾子) |
+| publication | 可視性 | 型(internal・file 修飾子)+構造検査(`InternalsVisibleTo` の宛先が同じコンテキストの tests の assembly に限られることの照合) |
 | banned-api-analyzers | 直読と自由文出力を禁止 API で止める | analyzer/lint(BannedApiAnalyzers の禁止一覧を検証入口でエラー化) |
 | inspection | nullable と警告を検証入口でエラーにする | analyzer/lint(nullable reference types と WarningsAsErrors の compiler 設定) |
 | inspection | 非同期の形と期限の伝播を analyzer で検査する | 構造検査(自作 Roslyn analyzer を検証入口で実行) |

@@ -18,12 +18,15 @@ surface ごとの規律は、[aspnet-core](./aspnet-core.md)・[consoleappframew
 ### 完了条件
 内部の実装が、internal に保たれている。
 1ファイルに閉じる型が、file 修飾子で閉じられている。
+`InternalsVisibleTo` の宛先が、同じコンテキストの tests の assembly に限られている。
 
 ### 禁止事項
 内部の実装を、public で公開すること。
+`InternalsVisibleTo` を、別のコンテキストの assembly へ向けること。
 
 ### 行動
 公開する API だけを public にし、内部を internal、1ファイルに閉じる型を file 修飾子で閉じる。
+`InternalsVisibleTo` の宛先を、同じコンテキストの tests の assembly だけに保つ。
 
 ### 例
 アセンブリ内だけで使う型は `internal`、1ファイルに閉じる型は `file` にする。
