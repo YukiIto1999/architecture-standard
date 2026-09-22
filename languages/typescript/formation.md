@@ -3,7 +3,7 @@
 ## 概要
 formation は、TypeScript で値・型・不変条件をモデリングする実現軸である。
 principles の [modeling](../../principles/modeling/README.md) が定める業務意味の型封入と、concerns の [types](../../concerns/types/README.md) が定める型の規律を、TypeScript の機構で満たす。
-業務の値の型封入の規律は [valibot](./valibot.md) が持つ。
+境界で受けた値を検証する schema の規律は [valibot](./valibot.md) が持つ。
 
 ## 不正な状態を構築できなくする
 

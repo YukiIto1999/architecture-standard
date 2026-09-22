@@ -62,7 +62,7 @@ function toEmail(value: string): Result<Email, EmailError> {
 外部入力は `unknown` で受け、境界の parse は valibot で書く。
 `safeParse` の失敗は Result の err へ変換する。
 HTTP の応答と postMessage の受信は、どちらもこの parse を通す。
-業務の値の schema は formation が定義し、境界の schema はそれを組み込んで一つの真実源にする。
+業務の値の schema は [formation](./formation.md) が定める型封入に合わせ、境界の schema はそれを組み込んで一つの真実源にする。
 
 ### 根拠
 TypeScript の静的な型は、外部から来る値を保証しない。
