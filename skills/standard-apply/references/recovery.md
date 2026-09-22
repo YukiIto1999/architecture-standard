@@ -11,11 +11,11 @@ recovery では、判断を動かす主張を `主張 / 根拠状態 / locator �
 矛盾、不一致、risk などの診断は、根拠行から導いた `Derived` の独立した行にする。回収結果に診断が一つでもあれば、Derived を表外の未分類 prose にしない。
 `Known` と `Observed` には file、行、一次資料、コマンド結果の locator を、`Derived` には前提と導出を添える。`Assumed` と `Unknown` は未解決のまま明示し、`Intended` または `Target` へ読み替えない。
 資料と実装の食い違いを矛盾または defect と確定できるのは、同じ性質について衝突する双方を根拠付きで確認した場合だけである。確定した一つの性質から、別の state authority、caller、設定、runtime まで確定したと広げない。未観測の要素がその主張を両立させる余地を残す場合は `Unknown` とし、「余地がない」と断定しない。
-一回の Glob が返さない hidden file と、読取候補から除いた artifact の内容は未観測である。「他に資料がない」「全 file を確認した」のような網羅主張を Derived または Observed にせず、判断へ影響する可能性があれば `Unknown` とする。
-存在しないという主張は、列挙手段が対象集合を覆う場合だけ `Observed` にする。`<target-project-root>/**/*` の結果から述べられるのは、その Glob が返した非 hidden の候補内で未発見だったことまでであり、「project 全体に存在しない」「全 file に参照がない」へ広げない。網羅できない範囲を含む否定命題は `Unknown` にする。
-到達不能、writer 不在、参照なしを `Derived` にする前に、その主張を変えうる定義、生成物、外部 module、hidden file が観測範囲に残っていないことを示す。未定義の symbol、除外した artifact、未観測の呼出元または実装が一つでも残る場合は、確認した file 間の辺がないという `Observed` と、project 全体での定義または到達可能性が `Unknown` であるという行へ分ける。未定義 symbol を複数まとめる場合も、候補集合内で定義を確認できない `Observed` 行と、集合外を含む project-wide な定義・到達可能性の `Unknown` 行を表内で対にし、表外の要約だけで後者を代用しない。
+一つの discovery search が返さない hidden file、除外 artifact、宣言外の module の内容は未観測である。空の search や初回候補集合を、その範囲を超える不存在の根拠にしない。
+存在しないという主張は、宣言された対象集合または実際に列挙した集合を覆う証拠がある場合だけ `Observed` にする。狭い native search が返さないことから、project 全体に存在しない、全 file に参照がない、decision record がないとは断定せず、未観測範囲を `Unknown` にする。
+到達不能、writer 不在、参照なしを `Derived` にする前に、その主張を変えうる定義、生成物、外部 module、hidden file が観測範囲に残っていないことを示す。未定義 symbol、除外した artifact、未観測の呼出元または実装が一つでも残る場合は、確認した file 間の辺がないという `Observed` と、project 全体での定義または到達可能性が `Unknown` であるという行へ分ける。未定義 symbol を複数まとめる場合も、候補集合内で定義を確認できない `Observed` 行と、集合外を含む project-wide な定義・到達可能性の `Unknown` 行を表内で対にし、表外の要約だけで後者を代用しない。
 最終応答の回収表は `主張 / 根拠状態 / locator または導出 / 意図状態 / 変更先状態 / 未解決境界` の六列を省略しない。各行の未解決境界には、その主張の真偽を変えうる未観測範囲を具体的に書き、なければ `対象外` とする。表外で Unknown を後置しても、表内の網羅主張または過剰な Derived は相殺されない。
 Executive Diagnosis、要約、結論にも回収表と同じ観測境界を適用する。表で Unknown とした範囲を、表外で「実装のどこにもない」「実現されていない」「writer は存在しない」と断定しない。
-一回の Glob で始めた報告は、対象範囲を `target-project 全域` または `全 file` と表記せず、`Glob が返した非 hidden の候補と、限定 Grep で読んだ決定の記録` のように観測集合を列挙する。未解決境界にも「他に資料がない」と書かず、観測集合内で未発見であることと、集合外に存在する可能性を分ける。
+bounded discovery で始めた報告は、実際に観測した候補と、宣言または直接リンクから追加で読んだ file を対象範囲として表記する。`target-project 全域` または `全 file` と呼ぶには、その coverage を根拠付きで示す。未解決境界には観測集合外に存在する可能性を分けて書き、空の search を「他に資料がない」と要約しない。
 読み取り専用の recovery は、意味、状態、責務、依存の診断で止める。修正、目標構造、移行順序、新しい抽象、将来の拡張を提案または作成しない。
-project root だけを与えられた recovery は、最初の一回の Glob 後に、返った非 hidden の source、test、configuration だけを候補集合として読む。決定の記録の置き場は、その後に target project root の `README.md` を exact path で読んで宣言を確認し、宣言が無ければ `docs/decisions/` とする。その置き場へ限定した決定の記録の Grep もこの Glob より後に行う。ユーザー仮説と回収語の検証は候補集合の読取とその置き場に限定した一語の Grep で行い、候補集合外を探す二回目の Glob、root 全域の Grep、別 pattern の再試行へ広げない。
+project root だけを与えられた recovery は、README または manifest が宣言する source、test、configuration を開始点にし、宣言がなければ process が要求する bounded discovery を行う。決定の記録の正本の置き場は最上位 README の宣言で確認する。宣言がなければ置き場と契約の authority を Unknown に残し、manifest や直接リンクから読めた記録は候補として区別する。source、caller、authority、test、decision record の直接リンクを追って material evidence が揃うまで狭く探索し、最初の search が空でも候補名や別 directory を機械的に試さない。現在の標準本文が定める decision-record 規則と target project の宣言が食い違う場合は、観測した宣言と規範の差を Unknown または Derived として分け、どちらかを黙って読み替えない。
