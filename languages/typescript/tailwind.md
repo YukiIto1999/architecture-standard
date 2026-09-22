@@ -2,8 +2,7 @@
 
 用途は、styling を組む機構である。
 採用は、TypeScript は Tailwind CSS の Vite plugin である。
-design token は `@theme` に一元化し、交換形式は上位規律が要求しないため採用しない。
-判断基準は、design token を一元化でき、CSS をビルド時に静的に出せることである。
+判断基準は、design token を `@theme` に一元化でき、CSS をビルド時に静的に出せることである。交換形式は上位規律が要求しないため採らない。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## styling
