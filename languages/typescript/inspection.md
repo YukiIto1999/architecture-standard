@@ -180,7 +180,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 |---|---|---|
 | vitest | 実行 | 実行テスト(Vitest の単体・性質・結合を検証入口で実行し、発見件数0を失敗にする) |
 | fast-check | 性質 | 実行テスト(fast-check の生成・縮小・stateful property と回帰 seed の再実行) |
-| playwright-bdd | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift、baseline metadata と environment fingerprint の照合)+実行テスト(cucumber-js を実装と同じ検証入口で実行し、Playwright で状態・feedback・progress の表示時間を測定し、fingerprint 一致時だけ screenshot 差分を実行)+実行テスト・レビュー(baseline 画像と metadata の原子的な更新と明示承認) |
+| cucumber-js | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber-js を実装と同じ検証入口で実行) |
+| playwright-bdd | UI smoke の Gherkin を Playwright の test へ変換する | 実行テスト(playwright-bdd が変換した test を Playwright の runner で実装と同じ検証入口から実行)+レビュー(executable spec と UI の E2E smoke・visual を代替に並べていないことの判断) |
 | axe-core-playwright | accessibility | 実行テスト(@axe-core/playwright による自動判定可能な違反、Playwright による keyboard 操作・pointer target の bounding box・WCAG 2.2 Level AA の text/non-text contrast と例外記録の照合)+レビュー(自動判定できない WCAG 2.2 Level AA の確認) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`vitest list --json` と Playwright `--list` が返す project・file・suite・test の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。cucumber-js scenario は URI・line・name の組を同じ集合へ加える) |
 | knip | 未使用 | analyzer/lint(knip で未使用のファイル・export・依存を検出し検証入口で失敗) |
@@ -225,7 +226,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |
 | publication | 可視性 | 構造検査(package.json の exports フィールドの検査と、exports に無い path への import の拒否) |
 | oxlint | 汎用名と裸ループと自由文出力を lint で止める | analyzer/lint(id-denylist・typescript/prefer-for-of・no-console をエラー化) |
-| playwright | baseline 画像と環境指紋を一つの更新単位で版管理する | 構造検査(fingerprint 照合を比較前に実行)+レビュー(画像と metadata の一組更新) |
+| playwright | 表示までの時間を E2E で測る | 実行テスト(Playwright の E2E で入力時刻・状態または feedback の表示時刻・progress の表示時刻・完了時刻を測定し、experience の閾値と継続条件へ照合) |
+| playwright | baseline 画像と環境指紋を一つの更新単位で版管理する | 構造検査(baseline metadata と実行環境の environment fingerprint を screenshot の比較前に照合)+実行テスト(fingerprint 一致時だけ `toHaveScreenshot` で screenshot 差分を実行し、画像と metadata の生成が片方だけ確定しないこと)+レビュー(画像と metadata の一組更新の明示承認) |
 
 ## 参照
 検証の機械化と実行可能な仕様の検査経路は [verification](../../principles/verification/README.md) に従う。
