@@ -28,7 +28,7 @@ session cookie の Domain 属性は、設定しない。
 認証の成功時と権限の変更時に、session ID を再生成する。
 session には、idle expiry と absolute expiry の両方を設定する。
 logout では、共有 store から session を削除する。
-back-channel logout token は、署名、issuer、audience、発行時刻、期限、back-channel logout の event claim を検証する。
+back-channel logout token の検証は、[jsonwebtoken](./jsonwebtoken.md) が受け持つ。
 back-channel logout token の token ID は、一度だけ受理して replay を拒否する。
 back-channel logout token に sid があれば `(issuer, sid)` で、なければ `(issuer, subject)` で共有 store の session を特定して失効させる。
 token ID の replay 防止記録と session の失効は、共有 store の同じ原子的な操作で確定する。
@@ -64,7 +64,7 @@ session cookie に、Domain 属性がない。
 認証の成功時と権限の変更時に、session ID が再生成されている。
 session に、idle expiry と absolute expiry が設定されている。
 logout した session が、共有 store から削除されている。
-back-channel logout token の署名、issuer、audience、発行時刻、期限、back-channel logout の event claim が検証されている。
+back-channel logout token が、[jsonwebtoken](./jsonwebtoken.md) の完了条件を満たして検証されている。
 back-channel logout token の token ID が、一度だけ受理されている。
 sid がある logout token は `(issuer, sid)` で、sid がない token は `(issuer, subject)` で共有 store の session を失効させている。
 token ID の replay 防止記録と session の失効が、共有 store の同じ原子的な操作で確定している。
@@ -98,7 +98,7 @@ SessionManagerLayer の builder では、Domain を設定しない。
 認証の成功時と権限の変更時に、session ID を再生成する。
 idle expiry と absolute expiry を設定する。
 logout では共有 store から session を削除する。
-back-channel logout token の署名、issuer、audience、発行時刻、期限、event claim を検証する。
+back-channel logout token を、[jsonwebtoken](./jsonwebtoken.md) で検証する。
 sid があれば `(issuer, sid)` を使い、なければ `(issuer, subject)` を使って共有 store の session を失効させる。
 検証した token ID の期限付き replay 防止記録と session の失効を、共有 store の同じ原子的な操作で確定する。
 token の更新経路に、単一の更新に絞る制御を入れる。

@@ -194,7 +194,8 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | tokio | 共有状態 | 構造検査(bounded mpsc と単一所有 task)+レビュー(更新経路の単一性) |
 | coordination | 資源の解放 | 型(Drop) |
 | axum | server | 構造検査(認証 layer の位置と core 公開 API への principal・token・claim 型の流入禁止)+実行テスト(検証済み principal から actor への写像、actor と検証済み入力による core 公開 API 呼出、IntoResponse と CatchPanicLayer の応答、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー |
-| tower-sessions | BFF | 型(openidconnect の client・actor・埋め込んだ core の公開 API)+構造検査(route が core の公開 API だけを呼ぶこと)+実行テスト(`__Host-`、Secure、HttpOnly、SameSite、Path、Domain 未設定の統合テスト、principal から actor への写像、token の交換と更新、back-channel logout token の署名と claim の検証、issuer と sid/subject による session 失効、token ID の replay 拒否、replay 記録と失効の原子的な確定) |
+| tower-sessions | BFF | 型(openidconnect の client・actor・埋め込んだ core の公開 API)+構造検査(route が core の公開 API だけを呼ぶこと)+実行テスト(`__Host-`、Secure、HttpOnly、SameSite、Path、Domain 未設定の統合テスト、principal から actor への写像、token の交換と更新、issuer と sid/subject による session 失効、token ID の replay 拒否、replay 記録と失効の原子的な確定) |
+| jsonwebtoken | logout token の検証 | 実行テスト(jwks_uri の JWKS から構築した鍵での署名検証、未知の kid での JWKS 再取得と拒否、許可外 algorithm の拒否、alg が none の token の拒否、`typ` が `logout+jwt` でない token の拒否、issuer・audience・期限の判定、iat・jti・events の欠落の拒否、nonce を持つ token の拒否、sid と sub のいずれも無い token の拒否、理解できない claim の無視) |
 | clap | console | 型(clap の derive) |
 | apalis | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(Data extractor による依存注入の判断) |
 | 全域 | cast allowlist | 構造検査(reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
