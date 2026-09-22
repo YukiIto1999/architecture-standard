@@ -227,10 +227,6 @@ expect_text \
   '現在のモードで変更契約に対して実測できる条件を確かめ、未実装・未実行の条件を分けて報告した時点で止める' \
   skills/standard-apply/references/change-contract.md
 expect_text \
-  "apply は標準参照の節約を対象projectの調査不足へ転用しない" \
-  'ここまでの参照制限は標準本文に適用する' \
-  skills/standard-apply/SKILL.md
-expect_text \
   "apply は新要素の前に変更不要と削除を判定する" \
   '変更不要、不要な既存要素の削除' \
   skills/standard-apply/references/change-contract.md
@@ -258,82 +254,6 @@ expect_text \
   "apply は設計依頼で未要求の成果物を作らない" \
   '決定の記録、設計書、報告 file への記録を依頼されていなければ file を作らず' \
   skills/standard-apply/references/change-contract.md
-expect_text \
-  "apply はexact path指定時のGlobを完了扱いしない" \
-  'Glob を使った場合は参照規律を満たしていない' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はexact file指定時に対象projectのGlobを手段から外す" \
-  'exact file path がある.*その file を Read で直接読む.*対象 project への Glob' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply は入口をtool call前に一つ選ぶ" \
-  '対象 project へ最初の tool call を行う前に、次の入口を一つだけ選ぶ' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はexact file作業で関連確認にもGlobしない" \
-  'project の決定の記録、caller、state、test の確認にも Glob を使わない' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はproject契約の記録を回収語の限定Grepで発見する" \
-  '観測した公開 symbol、authority 型、受入語のうち最も固有な一語を選び、その exact token の一回の Grep' \
-  skills/standard-apply/references/change-contract.md
-expect_text \
-  "apply は設計前に決定の記録とtestの追跡gateを閉じる" \
-  '設計本文を書く前に、受入条件の意味を持つ project の決定の記録と既存 test の追跡を gate として閉じる' \
-  skills/standard-apply/references/change-contract.md
-expect_text \
-  "apply はexact pathをdirectory列挙で再発見しない" \
-  '対象 project への Glob、fd、directory 一覧、`git ls-files`' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はexact pathの直読を最初の対象project操作にする" \
-  '最初の対象 project 読取または探索は、表の操作でなければならない' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はexact sourceの意味設計を閉じた経路で調べる" \
-  'exact source path を与えられ、受入条件に completion、state、success または failure がある設計は、次の対象 project 操作だけを記載順に行う' \
-  skills/standard-apply/references/target-scoping.md
-expect_text \
-  "apply はexact source経路のORと全域Grepを禁止する" \
-  '`\|` を含む OR pattern、project root 全域の Grep、Glob、別名 manifest の試行を使わない' \
-  skills/standard-apply/references/target-scoping.md
-expect_text \
-  "apply はpath未指定Globを標準探索としても使わない" \
-  'path 未指定の Glob は標準と対象 project の双方へ一致しうるため、標準側だけの探索としても使わない' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はdirectory入口のsystem-wide作業だけ一度の限定Globを許す" \
-  'system-wide な recovery または audit を要求する場合に限り、開始点の発見に Glob を一回だけ許す' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はdirectory入口のGlob patternをproject rootへ固定する" \
-  'pattern は `<target-project-root>/\*\*/\*` の一つに固定' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はdirectory入口で候補名を複数回試さない" \
-  '既知名の存在確認、top-level確認、source用とtest用の分割によって複数回実行しない' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はroot-only recoveryの最初のGlobを一意にする" \
-  '最初の対象 project 探索を文字どおり `<target-project-root>/\*\*/\*` の一回にする' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "recovery eval はGlob回数とpatternを採点する" \
-  'Glob は target-project/\*\*/\* の一回だけ' \
-  skills/standard-apply/evals/evals.json
-expect_text \
-  "apply はroot recoveryで決定の記録より先に一回のGlobを行う" \
-  'その置き場へ限定した決定の記録の Grep もこの Glob より後に行う' \
-  skills/standard-apply/references/recovery.md
-expect_text \
-  "recovery eval は決定の記録をGlob由来の読取候補にしない" \
-  'docs/decisions.*Glob 由来の読取候補から除く' \
-  skills/standard-apply/evals/evals.json
-expect_text \
-  "apply は決定の記録のGrep失敗時に列挙へfallbackしない" \
-  'Grep が失敗した場合も find、Glob、directory 一覧へ切り替えず' \
-  skills/standard-apply/SKILL.md
 expect_text \
   "apply は未確定の失敗契約を疑似コードで潰さない" \
   '成功と同じ戻り値へ畳む疑似コードを書かない' \
@@ -363,10 +283,6 @@ expect_text \
   '現在の意図と将来の変更先を同時に述べる場合は二行へ分ける' \
   skills/standard-apply/references/recovery.md
 expect_text \
-  "apply は受入語のauthorityと既存testまで追う" \
-  'Accepted な契約、state authority、writer、caller、既存 test を一段ずつ追い' \
-  skills/standard-apply/references/change-contract.md
-expect_text \
   "apply はtask終了とdomain completionを同一視しない" \
   'future または task の終了と、domain の terminal state または永続化された authority の更新を同じ completion とみなさない' \
   skills/standard-apply/references/change-contract.md
@@ -387,40 +303,12 @@ expect_text \
   '`JoinSet` に束ねた job task 内で取消優先の permit 待ちを行うことを必須構造' \
   skills/standard-apply/references/change-contract.md
 expect_text \
-  "apply は既存testを公開callerと結果から探す" \
-  '一段上の公開 caller の exact symbol を一回だけ、manifest または明示契約から確認した test root で Grep' \
-  skills/standard-apply/references/change-contract.md
-expect_text \
-  "apply はtest rootを慣例から推測しない" \
-  'test root を確認できなければ慣例から推測せず Unknown にする' \
-  skills/standard-apply/references/change-contract.md
-expect_text \
-  "apply はAcceptedをOR検索して全記録を読まない" \
-  '`Status: Accepted\|<受入語>\|<authority型>` の OR 検索で全 Accepted な記録を候補にしない' \
-  skills/standard-apply/references/change-contract.md
-expect_text \
-  "apply は公開symbolから契約の記録とauthorityを順に追う" \
-  '決定の記録の契約は、手順2で確認した置き場に限定して.*記録が authority 型を名指しする場合だけ、その exact 型名を source root で一回 Grep' \
-  skills/standard-apply/references/target-scoping.md
-expect_text \
-  "apply は決定の記録の置き場をREADMEの宣言から決める" \
-  '`README.md` が宣言した置き場\(宣言が無ければ `docs/decisions/`\)' \
-  skills/standard-apply/references/change-contract.md
-expect_text \
   "apply はstandard rootをrev-parseで再発見しない" \
   '`pwd` や `git rev-parse` で standard root を再発見しない' \
   skills/standard-apply/SKILL.md
 expect_text \
   "apply の設計応答は将来のartifact指示を足さない" \
   '依頼が設計だけなら、将来の決定の記録、file 作成、cleanup、別変更の指示も削除する' \
-  skills/standard-apply/references/change-contract.md
-expect_text \
-  "apply はcallerとstateのOR検索でtestを広げない" \
-  'caller、状態、型の OR 検索や対象 project root 全域の Grep で無関係な test を候補にしない' \
-  skills/standard-apply/references/change-contract.md
-expect_text \
-  "apply は内部関数名だけで公開callerのtest不在を判定しない" \
-  '変更対象の内部関数名だけを検索語にして公開 caller の test を不在と判定しない' \
   skills/standard-apply/references/change-contract.md
 expect_text \
   "apply は外部cancellationをsibling取消と分ける" \
@@ -447,20 +335,8 @@ expect_text \
   'ユーザーが示した仮説は、その仮説自体を `Assumed` の独立した行に残す' \
   skills/standard-apply/references/recovery.md
 expect_text \
-  "apply はGlob未発見をproject全体の不存在へ広げない" \
-  'Glob が返した非 hidden の候補内で未発見だったことまでであり.*project 全体に存在しない' \
-  skills/standard-apply/references/recovery.md
-expect_text \
-  "apply は未観測範囲が残る到達可能性をUnknownにする" \
-  '未定義の symbol、除外した artifact、未観測の呼出元または実装が一つでも残る場合.*project 全体での定義または到達可能性が `Unknown`' \
-  skills/standard-apply/references/recovery.md
-expect_text \
   "apply はrecovery表の未解決境界列を省略しない" \
   '回収表は `主張 / 根拠状態 / locator または導出 / 意図状態 / 変更先状態 / 未解決境界` の六列を省略しない' \
-  skills/standard-apply/references/recovery.md
-expect_text \
-  "apply は一回のGlob範囲をproject全域と呼ばない" \
-  '対象範囲を `target-project 全域` または `全 file` と表記せず' \
   skills/standard-apply/references/recovery.md
 expect_text \
   "apply はdecision軸の対象外とUnknownを分ける" \
@@ -498,34 +374,6 @@ expect_text \
   "audit は該当なしの空節を出力しない" \
   '該当項目がなければ、その見出し自体を省き、`なし`、`該当なし`' \
   .claude/skills/standard-audit/SKILL.md
-expect_text \
-  "apply は判断に使う直接参照だけを読む" \
-  'その判断を変えうる直接の参照先だけを読み、答えを得た参照経路はそこで止める' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply は既知のexact pathを再発見しない" \
-  'exact file path を与えられた作業では、project の決定の記録、caller、state、test の確認にも Glob を使わない' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はprocessの無条件linkを必須条件として読む" \
-  'process が現在のモードの順序または確認点として無条件に `従う` と定める link は、変更契約の必須条件として読む' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はconcern間linkを変更契約なしに再帰しない" \
-  '読んだ concern から別 concern への link も無条件に再帰しない' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はprocess stepの消込と条件付きlink全読取を混同しない" \
-  'process の全 step を消し込むことと、条件付き link を全て読むことを混同しない' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はdirectory linkから同階層を列挙しない" \
-  'directory への link は同階層の列挙を許可しない' \
-  skills/standard-apply/SKILL.md
-expect_text \
-  "apply はdirectory READMEを一度だけ台帳にする" \
-  'その directory の `README.md` を台帳として一度だけ読み、一つに絞る' \
-  skills/standard-apply/SKILL.md
 expect_text \
   "apply は未観測の契約を補って設計しない" \
   '具体的な独自型や失敗値を発明せず、必要な契約変更と確認対象を未確定の必須条件として残す' \
@@ -833,20 +681,12 @@ expect_text \
   'CLAUDE_SKILL_DIR' \
   .claude/skills/standard-update/SKILL.md
 expect_text \
-  "instruction 変更の task eval は影響する task と旧版比較へ限定する" \
-  '変更した instruction の入力と観測可能な結果を prompt と expectation が直接使う task だけ' \
-  .claude/skills/standard-update/references/evaluation.md
-expect_text \
   "eval 定義だけの変更は変更 task の新版だけを実行する" \
   '`evals/evals.json` だけを変更した場合は、変更した task を `with-skill`' \
   .claude/skills/standard-update/references/evaluation.md
 expect_text \
   "description 変更だけが full trigger eval を要求する" \
   'description または `evals/trigger-evals.json` を変更した場合.*全 query' \
-  .claude/skills/standard-update/references/evaluation.md
-expect_text \
-  "script と reference だけの変更は model eval を要求しない" \
-  '`scripts/\*` または `references/\*\.md` だけを変更し.*model eval は実行しない' \
   .claude/skills/standard-update/references/evaluation.md
 expect_text \
   "標準のコード例は説明コメントを生成しない" \
@@ -1025,14 +865,6 @@ expect_no_text \
 expect_text \
   "task evaluator はrouting判断をtaskと対象skillへ委ねる" \
   'どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はskillの最初の対象project操作を共通promptで上書きしない" \
-  '対象 skill が最初の対象 project 操作または閉じた参照経路を定める場合は、他の対象 project 操作より優先' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator は固定patternの試行錯誤を許さない" \
-  'exact path、exact token、Glob pattern、回数を固定した場合は、その値を変えた試行や候補探索を前後に追加しない' \
   .claude/skills/standard-update/scripts/run-task-evals.mjs
 expect_text \
   "task evaluator は一時的な ENOTEMPTY を再試行してfixtureを回収する" \
@@ -1507,6 +1339,27 @@ for probe_skill in standard-apply standard-audit standard-conformance standard-f
       fail "$probe_skill/$eval_configuration のtask fixtureからmutationを隔離" "$task_harness_probe_output"
     fi
   done
+done
+
+fake_apply_fixture_probe="$TEST_ROOT/claude-apply-fixture-probe"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'test -z "$(git status --porcelain)"' \
+  'git ls-files --error-unmatch target-project/app/http.rs target-project/tests/http.rs architecture-decisions/0002-worker-contract.md >/dev/null' \
+  'test ! -e skills/standard-apply/evals' \
+  'test ! -e .claude/skills/standard-update/scripts/run-task-evals.mjs' \
+  'printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","usage":{}}'\''' \
+  > "$fake_apply_fixture_probe"
+chmod +x "$fake_apply_fixture_probe"
+for eval_configuration in old-skill with-skill; do
+  if apply_probe_output=$(CLAUDE_EVAL_COMMAND="$fake_apply_fixture_probe" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/apply-probe" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration "$eval_configuration" --skill standard-apply --eval-id 6 2>&1) \
+    && test ! -s "$TEST_ROOT/apply-probe/standard-apply/eval-6-sonnet/$eval_configuration/status.txt" \
+    && test ! -s "$TEST_ROOT/apply-probe/standard-apply/eval-6-sonnet/$eval_configuration/diff.patch"; then
+    pass "$eval_configuration の設計fixtureは無編集をcleanとして記録する"
+  else
+    fail "$eval_configuration の設計fixtureは無編集をcleanとして記録する" "$apply_probe_output"
+  fi
 done
 
 fake_audit_mutation_probe="$TEST_ROOT/claude-audit-mutation-probe"

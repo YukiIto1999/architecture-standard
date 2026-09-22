@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync, spawn } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -56,16 +56,19 @@ async function runEval(skillName, item) {
     hideCurrentSkillEvaluationOracles(fixtureRoot, skillName);
     initializeSanitizedRepository(fixtureRoot);
     prepareFixture(fixtureRoot);
-    initializeFixtureCommit(fixtureRoot);
-    prepareEvaluationChange(fixtureRoot, skillName, item.id);
+    if (skillName === "standard-apply") {
+      prepareEvaluationChange(fixtureRoot, skillName, item.id);
+      initializeFixtureCommit(fixtureRoot);
+    } else {
+      initializeFixtureCommit(fixtureRoot);
+      prepareEvaluationChange(fixtureRoot, skillName, item.id);
+    }
 
     const prompt = [
       "これは実タスク評価です。確認質問で止まらず、与えられた範囲を最後まで実行してください。",
       "作業対象は現在の一時fixtureだけです。元のrepositoryへは書き込まないでください。",
       "task の path は現在の作業directoryからの相対pathです。外部事実の確認が task に必要なら WebSearch と WebFetch を使えます。Bash は許可済みの検証 script と git show/status/diff だけに使ってください。",
       "ls、find、wc、cat、git log、git rev-parse を Bash で実行しないでください。file の読取と探索には Read、Glob、Grep を使えます。どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断してください。",
-      "対象 skill が最初の対象 project 操作または閉じた参照経路を定める場合は、他の対象 project 操作より優先してください。この共通 prompt はその順序や禁止 tool の例外を作りません。",
-      "skill が exact path、exact token、Glob pattern、回数を固定した場合は、その値を変えた試行や候補探索を前後に追加しないでください。禁止操作を後から自己申告しても経路遵守には戻らないため、最初の一回から固定値を使ってください。",
       "task が file を変更し、使用する skill が検証を要求する場合は、repository root から `bash .claude/skills/standard-update/scripts/verify.sh` の形で実行してください。読み取り専用 task へ検証を強制しないでください。",
       "この隔離評価では subagent は利用できません。skill が独立 reviewer を明示的に要求する場合だけ、その fallback として同じ session で scoped self-audit を行い、Agent や background task を起動して待たないでください。skill が要求しない self-audit は追加せず、閉じた経路が tool または file を制限する場合は fallback でもその範囲を広げないでください。",
       configuration === "without-skill"
@@ -327,7 +330,8 @@ function hideCurrentSkillEvaluationOracles(fixtureRoot, skillName) {
 
 function prepareFixture(fixtureRoot) {
   const targetRoot = path.join(fixtureRoot, "target-project");
-  mkdirSync(path.join(targetRoot, "docs", "decisions"), { recursive: true });
+  const decisionRoot = path.join(fixtureRoot, "project-decisions");
+  mkdirSync(decisionRoot, { recursive: true });
   mkdirSync(path.join(targetRoot, "app"), { recursive: true });
   mkdirSync(path.join(targetRoot, "tests"), { recursive: true });
   writeFileSync(path.join(targetRoot, "README.md"), [
@@ -335,15 +339,16 @@ function prepareFixture(fixtureRoot) {
     "",
     "Rust API と durable worker を持つ想定の検査用 project。",
     "source root は `app/`、test root は `tests/` とする。",
+    "決定の記録は対象 project の外の `../project-decisions/` に置く。",
     "",
   ].join("\n"));
-  writeFileSync(path.join(targetRoot, "docs", "decisions", "0001-standard.md"), [
+  writeFileSync(path.join(decisionRoot, "0001-standard.md"), [
     "# architecture standard",
     "",
     "準拠の基準は、常に現在の標準本文である。",
     "",
   ].join("\n"));
-  writeFileSync(path.join(targetRoot, "docs", "decisions", "0002-worker-contract.md"), [
+  writeFileSync(path.join(decisionRoot, "0002-worker-contract.md"), [
     "# worker completion contract",
     "",
     "Status: Accepted",
@@ -525,6 +530,54 @@ function isPrime(candidate: number): boolean { /* ... */ }
   }
   // fixture-mutation:end
 
+  // fixture-mutation:start
+  if (skillName === "standard-apply" && evalId === 6) {
+    const targetRoot = path.join(fixtureRoot, "target-project");
+    const decisionRoot = path.join(fixtureRoot, "project-decisions");
+    const adrRoot = path.join(fixtureRoot, "architecture-decisions");
+    renameSync(decisionRoot, adrRoot);
+
+    const readme = path.join(targetRoot, "README.md");
+    replaceKnownStateOnce(readme, [
+      "決定の記録は対象 project の外の `../project-decisions/` に置く。",
+    ],
+      "決定の記録は対象 project の外の `../architecture-decisions/` に置く。HTTP route は `app/http.rs` から公開する。"
+    );
+
+    const decision = path.join(adrRoot, "0002-worker-contract.md");
+    replaceKnownStateOnce(decision, [
+      "# worker completion contract\n\nStatus: Accepted\n\n`run` returns only after every submitted job has reached a terminal state.\nThe persisted `JobStatus` is the authority for job completion.\n",
+    ],
+      "# worker completion contract\n\n## Status\nAccepted\n\n## Decision\nThe HTTP route `post_jobs` calls `submit_via_http`, which calls `run`. `run` returns only after every submitted job has reached a terminal state. The persisted `JobStatus` is the authority for job completion.\n"
+    );
+
+    const api = path.join(targetRoot, "app", "api.rs");
+    replaceKnownStateOnce(api, [
+      "pub async fn submit(jobs: Vec<Job>) -> &'static str {\n    crate::worker::run(jobs).await;\n    \"completed\"\n}",
+    ],
+      "pub async fn submit_via_http(jobs: Vec<Job>) -> &'static str {\n    crate::worker::run(jobs).await;\n    \"completed\"\n}"
+    );
+
+    writeFileSync(path.join(targetRoot, "app", "http.rs"), [
+      "pub async fn post_jobs(jobs: Vec<Job>) -> &'static str {",
+      "    crate::api::submit_via_http(jobs).await",
+      "}",
+      "",
+    ].join("\n"));
+
+    rmSync(path.join(targetRoot, "tests", "worker.rs"));
+    writeFileSync(path.join(targetRoot, "tests", "http.rs"), [
+      "#[tokio::test]",
+      "async fn http_route_reports_terminal_state() {",
+      "    let response = post_jobs(vec![slow_job()]).await;",
+      "    assert_eq!(response, \"completed\");",
+      "    assert_terminal_job_status();",
+      "}",
+      "",
+    ].join("\n"));
+  }
+  // fixture-mutation:end
+
 }
 
 function replaceKnownStateOnce(filePath, knownStates, replacement) {
@@ -584,6 +637,9 @@ function initializeSanitizedRepository(fixtureRoot) {
 function initializeFixtureCommit(fixtureRoot) {
   configureFixtureGit(fixtureRoot);
   execFileSync("git", ["add", "-A"], { cwd: fixtureRoot });
+  const decisionRoot = existsSync(path.join(fixtureRoot, "architecture-decisions"))
+    ? "architecture-decisions" : "project-decisions";
+  execFileSync("git", ["add", "--force", "target-project", decisionRoot], { cwd: fixtureRoot });
   execFileSync("git", ["commit", "--quiet", "-m", "test: prepare skill evaluation fixture"], { cwd: fixtureRoot });
 }
 
