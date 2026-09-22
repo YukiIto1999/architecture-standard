@@ -41,6 +41,7 @@ host の組立点で webview の runtime を一つ選び、その runtime crate 
 desktop と mobile の各 IPC の入口で host の認証 adapter の資格情報を検証し、actor を構築する。
 actor と検証済み入力だけを core の公開 API へ渡す。
 認証の資格情報を host の認証 adapter に、業務の secret と判断を core に置く。
+
 ### 例
 資格情報は host 側で actor へ写し、frontend の入力と actor だけを core へ渡す。
 
@@ -71,6 +72,7 @@ desktop の自動更新が、Tauri の updater plugin で行われている。
 更新成果物の検証に使う公開鍵が、設定に置かれている。
 `bundle.createUpdaterArtifacts` が有効で、`TAURI_SIGNING_PRIVATE_KEY` を使う build が updater bundle と signature を生成している。
 updater bundle と signature が、TLS の endpoint から配布され、設定した公開鍵で signature が updater bundle を検証できる。
+設定した公開鍵を与えた updater が、正しい signature の bundle を受理し、signature の欠落と改竄した bundle を拒否することが、実行テストで確かめられている。
 更新の endpoint が、TLS である。
 非 HTTPS の endpoint を許す設定が、置かれていない。
 release 成果物の署名と provenance だけが、Cosign の定める検証を満たしている。
