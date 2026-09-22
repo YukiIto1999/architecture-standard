@@ -56,7 +56,8 @@ Large runner は、local host の資源と、対象として明示した外部�
 size 別 runner の対象は、各言語の test runner が discovery で返す native test ID の集合で定義する。
 同じ native test ID を複数の size へ含めない。
 parameterized case、doctest、生成した executable spec は、runner が個別に返す ID をそのまま用いる。
-各 size の実行結果が返す native test ID の集合を、その size の discovery 集合と一致させ、発見件数が0件なら失敗する。
+各 size の実行結果が返す native test ID の集合を、その size の discovery 集合と一致させる。
+その size の区画を置いた場合に、発見件数が0件なら失敗する。
 size 別 runner は、許可していない filesystem・socket・network・process を実行環境で到達不能にし、接続を試みた test を失敗させる。
 Small の test は、実行開始後に filesystem、socket、network、別 process へ到達できない環境で動かす。
 Small の fixture は、test binary または test process の値として読み込み前に組み込み、test 本体から repository や一時領域を読まない。

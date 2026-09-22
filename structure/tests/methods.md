@@ -57,7 +57,7 @@ oracle が得にくい対象は、metamorphic な関係で検証する。
 replay は、イベントから projection を再構築して検証する。
 再構築の決定性は、同じイベント列を空の状態へ二度適用して結果が一致することで検証する。二度の一致は決定性の証明ではなく、実行時の入力と外部への効果を早期に見つける検査である。
 信頼できない入力は、契約を駆動にした fuzz で検証する。
-契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [languages](../../languages/) の各 ecosystem が定める。
+契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools/build](../../tools/build/README.md) が定める。
 公開 API の契約への適合も、同じ機構で検証する。
 protocol 経路の適合は、生成物と実装の drift の検査と conformance で検証する。
 契約 generator の生成結果は、全 variant の判別子と payload を serialize と deserialize で往復する generated-contract round-trip で検証し、repository の検証入口で失敗として扱う。

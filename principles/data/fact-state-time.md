@@ -33,4 +33,4 @@
 ### 行動
 対象データを、イベント・リソース・現在状態・識別子・時刻の観点で分類する。
 発生した事実か、状態が変わっても継続して同一性を持つ対象かで、イベントとリソースを見分ける。
-関係と制約への落とし方は、[persistence](../../concerns/persistence/README.md) が具象化する。
+関係と制約への落とし方は、[persistence](../../concerns/persistence/README.md) が定める。

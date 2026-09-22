@@ -7,7 +7,7 @@
 ## 順序
 
 1. 現行の意味、state の authority、実行経路が確立していなければ [recovery](./recovery.md) を実行し、目標の形が確立していなければ [design](./design.md) を実行する。その後、現行と目標の差分を出す(標準との差分は [audit](./audit.md) の順序で出す)。
-2. 既存の違反を一度に解消できない場合は、準拠との差分を検査の失敗 baseline として全件固定し、各差分に所有者・解消条件・検出する root check を割り当てる。新しい違反は baseline に加えない。
+2. 既存の違反を一度に解消できない場合は、[audit](./audit.md) が定める基線台帳へ全件記録し、各行に所有者・解消条件・検出する root check を割り当てる。新しい違反は基線台帳に加えない。
 3. 変える前に安全網を張る([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」に従い、回帰テスト・本番の観測・新旧の整合検査を備える)。
 4. 変更を小さく可逆な段に分け、各段に達成条件・撤退条件・不可逆点を定める([principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」に従う)。
 5. 新旧が同じ datastore にある場合は、[concerns/transaction](../concerns/transaction/single-commit-point.md) の「一つの確定点を持つ」と、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」を適用する。
@@ -23,7 +23,7 @@
 ## 確認点
 
 各段の達成条件・撤退条件・不可逆点の定めと安全網の具備は、[principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」の完了条件に照合する。
-失敗 baseline に、準拠との差分の欠落、新規違反、所有者・解消条件・root check の欠落がないことを確かめる。
+基線台帳に、準拠との差分の欠落、新規違反、所有者・解消条件・root check の欠落がないことを確かめる。
 安全網に頼る前に、テストを意図的に壊して赤になることを確かめる([principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」に照合する)。
 同じ datastore の移行は、[concerns/transaction](../concerns/transaction/README.md) の一つの確定点と、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」の完了条件に照合する。
 schema migration の artifact は、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」の完了条件と禁止事項に照合する。

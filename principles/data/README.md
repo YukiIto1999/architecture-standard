@@ -3,7 +3,7 @@
 data は、データと状態に関する原則を置く。
 整合性を集約境界に閉じ、データを意味で分類し、事実を追記して現在状態を導き、整合性をデータ層の制約で守る。
 論理と物理の分離は [modeling](../modeling/README.md)、正本と互換の独立は [separation](../separation/README.md)、状態の命名は [naming](../naming/README.md) に従う。
-関係と制約による永続データの設計は、concerns の [persistence](../../concerns/persistence/README.md) が具象化する。
+関係と制約による永続データの設計は、concerns の [persistence](../../concerns/persistence/README.md) が定める。
 
 ## 規律
 
