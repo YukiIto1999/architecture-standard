@@ -31,7 +31,7 @@ surfaces は、対話様式というアクターの軸で束ねており、技�
 
 上は、実行時とビルドのコード境界の最大構成である。
 core・contracts・tests は、常に置く。
-contracts は canonical を常に持ち、http・protocol・generated は通信の関心があるときに置く。
+contracts は canonical を常に持ち、http・protocol は通信の関心があるときに、generated は canonical の契約を code から使うときに置く。
 server・console・worker・viewer・extension の surface は、surfaces の直下に、対応する関心があるときに置く。
 runtimes・deploy は、対応する関心があるときに置く。
 libs は、対応する機構があるときに置く。
@@ -97,7 +97,7 @@ surfaces に surface として置き、protocol の対話様式を表す名で�
 | extension の remote | libs・contracts/generated の型 |
 | extension の local | libs・contracts/protocol と、protocol から生成した contracts/generated |
 | extension(UI を持つ場合) | viewer の公開 API |
-| runtimes/\<host\> | 対応する surface・その host の API・port の実装に用いる contracts/generated・core を埋め込む場合は core と libs と contracts/canonical、および同じ core を埋め込む自己ホスト surface の routes |
+| runtimes/\<host\> | 対応する surface・その host の API・port の実装に用いる contracts/generated・同梱起動する埋め込み surface の成果物・core を埋め込む場合は core と libs と contracts/canonical、および同じ core を埋め込む自己ホスト surface の routes |
 | deploy | 配備の対象となる成果物 |
 | tests | 検証のために全ての境界 |
 
@@ -109,7 +109,8 @@ build と test にだけ存在してよい root またぎ依存は、次の表�
 | root tests・各境界内の test package | libs の mechanism testing package |
 
 core と surface の公開 API は libs の型(Result・Effect)を運ぶため、それらを消費する境界は libs へも依存する。
-canonical operation を HTTP へ束ねる写像の正本は自己ホスト surface の routes であり、core を埋め込む runtime はそれを参照し、同じ写像を二重に作らない。
+canonical operation を HTTP へ束ねる写像の正本は contracts の http であり、自己ホスト surface の routes はその写像を実装する。core を埋め込む runtime は routes を参照し、同じ写像を二重に作らない。
+同梱起動は、起動する成果物への依存として実行時依存表で扱い、設定の path だけで表さない。
 実行時依存表と build・test-only 依存表が、root またぎ依存の機械検証の唯一の駆動元である。
 両表に無い参照元から参照先への root またぎ依存は、すべて禁止とする。
 root の arch test は、runtime・build・test の phase ごとに依存 edge を区別する。

@@ -1,7 +1,7 @@
 # generated 層
 
 generated 層は、canonical と binding(http・protocol)から生成した出力を定める層である。
-generated は、別プロセスの client または型を要するときに置く。
+generated は、canonical の契約を code から使うときに置く。
 generated は [layout](./layout.md) の依存に従う。
 
 ## 生成物

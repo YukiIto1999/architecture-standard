@@ -24,7 +24,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 
 | ファイル | 用途 | 採用 |
 |---|---|---|
-| [apalis](./apalis.md) | 背景処理と定期実行の daemon の骨格である | Rust は apalis であり、PostgreSQL を backend にした queue に限って使う |
+| [apalis](./apalis.md) | 背景処理と定期実行の daemon の骨格である | Rust は apalis と apalis-postgres であり、PostgreSQL を backend にした queue に限って使う |
 | [async-trait](./async-trait.md) | 実行時に差し替える非同期の port を動的ディスパッチで扱う機構である | Rust は async-trait である |
 | [axum](./axum.md) | HTTP の API を公開する surface の骨格である | Rust は axum である |
 | [cargo-llvm-cov](./cargo-llvm-cov.md) | テストが実行していない箇所を見つけるカバレッジ計測である | Rust は cargo-llvm-cov である |
@@ -35,7 +35,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [cucumber](./cucumber.md) | 業務語彙の executable spec を実行する道具である | Rust は cucumber の Rust 実装である |
 | [jsonwebtoken](./jsonwebtoken.md) | OIDC の back-channel logout token を検証する JWT の検証機構である | Rust は jsonwebtoken(暗号の provider は `aws_lc_rs`)である |
 | [redis](./redis.md) | Valkey へ接続する client である | Rust は redis である |
-| [openidconnect](./openidconnect.md) | BFF の OIDC code・PKCE・token 管理 | Rust は openidconnect である |
+| [openidconnect](./openidconnect.md) | OIDC の code と PKCE のフローを終端し ID Token を検証するクライアントである | Rust は openidconnect である |
 | [progenitor](./progenitor.md) | 契約から Rust の client と型を生成し、drift・conformance の検査に使う道具である | Rust は progenitor である |
 | [reqwest](./reqwest.md) | 外部 HTTP API を呼び出す非同期 client である | Rust は reqwest (TLS は rustls)である |
 | [proptest](./proptest.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | Rust は proptest である |
@@ -43,14 +43,15 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [serde](./serde.md) | 値を wire 形式と相互に直列化・逆直列化する機構である | Rust は serde である |
 | [sqlx-cli](./sqlx-cli.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | Rust は sqlx-cli である |
 | [sqlx](./sqlx.md) | SQL を型で扱いながら書く永続化アクセス層である | Rust は sqlx である |
-| [tauri](./tauri.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が Rust のときは desktop・mobile ともに Tauri である |
+| [syn](./syn.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | Rust は syn(`parsing` と `full` の feature)である |
+| [tauri](./tauri.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が Rust のときは desktop・mobile ともに Tauri であり、webview の runtime は wry の runtime crate を選ぶ |
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | Rust は testcontainers である |
 | [thiserror](./thiserror.md) | 責務の単位でエラー型を宣言し表示と変換を導出する機構である | Rust は thiserror である |
 | [tokio-util](./tokio-util.md) | 協調的な取り消しを、処理の木へ伝える token の機構である | Rust は tokio-util である |
 | [typify](./typify.md) | HTTP を持たない契約の JSON Schema から Rust の型を生成する道具である | Rust は typify である |
 | [tokio](./tokio.md) | 非同期の実行を担う runtime である | Rust は Tokio である |
 | [tower-lsp-server](./tower-lsp-server.md) | 言語サービスの公開・extension が接続する core への JSON-RPC | tower-lsp-server である |
-| [tower-sessions](./tower-sessions.md) | BFF の token 管理・BFF の session 管理 | Rust は tower-sessions のサーバー側セッション、redis の共有 store client と openidconnect のトークンエンドポイントクライアントである |
+| [tower-sessions](./tower-sessions.md) | BFF の token 管理・BFF の session 管理 | Rust は tower-sessions のサーバー側セッション、redis の Valkey client と openidconnect のトークンエンドポイントクライアントである |
 | [tower](./tower.md) | HTTP の経路の横断処理を、層として合成する機構である | Rust は tower と tower-http である |
 
 ## 言語機構で満たす用途
@@ -61,6 +62,6 @@ rust の言語としての採用と、実現規律、採用物を置く。
 |---|---|---|
 | viewer・extension・host の効果の表現 | 言語機構(Future・Result)で表し、外部ライブラリを採らない | [connection](./connection.md) |
 | API の禁止 | clippy の disallowed_methods で満たし、専用の道具を置かない | [clippy](./clippy.md) |
-| 構造検査 | root の tests/ に置く自作の構造検査で満たし、道具を置かない | [inspection](./inspection.md) |
+| crate 依存の phase の区別 | `cargo metadata` の `dep_kinds` が返す normal・dev・build で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | 未使用コードの検出 | コンパイラと lint の到達可能性に基づく検出で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | UI の accessibility 検査 | viewer を TypeScript に委ねるため採用を持たない | — |
