@@ -9,18 +9,18 @@
 
 ### 要求
 Rust の構造検査は、source を syn の `parse_file` で構文木へ読む。
-use 宣言の module path、item の可視性と配置、関数の signature、属性とドキュメントコメント、macro の呼び出しを構造検査で取得する。
+use 宣言の module path、item の可視性と配置、impl の trait path と self type、関数の signature、属性とドキュメントコメント、macro の呼び出しを構造検査で取得する。
 取得した構造を、依存方向・公開面・配置の文法の規則へ照合する。
 
 ### 根拠
 採用している stable toolchain は、Rust の構文木を検査へ公開しない。
 `proc_macro` は手続き的 macro の実装の中だけで使え、その外から呼ぶと panic する。
 `rustc_private` は nightly の機能であり、`rustc-dev` component を要するので stable の採用と両立しない。
-syn は stable の crate として `parse_file` を提供し、use 宣言・可視性・signature・属性・macro 呼び出しを同じ構文木から取れる。
+syn は stable の crate として `parse_file` を提供し、use 宣言・可視性・impl の trait path と self type・signature・属性・macro 呼び出しを同じ構文木から取れる。
 
 ### 完了条件
 構造検査が、syn の `parse_file` で source を構文木へ読んでいる。
-構造検査が、use 宣言の module path、item の可視性と配置、関数の signature、属性とドキュメントコメント、macro の呼び出しを取得している。
+構造検査が、use 宣言の module path、item の可視性と配置、impl の trait path と self type、関数の signature、属性とドキュメントコメント、macro の呼び出しを取得している。
 取得した構造が、依存方向・公開面・配置の文法の規則へ照合されている。
 
 ### 禁止事項
@@ -29,5 +29,5 @@ syn は stable の crate として `parse_file` を提供し、use 宣言・可�
 
 ### 行動
 root の tests に置く構造検査から、対象の source を syn の `parse_file` で読む。
-use 宣言・可視性・signature・属性・macro 呼び出しを列挙する。
+use 宣言・可視性・impl の trait path と self type・signature・属性・macro 呼び出しを列挙する。
 列挙した構造を、検証入口で規則へ照合する。
