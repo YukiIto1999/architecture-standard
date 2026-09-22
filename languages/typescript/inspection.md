@@ -198,7 +198,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |
 | publication | 可視性 | 構造検査(package.json の exports フィールドの検査) |
 
-| oxlint | 汎用名と裸ループと自由文出力を lint で止める | analyzer/lint(id-denylist・unicorn/no-for-loop・no-console をエラー化) |
+| oxlint | 汎用名と裸ループと自由文出力を lint で止める | analyzer/lint(id-denylist・typescript/prefer-for-of・no-console をエラー化) |
 
 | playwright | baseline 画像と環境指紋を一つの更新単位で版管理する | 構造検査(fingerprint 照合を比較前に実行)+レビュー(画像と metadata の一組更新) |
 ## 参照

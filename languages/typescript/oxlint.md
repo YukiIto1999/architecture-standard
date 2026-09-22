@@ -9,7 +9,7 @@
 
 ### 要求
 識別子の汎用名は、id-denylist で data・info・temp・result などの一覧を定めて禁止する。
-集合の添字による裸ループは、unicorn/no-for-loop で禁止し、集合処理を名前のある操作で書く。
+集合の添字による裸ループは、typescript/prefer-for-of で禁止し、集合処理を名前のある操作で書く。
 console への出力は、no-console で禁止し、telemetry の port と console 相当の出力層だけを許可指定で除く。
 
 ### 根拠
@@ -19,7 +19,7 @@ data・info・temp のような汎用名は生成時に混入しやすく、id-d
 
 ### 完了条件
 id-denylist に汎用名の一覧が定められ、違反が検証入口でエラーとして扱われている。
-unicorn/no-for-loop が有効になっている。
+typescript/prefer-for-of が有効になっている。
 no-console が有効で、許可が telemetry の port と console 相当の出力層に限られている。
 
 ### 禁止事項
@@ -27,5 +27,5 @@ no-console が有効で、許可が telemetry の port と console 相当の出�
 telemetry を経ない console 出力を業務コードに置くこと。
 
 ### 行動
-oxlint の設定へ id-denylist・unicorn/no-for-loop・no-console を定め、違反箇所は名前の付け直し・名前のある集合操作・telemetry の port へ直す。
+oxlint の設定へ id-denylist・typescript/prefer-for-of・no-console を定め、違反箇所は名前の付け直し・名前のある集合操作・telemetry の port へ直す。
 
