@@ -2,6 +2,7 @@
 
 演習は、稼働する系と運用の穴を、攻撃者と障害の視点で定期的に探す。
 検証の技法は [structure/tests/methods](../structure/tests/methods.md)、脅威の前提は [concerns/security](../concerns/security/README.md) に従う。
+検証入口で機械的に判定できる違反の検出は、この順序の範囲外であり [audit](./audit.md) が持つ。
 
 ## 順序
 
@@ -12,5 +13,5 @@
 ## 確認点
 
 演習の頻度と対象が、project の決定の記録に定められている。
-発見が、severity と該当箇所を添えて記録されている。
+発見が、[audit](./audit.md) の確認点が定める書式で、severity と該当箇所を添えて記録されている。
 runbook と観測の修正が、演習の発見へ遡れる。
