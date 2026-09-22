@@ -27,6 +27,8 @@ typescript の言語としての採用と、実現規律、採用物を置く。
 | [axe-core-playwright](./axe-core-playwright.md) | UI の E2E で、自動判定できる accessibility の違反を検出する道具である | TypeScript は @axe-core/playwright である |
 | [cucumber-js](./cucumber-js.md) | 業務語彙の executable spec を実行する道具である | TypeScript は cucumber-js である |
 | [fast-check](./fast-check.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | TypeScript は fast-check である |
+| [http-client-js](./http-client-js.md) | 契約から TypeScript の client と型を生成し、drift・conformance の検査に使う道具である | TypeScript は `@typespec/http-client-js` である |
+| [json-schema-to-typescript](./json-schema-to-typescript.md) | HTTP を持たない契約の JSON Schema から TypeScript の型を生成する道具である | TypeScript は json-schema-to-typescript である |
 | [knip](./knip.md) | エントリーポイントからの到達可能性で、未使用のファイル・エクスポート・依存を見つける道具である | TypeScript は knip である |
 | [kobalte](./kobalte.md) | 見た目を持たない振る舞いだけの UI component を提供する機構である | @kobalte/core の SolidJS 2.0 対応版である |
 | [opentelemetry-js](./opentelemetry-js.md) | 利用者の環境で動く viewer の trace と構造化 event を、境界の殻で収集する機構である | TypeScript は OpenTelemetry JS の WebTracerProvider と span event、OTLP/HTTP の trace exporter である |
@@ -42,7 +44,6 @@ typescript の言語としての採用と、実現規律、採用物を置く。
 | [tsdoc](./tsdoc.md) | ドキュメントコメントの存在、構文、宣言と tag の機械判定できる対応、最初の一行と句読点を検査する道具である | TypeScript は @typescript/typescript6 6.0.2 と @microsoft/tsdoc を使う構造検査である |
 | [tsgolint](./tsgolint.md) | 規則の違反をビルドで止める linter である | TypeScript は `oxlint --type-aware` と `oxlint-tsgolint` の組である |
 | [typescript-compiler-api](./typescript-compiler-api.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | TypeScript は @typescript/typescript6 6.0.2 の compiler API を使う AST 構造検査である |
-| [typespec](./typespec.md) | UI が参照する契約の型の真実源となる契約記述である | TypeScript は TypeSpec と `@typespec/openapi3` の OpenAPI 出力である |
 | [valibot](./valibot.md) | 外部入力を schema で検証し、検証済みの値だけに型を名乗らせる機構である | TypeScript は valibot である |
 | [vite](./vite.md) | web の host の entry と bundler である | Vite と @solidjs/vite-plugin である |
 | [vitest](./vitest.md) | 単体・性質・結合のテストの実行系である | TypeScript は Vitest である |

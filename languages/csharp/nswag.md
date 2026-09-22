@@ -1,8 +1,8 @@
 # NSwag
 
 用途は、契約から C# の client と型を生成し、drift・conformance の検査に使う道具である。
-採用は、C# は NSwag である。
-判断基準は、contracts/generated の client と型を契約から生成でき、drift をリポジトリの検証入口の gate にできることである。
+採用は、C# は NSwag であり、HTTP を持たない契約は NSwag の JSON Schema 入力で型を生成する。
+判断基準は、contracts/generated の client と型を契約から生成でき、`@typespec/json-schema` が出力する JSON Schema からも型を生成でき、drift をリポジトリの検証入口の gate にできることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## 生成した契約を使い、drift を検査の gate にする
