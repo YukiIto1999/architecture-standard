@@ -28,6 +28,7 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [aspnet-core](./aspnet-core.md) | server・server の middleware・BFF の session 管理・OIDC クライアント | C# は ASP.NET Core の Minimal API である |
 | [banned-api-analyzers](./banned-api-analyzers.md) | 禁止した API の呼び出しを、ビルドで検出する検査である | C# は Microsoft.CodeAnalysis.BannedApiAnalyzers である |
 | [consoleappframework](./consoleappframework.md) | CLI の surface の骨格である | C# は ConsoleAppFramework である |
+| [coverlet-mtp](./coverlet-mtp.md) | テストが実行していない箇所を見つけるカバレッジ計測である | C# は coverlet.MTP である |
 | [cscheck](./cscheck.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | C# は CsCheck である |
 | [csharpier](./csharpier.md) | 表記を道具の既定で一意に揃える formatter である | C# は CSharpier である |
 | [dapper-aot](./dapper-aot.md) | SQL 中の placeholder と parameter member の対応を DB を起動せずに補助検査する道具である | C# は DapperAOT である |
@@ -35,7 +36,6 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [duende-access-token-management](./duende-access-token-management.md) | BFF が保持する token の交換と更新を担う機構である | C# は Duende.AccessTokenManagement である |
 | [grate](./grate.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | C# は grate の up の one-time script である |
 | [maui-hybridwebview](./maui-hybridwebview.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が C# のときは mobile は .NET MAUI の HybridWebView である |
-| [microsoft-testing-extensions-code-coverage](./microsoft-testing-extensions-code-coverage.md) | テストが実行していない箇所を見つけるカバレッジ計測である | C# は Microsoft.Testing.Extensions.CodeCoverage である |
 | [mutation-dotnet](./mutation-dotnet.md) | テストが振る舞いを固定しているかを測る mutation 検査である | C# は mutation-dotnet である |
 | [netsparkle-updater](./netsparkle-updater.md) | 配布した desktop の成果物を、署名を検証しながら自動で更新する機構である | C# は NetSparkleUpdater である |
 | [npgsql](./npgsql.md) | PostgreSQL へ接続し、transaction の確定と制約違反の判別を担う data provider である | C# は Npgsql である |
