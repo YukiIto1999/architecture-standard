@@ -3,7 +3,7 @@
 用途は、Valkey へ接続する client である。
 採用は、C# は StackExchange.Redis である。
 判断基準は、接続を composition で共有して切断後に再接続し、session・cache・一時データの読み書きを一つの client interface に集約し、採用している .NET の版を target し、RESP で Valkey へ接続できることである。
-撤回条件は、判断基準を満たさなくなることであり、Valkey GLIDE C# が work in progress の表明を外して採用している .NET の版を target すること、StackExchange.Redis の保守の停止、採用した Valkey サーバ版との接続互換の破綻を再評価のトリガーとする。
+撤回条件は、判断基準を満たさなくなることであり、同じ用途を満たす別の client が work in progress の表明を外して採用している .NET の版を target すること、StackExchange.Redis の保守の停止、採用した Valkey サーバ版との接続互換の破綻を再評価のトリガーとする。
 
 ## 一時データ
 

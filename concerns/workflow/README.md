@@ -3,7 +3,7 @@
 ## 概要
 workflow は、複数の確定点にまたがる一つの業務目的の順序・分岐・再開・補償を統べる規律である。
 principles の [data](../../principles/data/README.md) が定める複数集約の結果整合性を、全系の業務の流れとして具象化する。
-event の契約と配送・消費は [messaging](../messaging/README.md)、確定点は [transaction](../transaction/README.md)、再開の記録と配置は [structure/core/application](../../structure/core/application.md) が定める。
+event と確定点と再開の記録の扱いは、[参照](#参照) が示す正本に従う。
 
 ## 規律
 
