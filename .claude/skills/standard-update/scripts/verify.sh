@@ -203,7 +203,7 @@ is_non_product_token() {
   # 採用行に併記される言語名・規格名・機構の一般語だけを除き、製品名の候補は行から毎回導出する。
   case "$1" in
     "API"|"HTTP"|"Build"|"C#"|"CI"|"CSS"|"Community"|"Core"|"JSON"|"JSON-RPC"|"Minimal"|"NET"|"OpenAPI"|"Rust"|"S3776"|"SPDX"|"TypeScript"|\
-    "analyzer"|"backend"|"client"|"ID"|"cognitive"|"collector"|"commit"|"tree"|"companion"|"complexity"|"cookie"|"core"|"coverage"|"desktop"|"for"|"framing"|"gate"|"generation"|"generator"|"handler"|"library"|"mobile"|"node"|"one-time"|"plugin"|"project"|"provider"|"quality"|"queue"|"record"|"root"|"runtime"|"rust"|"schema"|"script"|"sealed"|"source"|"tests/"|"tools"|"type-aware"|"union"|"up"|"v1"|"v8")
+    "analyzer"|"backend"|"client"|"ID"|"cognitive"|"collector"|"commit"|"tree"|"companion"|"complexity"|"cookie"|"core"|"coverage"|"desktop"|"for"|"framing"|"gate"|"generation"|"generator"|"handler"|"library"|"mobile"|"node"|"one-time"|"plugin"|"project"|"provider"|"quality"|"queue"|"record"|"repository"|"root"|"runtime"|"rust"|"schema"|"script"|"sealed"|"source"|"tests/"|"tools"|"type-aware"|"union"|"up"|"v1"|"v8")
       return 0
       ;;
     *)
@@ -240,7 +240,7 @@ fi
 
 echo
 echo "=== 3. concerns への言語機構/方言の漏れ(あってはならない) ==="
-if rg -nP '\b(sqlx|tokio|axum|tower|serde|Dapper|Npgsql|EF Core|zod|valibot|neverthrow|SolidJS|Tailwind|Vite|VSCode|fred|apalis|PGMQ|clap|NSwag|Wolverine|Photino|MAUI|Kobalte|ON CONFLICT|ON DUPLICATE|StreamJsonRpc|vscode-jsonrpc|createResource|createSignal|actor framework|Playwright|TypeScript|compiler API)\b' concerns; then
+if rg -nP '\b(sqlx|tokio|axum|tower|serde|Dapper|Npgsql|EF Core|zod|valibot|ts-results-es|SolidJS|Tailwind|Vite|VSCode|fred|apalis|PGMQ|clap|NSwag|Wolverine|Photino|MAUI|Kobalte|ON CONFLICT|ON DUPLICATE|StreamJsonRpc|vscode-jsonrpc|createResource|createSignal|actor framework|Playwright|TypeScript|compiler API)\b' concerns; then
   fail "concerns に言語機構/方言が漏れている(中立化するか languages へ移すこと)"
 else
   pass "concerns に言語機構/方言の漏れなし"
