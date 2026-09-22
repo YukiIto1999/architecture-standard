@@ -172,8 +172,8 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | 全域 | branch coverage | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定) |
 | valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・境界の parse の単体テスト) |
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |
-| typespec | 契約の型を生成する | 実行テスト(生成器 toolchain が openapi-typescript の peer dependency に適合する TypeScript を使うこと、製品の TypeScript toolchain と分離した生成、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
-| translation | 生成型を型としてのみ使い、通信を port に通す | 構造検査(TypeScript compiler API での runtime の import の検出)+型(import type) |
+| http-client-js | 生成した契約を使い、drift を検査の gate にする | 実行テスト(契約からの生成、再生成の差分、判別付き直和の判別子つき union と網羅の型検査、生成 client への transport の注入、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
+| translation | 生成型を型としてのみ使い、通信を port に通す | 構造検査(TypeScript compiler API。viewer からの生成 client の import と runtime の import の検出、生成 client の import を ui port の実装へ限定)+型(import type) |
 | ts-results-es | 効果を遅延した関数で表す | 構造検査(TypeScript compiler API。Effect が unique symbol の nominal brand を持ち、deferEffect だけが branded value を構築し、全ての公開 Effect factory に parameter initializer がなく、本体が実行用の関数リテラルを deferEffect へ直接渡すこと)+実行テスト(deferEffect の構築時は副作用0件で、返した Effect の呼出後にだけ開始すること)+型(Effect の nominal brand・環境・AbortSignal・wall-clock の絶対期限・AsyncResult のシグネチャ) |
 | ts-results-es | 想定内失敗を Result で返す | 型(ts-results-es の Result・判別子つき union) |
 | ts-results-es | 非同期 API の送出を AsyncResult へ変換する | 構造検査(TypeScript compiler API。設定した Promise を返す境界 API の呼出しを `Result.wrapAsync` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(関数呼出時の同期 throw と返した Promise の rejection を同じ mapper が Err にし、欠陥と AbortError は元の error のまま rejection になること) |

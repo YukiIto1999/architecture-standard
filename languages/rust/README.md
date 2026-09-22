@@ -47,6 +47,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | Rust は testcontainers である |
 | [thiserror](./thiserror.md) | 責務の単位でエラー型を宣言し表示と変換を導出する機構である | Rust は thiserror である |
 | [tokio-util](./tokio-util.md) | 協調的な取り消しを、処理の木へ伝える token の機構である | Rust は tokio-util である |
+| [typify](./typify.md) | HTTP を持たない契約の JSON Schema から Rust の型を生成する道具である | Rust は typify である |
 | [tokio](./tokio.md) | 非同期の実行を担う runtime である | Rust は Tokio である |
 | [tower-lsp-server](./tower-lsp-server.md) | 言語サービスの公開・extension が接続する core への JSON-RPC | tower-lsp-server である |
 | [tower-sessions](./tower-sessions.md) | BFF の token 管理・BFF の session 管理 | Rust は tower-sessions のサーバー側セッション、redis の共有 store client と openidconnect のトークンエンドポイントクライアントである |
