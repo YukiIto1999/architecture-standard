@@ -24,4 +24,4 @@ store の採用では、persistence は datastore と一時データの store �
 データの原則は [data](../../principles/data/README.md)、論理設計と物理設計の分離は [modeling](../../principles/modeling/README.md)、書き込みパスの一貫性は [transaction](../transaction/README.md) に従う。
 稼働中のスキーマと別 datastore への移行は [migration](../migration/README.md) に従う。
 cache の鮮度・無効化・不在・障害時の意味は [caching](../caching/cache-aside.md) の「cache を正本の控えに保つ」に従う。
-永続化の置き場は [structure/core/infrastructure](../../structure/core/infrastructure.md)、言語別の実現は [languages](../languages/) が定める。
+永続化の置き場は [structure/core/infrastructure](../../structure/core/infrastructure.md)、言語別の実現は [languages](../../languages/) が定める。

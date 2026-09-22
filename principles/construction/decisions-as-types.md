@@ -74,7 +74,7 @@ function fee(account: Account): Money {
 }
 ```
 
-Rust では enum と網羅 match、C# では閉じた sealed 階層と switch 式で、同じ網羅ができる。
+閉じた直和と網羅的な分岐を持つ言語機構であれば、同じ網羅ができる。
 組立点で差し替える方針は多態で表し、実装を方針の型に閉じる。
 
 ```ts

@@ -212,14 +212,16 @@ is_non_product_token() {
   esac
 }
 
-echo "=== 1. broken .md links(principles/concerns/structure/tools/languages/process + README) ==="
+echo "=== 1. broken links(principles/concerns/structure/tools/languages/process + README。file と directory の両方) ==="
 broken=0
 while IFS= read -r f; do
   d=$(dirname "$f")
   while IFS= read -r l; do
     [ -z "$l" ] && continue
-    [ -f "$d/$l" ] || { echo "  broken: $f -> $l"; broken=1; }
-  done < <(rg -oN '\]\(([^)]+\.md)\)' "$f" -r '$1' 2>/dev/null)
+    l=${l%%#*}
+    [ -z "$l" ] && continue
+    [ -e "$d/$l" ] || { echo "  broken: $f -> $l"; broken=1; }
+  done < <(rg -oN '\]\((\.[^)]*)\)' "$f" -r '$1' 2>/dev/null)
 done < <(fd . principles concerns structure tools languages process -e md 2>/dev/null; echo README.md)
 if [ "$broken" = 0 ]; then pass "リンク切れなし"; else fail "リンク切れあり(上記 broken 行)"; fi
 

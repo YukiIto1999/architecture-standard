@@ -20,4 +20,4 @@ principles の [construction](../../principles/construction/README.md) が定め
 不変は [construction](../../principles/construction/README.md)、副作用の隔離は [separation](../../principles/separation/README.md) に従う。
 効果の合成は [effect](../effect/README.md)、文脈の伝播は [context-propagation](../context-propagation/README.md) に従う。
 待ち行列と流入の上限は [resilience](../resilience/README.md)、性能目的の並列化は [performance](../performance/README.md) に従う。
-言語別の実現は [languages](../languages/) が定める。
+言語別の実現は [languages](../../languages/) が定める。

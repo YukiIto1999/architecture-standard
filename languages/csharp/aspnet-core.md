@@ -69,21 +69,21 @@ public static RouteGroupBuilder MapTodoEndpoints(this IEndpointRouteBuilder app)
 ## server の middleware
 
 用途は、HTTP の経路の横断処理を、層として合成する機構である。
-C# は ASP.NET Core の組み込みの middleware で満たし、別の採用を持たない。
+採用は、C# は ASP.NET Core の組み込みの middleware であり、別の機構を重ねない。
 判断基準は、採用済みの server の骨格と同じ抽象で層を積め、横断処理を経路の定義から分離できることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## BFF の session 管理
 
 用途は、BFF が session を保持し cookie で運ぶ機構である。
-C# は ASP.NET Core 標準の cookie 認証を使い、外部ライブラリを別に選ばない。
+採用は、C# は ASP.NET Core 標準の cookie 認証であり、別の機構を重ねない。
 判断基準は、Secure・HttpOnly・SameSite=Strict の cookie 属性を、既定または明示の設定で強制できることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## OIDC クライアント
 
 用途は、OIDC の code と PKCE のフローを終端し ID Token を検証するクライアントである。
-C# は ASP.NET Core 標準の handler を使い、外部ライブラリを別に選ばない。
+採用は、C# は ASP.NET Core 標準の OpenID Connect handler であり、別の機構を重ねない。
 判断基準は、authorization code と PKCE の flow を終端し、ID Token の署名、issuer、audience、nonce を検証できることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 

@@ -47,8 +47,9 @@ deploy は、特定の配備先に縛られない。
 配備先ごとの違いは、infrastructure と delivery の定義に閉じ込める。
 具体の platform と tool は標準に固定せず、project が単一の採用を決定の記録に明記する。
 利用者の端末で動く成果物(desktop・extension・console など)を store や marketplace で配布する経路は、deploy の配備先に含めない。
-配布は、release の成果物を、配布 channel の提出手順へ渡す形で行う。
-配布と更新は、配布 channel や store などの配布機構に任せ、自前の更新機構を作らない。
+配布は、配布 channel を使う場合、release の成果物を提出手順へ渡す形で行い、更新も配布機構に任せる。
+配布機構が更新を提供しない成果物は、署名を検証する自動更新の配布先を project が運用し、その配備先の宣言を infrastructure に置く。
+配布機構が更新を提供する成果物に対して、自前の更新機構を作らない。
 release する成果物の供給網の保証は [concerns/security](../../concerns/security/README.md) に従う。
 
 ## infrastructure

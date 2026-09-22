@@ -3,7 +3,7 @@
 用途は、背景処理と定期実行の daemon の骨格である。
 採用は、C# は Wolverine であり、PostgreSQL を backend にした queue に限って使う。
 判断基準は、queue と scheduler を既存の datastore に閉じ、外部の broker を開かないことである。
-撤回条件は、判断基準を満たさなくなることであり、backend の対応状況の変化と apalis の 1.0 リリースを再評価のトリガーとする。
+撤回条件は、判断基準を満たさなくなることであり、backend の対応状況の変化、保守の停止、採用している .NET の版を target しなくなることを再評価のトリガーとする。
 
 ## worker
 

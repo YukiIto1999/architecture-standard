@@ -17,4 +17,4 @@ transaction は書き込みパスの動的な確定を扱い、静止した関�
 ## 参照
 整合性と集約は [data](../../principles/data/README.md)、効果とエラーは [effect](../effect/README.md) に従う。
 配送は [messaging](../messaging/README.md)、冪等と再試行は [resilience](../resilience/README.md) に従う。
-書き込みパスの所有を実現する構造は [structure/core/composition](../../structure/core/composition.md)、言語別の実現は [languages](../languages/) が定める。
+書き込みパスの所有を実現する構造は [structure/core/composition](../../structure/core/composition.md)、言語別の実現は [languages](../../languages/) が定める。

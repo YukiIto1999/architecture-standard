@@ -76,4 +76,4 @@ if (order.status === OrderStatus.Paid || order.status === OrderStatus.Preparing)
 if (order.canCancel()) { /* ... */ }
 ```
 
-Rust では newtype と非公開フィールド、C# では record と検証付きファクトリで、同じ封入ができる。
+専用の型と、外から値を組み立てられない構築経路があれば、同じ封入ができる。

@@ -12,4 +12,4 @@ secret の値と lifecycle の正本は secrets であり、[configuration](../c
 ## 参照
 設定へ secret の参照を置き、起動時に値を解決する適用は [configuration](../configuration/README.md) が書く。
 暗号の姿勢は [security](../security/README.md) に従う。
-配備における secret の置き場は [structure/deploy](../structure/deploy/) が定める。
+配備における secret の置き場は [structure/deploy](../../structure/deploy/) が定める。

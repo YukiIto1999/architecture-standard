@@ -13,4 +13,4 @@ principles の [data](../../principles/data/README.md) が定める事実の保�
 事実の保持と削除の判断は [data](../../principles/data/README.md) に従う。
 観測の記録への適用と、境界を越えて伝播する文脈の扱いは [observability](../observability/README.md) に従う。
 消去する port と管理操作の置き場は [structure/core/infrastructure](../../structure/core/infrastructure.md) が定める。
-言語別の実現は [languages](../languages/) が定める。
+言語別の実現は [languages](../../languages/) が定める。
