@@ -38,7 +38,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [openidconnect](./openidconnect.md) | OIDC の code と PKCE のフローを終端し ID Token を検証するクライアントである | Rust は openidconnect である |
 | [progenitor](./progenitor.md) | 契約から Rust の client と型を生成し、drift・conformance の検査に使う道具である | Rust は progenitor である |
 | [reqwest](./reqwest.md) | 外部 HTTP API を呼び出す非同期 client である | Rust は reqwest (TLS は rustls)である |
-| [proptest](./proptest.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | Rust は proptest である |
+| [proptest](./proptest.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | Rust は proptest と proptest-state-machine の組である |
 | [rustfmt](./rustfmt.md) | 表記を道具の既定で一意に揃える formatter である | Rust は rustfmt である |
 | [serde](./serde.md) | 値を wire 形式と相互に直列化・逆直列化する機構である | Rust は serde である |
 | [sqlx-cli](./sqlx-cli.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | Rust は sqlx-cli である |
