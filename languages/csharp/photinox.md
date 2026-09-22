@@ -8,7 +8,7 @@
 ## desktop の host
 
 ### 要求
-C# の core を持つ desktop の host は PhotinoX とし、Tauri に C# の sidecar を載せる形は不採用とする。
+C# の core を持つ desktop の host は PhotinoX とし、core の言語と host の言語を割らない。
 UI は viewer に閉じ、native の widget を別に作らない。
 desktop の bridge は、host の認証 adapter が保持する資格情報を認証境界で検証して actor を構築する。
 bridge は actor と資格情報を viewer から受け取らず、actor と検証済み入力だけを core へ渡す。
@@ -16,19 +16,19 @@ bridge は actor と資格情報を viewer から受け取らず、actor と検�
 ### 根拠
 PhotinoX は OS 内蔵の webview に viewer を載せ、C# の core を back-end にする。
 UI を viewer に閉じ native の widget を別に作らなければ、面の重複と攻撃面が増えない。
-Tauri に C# の sidecar を載せる形は、core の言語と host の言語が割れて構成が複雑になる。
+core の言語と host の言語が割れると、同じ機能の配線が二つの言語へまたがり構成が複雑になる。
 host が保持する資格情報から bridge の認証境界で actor を構築すれば、viewer が actor を指定できず、core は認証方式を知らずに済む。
 
 ### 完了条件
 desktop の host が、PhotinoX である。
 UI が viewer に閉じ、native の widget が別に作られていない。
-Tauri に C# の sidecar を載せる形が、採られていない。
+core の言語と host の言語が、割れていない。
 desktop の bridge の認証境界が、host の認証 adapter の資格情報を検証して actor を構築している。
 core の公開 API が、actor と検証済み入力だけを受け取っている。
 
 ### 禁止事項
 native の widget を、viewer と別に作ること。
-Tauri に C# の sidecar を載せる形を、採ること。
+core を別の言語の host の sidecar として載せること。
 actor または資格情報を、viewer から bridge へ渡すこと。
 資格情報を、core の公開 API へ渡すこと。
 
