@@ -175,8 +175,8 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | neverthrow | 同期 API の送出を Result へ変換する | 構造検査(TypeScript compiler API。設定した同期 DOM API と postMessage の呼出しを、直後に呼ばれる `Result.fromThrowable` の関数リテラル内へ限定)+実行テスト(同期の戻り値と throw、想定外の欠陥の再送出) |
 | connection | 依存を環境で受け、host の能力を port で宣言する | 型(環境の型・ui port の型)+レビュー(singleton を作らないことの判断) |
 | 全域 | cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
-| solidjs | 状態の機構 | レビュー(権威による remote/local と、local の寿命・共有範囲による URL/横断 UI/一時 UI の選択) |
-| solidjs | remote の規律 | レビュー(local の横断 UI store への複製禁止の判断) |
+| solidjs | 状態の機構 | レビュー(structure の分類に対応する remote/URL/横断/一時 の機構の選択) |
+| solidjs | remote の規律 | レビュー(local の横断 store への複製禁止の判断) |
 | publication | 保存の禁止 | analyzer/lint(oxlint の no-restricted-properties で localStorage・sessionStorage の直呼びを禁止) |
 | vscode | extension の保持状態 | 型(state port・secret port)+レビュー |
 | coordination | 非同期 | レビュー |
