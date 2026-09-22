@@ -172,10 +172,10 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(rustfmt --check、rustc の non_snake_case 系 lint) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし)+レビュー(公開要素の外部契約、非公開要素の内部契約、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(命名照合) |
-| 全域 | branch coverage | 計測(branch を数える設定は nightly channel で実行する `cargo llvm-cov --branch` であり、その json 出力の branch 集計から project 記録の branch 下限を検証入口で判定) |
+| cargo-llvm-cov | カバレッジ | 計測(stable toolchain の `cargo llvm-cov nextest` が region と line を数え、`--fail-under-regions` と `--fail-under-lines` を与えた終了値で project 記録の下限を検証入口で判定し、`--json` の出力を記録に残す) |
 | serde | 境界で一度だけ parse してドメイン型へ移す | 型(TryFrom)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
 | translation | 終了を surface の境界表現へ写す | 実行テスト(surface ごとの成功・想定内失敗・欠陥・取り消しの写像) |
-| translation | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
+| progenitor | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
 | connection | 効果を言語の効果型で表す | 型(Future・Result)+レビュー(domain の同期性の判断) |
 | connection | 失敗を Result に、欠陥を panic にする | analyzer/lint(clippy unwrap_used・expect_used deny)+型(Result) |
 | connection | 要求する依存を能力の trait bound で型に出す | 型(trait bound) |
@@ -194,7 +194,8 @@ crate ルートに `#![deny(missing_docs)]` を置く。
 | tokio | 共有状態 | 構造検査(bounded mpsc と単一所有 task)+レビュー(更新経路の単一性) |
 | coordination | 資源の解放 | 型(Drop) |
 | axum | server | 構造検査(認証 layer の位置と core 公開 API への principal・token・claim 型の流入禁止)+実行テスト(検証済み principal から actor への写像、actor と検証済み入力による core 公開 API 呼出、IntoResponse と CatchPanicLayer の応答、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー |
-| tower-sessions | BFF | 型(openidconnect の client・actor・埋め込んだ core の公開 API)+構造検査(route が core の公開 API だけを呼ぶこと)+実行テスト(`__Host-`、Secure、HttpOnly、SameSite、Path、Domain 未設定の統合テスト、principal から actor への写像、token の交換と更新、back-channel logout token の署名と claim の検証、issuer と sid/subject による session 失効、token ID の replay 拒否、replay 記録と失効の原子的な確定) |
+| tower-sessions | BFF | 型(openidconnect の client・actor・埋め込んだ core の公開 API)+構造検査(route が core の公開 API だけを呼ぶこと)+実行テスト(`__Host-`、Secure、HttpOnly、SameSite、Path、Domain 未設定の統合テスト、principal から actor への写像、token の交換と更新、issuer と sid/subject による session 失効、token ID の replay 拒否、replay 記録と失効の原子的な確定) |
+| jsonwebtoken | logout token の検証 | 実行テスト(jwks_uri の JWKS から構築した鍵での署名検証、未知の kid での JWKS 再取得と拒否、許可外 algorithm の拒否、alg が none の token の拒否、`typ` が `logout+jwt` でない token の拒否、issuer・audience・期限の判定、iat・jti・events の欠落の拒否、nonce を持つ token の拒否、sid と sub のいずれも無い token の拒否、理解できない claim の無視) |
 | clap | console | 型(clap の derive) |
 | apalis | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(Data extractor による依存注入の判断) |
 | 全域 | cast allowlist | 構造検査(reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |

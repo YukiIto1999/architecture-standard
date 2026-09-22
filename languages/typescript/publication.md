@@ -102,10 +102,11 @@ localStorage.setItem("access_token", response.accessToken);
 ```typescript
 const submitLogin = (body: LoginBody): Effect<HasBff, LoginError, Session> =>
   deferEffect((env, signal, deadlineAt) =>
-    ResultAsync.fromThrowable(
-      () => env.bff.login(body, signal, deadlineAt),
-      toLoginError,
-    )());
+    new AsyncResult(
+      Result.wrapAsync<LoginResponse, unknown>(
+        () => env.bff.login(body, signal, deadlineAt),
+      ).then((received) => received.mapErr(toLoginError)),
+    ));
 const loginResult = await withDeadlineEffect(
   env,
   submitLogin(body),

@@ -33,8 +33,10 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [clap](./clap.md) | CLI の surface の骨格である | Rust は clap である |
 | [clippy](./clippy.md) | 規則の違反をビルドで止める linter である | Rust は clippy である |
 | [cucumber](./cucumber.md) | 業務語彙の executable spec を実行する道具である | Rust は cucumber の Rust 実装である |
+| [jsonwebtoken](./jsonwebtoken.md) | OIDC の back-channel logout token を検証する JWT の検証機構である | Rust は jsonwebtoken(暗号の provider は `aws_lc_rs`)である |
 | [redis](./redis.md) | Valkey へ接続する client である | Rust は redis である |
 | [openidconnect](./openidconnect.md) | BFF の OIDC code・PKCE・token 管理 | Rust は openidconnect である |
+| [progenitor](./progenitor.md) | 契約から Rust の client と型を生成し、drift・conformance の検査に使う道具である | Rust は progenitor である |
 | [reqwest](./reqwest.md) | 外部 HTTP API を呼び出す非同期 client である | Rust は reqwest (TLS は rustls)である |
 | [proptest](./proptest.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | Rust は proptest である |
 | [rustfmt](./rustfmt.md) | 表記を道具の既定で一意に揃える formatter である | Rust は rustfmt である |

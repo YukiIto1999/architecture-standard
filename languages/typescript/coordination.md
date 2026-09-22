@@ -42,7 +42,7 @@ wrapper の開始前に親の取消と期限超過がともに成立している
 期限確認で期限用 controller を abort した後は、合成した signal の `throwIfAborted` を呼び、実際に選ばれた reason を送出する。
 `withDeadlineEffect` は、絶対期限と合成した signal を operation へ渡す。
 operation とその下流は、受け取った絶対期限を時刻値のまま伝播する。
-`withDeadlineEffect` は `ResultAsync<T, E | DeadlineExceeded>` を返す。
+`withDeadlineEffect` は `AsyncResult<T, E | DeadlineExceeded>` を返す。
 `withDeadlineEffect` は、operation の Result または rejection を捕捉し、`ResumeSource` の購読を解除してから期限と返却結果を判定する。
 operation が解決した `Err<E>` は、期限を越えていても元の failure を優先して返し、期限超過を診断 metadata または log へ記録する。
 operation の rejection が期限 signal の reason と同一か、その reason を cause chain に持つなら、`DeadlineExceeded` へ写す。
@@ -88,7 +88,7 @@ browser、extension、IDE、DOM を持たない host が、それぞれの再開
 親の signal が `AbortSignal.any` の iterable の先頭にあり、wrapper の開始前に親の取消と期限超過がともに成立している場合も、合成した signal の親 reason が保持されている。
 期限確認で期限用 controller を abort した後に、合成した signal の `throwIfAborted` から実際に選ばれた reason が送出されている。
 `withDeadlineEffect` が、絶対期限と合成した signal を operation へ渡している。
-`withDeadlineEffect` が `ResultAsync<T, E | DeadlineExceeded>` を返している。
+`withDeadlineEffect` が `AsyncResult<T, E | DeadlineExceeded>` を返している。
 operation とその下流が、受け取った絶対期限を時刻値のまま伝播している。
 外部 I/O、待機、下流 Effect の直接呼出が、TypeScript compiler API による AST 構造検査で禁止されている。
 operation の Result または rejection が捕捉され、`ResumeSource` の購読解除後に期限と返却結果が判定されている。
@@ -218,8 +218,8 @@ function withDeadlineEffect<Env, E, A>(
   deadlineAt: number,
   parentSignal: AbortSignal,
   resumeSource: ResumeSource,
-): ResultAsync<A, E | DeadlineExceeded> {
-  return new ResultAsync((async (): Promise<Result<A, E | DeadlineExceeded>> => {
+): AsyncResult<A, E | DeadlineExceeded> {
+  return new AsyncResult((async (): Promise<Result<A, E | DeadlineExceeded>> => {
     const deadlineController = new AbortController();
     let timeoutSignal: AbortSignal | undefined;
     let combinedSignal: AbortSignal | undefined;
@@ -257,7 +257,7 @@ function withDeadlineEffect<Env, E, A>(
       if (outcome.deadlineSource &&
           (Object.is(outcome.error, outcome.deadlineSource.reason) ||
            hasCause(outcome.error, outcome.deadlineSource.reason))) {
-        return err(new DeadlineExceeded(outcome.error));
+        return Err(new DeadlineExceeded(outcome.error));
       }
       if (observedAt >= deadlineAt) {
         deadlineDiagnostics.annotateOverrun({ deadlineAt, observedAt, error: outcome.error });
@@ -268,12 +268,12 @@ function withDeadlineEffect<Env, E, A>(
       if (observedAt >= deadlineAt) {
         deadlineDiagnostics.annotateOverrun({ deadlineAt, observedAt, error: outcome.result.error });
       }
-      return err(outcome.result.error);
+      return Err(outcome.result.error);
     }
     if (observedAt >= deadlineAt) {
-      return err(new DeadlineExceeded());
+      return Err(new DeadlineExceeded());
     }
-    return ok(outcome.result.value);
+    return Ok(outcome.result.value);
   })());
 }
 ```
@@ -304,7 +304,7 @@ const preservedFailure = await withDeadlineEffect(
   parentSignal,
   processResumeSource,
 );
-expect(preservedFailure).toEqual(err(failure));
+expect(preservedFailure).toEqual(Err(failure));
 expect(deadlineDiagnostics.last()).toMatchObject({ deadlineAt, error: failure });
 ```
 
@@ -317,7 +317,7 @@ parentBeforeStart.abort(parentReason);
 let operationStarted = false;
 const notStarted = deferEffect(() => {
   operationStarted = true;
-  return okAsync(undefined);
+  return Ok(undefined).toAsyncResult();
 });
 await expect(withDeadlineEffect(
   env,
@@ -344,7 +344,7 @@ controller の abort が兄弟に生じさせた rejection は、独立した de
 各 Effect は、決定の記録で固定した単一の limiter が需要枠を与えた callback の内側で開始する。
 
 ### 根拠
-ResultAsync の `Err` は Promise の解決値なので、task 自体を Promise.all に渡すだけでは兄弟を abort できない。
+AsyncResult の `Err` は Promise の解決値なので、task 自体を Promise.all に渡すだけでは兄弟を abort できない。
 各 task の Result と rejection を観測する Promise を置けば、`Err` と defect のどちらでも残りの兄弟へ取消を早く伝えられる。
 abort 後に観測用 Promise へ Promise.allSettled で合流すれば、未完了の兄弟を範囲の外へ残さない。
 controller 由来の rejection を除外すれば、`Err` による sibling abort を新しい defect と取り違えない。
@@ -366,7 +366,7 @@ controller 由来の sibling cancellation rejection が、独立した defect �
 
 ### 禁止事項
 一つが失敗しても、束ねた残りの実行を走らせ続けること。
-ResultAsync の `Err` を Promise の成功だけとみなし、兄弟を走らせ続けること。
+AsyncResult の `Err` を Promise の成功だけとみなし、兄弟を走らせ続けること。
 最初の `Err` または rejection を伝播し、兄弟への合流を飛ばすこと。
 `Err` による controller の abort が生じさせた rejection を独立した defect とみなすこと。
 独立した rejection defect を `Err` で隠すこと。
@@ -386,10 +386,11 @@ project の決定の記録で固定した単一の limiter を使い、その ca
 ```typescript
 const requestUrl = (url: URL): Effect<HasHttp, RequestError, Response> =>
   deferEffect((env, signal, deadlineAt) =>
-    ResultAsync.fromThrowable(
-      () => env.http.fetch(url, { signal, deadlineAt }),
-      toRequestError,
-    )());
+    new AsyncResult(
+      Result.wrapAsync<Response, unknown>(
+        () => env.http.fetch(url, { signal, deadlineAt }),
+      ).then((received) => received.mapErr(toRequestError)),
+    ));
 ```
 
 最初の `Err` または rejection で abort し、全兄弟へ合流してから結果を決める。limiter は project の決定の記録で一つに固定し、その需要枠の内側で初めて Effect を開始する。
@@ -438,8 +439,8 @@ const combinedResult = await (async (): Promise<Result<readonly Response[], Requ
 
   await Promise.allSettled(observations);
   if (firstDefect) throw firstDefect.error;
-  if (firstFailure) return err(firstFailure.error);
-  return ok(responses);
+  if (firstFailure) return Err(firstFailure.error);
+  return Ok(responses);
 })();
 ```
 
