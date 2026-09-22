@@ -192,7 +192,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | solidjs | viewer | レビュー(props の分割代入の禁止) |
 | opentelemetry-js | viewer の telemetry | 型(ui port の型)+レビュー(SDK の adapter への隔離の判断) |
 | tailwind | styling | レビュー |
-| vite | web の host | レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
+| vite | viewer を載せる host の entry と build | レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
 | publication | extension | 型(port の interface) |
 | vscode | ide の host | 型(判別子つき union の schema・safeParse)+実行テスト(postMessage 受信の単体テスト) |
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |
