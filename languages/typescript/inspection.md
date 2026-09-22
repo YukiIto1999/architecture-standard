@@ -157,7 +157,7 @@ oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max
 | axe-core-playwright | accessibility | 実行テスト(@axe-core/playwright による自動判定可能な違反、Playwright による keyboard 操作・pointer target の bounding box・WCAG 2.2 Level AA の text/non-text contrast と例外記録の照合)+レビュー(自動判定できない WCAG 2.2 Level AA の確認) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`vitest list --json` と Playwright `--list` が返す project・file・suite・test の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。cucumber-js scenario は URI・line・name の組を同じ集合へ加える) |
 | knip | 未使用 | analyzer/lint(knip で未使用のファイル・export・依存を検出し検証入口で失敗) |
-| stryker-js | 有効性 | mutation(StrykerJS の totalUndetected または Survived+NoCoverage が0件の gate と対象件数0の失敗) |
+| stryker-js | 有効性 | mutation(StrykerJS の totalUndetected または Survived+NoCoverage が0件の gate、変異生成0件の失敗、選んだテストの実行0件の失敗、既知の欠陥を仕込んだ確認での検出の成立) |
 | inspection | 構造 | 構造検査(TypeScript compiler API が解決した依存 edge と skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
 | typescript-compiler-api | 構造検査 | 構造検査(@typescript/typescript6 の compiler API による call expression の symbol・callee expression の型・parameter の initializer・destructuring の binding element・module specifier の解決先 file と型だけの import かどうかの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(tsc・oxlint・`oxlint --type-aware`・`oxlint-tsgolint`・SonarQube の設定と診断を検証入口でエラー化) |
