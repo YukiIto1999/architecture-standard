@@ -8,23 +8,13 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 標準を project へ適用する入口である。
 手順と判定基準の正本は標準本文に置き、この skill へ転写しない。
 
-## 開始ゲート
+## 対象の入口
 
-対象 project へ最初の tool call を行う前に、次の入口を一つだけ選ぶ。
+対象 project の既知の入口から始める。exact file path があればその file を直接読む。symbol だけが分かる場合は、利用可能な LSP で定義と参照を確認し、使えなければ native search で探す。project root しか分からない場合は README や manifest の宣言を確認し、必要な source と test の範囲を絞る。
 
-| 入力の入口 | 最初の対象 project 操作 | この作業で使わない探索 |
-|---|---|---|
-| exact file path がある | その file を Read で直接読む | 対象 project への Glob、fd、directory 一覧、`git ls-files` |
-| symbol だけがある | その exact symbol の Grep で一つの定義候補へ絞り、一致 file を読む | 対象 project への Glob、directory 一覧 |
-| project root だけで system-wide recovery または audit | 後述の条件を満たす場合だけ `<target-project-root>/**/*` を一回 Glob する | 二回目の Glob、別の列挙手段 |
+既知の path を再発見するための列挙はしない。探索が必要な場合は target root と確認する関係を明示し、ignore 境界を維持する。空の検索結果や初回の候補集合だけで、project 全体に契約、writer、test が存在しないとは判断しない。
 
-選択直後の最初の対象 project 読取または探索は、表の操作でなければならない。標準本文は手元の `<standard-root>` にある現在の規範文書を根拠とし、対象 project の入口を再発見する `README.md` や `target-project/*` の Glob、`pwd`、directory 一覧は使わない。
-exact file path を与えられた作業では、project の決定の記録、caller、state、test の確認にも Glob を使わない。path 未指定の Glob は標準と対象 project の双方へ一致しうるため、標準側だけの探索としても使わない。先に Glob してから exact path へ戻っても、この開始ゲートを満たしたことにならず、調査または設計を完了と報告しない。
-project root だけを与えられた system-wide recovery または audit では、最初の対象 project 探索を文字どおり `<target-project-root>/**/*` の一回にする。`README.md` や `<target-project-root>/*` を先に試してはならない。二回目を実行した場合は後の結果を正当化に使わず、調査を完了と報告しない。
-
-### 閉じた対象調査経路
-
-exact source path を与えられ、受入条件に completion、state、success または failure がある設計では、最初の対象 project 操作の前に [target scoping](references/target-scoping.md) を読み、そこに記載した経路と限定 Grep だけを使う。
+受入条件に completion、state、success、failure など意味と authority の確認が必要な語がある設計では、[target scoping](references/target-scoping.md) に従って対象の根拠を追う。
 
 ## 前提
 
@@ -35,21 +25,16 @@ exact source path を与えられ、受入条件に completion、state、success
 
 ## 参照経路
 
-対象 project の調査を閉じた後、`<standard-root>/README.md` と選んだ process を最初の標準本文として読む。対象 project の exact file は開始ゲートに従って先に読んでよい。
-root の manifest は既定名の exact path を直接読み、標準の directory link はその `README.md` を直接読む。これらの発見に Glob を使わない。Grep が失敗した場合も find、Glob、directory 一覧へ切り替えず、未確認にする。
-それ以外の本文を読む前に、その file が答える次の判断または照合項目を内部チェックリストへ一つ記録する。
-その判断を変えうる直接の参照先だけを読み、答えを得た参照経路はそこで止める。
-網羅した安心を得るための directory 列挙、同階層の一括読取、使わない規律の先回り読取は行わない。
-選んだ process または依頼が全域照合を要求する場合は、その要求自体を各参照経路の根拠にする。
-process が現在のモードの順序または確認点として無条件に `従う` と定める link は、変更契約の必須条件として読む。`変更が触れる`、`採用する` など適用条件がある link は、条件に当たる対象と違反しうる結果を示せる場合だけ読む。
-読んだ concern から別 concern への link も無条件に再帰しない。queue、過負荷、retry、deadline、lifecycle など link 先が所有する対象が変更契約に含まれる場合だけ読む。並行上限と子処理完了だけの設計では、それらが観測されない限り resilience へ広げない。
-process の全 step を消し込むことと、条件付き link を全て読むことを混同しない。変更契約から不適用と判断できる条件付き step は、process 本文と観測した対象を根拠に見送り、参照先を読んで見送りを補強しない。
-directory への link は同階層の列挙を許可しない。具体的な file の特定が必要なら、その directory の `README.md` を台帳として一度だけ読み、一つに絞る。台帳から絞れなければ推測で探索せず未確認事項にする。
-ここまでの参照制限は標準本文に適用する。対象 project は、選んだ process の判断に必要な実行経路、caller、consumer、state、設定、テスト、実測結果を根拠が揃うまで読み、一つの file や検索結果で全体を代表させない。
-依頼が対象 project root だけを示し、exact file path、symbol、manifest のいずれからも開始点を固定できず、選んだ process が system-wide な recovery または audit を要求する場合に限り、開始点の発見に Glob を一回だけ許す。pattern は `<target-project-root>/**/*` の一つに固定し、既知名の存在確認、top-level確認、source用とtest用の分割によって複数回実行しない。結果から `.git`、build output、generated artifact、vendor、決定の記録の置き場を Glob 由来の読取候補から除き、必要な source、test、configuration の開始点を固定する。project の決定の記録が system purpose、語彙、state authority または契約を持つ場合は、Glob の結果で発見したことにせず、回収した語を固定した Grep を、target project root の `README.md` が宣言した置き場(宣言が無ければ `docs/decisions/`)に限定して別に行い、一致した file だけを読む。二回目の Glob、find、fd、`git ls-files` へ進まず、一回の結果で特定できない関係は未確認にする。Glob 自体が失敗した場合も別の列挙手段へ切り替えない。
-対象 project で exact path が分かる入口は直接読む。そこから一度に広域探索せず、現在の主張を確定する caller、consumer、state authority、effect、test の関係を一つ選び、その関係を順方向または逆方向へ一段ずつ追う。変更契約または意味回収の判断を変えない directory、script、隣接 module は列挙しない。
-依頼が exact source path を示す場合、対象 project 全体への Glob は使わない。source を直接読み、必要な関係は確認する symbol または参照先を固定した Grep で一つずつ探す。特定できない関係は探索範囲を広げて推測せず未確認にする。project の決定の記録の探索も上で定めた限定 Grep だけを使い、find、Glob、directory 一覧を代替にしない。
-exact source path がある条件で Glob を使った場合は参照規律を満たしていないため、その結果で調査または設計を完了せず、exact path からやり直す。
+`<standard-root>/README.md` と選んだ process を読み、今回の判断に必要な規律へ進む。対象 project の調査と標準本文の照合は、互いに必要な根拠を確認しながら進める。
+
+- 標準本文を追加で読む前に、その file が答える判断または照合項目を定める。答えが得られた参照経路はそこで止め、使わない規律を先回りして読まない。
+- process が無条件に `従う` と定める link は必須条件として読む。`変更が触れる`、`採用する` などの条件付き link は、今回の対象が条件を満たす場合だけ読む。directory link はその README を入口にする。
+- concern から別 concern の link へ無条件に再帰しない。queue、過負荷、retry、deadline、lifecycle など、その規律の対象が変更契約に含まれるかで判断する。process の全 step を消し込むことと、条件付き link を全て読むことを混同しない。
+- 依頼または process が全域照合を要求する場合は、その要求を探索範囲の根拠にする。局所変更の参照節約を、全域監査や対象 project の調査不足へ転用しない。
+
+対象 project は README、manifest、直接の参照先を手掛かりに、caller、consumer、state authority、writer、effect、test、decision record を一段ずつ追う。宣言された置き場を優先するが、最初の検索で見つからなければ、観測した別名、公開 route、返却値、型などから必要な範囲だけ再探索する。決定の記録の正本の置き場は最上位 README の宣言で確認する。宣言がなければ置き場と契約の authority は Unknown とし、他の場所から読めた記録を正本へ昇格させない。
+
+探索の完了は tool の綴り、検索回数、決め打ちの directory 名では判定しない。判断を左右する主張ごとに根拠と確認範囲が示せたら止める。追加の探索で解消できる不足は追い、利用可能な資料では確定できない契約だけを Unknown として残す。未確認の関係を推測で埋めない。
 
 ## 作業境界
 

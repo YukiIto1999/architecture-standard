@@ -56,13 +56,10 @@
         "設定化、retry、監視、汎用 executor、周辺 cleanup を設計へ追加しない",
         "fixture にない Job、run_job、呼出元の契約や独自の WorkerError を発明せず、標準必須の失敗伝播と cancellation に必要な契約変更を未確定の必須条件として示す",
         "run_job の実装または契約を確認できないまま terminal JobStatus の書込みを既存責務として割り当てず、task の join と persisted authority 上の domain completion を同一視しない",
-      "completion の意味を Accepted な決定の記録、persisted JobStatus authority、公開 caller、既存 test まで追い、外部 cancellation と deadline の伝播契約を sibling cancellation と別の未確定必須条件にする",
-      "target-project/README.md に決定の記録の置き場の宣言が無いことを確認し、worker.rs の公開 symbol run を docs/decisions で一回だけ検索して Accepted な記録を読み、そこで名指された JobStatus を app で一回だけ検索する。Job、State、Status、completion の候補検索や同じ token の再検索を行わない",
+        "completion の意味を採用済みの決定の記録、persisted JobStatus authority、公開 caller、既存 test まで追い、外部 cancellation と deadline の伝播契約を sibling cancellation と別の未確定必須条件にする",
       "根拠に使う標準本文の確認は exact file path だけで行い、directory を網羅探索しない",
         "安全と検証をコード量削減の対象にせず、同時実行上限と全 job 完了を観測する検証を残す",
         "process/design.md が無条件に要求する検証、naming、modeling、separation、境界と、変更が触れる並行処理、Rust 実現だけを読み、他の concerns や言語実現を加えない",
-      "directory を Glob で列挙せず、必要なら languages/README.md の台帳から Rust の該当 file を一つに絞る",
-      "対象 project の最初の操作は指定された worker.rs の Read とし、target-project/README.md で source root と test root を確認した後、単一 token の限定 Grep だけを使う。OR pattern、project root 全域の Grep、別名 manifest の試行を行わない",
       "標準本文は手元の <standard-root> から直接読み、current directory 任せの git show、pwd、git rev-parse を使わない",
       "languages の既存 Tokio 採用を確認する場合も、同じ file の queue engine など無関係な entry を設計範囲へ取り込まない",
         "必須の失敗伝播、取消、persisted authority が Unknown の間は標準が明示する機構を十分な段として選択せず、最初に成立しうる暫定段として確定条件だけを示す。後の候補を比較・設計せず、『後続の段は検討しない』『新しい依存は不要』のような後段の否定にも触れない"
@@ -77,18 +74,34 @@
       "expectations": [
         "standard-audit ではなく対象 project への standard-apply と判定し、process/recovery.md を選ぶ",
         "標準の参照は判断に必要な箇所へ絞る一方、対象 project は実行経路、caller、state、test を判断に必要な深さまで読む",
-        "project root しか開始点がないため Glob は target-project/**/* の一回だけとし、候補名の試行や二回目の列挙を行わず、docs/decisions、build output、generated artifact、vendor を Glob 由来の読取候補から除く。project の決定の記録は回収語を固定した限定 Grep で別に発見する",
+        "project root しか開始点がないため、bounded discovery で観測範囲を明示し、宣言された source、test、decision-record root と直接リンクされた file を順に追う。空の search を不存在の証拠にせず、根拠が不足する関係だけを狭く広げる",
         "判断を左右する全主張の根拠状態を Known、Derived、Observed、Assumed、Unknown の一つにし、Intended と Target を別軸で Intended・Unknown・対象外およびTarget・Unknown・対象外に分ける",
         "source、test、設定、実行結果として現在そうである主張は Observed とし、明示契約または一次資料の Known と区別する",
         "ユーザーの『worker.rs が JobStatus の writer でもあるはず』という根拠付き仮説を Assumed とし、Known、Observed、Intended のいずれにも読み替えない",
         "worker.rs 自身は JobStatus を参照も更新もしていないという Observed から、worker.rs 自身が writer だという仮説を反証する一方、project 全体の writer は別命題として Unknown のまま残す",
         "現行コードまたは characterization test の Observed を Intended とみなさない",
-        "一回の Glob が返さない hidden file と除外 artifact を未観測として扱い、非 hidden の候補内で未発見だった事実を target-project 全体の不存在へ広げない",
+        "初回の観測範囲外や hidden file、除外 artifact、未観測 module を未観測として扱い、候補内で未発見だった事実を project 全体の不存在へ広げない",
         "未定義 symbol、外部 module、hidden file、未観測の caller が到達可能性を変えうる場合、確認した file 間の参照なしを Observed、project 全体の到達可能性を Unknown として別の行にする",
         "回収表は主張、根拠状態、locator または導出、意図状態、変更先状態、未解決境界の六列を持ち、表外の Unknown で表内の網羅主張を相殺しない",
         "purpose、actor、語彙、state、transition、pipeline、dependency のうち判断に必要な view だけを示し、固定の全成果物や空の節を作らない",
         "根拠がない事項を一般的なベストプラクティスで補わず Unknown として残す",
         "実装修正、interface や Factory の追加、目標構造、移行計画へ進まない"
+      ]
+    },
+    {
+      "id": 6,
+      "model": "sonnet",
+      "prompt": "`target-project/app/worker.rs` の worker について、同時に実行する job を4件以下に制限し、全 job の完了後に run が返る変更を architecture-standard に従って設計してください。今回は設計だけで、実装や既存資料の変更はしません。既存の公開契約と検証を踏まえ、標準が要求する安全性を落とさず、依頼外の機能は加えないでください。",
+      "expected_output": "design mode を選び、宣言された場所と実際の caller、decision record、authority、test を証拠駆動で追跡し、task join と persisted domain completion を区別した最小の設計を示す。source は変更しない。",
+      "files": [],
+      "expectations": [
+        "process/design.md を適用モードとして選び、根拠にした標準本文を file 付きで示す",
+        "README または manifest が宣言する source と test の場所、および最上位 README が宣言する decision-record location を読み、decision record と test を実際の caller・route・authority のリンクから回収する",
+        "最初の search の空結果や実装名の不一致を不在の証拠にせず、renamed caller を公開 route と明示リンクから追い、material evidence が揃うまで必要な探索を狭く続ける",
+        "受入条件を Accepted な決定、persisted authority、公開 caller、既存 test の結果へ結び、task の終了や join と domain completion を同一視しない",
+        "writer、authority、error、cancellation、deadline、依存、test 契約を確認できない場合は Unknown とし、架空の run_job、WorkerError、型、責務を発明しない",
+        "標準が要求する失敗伝播、取消、外部 cancellation または deadline の未確認契約を隠さず、設定化、retry、監視、無関係な cleanup へ scope を広げない",
+        "設計だけに留め、target-project の source、decision record、test、設定を編集しない"
       ]
     }
   ]
