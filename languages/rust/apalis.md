@@ -1,9 +1,9 @@
 # apalis
 
 用途は、背景処理と定期実行の daemon の骨格である。
-採用は、Rust は apalis であり、PostgreSQL を backend にした queue に限って使う。
-判断基準は、queue と scheduler を既存の datastore に閉じ、外部の broker を開かないことである。
-撤回条件は、判断基準を満たさなくなることであり、backend の対応状況の変化と apalis の 1.0 リリースを再評価のトリガーとする。
+採用は、Rust は apalis と apalis-postgres であり、PostgreSQL を backend にした queue に限って使う。
+判断基準は、queue と scheduler を既存の datastore に閉じ、外部の broker を開かず、backend が [sqlx](./sqlx.md) の採用と同じ系の SQL client を要求することである。
+撤回条件は、判断基準を満たさなくなることであり、backend の対応状況の変化と apalis の安定版の到達を再評価のトリガーとする。
 
 ## worker
 

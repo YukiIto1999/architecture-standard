@@ -41,9 +41,9 @@ typescript の言語としての採用と、実現規律、採用物を置く。
 | [tailwind](./tailwind.md) | styling を組む機構である | TypeScript は Tailwind CSS の Vite plugin である |
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | TypeScript は testcontainers の node 実装である |
 | [ts-results-es](./ts-results-es.md) | viewer・extension・host の軽い役割に見合う、副作用と想定内失敗を型で表す機構である | TypeScript は ts-results-es である |
-| [tsdoc](./tsdoc.md) | ドキュメントコメントの存在、構文、宣言と tag の機械判定できる対応、最初の一行と句読点を検査する道具である | TypeScript は @typescript/typescript6 6.0.2 と @microsoft/tsdoc を使う構造検査である |
+| [tsdoc](./tsdoc.md) | ドキュメントコメントの存在、構文、宣言と tag の機械判定できる対応、最初の一行と句読点を検査する道具である | TypeScript は @typescript/typescript6 と @microsoft/tsdoc を使う構造検査である |
 | [tsgolint](./tsgolint.md) | 規則の違反をビルドで止める linter である | TypeScript は `oxlint --type-aware` と `oxlint-tsgolint` の組である |
-| [typescript-compiler-api](./typescript-compiler-api.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | TypeScript は @typescript/typescript6 6.0.2 の compiler API を使う AST 構造検査である |
+| [typescript-compiler-api](./typescript-compiler-api.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | TypeScript は @typescript/typescript6 の compiler API を使う AST 構造検査である |
 | [valibot](./valibot.md) | 外部入力を schema で検証し、検証済みの値だけに型を名乗らせる機構である | TypeScript は valibot である |
 | [vite](./vite.md) | viewer を載せる host の entry と bundler である | Vite と @solidjs/vite-plugin である |
 | [vitest](./vitest.md) | 単体・性質・結合のテストの実行系と、テストが実行していない箇所を見つけるカバレッジ計測である | TypeScript は Vitest と Vitest の coverage(v8 provider)である |
