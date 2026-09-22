@@ -8,8 +8,8 @@ release は、成果物の検証から配備先への反映まで、戻せる状
 1. 成果物の生成と同時に、SLSA provenance と SBOM と署名を生成する([structure/deploy](../structure/deploy/layout.md) の provenance に従う)。
 2. 配備の前に、provenance と署名を検証し、検証できない成果物を配備しない。
 3. datastore の schema migration は、新しい版のアプリケーションへ切り替える前に適用する。migration の実施は delivery の反映手順の一部とし、アプリケーションの起動処理へ埋め込まない。
-4. 配備先への反映は、準備の面が処理可能を宣言してから振り分け、全インスタンスの同時離脱を避ける。
-5. 配備の回帰は、新しい版を切るのでなく、前の不変な版の desired state へ宣言を戻して反映する。
+4. 配備先への反映は、準備の面が処理可能を宣言した後に行う。反映の仕方は [structure/deploy](../structure/deploy/layout.md) が定める。
+5. 配備の回帰は、不具合を確認した時点で行う。戻し方は [structure/deploy](../structure/deploy/layout.md) が定める。
 
 ## 確認点
 

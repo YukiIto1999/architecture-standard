@@ -68,7 +68,9 @@ delivery は、immutable な成果物を配備先へ反映する。
 成果物の semantic versioning による版づけと不変性は [concerns/security](../../concerns/security/README.md) に、generated の drift 検査は [contracts/generated](../contracts/generated.md) に従う。
 配備先の desired state を、宣言として版で管理する。
 running な配備先を、手続きで直接書き換えない。
-反映の振り分け、回帰の戻し方、migration を適用する時点は、[process/release](../../process/release.md) が定める。
+反映は、準備の面が処理可能を宣言してから振り分け、全インスタンスの同時離脱を避ける。
+回帰は、新しい版を切らず、前の不変な版の desired state へ宣言を戻して反映する。
+反映と回帰と migration を行う時点の順序は、[process/release](../../process/release.md) が定める。
 反映時の生存と準備の規律は [concerns/lifecycle](../../concerns/lifecycle/README.md) に従う。
 delivery の内部は、反映する配備先の単位に対応させて分ける。
 一つの配備先への反映定義を一つの単位にまとめる。
