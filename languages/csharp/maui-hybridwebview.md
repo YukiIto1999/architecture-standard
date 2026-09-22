@@ -23,6 +23,8 @@ mobile の host が、.NET MAUI の HybridWebView である。
 viewer が HybridWebView の中で動き、native の UI が別に作られていない。
 mobile の bridge の認証境界が、host の認証 adapter の資格情報を検証して actor を構築している。
 core の公開 API が、actor と検証済み入力だけを受け取っている。
+bridge の引数に actor と資格情報の型が現れないことが、構造検査で確かめられている。
+資格情報から actor への写像と、actor と検証済み入力による core の公開 API の呼出が、実行テストで確かめられている。
 
 ### 禁止事項
 native の UI を、viewer と別に作ること。

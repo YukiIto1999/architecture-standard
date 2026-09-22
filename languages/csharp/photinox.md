@@ -24,6 +24,8 @@ desktop の host が、PhotinoX である。
 UI が viewer に閉じ、native の widget が別に作られていない。
 core の言語と host の言語が、割れていない。
 desktop の bridge の認証境界が、host の認証 adapter の資格情報を検証して actor を構築している。
+bridge の引数に actor と資格情報の型が現れないことが、構造検査で確かめられている。
+資格情報から actor への写像と、actor と検証済み入力による core の公開 API の呼出が、実行テストで確かめられている。
 core の公開 API が、actor と検証済み入力だけを受け取っている。
 
 ### 禁止事項
