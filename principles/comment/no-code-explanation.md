@@ -27,7 +27,7 @@
 コードの内容を説明するコメントは、処理の言い換えにすぎない。
 
 ```ts
-// 注文を一件ずつ検証して、有効なら予約する
+// 検証を通った注文の予約
 for (const order of orders) {
   if (isValid(order)) reserve(order);
 }

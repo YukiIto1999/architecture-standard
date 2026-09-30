@@ -3,6 +3,7 @@
 ### 要求
 実装コメントは、読み手が自然に選ぶ実装を、現在も有効な制約によって採れない場合だけ書く。
 採らなかった実装と、それを妨げる制約を、短く具体的に述べる。
+実装コメントの記述の形は、[documentation](../documentation/sentence-endings.md) の「文末の形を記述の種類で分ける」に従う。
 複数の境界に及ぶ判断は [documentation](../documentation/README.md) の決定の記録へ置き、実装コメントには局所の判断に必要な参照だけを残す。
 
 ### 根拠
@@ -30,13 +31,13 @@
 処理内容の説明は実装コメントへ残さない。
 
 ```ts
-// 順番に送信する
+// メッセージの逐次送信
 for (const message of messages) await publish(message);
 ```
 
 自然に見える並行送信を採らない理由は、コードから読み取れない現在の制約なので残す。
 
 ```ts
-// Promise.all は使わない。受信側が一つ前の版の確定前に次の版を受理しないため
+// 受信側が一つ前の版の確定前に次の版を受理しないため Promise.all による並行送信は不可
 for (const message of messages) await publish(message);
 ```

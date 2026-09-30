@@ -122,7 +122,7 @@ allow-expect-in-tests = true
 crate ルートに `#![deny(missing_docs)]` を置き、`pub` な要素のドキュメントコメントの欠落をビルドの失敗にする。
 非公開の要素は `clippy::missing_docs_in_private_items` を deny にし、ドキュメントコメントの欠落を検出する。
 `# Errors`・`# Panics`・`# Safety` の節の欠落は、`clippy::missing_errors_doc`・`clippy::missing_panics_doc`・`clippy::missing_safety_doc` を deny にして検出する。
-最初の一行が [conventions](./conventions.md) の体裁(一行の体言止め・句読点なし)を満たしているかは、構造検査で確かめる。
+最初の一行の文末と句読点の形は、principles の [documentation](../../principles/documentation/sentence-endings.md) の「文末の形を記述の種類で分ける」に従い、構造検査で確かめる。
 非公開要素の `# Errors` と `# Panics` の節の有無は、syn の構造検査で確かめる。
 ドキュメントコメントが、公開要素では可視境界の利用側への外部契約を、非公開要素では同一境界内の呼び出し側への内部契約を述べ、名前や実装の言い換えでなく、統一した語彙と一致しているかは、レビューで確かめる。
 

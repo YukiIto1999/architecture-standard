@@ -253,7 +253,7 @@ try
 }
 catch
 {
-    // ここでは再送出しない。全 task の失敗を失わず一度に返すため
+    // 全 task の失敗を失わず一度に返すため再送出は不可
 }
 
 externalRegistration.Dispose();

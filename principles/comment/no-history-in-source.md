@@ -31,7 +31,7 @@ source のコメントが、現在の宣言の契約か、現在も有効な採�
 
 ```ts
 // 2026-06-01 に while から for へ変更
-// TODO: 入力検証を追加する
+// TODO: 入力検証の追加
 // const legacyResult = reserveLegacy(order);
 const result = reserve(order);
 ```
