@@ -14,7 +14,7 @@ principles の [comment](../../principles/comment/README.md) が定めるドキ�
 当該宣言内の直接の throw など、構文と semantic model で判定できる欠陥を exception に記す。
 呼び出し先から伝播して当該宣言の契約になる欠陥を、公開範囲を問わずレビューで特定し、exception に記す。
 想定された失敗は returns の Result の型に現し、exception は欠陥に限る。
-summary の最初の一行は、名前の直訳でなく利用者が用途を判断できる目的を、体言止めで一行に書き、句読点を使わない。
+summary の最初の一行とドキュメントコメントの記述の形は、principles の [comment](../../principles/comment/declaration-contracts.md) の「ドキュメントコメントは宣言の契約を書く」と、[documentation](../../principles/documentation/sentence-endings.md) の「文末の形を記述の種類で分ける」に従う。
 
 ### 根拠
 XML ドキュメントコメントは、利用者が実装を読まずに、IntelliSense と生成文書から用途と契約を読めるようにする。
@@ -23,7 +23,6 @@ param は、コンパイラが引数との対応を検証し、記述漏れを�
 直接の throw などは構文と semantic model で対応する exception を検査できる。
 呼び出し先から伝播する欠陥が当該宣言の契約に含まれるかは意味の判断を要するため、analyzer だけでは網羅できない。
 exception は、戻り値に現れない欠陥としての送出を宣言し、想定された失敗は returns の Result の型に現す。
-最初の一行は検索や一覧で要素の目的を示す要約として再利用されるので、体言止めと句読点の排除は短い断片を一覧で走査しやすくする。
 
 ### 完了条件
 宣言した型とメンバに、用途と契約を述べる XML ドキュメントコメントがある。
@@ -31,7 +30,6 @@ exception は、戻り値に現れない欠陥としての送出を宣言し、�
 対象が持つ param・typeparam・returns・value が、網羅されている。
 当該宣言内で機械判定できる欠陥が、exception に記されている。
 呼び出し先から伝播して当該宣言の契約になる欠陥が、公開範囲を問わずレビューで特定され exception に記されている。
-summary の最初の一行が、名前の直訳でなく利用者が用途を判断できる目的を、句読点なしの体言止めで一行に示している。
 
 ### 禁止事項
 宣言した型やメンバの契約を、未記述で放置すること。
@@ -39,21 +37,19 @@ summary の最初の一行が、名前の直訳でなく利用者が用途を判
 対象が持つ param・typeparam・returns・value を、省くこと。
 当該宣言内で機械判定できる欠陥を、exception から省くこと。
 呼び出し先から伝播する欠陥まで、analyzer で網羅できるとみなすこと。
-summary の最初の一行を、句読点や動詞終わりの完結した文で書くこと。
 
 ### 行動
 宣言ごとに目的の summary を一行で書き、引数・型引数・戻り値・プロパティ値を記す。
 実効的な可視境界を確かめ、境界外へ公開される宣言は外部の利用側が、同一境界内だけの宣言は内部の呼び出し側が依存してよい保証を書く。
 当該宣言内で機械判定できる欠陥を、exception に記す。
 全ての宣言で呼び出し先から伝播する欠陥をレビューし、当該宣言の契約に含まれる欠陥を exception に記す。
-summary の最初の一行は、名前の直訳でなく利用者が用途を判断できる目的を、句読点のない体言止めで書く。
 
 ### 例
 ```csharp
-/// <summary>検証済みカートの確定と在庫引当</summary>
+/// <summary>在庫引当を伴う検証済みカートの注文確定</summary>
 /// <param name="cart">確定対象の検証済みカート</param>
-/// <returns>確定済みの注文または在庫不足の失敗</returns>
-/// <exception cref="InvalidOperationException">保存済みの注文が不変条件に違反している</exception>
+/// <returns>在庫不足を失敗とする確定済みの注文</returns>
+/// <exception cref="InvalidOperationException">保存済みの注文の不変条件違反</exception>
 public Result<Order, OrderError> Place(ValidCart cart) { /* ... */ }
 ```
 

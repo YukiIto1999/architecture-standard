@@ -25,7 +25,7 @@ principles は、ソフトウェア設計におけるすべての判断の土台
 | 表現 | [legibility](./legibility/README.md) | コードによる意図表現。可読性と視認性、認知負荷の最小化 |
 | 表現 | [naming](./naming/README.md) | 命名と語彙。概念の正確な写像、テスト名による仕様表現 |
 | 表現 | [comment](./comment/README.md) | コメント。コードの説明の排除、自然に見える実装を採らなかった理由の記録 |
-| 表現 | [documentation](./documentation/README.md) | 文書化。README、設計文書、決定の記録の役割分担 |
+| 表現 | [documentation](./documentation/README.md) | 文書化。README、設計文書、決定の記録の役割分担、文末の形 |
 
 ## 情報の正本
 

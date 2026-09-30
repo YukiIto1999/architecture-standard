@@ -52,15 +52,15 @@
 ### 件名の記述ルール
 
 - 目的の記述: 変更したファイル名や編集操作そのものではなく、何のためにその変更を行うのかという目的を具体的に記述する。
-- 文体と記号: 複数の語を並べる際は「と」または読点で接続し、中黒は使用しない。
+- 文末と記号: 要約の記述の形は、[principles/documentation](./principles/documentation/sentence-endings.md) の「文末の形を記述の種類で分ける」に従う。
 - 帰属表記の禁止: AI 名義の Co-authored-by や、生成ツール名によるクレジット表記は一切付与しない。
 
 #### 望ましいメッセージ例
 ```text
-feat: build の採用判断を再現できるようにする
-fix: verifier の異常終了を見逃さない
-refactor: skill の変更を独立して取り消せるようにする
-docs: Git の誤った履歴操作を防ぐ
+feat: build の採用判断の再現性
+fix: verifier の異常終了の見逃し防止
+refactor: skill ごとの変更の独立した取り消し
+docs: Git の誤った履歴操作の防止
 ```
 
 ## コミット前の検証
