@@ -51,7 +51,7 @@
 
 ### 件名の記述ルール
 
-- 目的の記述: 変更したファイル名や編集操作そのものではなく、何のためにその変更を行うのかという目的を具体的に記述する。
+- 目的の記述: 要約に書く内容は、[principles/documentation](./principles/documentation/commit-purpose.md) の「変更の目的を commit log に残す」に従う。
 - 文末と記号: 要約の記述の形は、[principles/documentation](./principles/documentation/sentence-endings.md) の「文末の形を記述の種類で分ける」に従う。
 - 帰属表記の禁止: AI 名義の Co-authored-by や、生成ツール名によるクレジット表記は一切付与しない。
 
