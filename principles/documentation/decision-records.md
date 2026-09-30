@@ -51,18 +51,19 @@ repository の成果物として置くと、記録が現在の状態を示すも
 commit log に変更の直接の目的だけを書くと、判断の文脈と代替案は残らない。
 
 ```text
-fix: process 間で session を共有する
+fix: process 間の session 共有
 ```
 
 決定の記録は、文脈、採らなかった案とその理由、決定、帰結を持つ。
 
 ```text
-session を外部の session store に保持する
+外部の session store への session の保持
 
 BFF はトークンを外部に出さないので、session を server 側に持つ必要がある。
-候補は外部の session store、RDB のセッションテーブル、署名付き Cookie。
+候補は外部の session store、RDB のセッションテーブル、署名付き Cookie の三つである。
 RDB は寿命の短いデータで負荷が増え、Cookie は失効と改ざんの運用が重い。
 不透明な session id を鍵に、TTL つきで外部の session store へ保持する。
 失効が TTL で自動になり、RDB から負荷を分離できる。
-session store の可用性が認証の可用性に直結する。冗長化は別の決定として残す。
+session store の可用性が認証の可用性に直結する。
+冗長化は別の決定として残す。
 ```

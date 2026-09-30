@@ -16,8 +16,7 @@ principles の [comment](../../principles/comment/README.md) が定めるドキ�
 当該宣言から外へ伝播すると compiler API で判定できる直接の throw に、送出型と一致する `ErrorType` の @throws を付ける。
 当該宣言内の try/catch で吸収される throw は、@throws の機械検査対象にしない。
 呼出先または rejected Promise から伝播して当該宣言の契約になる欠陥に、公開範囲を問わずレビューで @throws を付ける。
-summary の最初の一行は、一行で書き、句読点を使わない。
-summary の最初の一行は、名前の直訳を避け、利用者が用途を判断できる目的を体言止めで書く。
+最初の一行とドキュメントコメントの記述の形は、principles の [comment](../../principles/comment/declaration-contracts.md) の「ドキュメントコメントは宣言の契約を書く」と、[documentation](../../principles/documentation/sentence-endings.md) の「文末の形を記述の種類で分ける」に従う。
 
 ### 根拠
 TSDoc は、ツールが一貫して解釈できる統一文法で、利用者が実装を読まずに用途と契約を読めるようにする。
@@ -26,8 +25,6 @@ TSDoc は、ツールが一貫して解釈できる統一文法で、利用者�
 `@microsoft/tsdoc` は `{@link ErrorType}` を link として parse でき、compiler の semantic model は link の参照先と throw 式の型を解決できる。
 当該宣言から外へ出る直接の throw と try/catch で吸収される throw は、構文上の包含関係で分けられる。
 呼出先や rejected Promise から伝播する欠陥が当該宣言の契約かは、呼出関係と契約の意味を読む必要がある。
-最初の一行は検索や一覧で要素の目的を示す要約として再利用されるので、一行と句読点の排除は字面で検査できる。
-名前の直訳でないこと、用途を判断できること、体言止めであることは意味と形態の判断を要する。
 
 ### 完了条件
 宣言した要素に、用途と契約を述べる TSDoc のドキュメントコメントがある。
@@ -37,8 +34,6 @@ module 外の利用側へ公開される要素が外部契約を、同一境界�
 当該宣言から外へ伝播すると機械判定できる直接の throw に、送出型と link の参照先が一致する @throws が付いている。
 当該宣言内の try/catch で吸収される throw が、@throws の機械検査対象から除かれている。
 呼出先または rejected Promise から伝播して当該宣言の契約になる欠陥に、公開範囲を問わずレビューで @throws が付いている。
-summary の最初の一行が、一行かつ句読点なしである。
-summary の最初の一行が、名前の直訳でなく利用者が用途を判断できる目的を体言止めで示している。
 
 ### 禁止事項
 宣言した要素の契約を、未記述で放置すること。
@@ -49,8 +44,6 @@ module 外の利用側へ公開される要素の契約を、同一境界内だ�
 直接の throw の送出型と異なる symbol を、@throws の link で参照すること。
 当該宣言内の try/catch で吸収される throw に、当該宣言の契約にない @throws を機械的に要求すること。
 呼出先または rejected Promise から伝播する欠陥の網羅を、構造検査だけで保証できるとみなすこと。
-summary の最初の一行を、複数行または句読点つきで書くこと。
-summary の用途と体言止めを、字面の構造検査だけで保証できるとみなすこと。
 
 ### 行動
 要素ごとに目的の summary を書き、型引数・引数・戻り値を @typeParam・@param・@returns のうち該当するものに記す。
@@ -59,16 +52,14 @@ summary の用途と体言止めを、字面の構造検査だけで保証でき
 解決した型を `@throws {@link ErrorType} 条件` の `ErrorType` で参照する。
 当該宣言内の try/catch で吸収される throw を、機械検査の対応から除く。
 公開範囲を問わず、呼出先と rejected Promise から伝播する欠陥をレビューし、当該宣言の契約になるものを @throws に記す。
-summary の最初の一行を、一行かつ句読点なしで書く。
-レビューで、summary が名前の直訳でなく用途を判断できる体言止めになっていることを確かめる。
 
 ### 例
 ```typescript
 /**
- * 検証済みカートの確定と在庫引当
+ * 在庫引当を伴う検証済みカートの注文確定
  * @param cart - 確定対象の検証済みカート
- * @returns 確定済みの注文または在庫不足の失敗
- * @throws {@link InvariantViolation} 保存済みの注文が不変条件に違反している
+ * @returns 在庫不足を失敗とする確定済みの注文
+ * @throws {@link InvariantViolation} 保存済みの注文の不変条件違反
  */
 function place(cart: ValidCart): Result<Order, OrderError> { /* ... */ }
 ```
