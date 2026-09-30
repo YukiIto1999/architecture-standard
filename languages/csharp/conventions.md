@@ -47,7 +47,7 @@ exception は、戻り値に現れない欠陥としての送出を宣言し、�
 ### 例
 ```csharp
 /// <summary>在庫引当を伴う検証済みカートの注文確定</summary>
-/// <param name="cart">確定対象の検証済みカート</param>
+/// <param name="cart">注文として確定する品目と数量</param>
 /// <returns>在庫不足を失敗とする確定済みの注文</returns>
 /// <exception cref="InvalidOperationException">保存済みの注文の不変条件違反</exception>
 public Result<Order, OrderError> Place(ValidCart cart) { /* ... */ }

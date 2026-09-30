@@ -57,7 +57,7 @@ module 外の利用側へ公開される要素の契約を、同一境界内だ�
 ```typescript
 /**
  * 在庫引当を伴う検証済みカートの注文確定
- * @param cart - 確定対象の検証済みカート
+ * @param cart - 注文として確定する品目と数量
  * @returns 在庫不足を失敗とする確定済みの注文
  * @throws {@link InvariantViolation} 保存済みの注文の不変条件違反
  */
