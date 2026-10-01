@@ -116,7 +116,7 @@
         "段4を選んだ場合は新しい規範上の意味を追加したと報告し、編集後に意味を変えていないと読み替えない",
       "段4の下位実現は languages/README.md と rust・csharp・typescript の inspection.md を exact path で直接読み、Glob、Grep、principles/verification.md へ広げず、本文変更の要否を報告する",
         "TypeScript が cyclomatic complexity と cognitive complexity を別性質と明記しながら二重測定として前者を無効化する矛盾を見つけ、cyclomatic complexity は別性質だが標準の必須検証へ割り当てていないという非採用理由へ同期する。別性質であるだけで両方を必須化しない",
-        "TypeScript の同じ規律に残る『複雑度は SonarQube に一本化』という総称も、認知的複雑さを cognitive complexity(S3776)で測る行動へ限定する",
+        "TypeScript の同じ規律に残る複雑度の総称も、関数の複雑さを cognitive complexity(S3776)で測る行動へ限定する",
       "変更した場合は verify.sh を実行し、結果を報告する"
       ]
     },

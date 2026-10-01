@@ -26,6 +26,7 @@ typescript の言語としての採用と、実現規律、採用物を置く。
 |---|---|---|
 | [axe-core-playwright](./axe-core-playwright.md) | UI の E2E で、自動判定できる accessibility の違反を検出する道具である | TypeScript は @axe-core/playwright である |
 | [cucumber-js](./cucumber-js.md) | 業務語彙の executable spec を実行する道具である | TypeScript は cucumber-js である |
+| [eslint-plugin-sonarjs](./eslint-plugin-sonarjs.md) | 関数の複雑さを linter の規則として測る道具である | TypeScript は eslint-plugin-sonarjs の cognitive-complexity 規則を、oxlint の JS plugin として読み込んだものである |
 | [fast-check](./fast-check.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | TypeScript は fast-check である |
 | [http-client-js](./http-client-js.md) | 契約から TypeScript の client と型を生成し、drift・conformance の検査に使う道具である | TypeScript は `@typespec/http-client-js` である |
 | [json-schema-to-typescript](./json-schema-to-typescript.md) | HTTP を持たない契約の JSON Schema から TypeScript の型を生成する道具である | TypeScript は json-schema-to-typescript である |
