@@ -10,6 +10,5 @@ platforms は、セルフホストする基盤の採用を定める。
 | datastore | PostgreSQL | [postgresql.md](./postgresql.md) |
 | 一時 store | Valkey | [valkey.md](./valkey.md) |
 | 認可の engine | OpenFGA | [openfga.md](./openfga.md) |
-| 検査の基盤 | SonarQube Community Build | [sonarqube.md](./sonarqube.md) |
 | secret の暗号化 | SOPS | [sops.md](./sops.md) |
 | telemetry | OpenTelemetry | [opentelemetry.md](./opentelemetry.md) |
