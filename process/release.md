@@ -13,7 +13,7 @@ release は、成果物の検証から配備先への反映まで、戻せる状
 
 ## 確認点
 
-release 前の検証は、[verification](./verification.md) の「順序」に従って全域まで実行する。
+release する commit が、[verification](./verification.md) の「順序」の T1 と T2 に合格していることを確かめる。
 反映時の生存と準備は、[concerns/lifecycle](../concerns/lifecycle/README.md) の完了条件と禁止事項に照合する。
 migration の段の区切りは、[concerns/migration](../concerns/migration/README.md) に照合する。
 稼働中のデータを移す配備は、[migration](./migration.md) に従う。
