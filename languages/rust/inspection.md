@@ -41,7 +41,8 @@ lint は clippy を `[workspace.lints.clippy]` で強制し、unwrap_used・expe
 テストの unwrap・expect は、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可する。
 大きさとネストのしきい値は too_many_lines・excessive_nesting の lint の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 excessive_nesting は既定のしきい値を持たないため、project が clippy.toml にしきい値を定め、決定の記録に残す。
-認知的複雑さの測り方は、[sonarqube](../../tools/platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、clippy 側に複雑度の規則を重ねて持たせない。
+関数の複雑さは、[structure/tests の methods](../../structure/tests/methods.md) の「構造の検証」に従い、clippy の cognitive_complexity を `[workspace.lints.clippy]` で有効にして測り、しきい値は clippy.toml の cognitive-complexity-threshold に置く。
+基線台帳に記録した既存の違反は、その関数に `#[expect(clippy::cognitive_complexity, reason = "…")]` を付けて理由を書く。
 識別子の汎用名は、clippy.toml の disallowed-names で禁止する。
 環境変数の直読は、clippy.toml の disallowed-methods で std::env::var と std::env::var_os を禁止し、設定の読み込みを設定の parse を持つ組立点だけに許可する。
 標準出力への自由文出力は、print_stdout・print_stderr の deny で禁止し、console surface の出力層だけに `#[allow]` を付ける。
@@ -62,7 +63,9 @@ too_many_lines と excessive_nesting は、関数の肥大化とネストの深�
 data・info・temp のような汎用名は生成時に混入しやすく、disallowed-names は [restrict-generic-names](../../principles/naming/restrict-generic-names.md) の「汎用名・略語・一時名を制限する」を識別子の denylist として機械化する。
 環境変数の直読は [single-config-source](../../concerns/configuration/single-config-source.md) の「定めた源からまとめて読む」に反する散在を作るため、disallowed-methods がビルドで止める。
 自由文の標準出力は [structured-events](../../concerns/observability/structured-events.md) の「事実をイベントとして表し、構造化して出す」を素通りするため、print 系 lint で止める。
-clippy 自身の cognitive_complexity lint は、原典と異なる clippy 固有のヒューリスティックで実装され、clippy 公式が測定ツールとしての使用を推奨していないため採用しない。
+clippy の cognitive_complexity は原典の cognitive complexity と異なり、if を一つずつ、腕が二つ以上の match を腕の数によらず一つ加点し、ネストを加点しないので、閉じた直和の網羅を罰さず、ネストの深さは excessive_nesting が補う。
+clippy 公式はこの lint を測定の道具として推奨せず restriction の群に置くが、採用した linter の中で関数ごとに分岐の構造を数える規則はこの lint だけである。
+`#[expect]` は、違反が解消すると unfulfilled_lint_expectations を出し、`warnings = "deny"` の下で検証入口を止めるので、直した後の抑止が残らない。
 既定から緩める判断を決定の記録に残せば、緩和の理由が追える。
 
 ### 完了条件
@@ -71,6 +74,8 @@ workspace の lints に、unwrap_used・expect_used の deny の設定がある�
 テストの unwrap・expect が、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可されている。
 大きさとネストのしきい値が、too_many_lines・excessive_nesting の lint の規則として定められている。
 excessive_nesting のしきい値が、project の clippy.toml に定められ決定の記録に残されている。
+cognitive_complexity が有効で、cognitive-complexity-threshold が clippy.toml に [structure/tests の methods](../../structure/tests/methods.md) の値で定められている。
+cognitive_complexity の抑止が、基線台帳に記録した関数の reason 付きの `#[expect]` に限られている。
 緩和が、project の決定の記録に明記されている。
 clippy.toml に disallowed-names の一覧が定められている。
 std::env::var・std::env::var_os が disallowed-methods に登録され、許可が設定の組立点に限られている。
@@ -83,7 +88,8 @@ unsafe を許可する理由が、project の決定の記録に残されてい�
 ### 禁止事項
 警告を、検証入口でエラーとして扱わず黙って通過させること。
 大きさと複雑さのしきい値を、既定から黙って緩めること。
-cognitive complexity を、clippy の cognitive_complexity lint で測ること。
+cognitive_complexity を、`#[allow]` で抑止すること。
+cognitive_complexity を、crate または module の単位で抑止すること。
 `#![allow(unsafe_code)]` を crate root に置き、crate 全体を許可すること。
 異なる理由の unsafe をまとめて、module 単位で許可すること。
 
@@ -91,6 +97,7 @@ cognitive complexity を、clippy の cognitive_complexity lint で測ること�
 `[workspace.lints.rust]` に `warnings = "deny"` を設定する。
 `[workspace.lints.clippy]` に unwrap_used・expect_used を deny で設定し、clippy.toml に allow-unwrap-in-tests・allow-expect-in-tests を設定する。
 too_many_lines・excessive_nesting を有効にし、excessive_nesting のしきい値と緩和は project の決定の記録に明記する。
+cognitive_complexity を有効にし、clippy.toml に cognitive-complexity-threshold を定め、基線台帳に記録した既存の違反の関数に reason 付きの `#[expect]` を付ける。
 `[workspace.lints.rust]` に `unsafe_code = "deny"` を設定する。
 unsafe を含む最小の item に `#[allow(unsafe_code)]` を付け、同じ理由を共有する複数の item は最小の module にまとめて許可し、その理由を決定の記録に残す。
 
@@ -103,17 +110,19 @@ unwrap_used = "deny"
 expect_used = "deny"
 too_many_lines = "warn"
 excessive_nesting = "warn"
+cognitive_complexity = "warn"
 
 [workspace.lints.rust]
 warnings = "deny"
 unsafe_code = "deny"
 ```
 
-ワークスペースルートの `clippy.toml` では、テストの `unwrap` と `expect` だけを許可する。
+ワークスペースルートの `clippy.toml` では、テストの `unwrap` と `expect` を許可し、関数の複雑さのしきい値を定める。
 
 ```toml
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true
+cognitive-complexity-threshold = 15
 ```
 
 ## ドキュメントコメントの存在
@@ -198,7 +207,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | cargo-mutants | 有効性 | mutation(cargo-mutants の未検出 mutant 0件 gate、変異生成0件の失敗、baseline のテストが走らない実行の失敗) |
 | inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` から得た実際の edge と照合し、runtime 成果物への build・test edge 混入を失敗にする) |
 | syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
-| inspection | 予防 | analyzer/lint(rustc・clippy・SonarQube の設定と診断、未使用の要素と crate 依存の検出を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
+| inspection | 予防 | analyzer/lint(rustc・clippy の設定と診断、cognitive_complexity による関数の複雑さのしきい値、未使用の要素と crate 依存の検出を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
 | inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | formation | 業務の値を型に封じる | 型(newtype・非公開フィールド・Rust の可視性機構) |
 | formation | 不正な状態を構築できなくする | 型(enum・網羅 match・コンパイラの網羅性検査) |

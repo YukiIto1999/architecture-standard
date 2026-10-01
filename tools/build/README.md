@@ -13,5 +13,3 @@ build は、task の編成、共有ライブラリの取得、契約と release 
 | 成果物の署名と provenance | Cosign | [cosign.md](./cosign.md) |
 | 契約駆動の fuzz | Schemathesis | [schemathesis.md](./schemathesis.md) |
 | SBOM の既知脆弱性検査 | OSV-Scanner | [osv-scanner.md](./osv-scanner.md) |
-
-認知的複雑さの検査と quality gate は、[platforms/sonarqube](../platforms/sonarqube.md) の採用で満たす。

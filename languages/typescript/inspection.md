@@ -108,7 +108,7 @@ tsconfig は strict に加え、noUncheckedIndexedAccess と exactOptionalProper
 linter は oxlint を使い、型認識の検査は tsgolint による oxlint の type-aware 実行で行う。
 ファイル・関数の大きさとネストの深さのしきい値は oxlint の max-lines(ファイル)・max-lines-per-function(関数)・max-depth(ネスト)の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 環境変数の直読は、TypeScript compiler API による構造検査で process.env と import.meta.env の参照を設定の parse を持つ組立点だけに限る。
-認知的複雑さの測り方は、[sonarqube](../../tools/platforms/sonarqube.md) の「cognitive complexity を一箇所で測る」に従い、oxlint 側の複雑度の規則(complexity)は有効にしない。
+関数の複雑さは、[eslint-plugin-sonarjs](./eslint-plugin-sonarjs.md) の「関数の複雑さを lint で止める」に従い、oxlint 側の複雑度の規則(complexity)は有効にしない。
 
 ### 根拠
 strict を有効にすれば、不在や暗黙の any が型検査で止まる。
@@ -188,7 +188,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | stryker-js | 有効性 | mutation(StrykerJS の totalUndetected または Survived+NoCoverage が0件の gate、変異生成0件の失敗、選んだテストの実行0件の失敗、既知の欠陥を仕込んだ確認での検出の成立) |
 | inspection | 構造 | 構造検査(TypeScript compiler API が解決した依存 edge と skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
 | typescript-compiler-api | 構造検査 | 構造検査(@typescript/typescript6 の compiler API による call expression の symbol・callee expression の型・parameter の initializer・destructuring の binding element・module specifier の解決先 file と型だけの import かどうかの取得と規則照合) |
-| inspection | 予防 | analyzer/lint(tsc・oxlint・`oxlint --type-aware`・`oxlint-tsgolint`・SonarQube の設定と診断を検証入口でエラー化) |
+| inspection | 予防 | analyzer/lint(tsc・oxlint・`oxlint --type-aware`・`oxlint-tsgolint` の設定と診断を検証入口でエラー化) |
+| eslint-plugin-sonarjs | 関数の複雑さを lint で止める | analyzer/lint(oxlint の JS plugin として読み込んだ sonarjs/cognitive-complexity の error 化と、reportUnusedDisableDirectives による残った抑止の error 化) |
 | tsdoc | ドキュメントコメントの検査 | 構造検査(TypeScript compiler API と `@microsoft/tsdoc`)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | valibot | 業務の値を型に封じる | 型(valibot の brand・safeParse)+実行テスト(factory の単体テスト) |
 | formation | 不正な状態を構築できなくする | 型(判別子つき union・never 網羅) |
