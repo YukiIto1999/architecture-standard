@@ -22,8 +22,11 @@
 12. テストを通す最小の実装を書いて緑にし、形を整える判断は次の段へ譲る。
 13. 緑の間に感じた痛みと臭いを手がかりに、触れた範囲の構造を改善する([refactoring](./refactoring.md) に従う)。
 14. 緑になった項目を外し、直前の反復が明らかにした依存と痛みを手がかりに次の振る舞いを選び、作業が明らかにした振る舞いを加えたリストが空になるまで、5 から 13 を繰り返す。
-15. 出荷の前に、作業中に生まれた差分から目的に属するものだけを選別し、振る舞いの変更と構造の改善を別のコミットに分ける([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」に従う)。各コミットには、[principles/documentation](../principles/documentation/README.md) に従い、変更を行う直接の目的を記録する。
-16. 変更が触れた規律の完了条件・禁止事項と、[structure/tests](../structure/tests/layout.md) の機械検証に照合する。
+15. 公開 interface から観測できる振る舞いを変えた作業単位では、変えた振る舞いと、それと組み合わさる機能を対象に探索的テストを行う([structure/tests/methods](../structure/tests/methods.md) に従う)。
+16. 探索で見つけた欠陥はテストリストへ足してリストが空になるまで 5 から 14 を繰り返し、仕様の漏れは [design](./design.md) へ戻す。
+17. 手順16を終えた時点で、探索の記録を取り除く([structure/tests/methods](../structure/tests/methods.md) に従う)。
+18. 出荷の前に、作業中に生まれた差分から目的に属するものだけを選別し、振る舞いの変更と構造の改善を別のコミットに分ける([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」に従う)。各コミットには、[principles/documentation](../principles/documentation/README.md) に従い、変更を行う直接の目的を記録する。
+19. 変更が触れた規律の完了条件・禁止事項と、[structure/tests](../structure/tests/layout.md) の機械検証に照合する。
 
 ## 確認点
 
@@ -43,6 +46,7 @@
 変更したコードを、[principles/legibility](../principles/legibility/code-as-documentation.md) の「コードを第一級の文書として明瞭に書く」の完了条件と禁止事項に照合する。
 コメントを、[principles/comment](../principles/comment/README.md) の各規律の完了条件と禁止事項に照合する。
 テストの技法と有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
+公開 interface から観測できる振る舞いを変えた作業単位では、手順17で記録を取り除く前に、探索の記録が charter、触れた範囲、見つけた事象を持ち、見つけた欠陥がテストリストを経て自動の検証へ、仕様の漏れが [design](./design.md) へ移されていることを確かめる([structure/tests/methods](../structure/tests/methods.md) に照合する)。
 作業単位の終わりに、読み手がその作業単位の中だけにいた文書が残っていないことを、[principles/documentation](../principles/documentation/separate-document-types.md) の「文書の種別を分け、読み手を定める」の完了条件に照合する。
 
 ## 範囲外
