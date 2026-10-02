@@ -9,18 +9,18 @@
 
 ### 要求
 mutation は、mutation-dotnet で検査する。
-変更ごとの検査は、`--since` に push する範囲の比較の基点を渡して変更した file に絞って実行し、`mutation-report.json` から変更した行に位置する mutant を取り出す。
+変更ごとの検査は、`run --since <基点> --changed-lines` で push する範囲で変更した行に重なる mutant だけを生成し、`changed-lines --report <報告> --since <基点>` で報告を判定する。
 未検出の mutant は、報告の状態別件数のうち生存と未被覆の合計で数える。
 変更ごとの検査と全量の実行の合否、対象と絞り方の床は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ### 根拠
 テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
 未被覆の mutant は検出しなかった側に入るため、生存だけを数えると未検出の件数が少なく出る。
-`--since` は file の単位で絞るので、変更した行の判定は report の mutant の位置で行う。
+`--since` は変更した file を選び、`--changed-lines` は変更した行に重なる mutant だけを生成するため、変更していない行の mutant の実行を避けられる。
 テストが一件も見つからない実行は、対象の中断として非ゼロ終了になる。
 
 ### 完了条件
-変更した行の mutant が、`--since` で絞った mutation-dotnet の実行の report から取り出されている。
+変更した行の mutant だけが mutation-dotnet の実行の report に生成され、`changed-lines` で判定されている。
 未検出の mutant が、報告の生存と未被覆の合計で数えられている。
 テストが一件も見つからない実行が、検証入口を失敗で止めている。
 mutation-dotnet の取得が、release タグが指す commit ID で固定されている。
@@ -34,7 +34,7 @@ mutation-dotnet の取得を、commit ID を固定しない参照で行うこと
 
 ### 行動
 mutation-dotnet と、その build が参照する上流 repository を、release タグが指す commit ID を固定して取得する。
-mutation-dotnet を `--since` で変更した file に絞って変更ごとの検証入口に組み、report から変更した行の mutant を取り出す。
+mutation-dotnet の `run --since <基点> --changed-lines` を変更ごとの検証入口に組み、`changed-lines --report <報告> --since <基点>` で変更した行の mutant の報告を判定する。
 変更した行の mutant の生存と未被覆の合計を、合否の判定に渡す。
 生き残った欠陥に、テストを足す。
 絞り込みは、変異演算子と低リスク要素に限る。
