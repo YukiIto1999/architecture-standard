@@ -114,7 +114,7 @@ context7 と web-researcher のいずれかが利用できなければ、利用�
 ### 6. 配線と台帳を更新する
 
 concerns を横断規律の正本、structure を参照側にする。
-概念の増減では root `README.md`、`concerns/README.md`、`.claude/skills/standard-update/SKILL.md`、`scripts/verify.sh` を同期する。
+概念の増減では root `README.md`、`concerns/README.md`、`.claude/skills/standard-update/SKILL.md`、`references/concerns.md` を同期する。
 tools の区分や採用名を変えた場合は `tools/README.md`、languages の言語 ecosystem や採用物を変えた場合は `languages/README.md` と該当 ecosystem の台帳を同期する。いずれも領域一覧と該当 reference を同期し、`scripts/naming-registry-check.mjs` の動的 registry で検査する。永続する別の registry file は作らない。
 
 ### 7. 検証して閉じる

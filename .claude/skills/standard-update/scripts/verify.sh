@@ -485,9 +485,10 @@ echo
 echo "=== 8. skill の概念列挙と concerns/ 実ファイルの突合 ==="
 concerns_files=$(find concerns -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
 skill_ok=1
-for f in ".claude/skills/standard-update/SKILL.md" ".claude/skills/standard-update/references/concerns.md"; do
+# 概念名に依らず列挙を探すため、file ごとに列挙の位置を PCRE で持つ。
+while IFS=$'\t' read -r f list_pattern; do
   if [ ! -f "$f" ]; then echo "  MISSING FILE: $f"; skill_ok=0; continue; fi
-  listed=$(rg -oP 'effect・[^。\n]*' "$f" | head -1 | sed 's/・/\n/g' | sort)
+  listed=$(rg -oP -- "$list_pattern" "$f" | head -1 | sed 's/・/\n/g' | sort)
   if [ -z "$listed" ]; then echo "  $f: 概念列挙が見つからない"; skill_ok=0; continue; fi
   diff_out=$(diff <(echo "$concerns_files") <(echo "$listed"))
   if [ -n "$diff_out" ]; then
@@ -495,7 +496,10 @@ for f in ".claude/skills/standard-update/SKILL.md" ".claude/skills/standard-upda
     while IFS= read -r diff_line; do echo "    $diff_line"; done <<< "$diff_out"
     skill_ok=0
   fi
-done
+done <<'LISTS'
+.claude/skills/standard-update/SKILL.md	(?<=概念。)[a-z][a-z-]*(?:・[a-z][a-z-]*)*(?=。)
+.claude/skills/standard-update/references/concerns.md	^[a-z][a-z-]*(?:・[a-z][a-z-]*)*(?=。$)
+LISTS
 if [ "$skill_ok" = 1 ]; then pass "skill の概念列挙が concerns/ 実ファイルと一致"; else fail "skill の概念列挙が concerns/ 実ファイルと不一致"; fi
 
 echo
