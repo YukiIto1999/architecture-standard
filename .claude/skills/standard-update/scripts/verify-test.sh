@@ -124,6 +124,16 @@ sed -i 's/・accessibility。/・accessibility・extra。/' \
 printf '検査用の横断規律は [concerns/extra](../../concerns/extra/README.md) に従う。\n' >> "$fixture/structure/core/domain.md"
 expect_pass "concerns の期待数を台帳から導出する" "$fixture"
 
+fixture=$(make_fixture concept-list-order)
+sed -i 's/effect・\(.*\)・accessibility。/\1・accessibility・effect。/' \
+  "$fixture/.claude/skills/standard-update/SKILL.md" \
+  "$fixture/.claude/skills/standard-update/references/concerns.md"
+expect_pass "skill の概念列挙を並びに依らず照合する" "$fixture"
+
+fixture=$(make_fixture concept-list-drift)
+sed -i 's/・accessibility。/。/' "$fixture/.claude/skills/standard-update/references/concerns.md"
+expect_fail "skill の概念列挙から欠けた概念を検出する" "$fixture" "references/concerns.md: concerns/ 実ファイルと不一致"
+
 fixture=$(make_fixture concept-claim-drift)
 sed -i '0,/24概念/s//23概念/' "$fixture/README.md"
 expect_fail "concerns の数を書く root の全箇所を台帳と照合する" "$fixture" "concerns の概念: 記載=23 台帳=24"
