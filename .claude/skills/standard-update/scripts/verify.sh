@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 標準の更新後に走らせる機械検査。repo の root で実行する。読み取り専用。repo 内に一時ファイルを作らない。
-# リンク切れ・単位ごとの必須5節と任意の例・層への製品名漏れ・台帳と実ファイル数の整合・languages の規律と検証対応表の整合・principles/concerns の逐語一致・concerns/structure/languages の製品名指しの登録・規律名指しの見出し一致・統一語彙の旧表記・principles/concerns の消費者存在を、すべて pass/fail で確かめる。
+# リンク切れ・単位ごとの必須5節と任意の例・層への製品名漏れ・本文と skill が書く数と台帳の行数の照合・台帳と実ファイルの整合・languages の規律と検証対応表の整合・principles/concerns の逐語一致・concerns/structure/languages の製品名指しの登録・規律名指しの見出し一致・統一語彙の旧表記・principles/concerns の消費者存在を、すべて pass/fail で確かめる。
 set -uo pipefail
 
 required_commands=(git rg fd awk sed find wc tr head tail sort diff dirname paste basename cut node)
@@ -23,13 +23,27 @@ FAILED=0
 pass() { echo "PASS: $1"; }
 fail() { echo "FAIL: $1"; FAILED=1; }
 
-markdown_section_file_table_rows() {
-  awk -v target="$2" '
-    $0 == "## " target { in_section = 1; next }
-    in_section && /^##[[:space:]]+/ { in_section = 0 }
-    in_section && /^\| \[[^]]+\]\(\.\/[^)]+\.md\) \|/ { count++ }
-    END { print count + 0 }
+# 見出し行が正規表現 $2 に一致する節の中で、表の区切り行より後の本体行から $3 列目の値を一行ずつ出す。
+# 節は同じ深さ以上の見出しで閉じる。
+markdown_table_cells() {
+  awk -v heading="$2" -v column="$3" '
+    function heading_level(line) { return match(line, /[^#]/) - 1 }
+    function trim(value) {
+      sub(/^[[:space:]]+/, "", value)
+      sub(/[[:space:]]+$/, "", value)
+      return value
+    }
+    $0 ~ heading { in_section = 1; level = heading_level($0); in_body = 0; next }
+    in_section && /^#+[[:space:]]/ && heading_level($0) <= level { in_section = 0 }
+    !in_section { next }
+    /^\|[-:|[:space:]]+$/ { in_body = 1; next }
+    in_body && /^\|/ { split($0, cells, "|"); print trim(cells[column + 1]); next }
+    { in_body = 0 }
   ' "$1"
+}
+
+count_lines() {
+  sed '/^$/d' | wc -l | tr -d ' '
 }
 
 language_body_discipline_records() {
@@ -279,28 +293,90 @@ else
 fi
 
 echo
-echo "=== 5. 概念数の整合(concerns/README.md の台帳 = concerns 実ファイル = root README.md) ==="
+echo "=== 5. 本文と skill が書く数 = 台帳の行から数えた数(concerns は台帳 = 実ファイルも照合) ==="
 concerns_actual=$(find concerns -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
-root_claim=$(rg -oP '(?<=概念ごとの規律。)\d+(?=概念)' README.md | head -1)
-concerns_readme_rows=$(markdown_section_file_table_rows concerns/README.md 概念)
-echo "concerns 実ファイル数: $concerns_actual"
-echo "README.md(root) の記載: ${root_claim:-<抽出できず>}"
-echo "concerns/README.md の表の行数: $concerns_readme_rows"
-if [ -n "$root_claim" ] && [ "$concerns_actual" = "$concerns_readme_rows" ] && [ "$root_claim" = "$concerns_readme_rows" ]; then
-  pass "概念数が一致($concerns_actual)"
-else
-  fail "概念数が不一致(台帳=$concerns_readme_rows, 実ファイル=$concerns_actual, root=${root_claim:-<抽出できず>})"
+concerns_readme_rows=$(markdown_table_cells concerns/README.md '^## 概念$' 1 | count_lines)
+echo "concerns: 台帳=$concerns_readme_rows 実ファイル=$concerns_actual"
+if [ "$concerns_actual" != "$concerns_readme_rows" ]; then
+  fail "概念数が不一致(台帳=$concerns_readme_rows, 実ファイル=$concerns_actual)"
+fi
+
+declare -A ledger_counts=(
+  ["領域"]=$(markdown_table_cells README.md '^### 領域の一覧$' 1 | count_lines)
+  ["principles の群"]=$(markdown_table_cells principles/README.md '^## 原則の体系$' 1 | sort -u | count_lines)
+  ["principles の領域"]=$(markdown_table_cells principles/README.md '^## 原則の体系$' 2 | count_lines)
+  ["concerns の概念"]=$concerns_readme_rows
+  ["concerns の群"]=$(markdown_table_cells concerns/README.md '^## 概念$' 2 | sort -u | count_lines)
+  ["structure の root 境界"]=$(markdown_table_cells structure/README.md '^## 構成$' 1 | { rg -vxF '[skeleton](./skeleton.md)' || true; } | count_lines)
+  ["structure の surface"]=$(markdown_table_cells structure/surfaces/README.md '^## 構成$' 1 | count_lines)
+  ["structure の host"]=$(markdown_table_cells structure/runtimes/README.md '^## 構成$' 1 | count_lines)
+  ["tools の区分"]=$(markdown_table_cells tools/README.md '^## 構成$' 2 | count_lines)
+  ["languages の言語"]=$(markdown_table_cells languages/README.md '^## 構成$' 2 | count_lines)
+  ["languages の実現軸"]=$(markdown_table_cells languages/README.md '^## [0-9]+つの実現軸と全域規律$' 2 | { rg -xF '実現軸' || true; } | count_lines)
+  ["languages の全域規律"]=$(markdown_table_cells languages/README.md '^## [0-9]+つの実現軸と全域規律$' 2 | { rg -xF '全域規律' || true; } | count_lines)
+  ["process の単位"]=$(markdown_table_cells process/README.md '^## 単位$' 1 | count_lines)
+)
+
+# 数を書く箇所ごとに、file・数を取り出す PCRE・照合する台帳を一行で持つ。数の記載を足したらここへ足す。
+count_claims_ok=1
+while IFS=$'\t' read -r claim_file claim_pattern claim_key; do
+  claim_expected=${ledger_counts[$claim_key]}
+  claim_matches=$(rg -noP -- "$claim_pattern" "$claim_file" 2>/dev/null || true)
+  if [ -z "$claim_matches" ]; then
+    fail "数の記載が見つからない($claim_file の $claim_key。本文か照合表を直す)"
+    count_claims_ok=0
+    continue
+  fi
+  while IFS=: read -r claim_line claim_value; do
+    if [ "$claim_value" != "$claim_expected" ]; then
+      fail "数の記載が台帳と不一致($claim_file:$claim_line $claim_key: 記載=$claim_value 台帳=$claim_expected)"
+      count_claims_ok=0
+    fi
+  done <<< "$claim_matches"
+done <<'CLAIMS'
+README.md	\d+(?=つの領域)	領域
+.claude/skills/standard-update/SKILL.md	(?<=標準の)\d+(?=領域)	領域
+README.md	\d+(?=群)	principles の群
+principles/README.md	\d+(?=つの群)	principles の群
+.claude/skills/standard-update/references/principles.md	\d+(?=群)	principles の群
+principles/README.md	(?<=計)\d+(?=の領域)	principles の領域
+README.md	\d+(?=概念)	concerns の概念
+concerns/README.md	\d+(?=の(?:横断的な)?概念)	concerns の概念
+.claude/skills/standard-update/SKILL.md	\d+(?=概念)	concerns の概念
+.claude/skills/standard-update/references/concerns.md	\d+(?=概念)|(?<=この)\d+(?=に)	concerns の概念
+concerns/README.md	\d+(?=つの群)	concerns の群
+.claude/skills/standard-update/references/structure.md	(?<=固定)\d+(?=境界)	structure の root 境界
+.claude/skills/standard-update/references/structure.md	\d+(?= surface)	structure の surface
+structure/runtimes/README.md	\d+(?=つの host)	structure の host
+README.md	\d+(?=区分)	tools の区分
+tools/README.md	\d+(?=つの区分)	tools の区分
+.claude/skills/standard-update/references/tools.md	\d+(?=区分)	tools の区分
+languages/README.md	\d+(?=言語共通)	languages の言語
+.claude/skills/standard-update/references/tools.md	\d+(?=つの言語)	languages の言語
+languages/README.md	\d+(?=つの実現軸)	languages の実現軸
+.claude/skills/standard-update/SKILL.md	\d+(?=実現軸)	languages の実現軸
+.claude/skills/standard-update/references/tools.md	\d+(?=つの実現軸)	languages の実現軸
+process/bootstrap.md	\d+(?=つの実現軸)	languages の実現軸
+languages/README.md	\d+(?=つの全域規律)	languages の全域規律
+.claude/skills/standard-update/references/tools.md	\d+(?=つの全域規律)	languages の全域規律
+README.md	\d+(?=単位)	process の単位
+CLAIMS
+if [ "$count_claims_ok" = 1 ] && [ "$concerns_actual" = "$concerns_readme_rows" ]; then
+  pass "本文と skill が書く数が全て台帳の行数と一致"
 fi
 
 echo
-echo "=== 6. process/tools/languages の単位数 ==="
+echo "=== 6. process/tools/languages の台帳と実ファイル ==="
 numeric_ok=1
-process_expected=11
-process_readme_rows=$(markdown_section_file_table_rows process/README.md 単位)
-process_actual=$(find process -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
-echo "process: 台帳=$process_readme_rows 実ファイル=$process_actual 期待=$process_expected"
-if [ "$process_readme_rows" != "$process_expected" ] || [ "$process_actual" != "$process_expected" ]; then
-  fail "process の単位数が不一致(台帳=$process_readme_rows, 実ファイル=$process_actual, 期待=$process_expected)"
+process_declared=$(markdown_table_cells process/README.md '^## 単位$' 1 | sed -E 's#^\[[^]]*\]\(\./([^)]*)\)$#\1#' | sort)
+process_actual=$(find process -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -printf '%f\n' | sort)
+echo "process: 台帳=$(count_lines <<< "$process_declared") 実ファイル=$(count_lines <<< "$process_actual")"
+if [ "$process_declared" != "$process_actual" ]; then
+  echo "  process の台帳:"
+  printf '%s\n' "$process_declared" | sed 's/^/    /'
+  echo "  process の実ファイル:"
+  printf '%s\n' "$process_actual" | sed 's/^/    /'
+  fail "process の台帳と実ファイルが不一致"
   numeric_ok=0
 fi
 
@@ -365,7 +441,7 @@ echo "languages: 直下file=$languages_top_actual 言語=[$language_dirs_actual]
 if [ "$languages_ok" = 0 ]; then
   numeric_ok=0
 fi
-if [ "$numeric_ok" = 1 ]; then pass "process=10、tools の区分と台帳、languages=3×(6軸+conventions)と台帳で一致"; fi
+if [ "$numeric_ok" = 1 ]; then pass "process・tools・languages の台帳と実ファイルが一致"; fi
 
 echo
 echo "=== 7. 言語 ecosystem 本文の規律と inspection 対応表の一対一照合 ==="
