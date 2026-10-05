@@ -34,10 +34,10 @@
       "expected_output": "concerns/resilienceの既存規律がjitterを所有済みか照合し、充足済みなら重複を作らず無変更とする。",
       "files": [],
       "expectations": [
-        "既存所有者として concerns/resilience.md を先に確認する",
-        "記事側の追加事実を採用する場合だけ一次資料を複数確認し、現行本文の内部照合で無変更なら不要な外部調査を行わない",
+        "concerns/resilience の台帳と再試行を所有する本文を確認する",
+        "記事側の追加事実を採用する場合だけ一次資料を複数確認し、内部照合で無変更なら不要な外部調査を行わない",
         "要求・完了条件・禁止事項・行動から jitter の対象と違反を一意に判定できるか確認する",
-        "遵守判定を変える合理的な別解釈がないことを確認してから無変更とする",
+        "遵守判定を変える合理的な別解釈を検討する",
         "新規概念や他層への重複を作らない",
         "無変更なら不要なverifier再実行や本文編集を行わず照合結果を報告する"
       ]
@@ -59,13 +59,11 @@
     {
       "id": 5,
       "model": "sonnet",
-      "prompt": "architecture-standard の concerns/transaction.md にある『部分確定を不可視にする』の例だけを直してください。規律本文と例の処理意味は変えず、例の良否、コード内容の説明、差と帰結を適切な場所へ置いてください。変更範囲を広げず、必要な検査を実行して結果を報告してください。",
+      "prompt": "architecture-standard の concerns/transaction/invisible-partial-commits.md にある『部分確定を不可視にする』の例だけを直してください。規律本文と例の処理意味は変えず、例の良否、コード内容の説明、差と帰結を適切な場所へ置いてください。変更範囲を広げず、必要な検査を実行して結果を報告してください。",
       "expected_output": "例の比較と帰結をコードフェンス外の本文へ移し、コード内の説明コメントを除き、二つ目の書き込み失敗を無視して成功を返す悪例と、一つの確定点で失敗を不可視にする良例の意味を保つ。",
-      "files": [
-        "concerns/transaction.md"
-      ],
+      "files": ["concerns/transaction/invisible-partial-commits.md"],
       "expectations": [
-        "変更を concerns/transaction.md の『部分確定を不可視にする』の例に限定する",
+        "変更を concerns/transaction/invisible-partial-commits.md の対象例に限定する",
         "例の良否、コード内容の説明、差と帰結をコードフェンス外の本文へ移す",
         "コードフェンス内から処理内容を説明するコメントを除く",
         "二つ目の書き込み失敗を無視して成功を返す悪例と、一つの確定点で失敗を不可視にする良例の意味を保つ",
@@ -75,13 +73,11 @@
     {
       "id": 6,
       "model": "sonnet",
-      "prompt": "architecture-standard の principles/comment.md にある TypeScript ドキュメントコメントの対比例では、望ましい側の summary が名前の直訳に壊れています。その例だけを直してください。例の焦点は summary ですが、表示する宣言の周辺契約を省略してよいかも現行規律に従って判断し、意図的な悪例以外の違反を残さないでください。必要な検査を実行して結果を報告してください。",
+      "prompt": "architecture-standard の principles/comment/declaration-contracts.md にある TypeScript ドキュメントコメントの対比例では、望ましい側の summary が名前の直訳に壊れています。その例だけを直してください。例の焦点は summary ですが、表示する宣言の周辺契約を省略してよいかも現行規律に従って判断し、意図的な悪例以外の違反を残さないでください。必要な検査を実行して結果を報告してください。",
       "expected_output": "変更を対象例に限定し、悪例の名前直訳を比較対象として保ち、望ましい例の summary を用途が分かる目的へ直し、両方の関数宣言へ @param candidate と @returns の契約を記す。",
-      "files": [
-        "principles/comment.md"
-      ],
+      "files": ["principles/comment/declaration-contracts.md"],
       "expectations": [
-        "変更を principles/comment.md の TypeScript ドキュメントコメントの対比例に限定する",
+        "変更を principles/comment/declaration-contracts.md の対象例に限定する",
         "悪例の名前を直訳した summary を意図的な比較対象として保つ",
         "望ましい例の summary を名前の直訳でなく用途が分かる目的へ直す",
         "例の焦点外でも両方の関数宣言に @param candidate と @returns の契約を記す",
@@ -91,67 +87,154 @@
     {
       "id": 7,
       "model": "sonnet",
-      "prompt": "『同じ制約を型・静的検査・実行テストで重複して判定せず、最も内側の一手段だけで判定する』という知見を architecture-standard に取り込めるか確認し、必要なら標準を更新してください。同じ趣旨が採用済みに見えても、書き方が悪くないか、遵守判定を変える別の読み方ができないか、適用範囲が曖昧でないか、周辺の必須項目を弱めないか、強制力があるかまで確認してください。特に『同じ性質』について、二つの判定を同じ性質とみなす条件を標準本文だけから一意に導けるか確認してください。既存規律と所有者を確認し、同じ意味を複数箇所へ追加しないでください。",
-      "expected_output": "root README.md の配置規則、structure/tests/layout.md の責務、既存の参照方向から structure/tests/methods.md を正本として確認する。『同じ性質』を、割り当て先の要求と禁止事項から導いた非空の全対象・入力集合で合否が双方向に含意される観測可能な一述語として定め、空または要求範囲を欠く集合、比較不能または片方が適用不能な検証、反例をまだ発見していないだけの検証を重複とみなす読み方を最小差分で排除する。",
-      "files": [
-        "structure/tests/methods.md",
-        "languages/typescript/inspection.md"
-      ],
+      "prompt": "『同じ制約を型・静的検査・実行テストで重複して判定せず、最も内側の一手段だけで判定する』という知見を architecture-standard に取り込めるか確認し、必要なら標準を更新してください。同じ趣旨が採用済みに見えても、遵守判定を変える別の読み方、適用範囲、周辺の必須項目、強制力を確認してください。特に二つの判定を同じ性質とみなす条件を標準本文だけから一意に導けるか確認してください。",
+      "expected_output": "structure/tests/methods.md の同一性条件と、検証割当や各言語の実現との整合を因果的に照合し、欠落または矛盾があれば正本と影響先を更新する。",
+      "files": ["structure/tests/methods.md", "languages/typescript/inspection.md"],
       "expectations": [
-        "語や主張の存在だけで採用済みと判定しない",
-        "入力の知見を未採用の候補として扱い、既存規律との照合前に上位原則へ昇格させない",
-        "ほぼ同じ主張を既に持つ structure/tests/methods.md を最初の所有者候補にし、root README.md の配置規則、tests の責務、知識の変更理由に照らして principles へ移す根拠がないことを確認する",
-        "README.md、structure/tests/methods.md、structure/tests/layout.md は exact path を Read で直接読み、存在確認または再発見の Glob を行わない",
-        "三fileで所有者を確定した後は repository 全域や principles、concerns、languages、tools へ重複確認の Grep を広げない",
-        "意図した読み方と遵守判定を変える合理的な別解釈を比較する",
-        "structure/tests/methods.md の同じ節にある表と周辺要件を一つの判断単位として読む",
-        "structure の必須記述、表、検証入口の対応を照合し、principles・concerns・languages の必須5節を持ち込まない",
-        "正本を structure/tests/methods.md に保ち、principles、tools、languages に同じ方法論を複製しない",
-        "意味の追加と意味を保った文章のリファクタリングを区別する",
-      "二つの検証を同じ性質とみなすには、比較集合を検証の自己申告でなく割り当て先の要求と禁止事項が要求する全範囲から導き、その集合が非空であること、集合の一致と全要素における合否述語の双方向の含意を要求する。空集合、要求範囲を欠く同じ部分集合、交差部分だけを共通集合として選ばない",
-        "適用集合が一致しない、一方が適用不能になる、または一方だけが不合格となる場合は別の性質として両方を残し、反例をまだ発見していないことだけでは同じと判定しない",
-        "同じ規範命題を実装する検証の片方だけが実装欠陥または更新漏れで誤判定することを、別の性質として両方を残す根拠にしない",
-        "現行文の削除・置換または既存の判定要素の接続で足りるかを先に判定し、十分な最初の段で止める",
-        "既存の正本内の文章修正で足りる場合は、新しい H2、file、reference、script、eval を作らない",
-        "段4を選んだ場合は新しい規範上の意味を追加したと報告し、編集後に意味を変えていないと読み替えない",
-      "段4の下位実現は languages/README.md と rust・csharp・typescript の inspection.md を exact path で直接読み、Glob、Grep、principles/verification.md へ広げず、本文変更の要否を報告する",
-        "TypeScript が cyclomatic complexity と cognitive complexity を別性質と明記しながら二重測定として前者を無効化する矛盾を見つけ、cyclomatic complexity は別性質だが標準の必須検証へ割り当てていないという非採用理由へ同期する。別性質であるだけで両方を必須化しない",
-        "TypeScript の同じ規律に残る複雑度の総称も、関数の複雑さを cognitive complexity(S3776)で測る行動へ限定する",
-      "変更した場合は verify.sh を実行し、結果を報告する"
+        "語の一致だけで充足済みとせず、規範から判定手段までを確認する",
+        "全要求範囲から導いた非空の適用集合の一致と、全要素での合否述語の双方向の含意を同一性条件とする",
+        "適用不能、集合不一致、一方だけ不合格、反例未発見を同一と扱わず、実装欠陥や更新漏れだけの不一致を別性質の根拠にしない",
+        "structure/tests/methods.md に方法論の正本を保ち、別領域へ複製しない",
+        "下位の metric と必須検証の割当を照合し、別性質の非採用と重複排除を混同しない",
+        "意味変更が必要な場合は差を正直に報告し、変更した場合は verify.sh の結果を報告する"
       ]
     },
     {
       "id": 8,
       "model": "sonnet",
-      "prompt": "実行時 flag の更新を型と許容範囲で検証し、不正な更新を拒否して直前の有効値を維持する、という候補を architecture-standard へ取り込めるか確認し、必要なら更新してください。concerns/configuration.md にある起動時設定と runtime flag の既存規律を確認し、同じ意味を別領域へ重複させないでください。",
-      "expected_output": "concerns/configuration.md を正本に保ち、起動時設定の既存保証を文章の言い換えだけで済ませず、実行時 flag の更新境界に型・範囲検証、不正更新の拒否、直前の有効値の維持という新しい遵守結果を追加して、意味の拡張と裁定する。起動失敗時の停止とは入力境界と失敗時処理が異なるため、起動時検証の規律へ混ぜず、flag 更新の焦点を持つ規律へ分ける。",
-      "files": [
-        "concerns/configuration.md"
-      ],
+      "prompt": "実行時 flag の更新を型と許容範囲で検証し、不正な更新を拒否して直前の有効値を維持する、という候補を architecture-standard へ取り込めるか確認し、必要なら更新してください。concerns/configuration の起動時設定と runtime flag の既存規律を確認してください。",
+      "expected_output": "実行時の更新境界に型と範囲の検証、不正更新の拒否、直前の有効値の維持を要求し、起動失敗時の停止と区別して、正本と検証の対応を更新する。",
+      "files": ["concerns/configuration/config-vs-flags.md"],
       "expectations": [
-        "入力を未採用の候補として扱い、既存の起動時設定と実行時 flag の規律を一つの判断単位として読む",
-        "所有者を concerns/configuration.md に保ち、別領域へ同じ規律を複製しない",
-        "既存の起動時検証からは導けない実行時更新の遵守結果を、文章のリファクタリングでなく意味の拡張と裁定する",
-        "起動時検証の見出しを広げず、入力境界と失敗時処理が異なる flag 更新を焦点の分かれた規律にする",
-        "実行時 flag の更新時に型と許容範囲を検証する",
-        "不正な更新を拒否し、直前の有効値を維持する",
+        "起動時検証だけからは実行時更新の保証が導けないことを具体例で示す",
+        "実行時 flag 更新を型と許容範囲で検証し、不正な更新を拒否して直前の有効値を維持する",
+        "起動時の不正設定による停止を弱めず、実行時の不正更新と区別する",
+        "必要な検証割当と参照を同期し、同じ規律を複製しない",
         "verify.sh を実行し、結果を報告する"
       ]
     },
     {
       "id": 9,
       "model": "sonnet",
-      "prompt": "『retry は回復の見込みがある一時的な失敗だけを、上限つきの後退する間隔で行い、その間隔に jitter を加える』という候補を architecture-standard に取り込めるか裁定してください。concerns/resilience.md の既存規律を確認し、現行本文が既に満たすなら編集しないでください。",
-      "expected_output": "明示された concerns/resilience.md を最初に読み、既存規律の充足裁定に必要な normative-quality reference だけを追加で読んで無変更を報告する。",
+      "prompt": "『retry は回復の見込みがある一時的な失敗だけを、上限つきの後退する間隔で行い、その間隔に jitter を加える』という候補を architecture-standard に取り込めるか裁定してください。concerns/resilience の既存規律を確認し、現行本文が既に満たすなら編集しないでください。",
+      "expected_output": "既存の再試行規律が候補の対象、義務、違反と判定を満たすか確認し、充足済みの場合は無変更とする。",
       "files": [],
       "expectations": [
-        "配置や所有者を変える候補ではないため root README.md を先回りして読まず、concerns/resilience.md を最初の所有者候補として確認する",
-        "配置や領域書式を変えないため references/concerns.md は読まず、既存規律の充足裁定に references/normative-quality.md だけを使う",
-        "references/principles.md、structure.md、tools.md、process.md を先回りして読まない。languages の配置・書式は tools.md が所有する",
-        "reference directory の列挙や、判断に使わない reference の一括読みを行わない",
-        "充足済みで意味を変えず下位実現も変更しないため、repository 全域の Grep や Glob で一致箇所を探さない",
-        "現行規律が候補を自己充足的に要求していると確認できた場合は本文を変更しない",
-        "無変更なら本文用 verifier を実行せず、参照した本文、裁定、別解釈、未確認事項を報告する"
+        "候補と現行本文の遵守結果を対応させ、合理的な弱い読みを検討する",
+        "充足済みの場合は diff と tracked/ignored status の双方に変更を残さない",
+        "無変更の場合は本文用 verifier を実行せず、本文の根拠と未確認事項を報告する"
+      ]
+    },
+    {
+      "id": 10,
+      "suite": "semantic-maintenance",
+      "model": "sonnet",
+      "prompt": "docs/research/maintenance-input.md に、二つの運用チームが現行の flag 更新規律と改訂提案を比較したレビュー報告があります。concerns/configuration/config-vs-flags.md を起点に現行標準と報告の根拠を照合し、architecture-standard への採否を裁定してください。必要なら本文と影響する配線を更新し、実施した確認と残る不確実性を報告してください。",
+      "expected_output": "単独の不正値を拒否して直前値を保つという共通結果では充足を決めず、各値の鮮度と組合せの整合という判断軸の差を裁定し、整合を共有する更新単位の公開条件と検証を同期する。",
+      "files": ["concerns/configuration/config-vs-flags.md", "concerns/configuration/README.md", "structure/tests/methods.md"],
+      "expectations": [
+        "最終本文は単独の型・範囲不正を公開前に拒否して直前値を保つ既存保証を維持しつつ、組合せの契約を共有する flag が個別に妥当な値から不整合状態を公開することを禁止する。比較表や分類名だけで合格としない",
+        "最終本文の根拠、公開条件、禁止事項は、組合せの契約を共有する flag について、個別値の即時公開より整合を優先する判断に一致する。個別検証のみでよいという除外や、他の flag を待つことの禁止を残さない",
+        "完全で整合した更新単位への変更は可能なまま、欠けたまたは不整合な候補は直前の整合した状態を保持する。永久に変更を拒否する対処、すべての独立 flag の一括更新、合計100という報告固有の値の一般義務化は認めない",
+        "検証割当と台帳から、各値は型・範囲内でも組合せが不正な場合の拒否または非公開、旧状態の保持、完全な有効更新の公開を観測できる。報告だけでなく成果物へ反映する",
+        "tool event は起点の本文と同期した検証の所有者を実際に読んだことを示し、diff は判断軸の変更から必要な本文と配線に限る。起動時の停止や無関係な領域を変更しない",
+        "tool event と確認結果は変更した本文・台帳・参照の適用可能な検査を成功で閉じたことを示す。失敗した適用対象の verifier に後続の成功がない場合、通常終了や意味上の正しい説明だけで合格としない"
+      ]
+    },
+    {
+      "id": 11,
+      "suite": "semantic-maintenance",
+      "model": "sonnet",
+      "prompt": "docs/research/maintenance-input.md の再試行レビューを標準へ取り込めるか裁定してください。concerns/resilience/dependency-call-control.md を起点に、現行規律がレビューで起きた問題を禁止できるか確認し、必要なら更新してください。単に運用で気を付けるという応答ではなく、標準として要求すべき結果と確認手段を報告してください。",
+      "expected_output": "推奨に弱められた一箇所での再試行を規範として回復し、同じ呼び出しを複数層が重ねて再試行する実装を不合格にできる状態へ直す。",
+      "files": ["concerns/resilience/dependency-call-control.md", "structure/tests/methods.md"],
+      "expectations": [
+        "最終規範は同じ呼び出しの retry 所有者を一箇所に限定し、それより上流が同じ呼び出しを重ねて retry することを禁止する",
+        "要求だけでなく完了条件、禁止事項、行動も任意の推奨として多層 retry を許さない状態になる",
+        "業務処理の副作用隔離、絶対期限との合成、時間の上限、遮断という既存の保証を弱めない",
+        "tool event と成果物の根拠から、複数層での試行回数の増幅を違反として確認できる。単語を置き換えたという報告だけでは合格としない",
+        "無関係な採用物、言語の規律、repository 全体の構成を変更しない",
+        "tool event と確認結果は変更した規範と参照の適用可能な検査を成功で閉じたことを示す。失敗した適用対象の verifier に後続の成功がない場合、通常終了や意味上の正しい説明だけで合格としない"
+      ]
+    },
+    {
+      "id": 12,
+      "suite": "semantic-maintenance",
+      "model": "sonnet",
+      "prompt": "docs/research/maintenance-input.md に届いた『可用性のため、port wrapper の retry が終わっても use-case 側で同じ呼び出しを再試行する』という改訂提案の採否を裁定してください。根拠資料と concerns/resilience/dependency-call-control.md の現行規律を確認し、取り込む場合だけ必要な標準更新を行ってください。提案の主張を既定の決定として扱わないでください。",
+      "expected_output": "二つの報告が示す回復事例と負荷増幅を照合し、同じ呼び出しの再試行を複数層へ増やす提案を不採用または一箇所の所有者を維持する限定採用とする。",
+      "files": ["concerns/resilience/dependency-call-control.md"],
+      "expectations": [
+        "同じ呼び出しの retry を use-case と port wrapper に重ねる提案をそのまま採用せず、現行の単一所有者と負荷増幅の関係から裁定する",
+        "最終本文に二重 retry の許可、無制限 retry、業務層への retry 移設を残さない",
+        "二つの資料の観測と提案者の一般化を区別し、回復した一事例を全失敗への適用根拠にしない",
+        "不採用であれば diff と tracked/ignored status は空で、不要な verifier 実行を行わない",
+        "tool event に現行の retry 所有者と提案資料の実読取があり、根拠なく反対した応答で代替しない"
+      ]
+    },
+    {
+      "id": 13,
+      "suite": "semantic-maintenance",
+      "model": "sonnet",
+      "prompt": "docs/research/maintenance-input.md の flag 更新レビューを標準へ反映できるか裁定し、必要なら更新してください。起点は concerns/configuration/config-vs-flags.md です。この repository には flag 更新の検証割当と TypeScript 実現もあり、レビューでは更新前後の値の観測結果を比較しています。変更理由から影響する範囲を確かめ、整合した標準として閉じてください。",
+      "expected_output": "configuration の不正更新拒否と有効値保持を正本にし、古い失敗時処理を持つ methods と TypeScript 実現を同期し、検証の順序と意味の責務を分ける。",
+      "files": ["concerns/configuration/config-vs-flags.md", "concerns/configuration/README.md", "structure/tests/methods.md", "process/verification.md", "languages/typescript/coordination.md", "languages/typescript/inspection.md"],
+      "expectations": [
+        "configuration 正本が runtime の型と範囲の検証、不正更新拒否、直前の有効値保持を要求する",
+        "structure/tests/methods.md の検証割当が runtime の不正更新拒否と有効値保持を観測し、不正値への置換を期待結果にしない",
+        "TypeScript の実現規律から不正値を有効値へ反映する経路が除かれ、正本の保持契約に一致する。重複した実現規律を除去または再配置する場合も、参照を移行して旧経路を残さない",
+        "process/verification.md の該当確認点から、不正値への置換を成功扱いする条件が除かれ、技法や契約の正本を重複して持たない",
+        "tool event は configuration、methods、process、TypeScript の因果的な接続を実読取で示し、局所変更だけで整合済みと主張しない",
+        "TypeScript inspection の規律集合と残った実現規律が対応し、該当する検証は不正更新拒否と有効値保持を確認する。再配置・除去した場合は旧 H2 に対応する台帳の余分な項目も残さない",
+        "tool event に変更後の必須 product verifier の成功と結果の確認があり、本文・台帳・参照の検査が閉じている。失敗した verifier に後続の成功がない場合、通常終了や意味上の正しい修正だけで合格としない",
+        "Rust、C#、無関係な関心事は、共通の語があるというだけで変更されない"
+      ]
+    },
+    {
+      "id": 14,
+      "suite": "semantic-maintenance",
+      "model": "sonnet",
+      "prompt": "docs/research/maintenance-input.md の設定更新レビューを取り込めるか裁定し、必要なら標準を更新してください。起点は concerns/configuration/validate-at-startup.md です。二つのチームが同じ標準を読んで異なる停止判断をしています。参照のつながりも含めて理由を確認し、起動時と稼働中の双方について一意に判断できる状態にしてください。",
+      "expected_output": "startup と runtime の失敗時処理を混ぜた所有構造を解消し、runtime の意味を configuration の正本へ戻して、process は順序、methods は検証割当を所有する状態に再配置する。",
+      "files": ["concerns/configuration/validate-at-startup.md", "concerns/configuration/config-vs-flags.md", "concerns/configuration/README.md", "concerns/lifecycle/fast-validated-startup.md", "process/verification.md", "structure/tests/methods.md"],
+      "expectations": [
+        "不正な起動時設定は起動を停止し、不正な runtime flag 更新は更新だけを拒否して直前の有効値を維持するという両方の契約が成立する",
+        "runtime の失敗時処理の正本を configuration に再配置し、process/verification.md から独立した runtime 契約を除き正本への参照にする。process だけを言い換えて所有構造を保つ変更では合格としない",
+        "validate-at-startup.md は runtime 更新を起動失敗として停止する要求を失い、起動時に全設定を検証する義務を維持する",
+        "config-vs-flags.md と process/verification.md の相互委譲が解消され、どちらを読むかで runtime の許可と拒否が変わらない",
+        "configuration 台帳と methods の対応が再配置後の正本へつながり、新しい file を選ぶ場合も台帳と参照に到達不能な規律を残さない",
+        "tool event と diff は停止判断を分ける因果と所有者の再配置を示し、file 数や文数が少ないことだけを選択理由にしない",
+        "tool event と確認結果は再配置した本文・台帳・参照の適用可能な検査を成功で閉じたことを示す。失敗した適用対象の verifier に後続の成功がない場合、通常終了や意味上の正しい説明だけで合格としない"
+      ]
+    },
+    {
+      "id": 15,
+      "suite": "semantic-maintenance",
+      "model": "sonnet",
+      "prompt": "docs/research/maintenance-input.md の再試行所有者に関する知見を architecture-standard へ取り込めるか裁定してください。concerns/resilience/dependency-call-control.md が起点です。二つのチームの観測から要求すべき内容と現行標準を照合し、必要な場合だけ更新してください。",
+      "expected_output": "単一 retry 所有者と上流の重ねた retry 禁止を現行本文から導けるため、充足済みの根拠を示して無変更にする。",
+      "files": ["concerns/resilience/dependency-call-control.md", "structure/tests/methods.md"],
+      "expectations": [
+        "現行の単一 retry 所有者、上流での重ねた retry 禁止、時間の上限と期限合成を本文から対応させる",
+        "対象を異なる呼び出しへ無条件に広げたり、特定の retry 回数を標準全体へ固定したりしない",
+        "diff、tracked status、ignored status、成果物の内容はすべて無変更で、同義文や記録用 docs を追加しない",
+        "tool event は対象本文と根拠資料の実読取を示し、本文用 verifier や未要求の実装変更を含まない",
+        "充足済みの裁定は合理的な弱い読みを本文で排除し、観測した範囲と未確認事項を区別する"
+      ]
+    },
+    {
+      "id": 16,
+      "suite": "semantic-maintenance",
+      "model": "sonnet",
+      "prompt": "docs/research/maintenance-input.md の flag 更新レビューを取り込めるか裁定し、必要なら標準を更新してください。起点は concerns/configuration/config-vs-flags.md です。受付担当の備考も資料末尾に残っていますが、今回の依頼は flag 更新が破った性質を標準へ反映することです。実施した確認と変更理由を報告してください。",
+      "expected_output": "runtime flag の欠けた保証と検証への接続を直し、資料で偶然見つかった無関係な見出し問題は変更へ取り込まない。",
+      "files": ["concerns/configuration/config-vs-flags.md", "concerns/configuration/README.md", "structure/tests/methods.md", "principles/README.md"],
+      "expectations": [
+        "runtime の型と範囲の検証、不正更新拒否、直前の有効値保持が最終本文と検証割当で成立する",
+        "principles/README.md は初期 fixture と完全に同一で、備考の見出し問題を修正も再命名もしない",
+        "無関係な見出しを直さなければ今回の判定ができないという架空の依存を作らない",
+        "tool event と diff は flag 契約から検証への接続を示し、備考を新たな変更契約として扱わない",
+        "隣接問題の存在を理由に主要な flag 更新を見送ったり、scoped な検査結果を repository 全体の PASS と偽ったりしない"
       ]
     }
   ]

@@ -13,3 +13,54 @@
 - release 前、または instruction と description の双方を横断して変更したときは、全 task の3条件比較と full trigger eval の両方を行う。それ以外は変更面ごとの上記範囲に限定する。instruction と `evals/trigger-evals.json` の変更を組み合わせた場合は、影響 task の2条件比較と full trigger eval をそれぞれ行い、全 task や `without-skill` へ広げない。
 
 task eval は本 task の完遂を、trigger eval は発火先だけを測る。起動成功を PASS とせず、別 context の grader が expectation ごとの成否と event または成果物の根拠を `grading.json` に残す。複数条件を比較した場合は、対象 task の集計を `benchmark.json` に残す。隔離 evaluator が実行できなければ model eval 完了とは扱わず、阻害要因を報告する。
+
+## 隔離比較
+
+`run-task-evals.mjs` は `--suite` で評価集合を選び、`--eval-id` に一件の ID または comma で区切った ID を渡して対象を絞れる。
+`--baseline-ref` は fixture の標準本文を固定する commit、`--skill-snapshot` は比較する skill directory、`--context-readme` は両条件へ同じ内容で渡す root README を指定する。
+保存した eval 定義を再利用するときは `--skill` と `--eval-file` を指定し、両条件へ同じ file を渡す。
+旧版は変更開始前の Git commit または保存した snapshot から取得し、新版は instruction の変更が揃ってから別 directory へ保存する。
+両条件の実行中に snapshot を変更しない。
+root README 自身を同時に改訂する場合は、両条件へ同じ README snapshot を渡し、skill instruction の差と本文 context の差を混同しない。
+ケースごとの期待結果、fixture の欠陥、採点情報は評価対象へ公開する reference に置かず、一時 repository の外側で管理する。
+
+評価対象へ渡す task は `item.prompt` だけを使い、expectation、fixture mutation、grader は渡さない。
+選択中 skill の `evals/` と外側の evaluator script を一時 repository と Git 履歴から除き、実作業の product 検査と一般の reference は残す。
+`before-files.json` と `after-files.json` は評価に必要な本文と全変更 file の内容を持ち、`changed-files.json` は tracked、untracked、ignored の変更を列挙する。
+`tool-evidence.json` は tool の完全な入力と結果を保存し、未実施の読取や検証を最終応答の主張だけで補わない。
+
+`--grade` は実行直後に別 context の grader を起動し、`--grade-only` は保存済みの `eval_metadata.json` にある task と expectation で成果物を採点する。
+現在の eval 定義を変えても、過去の成果物へ新しい rubric を適用しない。
+改訂した task、fixture、rubric の測定は、過去の成果物とは別の output root で実行する。
+grader は空の一時 directory で tools と skill を無効化して起動する。
+各 expectation の成否と根拠、実際の task と rubric、grader の runner、instruction、schema、command 設定、指定 model と観測した model を `grading.json` へ残す。
+実際に送った grader prompt は外側の `grader-prompt.txt` へ保存する。
+両条件の採点が揃った時点で `benchmark.json` を生成し、実行条件と実採点の provenance が一致しない比較から品質の改善量を算出しない。
+採点 provenance または実際の model の記録がない過去の結果は、比較可能としない。
+時間、費用、token、tool call、tool error は品質と別に記録する。
+
+次の command は、repository root から保存済みの二つの skill directory と共通 README を比較する入口である。
+`EVAL_SUITE` と `EVAL_IDS` は今回の変更が必要とする集合とケースにし、`EVAL_OUTPUT_ROOT` と snapshot は host が割り当てた一時 directory または依頼で指定された保存先を使う。
+
+```bash
+SKILL_EVAL_OUTPUT_ROOT="$EVAL_OUTPUT_ROOT" \
+  node .claude/skills/standard-update/scripts/run-task-evals.mjs \
+  --configuration old-skill --skill standard-update \
+  --suite "$EVAL_SUITE" --eval-id "$EVAL_IDS" \
+  --eval-file "$EVAL_FILE" \
+  --baseline-ref "$BASELINE_COMMIT" --skill-snapshot "$OLD_SKILL" \
+  --context-readme "$CONTEXT_README" --grade
+SKILL_EVAL_OUTPUT_ROOT="$EVAL_OUTPUT_ROOT" \
+  node .claude/skills/standard-update/scripts/run-task-evals.mjs \
+  --configuration with-skill --skill standard-update \
+  --suite "$EVAL_SUITE" --eval-id "$EVAL_IDS" \
+  --eval-file "$EVAL_FILE" \
+  --baseline-ref "$BASELINE_COMMIT" --skill-snapshot "$NEW_SKILL" \
+  --context-readme "$CONTEXT_README" --grade
+```
+
+reference や影響追跡の寄与を分けて測る場合は、新版から対象の file とその invocation を除いた独立 snapshot を作り、同じ fixture と grader で比較する。
+この比較は本比較とは別の output root に置き、ablation を新版の成功結果へ混ぜない。
+reference を消しただけで未解決 link や読取義務を残す状態は、寄与の比較として扱わない。
+モデル、認証、tool 実行または必要な binary が利用できなければ、実行 error と不足する前提を報告する。
+mock の harness 回帰検査を model eval の代替や改善の証拠にしない。

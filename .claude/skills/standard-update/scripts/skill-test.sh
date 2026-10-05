@@ -19,6 +19,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=0
 PASSED=0
 
+
 pass() {
   printf 'PASS: %s\n' "$1"
   PASSED=$((PASSED + 1))
@@ -32,114 +33,6 @@ fail() {
   FAILED=$((FAILED + 1))
 }
 
-expect_text() {
-  local label="$1"
-  local pattern="$2"
-  shift 2
-  if rg -q "$pattern" "$@"; then pass "$label"; else fail "$label" "pattern: $pattern"; fi
-}
-
-expect_no_text() {
-  local label="$1"
-  local pattern="$2"
-  shift 2
-  if rg -q "$pattern" "$@"; then fail "$label" "unexpected pattern: $pattern"; else pass "$label"; fi
-}
-
-expect_line() {
-  local label="$1"
-  local line="$2"
-  shift 2
-  if rg -qF -x -- "$line" "$@"; then pass "$label"; else fail "$label" "line: $line"; fi
-}
-
-expect_eval_prompt_no_text() {
-  local label="$1"
-  local eval_id="$2"
-  local pattern="$3"
-  local eval_file="$4"
-  if node -e '
-    const fs = require("node:fs");
-    const [file, id, pattern] = process.argv.slice(1);
-    const item = JSON.parse(fs.readFileSync(file, "utf8")).evals.find((entry) => String(entry.id) === id);
-    if (!item) process.exit(2);
-    process.exit(new RegExp(pattern).test(item.prompt) ? 1 : 0);
-  ' "$eval_file" "$eval_id" "$pattern"; then
-    pass "$label"
-  else
-    fail "$label" "eval $eval_id prompt に含めない: $pattern"
-  fi
-}
-
-expect_eval_prompt_text() {
-  local label="$1"
-  local eval_id="$2"
-  local pattern="$3"
-  local eval_file="$4"
-  if node -e '
-    const fs = require("node:fs");
-    const [file, id, pattern] = process.argv.slice(1);
-    const item = JSON.parse(fs.readFileSync(file, "utf8")).evals.find((entry) => String(entry.id) === id);
-    if (!item) process.exit(2);
-    process.exit(new RegExp(pattern).test(item.prompt) ? 0 : 1);
-  ' "$eval_file" "$eval_id" "$pattern"; then
-    pass "$label"
-  else
-    fail "$label" "eval $eval_id prompt に含める: $pattern"
-  fi
-}
-
-printf '=== 1. skill の指示整合 ===\n'
-expect_text \
-  "methods は一致した適用集合と双方向含意で同じ性質を判定する" \
-  '同じ規範命題へ割り当てられ、そこから導いた非空の適用対象・入力集合が一致し、その集合の全要素で一方の合格が他方の合格を含意し、かつ逆方向も成り立つ' \
-  structure/tests/methods.md
-expect_text \
-  "methods は自己申告の空集合を同じ性質にしない" \
-  '各検証の自己申告から採らず、割り当て先である標準の要求と禁止事項が要求する全範囲から導く.*非空の集合を標準本文から定められなければ、同じ性質とは判定しない' \
-  structure/tests/methods.md
-expect_text \
-  "methods は比較不能な検証を別の性質として残す" \
-  '適用対象・入力集合が一致しない、一方が適用不能になる.*別の性質として両方を残す' \
-  structure/tests/methods.md
-expect_text \
-  "methods は反例未発見だけで同じ性質にしない" \
-  '反例をまだ見つけていないことだけを、同じ性質の根拠にしない' \
-  structure/tests/methods.md
-expect_text \
-  "typescript は別metricを重複として無効化しない" \
-  'cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない.*必須の検証へ割り当てていないため' \
-  languages/typescript/inspection.md
-expect_eval_prompt_no_text \
-  "無変更evalは不要な一次資料調査を指示しない" \
-  3 \
-  '一次資料' \
-  .claude/skills/standard-update/evals/evals.json
-expect_eval_prompt_no_text \
-  "意味拡張evalは裁定名をpromptで与えない" \
-  8 \
-  '意味の拡張|意味を拡張|充足済みとせず' \
-  .claude/skills/standard-update/evals/evals.json
-expect_text \
-  "文章refactor evalは同一性条件の自己充足を問う" \
-  '二つの判定を同じ性質とみなす条件を標準本文だけから一意に導けるか' \
-  .claude/skills/standard-update/evals/evals.json
-expect_text \
-  "Ponytail の一次資料を出典記録へ残す" \
-  'Source: https://github\.com/DietrichGebert/ponytail/blob/main/skills/ponytail/SKILL\.md' \
-  skills/standard-apply/references/provenance.md
-expect_text \
-  "Ponytail のlicenseを出典記録へ残す" \
-  'License: MIT \(https://raw\.githubusercontent\.com/DietrichGebert/ponytail/main/LICENSE\)' \
-  skills/standard-apply/references/provenance.md
-expect_text \
-  "Ponytail 由来の採用を出典記録へ残す" \
-  '^\- Adopted:' \
-  skills/standard-apply/references/provenance.md
-expect_text \
-  "Ponytail 由来の不採用を出典記録へ残す" \
-  '^\- Rejected:' \
-  skills/standard-apply/references/provenance.md
 
 TEMP_BASE="${TMPDIR:-/tmp}"
 TEMP_BASE="$(cd "$TEMP_BASE" 2>/dev/null && pwd -P)" || {
@@ -221,112 +114,6 @@ if package_partial_output=$(cd "$package_partial_fixture" && SKILL_EVAL_ISOLATED
 else
   pass "without-skill隔離評価では選択packageの部分残存を拒否する"
 fi
-unexpected_fixture_typo='情報の'"概観"
-expect_no_text \
-  "task fixture の誤字を evaluator 自身へ露出しない" \
-  "$unexpected_fixture_typo" \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_no_text \
-  "task evaluator は全 task へ full verifier を強制しない" \
-  '^      "検証は repository root から' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator は変更と skill 契約が要求する場合だけ検証入口を示す" \
-  'task が file を変更し.*skill が検証を要求する場合' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_no_text \
-  "task evaluator はexact path routingをoracleとして注入しない" \
-  'task または使用する skill が exact file path を固定した場合は Read で直接読み' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_no_text \
-  "task evaluator はsnapshotのexact diff解法をoracleとして注入しない" \
-  '根拠に使う exact file path だけを git diff の引数にし' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はrouting判断をtaskと対象skillへ委ねる" \
-  'どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator は一時的な ENOTEMPTY を再試行してfixtureを回収する" \
-  'rmSync\(fixtureRoot, \{ recursive: true, force: true, maxRetries: [1-9][0-9]*, retryDelay: [1-9][0-9]* \}\)' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はsubagentなしの自己監査fallbackを明示する" \
-  'skill が独立 reviewer を明示的に要求する場合だけ.*scoped self-audit' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はfallbackで閉じた経路を広げない" \
-  '閉じた経路が tool または file を制限する場合は fallback でもその範囲を広げない' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator は実行中のskillから評価oracleを隠す" \
-  'hideCurrentSkillEvaluationOracles\(fixtureRoot, skillName\)' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はfixtureからskill assertion oracleを隠す" \
-  '"standard-update", "scripts", "skill-test.sh"' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_no_text \
-  "task evaluator はagentへskill-test実行を許可しない" \
-  'Bash\(bash \.claude/skills/standard-update/scripts/skill-test\.sh\)' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はagentへproduct検査の実行を許可する" \
-  'Bash\(bash \.claude/skills/standard-update/scripts/skill-package-check\.sh\)' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はproduct検査へ選択skillを明示する" \
-  'env\.SKILL_EVAL_ISOLATED_SKILL = skillName' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はproduct検査へ比較条件を明示する" \
-  'env\.SKILL_EVAL_CONFIGURATION = configuration' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_line \
-  "task evaluator は全skillのfixtureからmutation sourceを除く" \
-  '    scrubFixtureMutationSource(fixtureRoot);' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "recovery eval はcallerをfixtureへ持つ" \
-  'writeFileSync\(path.join\(targetRoot, "app", "api.rs"\)' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "recovery eval はstateをfixtureへ持つ" \
-  'writeFileSync\(path.join\(targetRoot, "app", "state.rs"\)' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "recovery fixture はtest rootをmanifestで明示する" \
-  'source root は `app/`、test root は `tests/`' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_eval_prompt_text \
-  "recovery eval はユーザー仮説をKnownから分離して測る" \
-  5 \
-  'worker\.rs.*JobStatus.*writer.*仮説.*確認済みの仕様ではありません' \
-  skills/standard-apply/evals/evals.json
-expect_text \
-  "recovery eval はユーザー仮説をAssumedとして採点する" \
-  '根拠付き仮説を Assumed とし、Known、Observed、Intended のいずれにも読み替えない' \
-  skills/standard-apply/evals/evals.json
-expect_text \
-  "task evaluator は履歴をsanitizeしてからfixtureを作る" \
-  'initializeSanitizedRepository\(fixtureRoot\);' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task evaluator はclone元のGit objectを破棄する" \
-  'rmSync\(path.join\(fixtureRoot, "\.git"\).*maxRetries:' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_text \
-  "task fixture の決定の記録は現在の標準本文を基準にする" \
-  '準拠の基準は、常に現在の標準本文である。' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_no_text \
-  "task fixture は標準の commit を記録しない" \
-  'standard_commit' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
-expect_line \
-  "task evaluator はAgent toolを明示的に禁止する" \
-  '      "Agent",' \
-  .claude/skills/standard-update/scripts/run-task-evals.mjs
 
 printf '\n=== 3. verifier は依存不足で fail closed ===\n'
 make_limited_path() {
@@ -380,10 +167,6 @@ else
   pass "mktemp 失敗で即時終了"
 fi
 
-expect_text \
-  "trigger evaluator はtaskを実行せずroutingだけを測る" \
-  'これは Skill の発火先だけを測る隔離評価です。依頼そのものは実行しないでください' \
-  .claude/skills/standard-update/scripts/run-trigger-evals.mjs
 
 printf '\n=== 5. trigger evaluator は発火とtask完遂を分離する ===\n'
 for failure_mode in nonzero malformed result-error; do
@@ -918,6 +701,230 @@ if task_exited_leader_output=$(timeout 8 env CLAUDE_EVAL_COMMAND="$fake_task_exi
   pass "terminal result 後に leader が終了しても子孫を回収"
 else
   fail "terminal result 後に leader が終了しても子孫を回収" "$task_exited_leader_output"
+fi
+
+printf '\n=== 7. semantic maintenance の隔離と成果物 ===\n'
+semantic_probe="$TEST_ROOT/claude-semantic-probe"
+printf '%s\n' \
+  '#!/usr/bin/env node' \
+  'const fs = require("node:fs");' \
+  'const cp = require("node:child_process");' \
+  'const assert = require("node:assert/strict");' \
+  'const args = process.argv.slice(2);' \
+  'const result = (extra = {}) => console.log(JSON.stringify({type:"result",is_error:false,result:"harness probe",usage:{input_tokens:1,output_tokens:1},modelUsage:{"probe-model":{}},...extra}));' \
+  'if (args.includes("--json-schema")) {' \
+  '  const input = fs.readFileSync(0,"utf8");' \
+  '  assert.equal(args[args.indexOf("--tools")+1],"");' \
+  '  assert(args.includes("--disable-slash-commands"));' \
+  '  assert(!fs.existsSync(".claude"));' \
+  '  const expectations = JSON.parse(input.split("\n\n").find(line => line.startsWith("Expectations: ")).slice(14));' \
+  '  result({structured_output:{expectations:expectations.map(text => ({text,passed:true,evidence:"after-files.json: isolated harness probe"})),feedback:"probe only"}});' \
+  '} else {' \
+  '  assert.equal(cp.execFileSync("git",["status","--porcelain"],{encoding:"utf8"}),"");' \
+  '  for (const oracle of ["evals/evals.json","scripts/run-task-evals.mjs","scripts/skill-test.sh"]) {' \
+  '    const file = ".claude/skills/standard-update/"+oracle;' \
+  '    assert(!fs.existsSync(file));' \
+  '    assert.throws(() => cp.execFileSync("git",["show","HEAD^:"+file],{stdio:"pipe"}));' \
+  '  }' \
+  '  cp.execFileSync("git",["ls-files","--error-unmatch","docs/research/maintenance-input.md"],{stdio:"pipe"});' \
+  '  assert(!args[args.indexOf("-p")+1].includes("Expectations:"));' \
+  '  fs.appendFileSync("concerns/configuration/config-vs-flags.md","\nprobe content\n");' \
+  '  fs.writeFileSync("docs/research/ignored-probe.txt","ignored evidence");' \
+  '  console.log(JSON.stringify({type:"assistant",message:{content:[{type:"tool_use",id:"probe-read",name:"Read",input:{file_path:"docs/research/maintenance-input.md"}}]}}));' \
+  '  console.log(JSON.stringify({type:"user",message:{content:[{type:"tool_result",tool_use_id:"probe-read",is_error:false,content:"x".repeat(6000)}]}}));' \
+  '  result();' \
+  '}' > "$semantic_probe"
+chmod +x "$semantic_probe" || fail "semantic harness probe を構築" "chmod failed"
+for eval_configuration in old-skill with-skill; do
+  if semantic_probe_output=$(CLAUDE_EVAL_COMMAND="$semantic_probe" SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/semantic-evals" node "$SCRIPT_DIR/run-task-evals.mjs" --configuration "$eval_configuration" --skill standard-update --suite semantic-maintenance --grade 2>&1); then
+    pass "$eval_configuration の全semantic fixtureと別context graderを隔離"
+  else
+    fail "$eval_configuration の全semantic fixtureと別context graderを隔離" "$semantic_probe_output"
+  fi
+done
+if node - "$TEST_ROOT/semantic-evals" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const assert = require("node:assert/strict");
+const root = process.argv[2];
+const load = file => JSON.parse(fs.readFileSync(file, "utf8"));
+for (let id = 10; id <= 16; id += 1) {
+  const evalRoot = path.join(root, "standard-update", `eval-${id}-sonnet`);
+  assert.equal(load(path.join(evalRoot, "benchmark.json")).comparable, true);
+  for (const configuration of ["old-skill", "with-skill"]) {
+    const run = path.join(evalRoot, configuration);
+    assert.equal(load(path.join(run, "tool-evidence.json"))[0].result.length, 6000);
+    assert.equal(load(path.join(run, "tool-evidence.json"))[0].status, "succeeded");
+    assert(load(path.join(run, "changed-files.json")).includes("docs/research/ignored-probe.txt"));
+    assert.equal(load(path.join(run, "after-files.json"))["docs/research/ignored-probe.txt"], "ignored evidence");
+    assert.equal(load(path.join(run, "before-files.json"))["docs/research/ignored-probe.txt"], null);
+    assert(load(path.join(run, "grading.json")).summary.overall_pass);
+  }
+}
+const multiple = path.join(root, "standard-update", "eval-13-sonnet", "with-skill");
+const before = load(path.join(multiple, "before-files.json"));
+const coordination = before["languages/typescript/coordination.md"];
+const inspection = before["languages/typescript/inspection.md"];
+assert.equal(typeof coordination, "string");
+assert.equal(typeof inspection, "string");
+const headings = [...coordination.matchAll(/^## (.+)$/gm)].map(match => match[1]);
+const correspondence = [...inspection.matchAll(/^\| coordination \| ([^|]+) \|/gm)].map(match => match[1].trim());
+for (const heading of headings.filter(heading => !["概要", "参照"].includes(heading))) {
+  assert(correspondence.includes(heading), `missing inspection correspondence: ${heading}`);
+}
+NODE
+then
+  pass "全fixtureの同一context比較と未追跡・ignored成果物と完全なtool結果を記録"
+else
+  fail "全fixtureの同一context比較と未追跡・ignored成果物と完全なtool結果を記録" "artifact assertion failed"
+fi
+
+printf '\n=== 8. 保存済み採点のprovenanceと起動時runner ===\n'
+if node - "$TEST_ROOT" "$SCRIPT_DIR/run-task-evals.mjs" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const cp = require("node:child_process");
+const assert = require("node:assert/strict");
+const { createHash } = require("node:crypto");
+const [root, runner] = process.argv.slice(2);
+const digest = value => createHash("sha256").update(value).digest("hex");
+const load = file => JSON.parse(fs.readFileSync(file, "utf8"));
+const save = (file, value) => fs.writeFileSync(file, JSON.stringify(value));
+const output = path.join(root, "provenance-evals");
+const evalRoot = path.join(output, "standard-update", "eval-10-sonnet");
+fs.cpSync(path.join(root, "semantic-evals", "standard-update", "eval-10-sonnet"), evalRoot, { recursive: true });
+const probe = path.join(root, "claude-provenance-probe");
+fs.writeFileSync(probe, `#!/usr/bin/env node
+const fs = require("node:fs");
+const assert = require("node:assert/strict");
+const args = process.argv.slice(2);
+const result = {type:"result",is_error:Boolean(process.env.PROBE_MODEL_ERROR),result:"provenance probe",usage:{},modelUsage:{[process.env.PROBE_MODEL || "probe-model"]:{}}};
+if (args.includes("--json-schema")) {
+  const prompt = fs.readFileSync(0,"utf8");
+  const sections = prompt.split("\\n\\n");
+  assert.equal(sections.find(line => line.startsWith("Task: ")).slice(6), process.env.PROBE_TASK);
+  const expectations = JSON.parse(sections.find(line => line.startsWith("Expectations: ")).slice(14));
+  assert.deepEqual(expectations, JSON.parse(process.env.PROBE_EXPECTATIONS));
+  result.structured_output = {expectations:expectations.map(text => ({text:process.env.PROBE_INVALID_RUBRIC ? "wrong rubric" : text,passed:true,evidence:"provenance probe only"})),feedback:"not a semantic quality measurement"};
+} else {
+  assert(!process.env.PROBE_GRADE_ONLY, "grade-only unexpectedly executed task");
+  if (process.env.PROBE_MUTATE_RUNNER) fs.appendFileSync(process.env.PROBE_MUTATE_RUNNER,"\\n");
+}
+console.log(JSON.stringify(result));
+`, { mode: 0o755 });
+const savedPrompt = "historical saved task";
+const savedExpectations = ["historical saved expectation"];
+for (const configuration of ["old-skill", "with-skill"]) {
+  const file = path.join(evalRoot, configuration, "eval_metadata.json");
+  const metadata = load(file);
+  metadata.prompt = savedPrompt;
+  metadata.expectations = savedExpectations;
+  save(file, metadata);
+}
+const grade = (configuration, extraEnv = {}, executable = runner, expectedStatus = 0) => {
+  const result = cp.spawnSync(process.execPath, [executable, "--configuration", configuration,
+    "--skill", "standard-update", "--eval-id", "10", "--grade-only"], {
+    env: { ...process.env, CLAUDE_EVAL_COMMAND: probe, SKILL_EVAL_OUTPUT_ROOT: output,
+      PROBE_GRADE_ONLY: "1", PROBE_TASK: savedPrompt,
+      PROBE_EXPECTATIONS: JSON.stringify(savedExpectations), ...extraEnv },
+    encoding: "utf8",
+  });
+  assert.equal(result.status, expectedStatus, result.stdout + result.stderr);
+};
+const benchmark = () => load(path.join(evalRoot, "benchmark.json"));
+const assertNotComparable = () => {
+  assert.equal(benchmark().comparable, false);
+  assert.equal(benchmark().delta_with_minus_old, null);
+};
+grade("old-skill");
+grade("with-skill");
+assert.equal(benchmark().comparable, true);
+for (const configuration of ["old-skill", "with-skill"]) {
+  const run = path.join(evalRoot, configuration);
+  const grading = load(path.join(run, "grading.json"));
+  assert.deepEqual(grading.expectations.map(entry => entry.text), savedExpectations);
+  assert.equal(grading.provenance.task_prompt, savedPrompt);
+  assert.deepEqual(grading.provenance.expectations, savedExpectations);
+  const actualPrompt = fs.readFileSync(path.join(run, "grader-prompt.txt"), "utf8");
+  assert.equal(grading.provenance.grader_instructions_sha256, digest(actualPrompt.split("\n\n")[0]));
+  const command = grading.provenance.command_args;
+  assert.equal(grading.provenance.schema_sha256, digest(command[command.indexOf("--json-schema") + 1]));
+  assert.deepEqual(grading.provenance.actual_models, ["probe-model"]);
+}
+const rerunBackup = path.join(root, "graded-rerun-backup");
+fs.cpSync(evalRoot, rerunBackup, { recursive: true });
+for (const modelError of ["", "1"]) {
+  const rerun = cp.spawnSync(process.execPath, [runner, "--configuration", "with-skill",
+    "--skill", "standard-update", "--eval-id", "10"], {
+    env: { ...process.env, CLAUDE_EVAL_COMMAND: probe, SKILL_EVAL_OUTPUT_ROOT: output,
+      PROBE_GRADE_ONLY: "", PROBE_MODEL_ERROR: modelError },
+    encoding: "utf8",
+  });
+  assert.equal(rerun.status, modelError ? 1 : 0, rerun.stdout + rerun.stderr);
+  assert.equal(fs.existsSync(path.join(evalRoot, "with-skill", "grading.json")), false);
+  assert.equal(fs.existsSync(path.join(evalRoot, "benchmark.json")), false);
+  fs.rmSync(evalRoot, { recursive: true, force: true });
+  fs.cpSync(rerunBackup, evalRoot, { recursive: true });
+}
+const savedMetadata = fs.readFileSync(path.join(evalRoot, "with-skill", "eval_metadata.json"), "utf8");
+grade("with-skill", { PROBE_MODEL: "different-grader-model" });
+assertNotComparable();
+assert.equal(fs.readFileSync(path.join(evalRoot, "with-skill", "eval_metadata.json"), "utf8"), savedMetadata);
+grade("with-skill");
+const alternateRunner = path.join(root, "alternate-runner.mjs");
+fs.writeFileSync(alternateRunner, fs.readFileSync(runner, "utf8") + "\n");
+grade("with-skill", {}, alternateRunner);
+assertNotComparable();
+grade("with-skill");
+const oldGradingFile = path.join(evalRoot, "old-skill", "grading.json");
+const oldGrading = load(oldGradingFile);
+const legacy = structuredClone(oldGrading);
+delete legacy.provenance;
+save(oldGradingFile, legacy);
+grade("with-skill");
+assertNotComparable();
+save(oldGradingFile, oldGrading);
+grade("with-skill", { PROBE_INVALID_RUBRIC: "1" }, runner, 1);
+const failed = load(path.join(evalRoot, "with-skill", "grading.json"));
+assert.equal(failed.summary.overall_pass, false);
+assert.deepEqual(failed.provenance.expectations, savedExpectations);
+assert(failed.error);
+assert.equal(benchmark().delta_with_minus_old, null);
+grade("with-skill");
+const newMetadataFile = path.join(evalRoot, "with-skill", "eval_metadata.json");
+const revised = load(newMetadataFile);
+revised.expectations = ["corrected suite expectation"];
+revised.fixture_sha256 = digest("corrected suite fixture");
+save(newMetadataFile, revised);
+grade("with-skill", { PROBE_EXPECTATIONS: JSON.stringify(revised.expectations) });
+assertNotComparable();
+const liveRunner = path.join(root, "live-runner.mjs");
+fs.copyFileSync(runner, liveRunner);
+const startupHash = digest(fs.readFileSync(liveRunner));
+const liveOutput = path.join(root, "live-runner-evals");
+const savedEvalFile = path.join(root, "saved-evals.json");
+const liveDefinitions = load(path.join(path.dirname(runner), "..", "evals", "evals.json"));
+const savedEval = structuredClone(liveDefinitions.evals.find(item => item.id === 10));
+savedEval.prompt = savedPrompt;
+savedEval.expectations = savedExpectations;
+save(savedEvalFile, { skill_name: "standard-update", evals: [savedEval] });
+const liveResult = cp.spawnSync(process.execPath, [liveRunner, "--configuration", "with-skill",
+  "--skill", "standard-update", "--eval-id", "10", "--eval-file", savedEvalFile], {
+  env: { ...process.env, CLAUDE_EVAL_COMMAND: probe, SKILL_EVAL_OUTPUT_ROOT: liveOutput,
+    PROBE_MUTATE_RUNNER: liveRunner, PROBE_GRADE_ONLY: "" },
+  encoding: "utf8",
+});
+assert.equal(liveResult.status, 0, liveResult.stdout + liveResult.stderr);
+assert.notEqual(digest(fs.readFileSync(liveRunner)), startupHash);
+const liveMetadata = load(path.join(liveOutput, "standard-update", "eval-10-sonnet", "with-skill", "eval_metadata.json"));
+assert.equal(liveMetadata.runner_sha256, startupHash);
+assert.equal(liveMetadata.prompt, savedPrompt);
+assert.deepEqual(liveMetadata.expectations, savedExpectations);
+NODE
+then
+  pass "保存済みrubricで再採点しgrader差・旧artifact・改訂fixtureを比較から除外する"
+else
+  fail "保存済み採点のprovenanceと起動時runnerを保持する" "behavior regression failed"
 fi
 
 printf '\nテスト: %d passed, %d failed\n' "$PASSED" "$FAILED"
