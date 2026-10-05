@@ -1,10 +1,31 @@
-# 検証の重複と割当の固定経路
+# 検証の重複と割当を点検する
 
-入力の候補が、検証手段を「同じ性質」とみなして重複排除する言語非依存の判定基準を追加または変更し、特定言語の実現 file 自体の変更を依頼していない場合に限り、次の順序を使う。この固定経路は、その候補の所有者裁定についてだけ SKILL.md の一般経路より優先する。特定の `languages/*/inspection.md`、tool、または複数の明示 target への変更依頼は、主張と所有者を分けて一般経路で扱う。
+検証手段を「同じ性質」とみなして重複排除する候補では、一般の意味比較と影響追跡に次の点検を加える。
+この reference は検証の比較に固有の反例を所有し、所有者の固定や探索の打ち切りを所有しない。
 
-1. `README.md`、`structure/tests/methods.md`、`structure/tests/layout.md` を、この順に exact path の Read で直接読む。一つでも読めなければ止める。三つの Read が tool evidence に揃う前に reference または編集へ進まない。
-2. 手順1の三つを読んだことを確認してから、`.claude/skills/standard-update/references/normative-quality.md` を exact path で読む。layout を未読のまま reference を読んだ場合は、後から補って編集を続けず、この経路を未完了として止める。
-3. 裁定が段4なら、`tools/README.md`、`languages/README.md`、`languages/rust/inspection.md`、`languages/csharp/inspection.md`、`languages/typescript/inspection.md` を、この順に exact path の Read で直接読む。文章上の定義変更または実現機構を変えない変更でも省略しない。tools/README.md は言語 ecosystem の採用の書式と共通基準の正本であり、languages/README.md は languages の配置と軸の正本である。各 inspection について `有効な metric / 無効な metric / 無効にする理由 / 上位規範が必須検証へ割り当てた metric` を内部台帳へ記録し、四項目を本文から埋められない file は一致確認済みとしない。二つの metric を別の性質と明記しながら、重複、二重測定、または一本化を理由に片方を無効化している記述は上位判定と矛盾する。たとえば cyclomatic complexity と cognitive complexity を別物と書いた直後に「二重に測らないため cognitive complexity へ一本化する」と続ける文は矛盾であり、同じ指標の重複だと読み替えない。片方だけが標準の表で必須検証へ割り当てられているなら、非採用理由は「他方は標準の必須検証へ割り当てられていない」とだけ書く。その metric が誤判定する、劣る、不要であるという未検証の品質判断へ置き換えず、別性質であるだけで両方を必須化しない。同じ規律の行動に「複雑度を一つへ一本化する」のような総称が残る場合も、採用した具体的な metric だけを測る文へ同期する。最終報告では各言語を「同一指標だった」と一括せず、編集要否を決めた metric と現行理由を file ごとに示す。
-4. 上位の判定基準を変更するなら `structure/tests/methods.md` を編集する。reference だけにある用語を持ち込まず、編集前に同じ節で使われていた標準本文の語彙で書く。本文には、要求・禁止事項から導く非空の全適用集合、集合の一致と合否の双方向含意、不一致・適用不能・一方だけ不合格なら両方を残すこと、反例未発見だけでは同一にしないこと、実装欠陥・更新漏れだけでは別性質にしないことを全て明記する。一つでも欠ければ編集を完了としない。手順3で下位実現との矛盾を確認した場合だけ、矛盾する exact inspection file も同じ変更契約で同期する。矛盾がなければ下位 file を編集しない。編集後は `structure/tests/methods.md` と、編集した場合だけその exact inspection file を Read し直し、用語の存在確認にも Grep を使わない。次に `git diff -- structure/tests/methods.md` を一回実行し、inspection file も編集した場合だけ同じ command の末尾にその exact path を加える。この exact diff を最終 reviewer へ渡す差分とする。最後に exact path の `.claude/skills/standard-update/scripts/verify.sh` を実行する。最終報告の変更先も `structure/tests/methods.md` と正確に書き、path を組み替えない。
+## 起点と影響先
 
-この経路では開始から最終報告まで Glob と Grep、`principles/verification.md`、`references/structure.md`、script directory の列挙を使わない。段1から4の途中と検証後に記載外の標準 file を読まず、所有者確定後の重複検索や repository-wide な自己監査を行わない。最終の standard-audit / 独立 reviewer は免除しないが、reviewer の入力を変更差分、手順1から3で読んだ exact files、`verify.sh` の結果だけに固定し、新しい repository 探索を許可しない。subagent が利用できない場合は、同じ既読証拠だけで自己照合し、Grep、Glob、Bash、追加の Read を呼ばない。禁止した tool または file を使った場合は、経路を満たしたと報告しない。最終報告には、意図した読みと、それより弱く遵守判定を変える合理的な読みを、それぞれ一つの具体例で対比する。
+root `README.md` の配置規則、`structure/tests/methods.md` の判定基準、`structure/tests/layout.md` の責務を読む。
+既存の直接所有者を起点にし、上位の検証原則、同じ制約を扱う規律、各言語の inspection と tool の採用、process の確認点まで意味的な関係を辿る。
+参照がなくても、同じ検証の省略条件や割当を持つ箇所は確認する。
+主張が既存に含まれる場合も、下位の非採用理由が上位の判定基準と一致するか確かめる。
+配置は既存の知識と変更理由から決め、一般論にできることだけで principles へ移さない。
+
+## 反例と意味の差
+
+`normative-quality.md` の「同じ性質かを反例で分ける」で、要求と禁止事項から導く非空の全適用集合、集合の一致、合否述語の双方向含意を点検する。
+分類名が同じでも一方だけが適用できる組、同じ空集合または要求の一部だけを申告する組、一方だけが不合格になる組を試す。
+反例を未発見なだけで同一とせず、実装欠陥や更新漏れだけを別性質の根拠にしない。
+現行文から導けない省略条件を導入する場合は意味拡張として記録し、同義語の置換で済ませない。
+必要な区別は標準本文へ書き、reference にしかない条件で遵守を判定しない。
+
+## 下位の割当
+
+関係する inspection ごとに、有効な metric、無効な metric、無効にする理由、上位が必須検証へ割り当てた metric を本文から確認する。
+二つの metric を別性質としながら、重複や二重測定を理由に片方を無効にしているなら、判定と割当を混同している。
+cyclomatic complexity と cognitive complexity が別性質でも、両方を必須にする帰結は自動的には導けない。
+片方だけが必須へ割り当てられている場合は、他方を採用しない理由をその割当として表現し、品質が劣るという未検証の判断を加えない。
+同じ規律の行動や総称も採用した指標と一致させる。
+
+変更後は一般の影響表を再照合し、判定基準、割当、実現、非採用理由の整合を確認する。
+独立 reviewer の探索を既読 file だけへ制限せず、同じ因果関係の未接続の矛盾を確認できるようにする。
