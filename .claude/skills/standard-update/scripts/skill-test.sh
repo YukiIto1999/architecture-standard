@@ -114,6 +114,45 @@ if package_partial_output=$(cd "$package_partial_fixture" && SKILL_EVAL_ISOLATED
 else
   pass "without-skill隔離評価では選択packageの部分残存を拒否する"
 fi
+package_conformance_fixture="$TEST_ROOT/package-without-conformance"
+mkdir -p "$package_conformance_fixture" || fail "conformance isolation fixture を構築" "mkdir failed"
+cp -a .claude skills "$package_conformance_fixture/" || fail "conformance isolation fixture を構築" "copy failed"
+git -C "$package_conformance_fixture" init --quiet || fail "conformance isolation fixture を構築" "git init failed"
+rm -rf -- "$package_conformance_fixture/skills/standard-conformance"
+if package_conformance_output=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-conformance SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  pass "conformanceの完全不存在は自身のwithout-skill隔離だけで許可する"
+else
+  fail "conformanceの完全不存在は自身のwithout-skill隔離だけで許可する" "$package_conformance_output"
+fi
+if package_conformance_normal=$(cd "$package_conformance_fixture" && env -u SKILL_EVAL_ISOLATED_SKILL -u SKILL_EVAL_CONFIGURATION bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  fail "通常構成ではconformanceの完全不存在を拒否する" "$package_conformance_normal"
+else
+  pass "通常構成ではconformanceの完全不存在を拒否する"
+fi
+if package_conformance_other=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  fail "他Skillのwithout-skill隔離ではconformanceの欠落を拒否する" "$package_conformance_other"
+else
+  pass "他Skillのwithout-skill隔離ではconformanceの欠落を拒否する"
+fi
+cp -a skills/standard-conformance "$package_conformance_fixture/skills/" || fail "conformance partial fixture を構築" "copy failed"
+rm -f -- "$package_conformance_fixture/skills/standard-conformance/scripts/check-coverage.test.mjs"
+if package_conformance_partial=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-conformance SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  fail "自身のwithout-skill隔離でもconformanceのtest欠落は拒否する" "$package_conformance_partial"
+else
+  pass "自身のwithout-skill隔離でもconformanceのtest欠落は拒否する"
+fi
+if package_conformance_missing_test=$(cd "$package_conformance_fixture" && env -u SKILL_EVAL_ISOLATED_SKILL -u SKILL_EVAL_CONFIGURATION bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  fail "通常構成ではconformanceのbehavior test欠落を拒否する" "$package_conformance_missing_test"
+else
+  pass "通常構成ではconformanceのbehavior test欠落を拒否する"
+fi
+rm -rf -- "$package_conformance_fixture/skills/standard-conformance"
+ln -s missing-conformance-package "$package_conformance_fixture/skills/standard-conformance" || fail "conformance dangling source fixture を構築" "symlink failed"
+if package_conformance_dangling=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-conformance SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+  fail "conformanceの壊れたsymlinkを完全不存在として許可しない" "$package_conformance_dangling"
+else
+  pass "conformanceの壊れたsymlinkを完全不存在として許可しない"
+fi
 
 printf '\n=== 3. verifier は依存不足で fail closed ===\n'
 make_limited_path() {
@@ -473,7 +512,7 @@ printf '%s\n' \
   'trigger_runner=.claude/skills/standard-update/scripts/run-trigger-evals.mjs' \
   'skill_oracle=.claude/skills/standard-update/scripts/skill-test.sh' \
   'product_check=.claude/skills/standard-update/scripts/skill-package-check.sh' \
-  'if [ "$SKILL_EVAL_ISOLATED_SKILL" = standard-apply ]; then skill_root=skills/standard-apply; else skill_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL; fi' \
+  'case "$SKILL_EVAL_ISOLATED_SKILL" in standard-apply|standard-conformance|standard-feedback) skill_root=skills/$SKILL_EVAL_ISOLATED_SKILL ;; *) skill_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL ;; esac' \
   'eval_root=$skill_root/evals' \
   'task_oracle=$eval_root/evals.json' \
   'trigger_oracle=$eval_root/trigger-evals.json' \

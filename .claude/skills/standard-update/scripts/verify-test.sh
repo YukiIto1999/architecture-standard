@@ -44,6 +44,7 @@ make_fixture() {
   mkdir -p "$fixture/.claude/skills/standard-update" || return 1
   cp -a \
     "$REPO_ROOT/README.md" \
+    "$REPO_ROOT/skills" \
     "$REPO_ROOT/principles" \
     "$REPO_ROOT/concerns" \
     "$REPO_ROOT/structure" \
