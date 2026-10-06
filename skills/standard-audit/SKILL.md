@@ -55,7 +55,7 @@ description: architecture-standard 自体を読み取り専用で監査し、重
 - **C 書式**: 標準本文は、principles と concerns が概念フォルダの README(リードまたは概要と規律台帳)と規律ファイルの必須5節、languages の言語 ecosystem が概要・必須5節・参照、structure が layout 書式、tools の採用 file が4行 entry、process が手順書式か。skill は frontmatter と実行手順が host で成立するか。
 - **D 整合性**: folder 内の重複、矛盾、参照方向の逆転がないか。
 - **E 単一標準**: 標準側へ条件分岐や例外を作らず、逸脱を project の決定の記録へ送っているか。
-- **F 層間 MECE**: principles=なぜ、concerns=言語非依存の概念、structure=一つの部の境界と中身、tools=言語横断の採用、languages=言語ごとの実現と採用物、process=順序と確認点に分かれているか。
+- **F 層間 MECE**: root `README.md` の配置規則に照らし、記述の主たる判断を単位として、principles は判断基準と一般規律、concerns は特定概念の言語非依存の性質と保証、structure は project 全体と各部の構成および固有の設計規律、tools は言語横断の採用、languages は言語固有の実現と ecosystem の採用、process は作業順序と確認点を所有しているか。
 - **G 自己充足**: 要求、完了条件、禁止事項と参照だけで遵守を判定できるか。
 - **H 作り切り**: 要求範囲の欠落、または未要求の投機がないか。
 - **I 事実**: 一次資料と現行版に照らして正確か。実コード例は対象言語で成立するか。

@@ -13,9 +13,11 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 
 ## 領域
 
-- `principles/` — 言語に依存しない設計原則。なぜを所有する。
-- `concerns/` — 言語非依存の24概念。effect・concurrency・dependency・types・context-propagation・persistence・caching・migration・transaction・messaging・workflow・authentication・authorization・privacy・security・secrets・audit-trail・observability・configuration・resilience・performance・lifecycle・experience・accessibility。複数の部または全層へ効く規律を所有する。
-- `structure/` — 一つの部の境界、中身、依存方向を所有する。検証技法の選択、性質から型・静的検査・実行テスト・計測への割当、mutation・coverage・実行範囲は `structure/tests/methods.md` が所有する。
+- `principles/` — 特定概念や技術に閉じない設計の判断基準と一般規律を所有する。
+- `concerns/` — 言語非依存の24概念で守る性質と保証を所有する。
+  effect・concurrency・dependency・types・context-propagation・persistence・caching・migration・transaction・messaging・workflow・authentication・authorization・privacy・security・secrets・audit-trail・observability・configuration・resilience・performance・lifecycle・experience・accessibility を扱う。
+- `structure/` — project 全体と各部の責務、境界、依存方向、配置、および各部固有の設計規律を所有する。
+  検証技法の選択、性質から型・静的検査・実行テスト・計測への割当、mutation・coverage・実行範囲は `structure/tests/methods.md` が所有する。
 - `tools/` — 言語横断の開発道具(build)、自運用基盤(platforms)、外部 Web サービス(services)の採用と共通基準を所有する。
 - `languages/` — rust・csharp・typescript の言語 ecosystem。6実現軸の規律、全域規律 conventions、その言語 ecosystem の採用物を所有する。
 - `process/` — bootstrap・recovery・design・implementation・refactoring・review・audit・migration・verification・release・drill の順序と確認点を横断的に所有する。
@@ -134,7 +136,8 @@ typo、リンク、書式、正本と参照の同期だけを直し、外部事�
 
 ### 6. 配線と台帳を更新する
 
-concerns を横断規律の正本、structure を参照側にする。
+root `README.md` の配置規則に従い、記述の主たる判断を単位に正本と参照先を接続する。
+概念の性質と保証は concerns が、project 全体と各部の構成および固有の設計規律は structure が所有し、規範に従う関係を理由に正本を移したり複製したりしない。
 概念の増減では root `README.md`、`concerns/README.md`、`skills/standard-update/SKILL.md`、`references/concerns.md` を同期する。
 tools の区分や採用名を変えた場合は `tools/README.md`、languages の言語 ecosystem や採用物を変えた場合は `languages/README.md` と該当 ecosystem の台帳を同期する。いずれも領域一覧と該当 reference を同期し、`scripts/naming-registry-check.mjs` の動的 registry で検査する。永続する別の registry file は作らない。
 

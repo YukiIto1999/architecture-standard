@@ -17,52 +17,48 @@ AI エージェントによる起草と改訂を前提に、標準本文の書�
 
 ## アーキテクチャの全体像
 
-本標準は、抽象から具象へと段階的に具体化される6つの領域で構成されます。上位の抽象層は下位の具象層に依存せず、すべての参照は具象から抽象への一方向に保たれます。
+本標準の6つの領域は、どの種類の判断を正本として所有するかで分けます。
+同じ抽象度の六層ではなく、正本の所有、規範に従う関係、本文を探す参照経路を区別します。
+次の図の矢印は規範に従う関係だけを示し、探索の参照経路は示しません。
 
 ```text
-     [ principles ]      なぜ / 言語非依存の設計原則
-           ▲
-           │             全体を貫く規律は何か
-      [ concerns ]       セキュリティ・永続化・並行性などの24概念
-           ▲
-           │             各部をどう組むか
-     [ structure ]       骨格・境界・レイヤー・配置
-      ▲         ▲
-      │         │        何を、どう選ぶか
-   [ tools ]    │        言語横断の開発道具・自運用基盤・外部サービスの採用
-      ▲         │
-      │         │        どの言語機構で満たすか
- [ languages ]  │        rust・csharp・typescript の実現と採用物
-                │
-           [ process ]   どの順で作り、どこで確かめるか / 作業順序と確認点
+[ principles ] ◄── [ concerns ] ◄── [ structure ] ◄── [ tools ] ◄── [ languages ]
+                        ▲
+                        │
+                   [ process ]
 ```
 
 ### 領域の一覧
 
-| 領域 | 答える問い | 内容 |
+| 領域 | 答える問い | 正本として所有する判断 |
 |---|---|---|
-| [principles](./principles/) | なぜ | 設計判断の土台となる言語非依存の原則。構成・規律・表現の3群 |
-| [concerns](./concerns/) | 全体を貫く規律は何か | システム全体を通す概念ごとの規律。24概念 |
-| [structure](./structure/) | 各部をどう組むか | ターゲットプロジェクトの骨格と各部の構造 |
+| [principles](./principles/) | どの判断基準と一般規律に従うか | 特定概念や技術に閉じない設計の判断基準と一般規律。構成・規律・表現の3群 |
+| [concerns](./concerns/) | 概念が何を保証するか | 認可、永続化、並行性など、特定概念で守る言語非依存の性質と保証。24概念 |
+| [structure](./structure/) | 全体と各部をどう設計するか | ターゲットプロジェクト全体と各部の責務、境界、依存方向、配置、および各部固有の設計規律 |
 | [tools](./tools/) | 何を、どう選ぶか | 言語横断の採用と判断基準。build・platforms・services の3区分 |
-| [languages](./languages/) | どの言語機構で満たすか | 言語ごとの実現軸の規律と、その ecosystem の採用物。rust・csharp・typescript |
+| [languages](./languages/) | どの言語機構で満たすか | 言語固有の実現と規約、その ecosystem の採用物。rust・csharp・typescript |
 | [process](./process/) | どの順で作り、どこで確かめるか | 作業の種別ごとの順序と確認点。11単位 |
 
-### 参照と依存の規則
+### 規範に従う関係と参照経路
 
-領域間の参照は、具象から抽象への一方向に保ちます。languages は tools、structure、concerns、principles に従い、tools は structure、concerns、principles に従い、structure は concerns、principles に従い、concerns は principles に従います。
+規範に従う関係は、具象から抽象への一方向に保ちます。
+languages は tools、structure、concerns、principles に従い、tools は structure、concerns、principles に従い、structure は concerns、principles に従い、concerns は principles に従います。
 
-process は principles と concerns に従い、作業順序の入力および確認点の照合先として structure、tools、languages を指します。process は順序と確認点だけを所有し、性質の規範を再定義しません。
+process は principles と concerns に従い、作業順序の入力および確認点の照合先として structure、tools、languages を指します。
+process は順序と確認点だけを所有し、性質の規範を再定義しません。
 
-具象の側から、より抽象の側への参照は常に適法です。逆に、抽象の側は機構の置き場として具象の側を指すだけであり、具象の内容に依存しません。具象の側は、抽象が定めた規律を再定義しません。
+正本を所有する領域は、規範に従う関係だけでは決まりません。
+具象の側は、抽象が定めた規律を再定義しません。
+本文を探すための参照で抽象の側から具象の側を指す場合は、機構の所在を案内するだけであり、具象の内容に依存しません。
 
-参照文の文末の述語は、具象から抽象へは「に従う」、抽象から具象へは「が定める」と書き、文構造で参照の向きを表します。規律を名指す参照は、正本の見出しを「」で囲んだ逐語の名で書き、別の語で言い換えないこととします。
+参照文の文末の述語は、具象から抽象へは「に従う」、抽象から具象へは「が定める」と書き、文構造で参照の向きを表します。
+規律を名指す参照は、正本の見出しを「」で囲んだ逐語の名で書き、別の語で言い換えないこととします。
 
 なお、docs ディレクトリに置かれる資料は決定、調査、議事録、レビューの材料であり、標準には含めません。標準は docs なしで完全に自立して成立します。
 
 ## 利用シナリオ別の案内
 
-目的に応じて、以下の導線から各仕様を参照します。
+目的に応じて process の入口から必要な規律へ進み、以下の導線を参照します。
 
 ### 新規にプロジェクトを立ち上げる場合
 1. [process/bootstrap.md](./process/bootstrap.md) で全体の立ち上げ手順を確認します。
@@ -71,8 +67,8 @@ process は principles と concerns に従い、作業順序の入力および�
 
 ### 日常の設計や実装を進める場合
 1. [process/design.md](./process/design.md) および [process/implementation.md](./process/implementation.md) の順序と確認点に従います。
-2. 設計の判断根拠は [principles/](./principles/) を、システム全体の規律は [concerns/](./concerns/) を参照します。
-3. 各部の具体的なレイアウトと境界は [structure/](./structure/) に従います。
+2. 設計の判断基準と一般規律は [principles/](./principles/) を、特定概念の性質と保証は [concerns/](./concerns/) を参照します。
+3. 全体と各部の構成、境界、固有の設計規律は [structure/](./structure/) に従います。
 
 ### コードレビューや品質監査を実施する場合
 1. [process/review.md](./process/review.md) または [process/audit.md](./process/audit.md) を開きます。
@@ -142,14 +138,21 @@ process の記述が他の層と食い違うときは、他の層を正としま
 標準へ新しい規律や記述を追記する際は、以下の原則に従います。
 
 1. 複数の意味を含む曖昧な用語は、独立した個別の関心へ分解する。
-2. 各関心は、その変更理由が及ぶ最も広いスコープに一度だけ配置する。より狭い層はそれを参照するのみとし、再定義しない。
+2. 配置は記述の主たる判断を単位にし、複数の独立した判断を含む場合は分解して、それぞれの正本を一度だけ置き、他の領域は正本を参照して再定義しない。
 3. 配置先は以下の順で判定し、最初に合致した領域へ配置する。
-   1. なぜや判断基準となる価値は principles へ配置する。
-   2. 特定言語での実現と、その言語 ecosystem に属する採用物は languages へ配置する。
+   1. 特定の概念、構成、採用物に閉じない一般的な設計原則と判定規律は principles へ配置する。
+   2. 言語固有の実現、規約、その言語 ecosystem の採用判断は languages へ配置する。
    3. 言語横断の道具、自運用基盤、外部サービスの採用と判断基準は tools へ配置する。
-   4. 作業の手順と確認点は process へ配置する。
-   5. 単一のモジュールの境界や中身は structure へ配置する。
-   6. 複数のモジュールにまたがる、または全域に適用される規律は concerns へ配置する。
+   4. 開発・運用作業の順序と確認点は process へ配置する。
+   5. プロジェクト全体または各部の構成と固有の設計判断は structure へ配置する。
+   6. 特定概念の言語非依存の性質と保証は concerns へ配置する。
+
+理由を書く、言語で例示する、順序を持つ、複数のモジュールに効くという表現だけでは、配置先を決めません。
+採用理由は採用側が、原則の意図と是正を説明する行動は principles が、業務 workflow の状態と確定点は concerns が所有します。
+認可の保証は実装が一つのモジュールでも concerns に置き、認可 adapter の配置は structure に置きます。
+TypeScript の規約はプロジェクト全域に効いても languages に置きます。
+root をまたぐ具体的な許可依存は [structure/skeleton.md](./structure/skeleton.md) が、依存が満たす一般的な性質と保証は [concerns/dependency](./concerns/dependency/README.md) が所有し、root を一つの巨大なモジュールと読み替えて区別を失わせません。
+検証技法と規範から検証への割当は [structure/tests/methods.md](./structure/tests/methods.md) が所有し、structure をフォルダ配置だけに限定しません。
 
 ## 運用と判定
 
@@ -169,7 +172,7 @@ AI エージェントおよび開発者は、すべての作業モードにお�
 規律への遵守判定は、領域ごとの枠組みに従って厳密に行います。
 
 - principles と concerns では、要求で意図を捉え、完了条件と禁止事項に照らして判定します。機械検証可能な規範命題は structure/tests や languages の inspection に割り当て、残りは process の確認点照合が担います。
-- structure では、構成、依存方向、各 layout の固有規律への合致で判定します。
+- structure では、構成、依存方向、各部の本文が定める固有の設計規律への合致で判定します。
 - tools と languages では、採用と判断基準、採用機構と各規律の完了条件および禁止事項への合致で判定します。
 - process では、手順の順序遵守と確認点の照合有無で判定します。
 
