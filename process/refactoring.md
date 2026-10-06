@@ -21,6 +21,7 @@
 
 各段で、全テストが緑であり、外から見た振る舞いが変わっていないことを確かめる([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」に従う)。
 安全網に頼る前に、テストを意図的に壊して赤になることを確かめる([principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」に照合する)。
+この確認は、[principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」が要求する検証対象の保証の違反と判定結果に照合し、runner だけの赤と区別して、条件が同じ既存の mutation の証跡を再利用する。
 新しい場合の追加が既存の分岐本体の修正を要したなら、[principles/construction](../principles/construction/decisions-as-types.md) の「業務判断を型と多態で構造化する」に照合する。
 想定内の失敗が型に出ていれば、失敗の追加は全ての呼び出し側を型検査が指すので、拡張の圧は臭いの知覚でなくコンパイラが運ぶ([concerns/effect](../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に照合する)。圧が来ないなら、失敗が型から漏れているか、呼び出し側が取りこぼしを黙らせる腕を持っている。
 結合の診断は、[principles/separation](../principles/separation/coupling-by-distance.md) の「結合を距離に見合う強さにする」に従う。

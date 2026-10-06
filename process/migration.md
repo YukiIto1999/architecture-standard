@@ -25,6 +25,7 @@
 各段の達成条件・撤退条件・不可逆点の定めと安全網の具備は、[principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」の完了条件に照合する。
 基線台帳に、準拠との差分の欠落、新規違反、所有者・解消条件・root check の欠落がないことを確かめる。
 安全網に頼る前に、テストを意図的に壊して赤になることを確かめる([principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」に照合する)。
+この確認は、[principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」が要求する検証対象の保証の違反と判定結果に照合し、runner だけの赤と区別して、条件が同じ既存の mutation の証跡を再利用する。
 同じ datastore の移行は、[concerns/transaction](../concerns/transaction/README.md) の一つの確定点と、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」の完了条件に照合する。
 schema migration の artifact は、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」の完了条件と禁止事項に照合する。
 別 datastore の確定は、[concerns/transaction](../concerns/transaction/state-event-atomicity.md) の「状態とイベントを同一パスで記録する」の完了条件と禁止事項に照合する。
