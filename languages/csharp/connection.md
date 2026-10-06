@@ -93,6 +93,7 @@ Effect の生成は、文脈(`TRequirements` と `TFailure`)を型引数2つの�
 query 式のため、`Select` を `Map` から、`SelectMany` を `Bind` と `Map` から与える。
 `Try` の body は Deadline、CancellationToken を受け取って ValueTask<TValue> を返し、`AcquireRelease` の release は Deadline を受け取って ValueTask を返す。
 `AcquireRelease` の release は非取消の後始末であり、元の Deadline は受け取るが CancellationToken は受け取らない。
+AcquireRelease が扱う資源を子が使う場合の合流と、処理と解放がともに失敗する終了経路は [coordination](./coordination.md) の「資源解放」に従う。
 Effect 内部の body と release に Task を混在させない。
 Map、Bind、Select、SelectMany、MapFailure、Recover、AcquireRelease は、Run が受けた同じ Deadline を下流の Effect と release へ渡し、合成の途中で期限を生成し直さない。
 

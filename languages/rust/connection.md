@@ -146,7 +146,7 @@ domain と application は型消去したエラーを返さず、型消去は bi
 想定された失敗を Result にすれば、失敗が型に現れ、呼び出し側が扱いを強制される。
 thiserror は表示と変換を生成し、責務の単位のエラー型を `?` でつなげる。
 不変条件の違反は回復できない欠陥なので、Result に混ぜず panic で表す。
-取り消しは失敗でも欠陥でもなく、Future の drop で表すので、Result には入れない。
+取り消しは業務の失敗の Result に混ぜず、協調取消の完了と Future の drop の扱いは [tokio-util](./tokio-util.md) の「取り消し」に従う。
 型消去したエラーは種別が型から消えるので、domain と application では使わず、最上位の報告にだけ使う。
 
 ### 完了条件
@@ -171,7 +171,7 @@ domain と application で、型消去したエラーを返すこと。
 fn handle(repository: &impl OrderRepository, id: OrderId) -> Order { repository.find(id).unwrap() }
 ```
 
-`thiserror` の enum を `?` で伝播すれば、欠陥は panic、取り消しは `Future` の drop、依存は引数に現れる。
+thiserror の enum を `?` で伝播すれば、想定内の失敗は Result、欠陥は panic に分かれ、依存は引数に現れる。
 
 ```rust
 #[derive(thiserror::Error, Debug)]
