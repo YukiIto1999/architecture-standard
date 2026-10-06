@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-required_commands=(bash git rg node mktemp mkdir ln timeout sed rm chmod sleep)
+required_commands=(bash dirname git rg node mktemp mkdir ln timeout sed rm chmod sleep)
 for required_command in "${required_commands[@]}"; do
   if ! command -v "$required_command" >/dev/null 2>&1; then
     printf 'FAIL: missing required command: %s\n' "$required_command" >&2
@@ -9,13 +9,13 @@ for required_command in "${required_commands[@]}"; do
   fi
 done
 
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT="$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null)" || {
   printf 'FAIL: git repository で実行すること\n' >&2
   exit 1
 }
 cd "$REPO_ROOT" || exit 1
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=0
 PASSED=0
 
@@ -74,81 +74,81 @@ else
 fi
 package_fixture="$TEST_ROOT/package-missing-evals"
 mkdir -p "$package_fixture" || fail "package checker fixture を構築" "mkdir failed"
-cp -a .claude skills "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
+cp -a skills "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
 git -C "$package_fixture" init --quiet || fail "package checker fixture を構築" "git init failed"
 rm -rf -- "$package_fixture/skills/standard-apply/evals"
-if package_missing_output=$(cd "$package_fixture" && bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_missing_output=$(cd "$package_fixture" && bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "通常実行ではskillのeval一式欠落を拒否する" "$package_missing_output"
 elif ! printf '%s\n' "$package_missing_output" | rg -qF 'standard-apply: evals directory がない'; then
   fail "eval一式欠落を具体的に診断する" "$package_missing_output"
 else
   pass "通常実行ではskillのeval一式欠落を拒否する"
 fi
-if package_isolated_output=$(cd "$package_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=with-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_isolated_output=$(cd "$package_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=with-skill bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   pass "隔離評価では選択skillの隠したevalだけを許可する"
 else
   fail "隔離評価では選択skillの隠したevalだけを許可する" "$package_isolated_output"
 fi
-if package_partial_context=$(cd "$package_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_partial_context=$(cd "$package_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "不完全な隔離contextでeval欠落を許可しない" "$package_partial_context"
 else
   pass "不完全な隔離contextでeval欠落を許可しない"
 fi
 package_without_fixture="$TEST_ROOT/package-without-skill"
 mkdir -p "$package_without_fixture" || fail "without-skill package fixture を構築" "mkdir failed"
-cp -a .claude skills "$package_without_fixture/" || fail "without-skill package fixture を構築" "copy failed"
+cp -a skills "$package_without_fixture/" || fail "without-skill package fixture を構築" "copy failed"
 git -C "$package_without_fixture" init --quiet || fail "without-skill package fixture を構築" "git init failed"
 rm -rf -- "$package_without_fixture/skills/standard-apply"
-if package_without_output=$(cd "$package_without_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_without_output=$(cd "$package_without_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   pass "without-skill隔離評価では選択packageだけの不存在を許可する"
 else
   fail "without-skill隔離評価では選択packageだけの不存在を許可する" "$package_without_output"
 fi
 package_partial_fixture="$TEST_ROOT/package-partial-without-skill"
 mkdir -p "$package_partial_fixture" || fail "partial without-skill package fixture を構築" "mkdir failed"
-cp -a .claude skills "$package_partial_fixture/" || fail "partial without-skill package fixture を構築" "copy failed"
+cp -a skills "$package_partial_fixture/" || fail "partial without-skill package fixture を構築" "copy failed"
 git -C "$package_partial_fixture" init --quiet || fail "partial without-skill package fixture を構築" "git init failed"
 rm -f -- "$package_partial_fixture/skills/standard-apply/SKILL.md"
-if package_partial_output=$(cd "$package_partial_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_partial_output=$(cd "$package_partial_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "without-skill隔離評価では選択packageの部分残存を拒否する" "$package_partial_output"
 else
   pass "without-skill隔離評価では選択packageの部分残存を拒否する"
 fi
 package_conformance_fixture="$TEST_ROOT/package-without-conformance"
 mkdir -p "$package_conformance_fixture" || fail "conformance isolation fixture を構築" "mkdir failed"
-cp -a .claude skills "$package_conformance_fixture/" || fail "conformance isolation fixture を構築" "copy failed"
+cp -a skills "$package_conformance_fixture/" || fail "conformance isolation fixture を構築" "copy failed"
 git -C "$package_conformance_fixture" init --quiet || fail "conformance isolation fixture を構築" "git init failed"
 rm -rf -- "$package_conformance_fixture/skills/standard-conformance"
-if package_conformance_output=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-conformance SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_conformance_output=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-conformance SKILL_EVAL_CONFIGURATION=without-skill bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   pass "conformanceの完全不存在は自身のwithout-skill隔離だけで許可する"
 else
   fail "conformanceの完全不存在は自身のwithout-skill隔離だけで許可する" "$package_conformance_output"
 fi
-if package_conformance_normal=$(cd "$package_conformance_fixture" && env -u SKILL_EVAL_ISOLATED_SKILL -u SKILL_EVAL_CONFIGURATION bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_conformance_normal=$(cd "$package_conformance_fixture" && env -u SKILL_EVAL_ISOLATED_SKILL -u SKILL_EVAL_CONFIGURATION bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "通常構成ではconformanceの完全不存在を拒否する" "$package_conformance_normal"
 else
   pass "通常構成ではconformanceの完全不存在を拒否する"
 fi
-if package_conformance_other=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_conformance_other=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=without-skill bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "他Skillのwithout-skill隔離ではconformanceの欠落を拒否する" "$package_conformance_other"
 else
   pass "他Skillのwithout-skill隔離ではconformanceの欠落を拒否する"
 fi
 cp -a skills/standard-conformance "$package_conformance_fixture/skills/" || fail "conformance partial fixture を構築" "copy failed"
 rm -f -- "$package_conformance_fixture/skills/standard-conformance/scripts/check-coverage.test.mjs"
-if package_conformance_partial=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-conformance SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_conformance_partial=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-conformance SKILL_EVAL_CONFIGURATION=without-skill bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "自身のwithout-skill隔離でもconformanceのtest欠落は拒否する" "$package_conformance_partial"
 else
   pass "自身のwithout-skill隔離でもconformanceのtest欠落は拒否する"
 fi
-if package_conformance_missing_test=$(cd "$package_conformance_fixture" && env -u SKILL_EVAL_ISOLATED_SKILL -u SKILL_EVAL_CONFIGURATION bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_conformance_missing_test=$(cd "$package_conformance_fixture" && env -u SKILL_EVAL_ISOLATED_SKILL -u SKILL_EVAL_CONFIGURATION bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "通常構成ではconformanceのbehavior test欠落を拒否する" "$package_conformance_missing_test"
 else
   pass "通常構成ではconformanceのbehavior test欠落を拒否する"
 fi
 rm -rf -- "$package_conformance_fixture/skills/standard-conformance"
 ln -s missing-conformance-package "$package_conformance_fixture/skills/standard-conformance" || fail "conformance dangling source fixture を構築" "symlink failed"
-if package_conformance_dangling=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-conformance SKILL_EVAL_CONFIGURATION=without-skill bash .claude/skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_conformance_dangling=$(cd "$package_conformance_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-conformance SKILL_EVAL_CONFIGURATION=without-skill bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
   fail "conformanceの壊れたsymlinkを完全不存在として許可しない" "$package_conformance_dangling"
 else
   pass "conformanceの壊れたsymlinkを完全不存在として許可しない"
@@ -505,14 +505,46 @@ else
 fi
 
 printf '\n=== 6. task evaluator は terminal result 後の hook hang を回収する ===\n'
+nonneutral_baseline="$TEST_ROOT/nonneutral-baseline"
+fake_baseline_provider="$TEST_ROOT/claude-baseline-provider"
+provider_marker="$TEST_ROOT/baseline-provider-launched"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf launched > "$PROBE_PROVIDER_MARKER"' \
+  'printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"unexpected provider launch","usage":{}}'\''' \
+  > "$fake_baseline_provider"
+if chmod +x "$fake_baseline_provider" \
+  && git clone --quiet --no-hardlinks "$REPO_ROOT" "$nonneutral_baseline" \
+  && rm -f -- "$nonneutral_baseline/skills/standard-audit/SKILL.md" \
+  && git -C "$nonneutral_baseline" add -- skills/standard-audit/SKILL.md \
+  && git -C "$nonneutral_baseline" -c user.name='Skill Test' -c user.email=skill-test@example.invalid \
+    -c commit.gpgSign=false commit --quiet -m 'test: 中立配置を欠いた検証基線の作成'; then
+  for eval_configuration in with-skill old-skill without-skill; do
+    if baseline_output=$(PROBE_PROVIDER_MARKER="$provider_marker" CLAUDE_EVAL_COMMAND="$fake_baseline_provider" \
+      SKILL_EVAL_OUTPUT_ROOT="$TEST_ROOT/baseline-evals" \
+      node "$nonneutral_baseline/skills/standard-update/scripts/run-task-evals.mjs" \
+      --configuration "$eval_configuration" --skill standard-audit --eval-id 1 2>&1); then
+      fail "$eval_configuration でneutral packageのないbaselineを拒否する" "$baseline_output"
+    elif [ -e "$provider_marker" ]; then
+      fail "$eval_configuration のbaseline拒否ではproviderを起動しない" "$baseline_output"
+    elif ! printf '%s\n' "$baseline_output" | rg -qF 'lacks neutral skill package skills/standard-audit/SKILL.md'; then
+      fail "$eval_configuration のbaseline layout不足を具体的に診断する" "$baseline_output"
+    else
+      pass "$eval_configuration のneutral baseline不足をprovider起動前に拒否"
+    fi
+  done
+else
+  fail "neutral baseline拒否fixtureを構築" "fixture setup failed"
+fi
+
 fake_task_harness_probe="$TEST_ROOT/claude-task-harness-probe"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
-  'runner=.claude/skills/standard-update/scripts/run-task-evals.mjs' \
-  'trigger_runner=.claude/skills/standard-update/scripts/run-trigger-evals.mjs' \
-  'skill_oracle=.claude/skills/standard-update/scripts/skill-test.sh' \
-  'product_check=.claude/skills/standard-update/scripts/skill-package-check.sh' \
-  'case "$SKILL_EVAL_ISOLATED_SKILL" in standard-apply|standard-conformance|standard-feedback) skill_root=skills/$SKILL_EVAL_ISOLATED_SKILL ;; *) skill_root=.claude/skills/$SKILL_EVAL_ISOLATED_SKILL ;; esac' \
+  'runner=skills/standard-update/scripts/run-task-evals.mjs' \
+  'trigger_runner=skills/standard-update/scripts/run-trigger-evals.mjs' \
+  'skill_oracle=skills/standard-update/scripts/skill-test.sh' \
+  'product_check=skills/standard-update/scripts/skill-package-check.sh' \
+  'skill_root=skills/$SKILL_EVAL_ISOLATED_SKILL' \
   'eval_root=$skill_root/evals' \
   'task_oracle=$eval_root/evals.json' \
   'trigger_oracle=$eval_root/trigger-evals.json' \
@@ -550,7 +582,7 @@ printf '%s\n' \
   'test -z "$(git status --porcelain)"' \
   'git ls-files --error-unmatch target-project/app/http.rs target-project/tests/http.rs architecture-decisions/0002-worker-contract.md >/dev/null' \
   'test ! -e skills/standard-apply/evals' \
-  'test ! -e .claude/skills/standard-update/scripts/run-task-evals.mjs' \
+  'test ! -e skills/standard-update/scripts/run-task-evals.mjs' \
   'printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done","usage":{}}'\''' \
   > "$fake_apply_fixture_probe"
 chmod +x "$fake_apply_fixture_probe"
@@ -567,11 +599,11 @@ done
 fake_audit_mutation_probe="$TEST_ROOT/claude-audit-mutation-probe"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
-  'runner=.claude/skills/standard-update/scripts/run-task-evals.mjs' \
+  'runner=skills/standard-update/scripts/run-task-evals.mjs' \
   'expected='\''要求された機能範囲、受入条件、必須規律、安全性、互換性、必要な検証は妥協なく作り切ります。'\''' \
   'injected='\''要求された範囲は、必要な品質を適切に満たします。'\''' \
   'diff_files=$(git diff --name-only)' \
-  'eval_status=$(git status --short --untracked-files=all -- .claude/skills/standard-audit/evals)' \
+  'eval_status=$(git status --short --untracked-files=all -- skills/standard-audit/evals)' \
   'if [ "$diff_files" != "principles/README.md" ] || ! rg -qF "$injected" principles/README.md; then' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"audit mutation missing or escaped its target"}'\''' \
   'elif [ -e "$runner" ] || [ -n "$eval_status" ]; then' \
@@ -592,12 +624,12 @@ done
 fake_eval_scope_probe="$TEST_ROOT/claude-eval-scope-probe"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
-  'runner=.claude/skills/standard-update/scripts/run-task-evals.mjs' \
-  'scope_diff=$(git diff -- .claude/skills/standard-audit/SKILL.md)' \
+  'runner=skills/standard-update/scripts/run-task-evals.mjs' \
+  'scope_diff=$(git diff -- skills/standard-audit/SKILL.md)' \
   'diff_files=$(git diff --name-only)' \
-  'eval_status=$(git status --short --untracked-files=all -- .claude/skills/standard-update/evals)' \
-  'eval_ignored_status=$(git status --short --ignored=matching -- .claude/skills/standard-update/evals)' \
-  'if [ "$diff_files" != ".claude/skills/standard-audit/SKILL.md" ] || ! rg -qF '\''+- **A 思想の足場**: root `README.md`'\'' <<< "$scope_diff"; then' \
+  'eval_status=$(git status --short --untracked-files=all -- skills/standard-update/evals)' \
+  'eval_ignored_status=$(git status --short --ignored=matching -- skills/standard-update/evals)' \
+  'if [ "$diff_files" != "skills/standard-audit/SKILL.md" ] || ! rg -qF '\''+- **A 思想の足場**: root `README.md`'\'' <<< "$scope_diff"; then' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"instruction-only fixture diff missing"}'\''' \
   'elif [ -e "$runner" ] || [ -n "$eval_status" ] || [ -n "$eval_ignored_status" ]; then' \
   '  printf '\''%s\n'\'' '\''{"type":"result","is_error":true,"result":"evaluation scope fixture leaked into runner"}'\''' \
@@ -619,7 +651,7 @@ done
 fake_example_mutation_probe="$TEST_ROOT/claude-example-mutation-probe"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
-  'runner=.claude/skills/standard-update/scripts/run-task-evals.mjs' \
+  'runner=skills/standard-update/scripts/run-task-evals.mjs' \
   'diff_files=$(git diff --name-only)' \
   'if [ "$diff_files" = "concerns/transaction/invisible-partial-commits.md" ] && rg -qF "// 二つ目の失敗を無視して成功を返す" concerns/transaction/invisible-partial-commits.md; then' \
   '  : ' \
@@ -761,7 +793,7 @@ printf '%s\n' \
   '} else {' \
   '  assert.equal(cp.execFileSync("git",["status","--porcelain"],{encoding:"utf8"}),"");' \
   '  for (const oracle of ["evals/evals.json","scripts/run-task-evals.mjs","scripts/skill-test.sh"]) {' \
-  '    const file = ".claude/skills/standard-update/"+oracle;' \
+  '    const file = "skills/standard-update/"+oracle;' \
   '    assert(!fs.existsSync(file));' \
   '    assert.throws(() => cp.execFileSync("git",["show","HEAD^:"+file],{stdio:"pipe"}));' \
   '  }' \
@@ -910,7 +942,10 @@ grade("with-skill", { PROBE_MODEL: "different-grader-model" });
 assertNotComparable();
 assert.equal(fs.readFileSync(path.join(evalRoot, "with-skill", "eval_metadata.json"), "utf8"), savedMetadata);
 grade("with-skill");
-const alternateRunner = path.join(root, "alternate-runner.mjs");
+const alternateSource = path.join(root, "alternate-source");
+cp.execFileSync("git", ["clone", "--quiet", "--no-hardlinks", path.resolve(path.dirname(runner), "../../.."), alternateSource]);
+const alternateScripts = path.join(alternateSource, "skills", "standard-update", "scripts");
+const alternateRunner = path.join(alternateScripts, "run-task-evals.mjs");
 fs.writeFileSync(alternateRunner, fs.readFileSync(runner, "utf8") + "\n");
 grade("with-skill", {}, alternateRunner);
 assertNotComparable();
@@ -937,7 +972,7 @@ revised.fixture_sha256 = digest("corrected suite fixture");
 save(newMetadataFile, revised);
 grade("with-skill", { PROBE_EXPECTATIONS: JSON.stringify(revised.expectations) });
 assertNotComparable();
-const liveRunner = path.join(root, "live-runner.mjs");
+const liveRunner = alternateRunner;
 fs.copyFileSync(runner, liveRunner);
 const startupHash = digest(fs.readFileSync(liveRunner));
 const liveOutput = path.join(root, "live-runner-evals");

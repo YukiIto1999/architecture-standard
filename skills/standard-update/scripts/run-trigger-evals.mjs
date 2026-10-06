@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { execFileSync, spawn } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
-const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-const distributedSkills = new Set(["standard-apply", "standard-conformance", "standard-feedback"]);
+const repoRoot = execFileSync("git", ["-C", fileURLToPath(new URL("../../../", import.meta.url)), "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 const skillName = process.argv[2];
 const allowedSkills = new Set(["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"]);
 if (!allowedSkills.has(skillName)) throw new Error(`skill must be one of ${[...allowedSkills].join(", ")}`);
@@ -25,12 +25,19 @@ const fixtureRoot = mkdtempSync(path.join(tmpdir(), `architecture-standard-trigg
 
 try {
   execFileSync("git", ["clone", "--quiet", "--no-hardlinks", repoRoot, fixtureRoot]);
+  const claudeSkillDestination = path.join(fixtureRoot, ".claude", "skills");
+  assertInside(fixtureRoot, claudeSkillDestination);
+  rmSync(claudeSkillDestination, { recursive: true, force: true });
   for (const candidate of allowedSkills) {
     const candidateRoot = skillRoot(candidate);
     const candidatePath = path.join(fixtureRoot, candidateRoot);
     assertInside(fixtureRoot, candidatePath);
     rmSync(candidatePath, { recursive: true, force: true });
     cpSync(path.join(repoRoot, candidateRoot), candidatePath, { recursive: true, force: true });
+    const claudeSkillPath = path.join(claudeSkillDestination, candidate);
+    assertInside(fixtureRoot, claudeSkillPath);
+    mkdirSync(claudeSkillPath, { recursive: true });
+    cpSync(path.join(candidatePath, "SKILL.md"), path.join(claudeSkillPath, "SKILL.md"));
   }
 
   const results = [];
@@ -52,11 +59,8 @@ try {
   rmSync(fixtureRoot, { recursive: true, force: true });
 }
 
-// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
 function skillRoot(skillName) {
-  return distributedSkills.has(skillName)
-    ? path.join("skills", skillName)
-    : path.join(".claude", "skills", skillName);
+  return path.join("skills", skillName);
 }
 
 function evaluateQuery(query) {

@@ -4,7 +4,7 @@
     {
       "id": 1,
       "model": "haiku",
-      "prompt": "architecture-standard の standard-update/SKILL.md と、そこから直接参照される resource だけを、層別書式と実行可能性の観点で読み取り専用監査してください。今回は変更ファイルに限定した scoped audit です。修正せず、重大度・file・該当箇所・根拠を返してください。",
+      "prompt": "architecture-standard の skills/standard-update/SKILL.md と、そこから直接参照される resource だけを、層別書式と実行可能性の観点で読み取り専用監査してください。今回は変更ファイルに限定した scoped audit です。修正せず、重大度・file・該当箇所・根拠を返してください。",
       "expected_output": "変更対象と直接参照に限定した監査を選び、内部矛盾と実行不能な指示を証拠付きで報告する。",
       "files": [],
       "expectations": [
