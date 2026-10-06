@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-required_commands=(bash dirname git rg node mktemp mkdir ln timeout sed rm chmod sleep)
+required_commands=(bash dirname git rg node npm mktemp mkdir ln timeout sed rm chmod sleep)
 for required_command in "${required_commands[@]}"; do
   if ! command -v "$required_command" >/dev/null 2>&1; then
     printf 'FAIL: missing required command: %s\n' "$required_command" >&2
@@ -64,13 +64,14 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+if [ "${1:-}" != --line-store-only ]; then
 printf '\n=== 2. task eval と trigger eval の schema ===\n'
 eval_output=$(bash "$SCRIPT_DIR/skill-package-check.sh" 2>&1)
 if [ "$?" -eq 0 ]; then
   printf '%s\n' "$eval_output"
-  pass "5 skill の package 構造と eval schema が有効"
+  pass "skill の package 構造と eval schema が有効"
 else
-  fail "5 skill の package 構造または eval schema が無効" "$eval_output"
+  fail "skill の package 構造または eval schema が無効" "$eval_output"
 fi
 package_fixture="$TEST_ROOT/package-missing-evals"
 mkdir -p "$package_fixture" || fail "package checker fixture を構築" "mkdir failed"
@@ -354,9 +355,9 @@ printf '%s\n' \
   'printf '\''%s\n'\'' '\''{"type":"result","is_error":false,"result":"done"}'\''' > "$fake_other_skill"
 chmod +x "$fake_other_skill" || fail "other Skill fixture を構築" "chmod failed"
 if other_skill_output=$(CLAUDE_EVAL_COMMAND="$fake_other_skill" CLAUDE_EVAL_TIMEOUT_MS=1000 node "$SCRIPT_DIR/run-trigger-evals.mjs" standard-apply 13 2>&1); then
-  pass "対象外のskillは5 skillの誤発火に数えない"
+  pass "対象外のskillは評価対象の誤発火に数えない"
 else
-  fail "対象外のskillは5 skillの誤発火に数えない" "$other_skill_output"
+  fail "対象外のskillは評価対象の誤発火に数えない" "$other_skill_output"
 fi
 
 fake_exact_skill="$TEST_ROOT/claude-exact-skill"
@@ -515,6 +516,7 @@ printf '%s\n' \
   > "$fake_baseline_provider"
 if chmod +x "$fake_baseline_provider" \
   && git clone --quiet --no-hardlinks "$REPO_ROOT" "$nonneutral_baseline" \
+  && cp "$SCRIPT_DIR/run-task-evals.mjs" "$nonneutral_baseline/skills/standard-update/scripts/run-task-evals.mjs" \
   && rm -f -- "$nonneutral_baseline/skills/standard-audit/SKILL.md" \
   && git -C "$nonneutral_baseline" add -- skills/standard-audit/SKILL.md \
   && git -C "$nonneutral_baseline" -c user.name='Skill Test' -c user.email=skill-test@example.invalid \
@@ -944,6 +946,8 @@ assert.equal(fs.readFileSync(path.join(evalRoot, "with-skill", "eval_metadata.js
 grade("with-skill");
 const alternateSource = path.join(root, "alternate-source");
 cp.execFileSync("git", ["clone", "--quiet", "--no-hardlinks", path.resolve(path.dirname(runner), "../../.."), alternateSource]);
+fs.cpSync(path.join(path.resolve(path.dirname(runner), "../../.."), "skills"),
+  path.join(alternateSource, "skills"), { recursive: true, force: true });
 const alternateScripts = path.join(alternateSource, "skills", "standard-update", "scripts");
 const alternateRunner = path.join(alternateScripts, "run-task-evals.mjs");
 fs.writeFileSync(alternateRunner, fs.readFileSync(runner, "utf8") + "\n");
@@ -966,6 +970,22 @@ assert(failed.error);
 assert.equal(benchmark().delta_with_minus_old, null);
 grade("with-skill");
 const newMetadataFile = path.join(evalRoot, "with-skill", "eval_metadata.json");
+const comparisonOriginal = load(newMetadataFile);
+for (const field of ["execution_settings_sha256", "task_sha256", "standard_sha256"]) {
+  const changed = structuredClone(comparisonOriginal);
+  changed[field] = digest(`different ${field}`);
+  save(newMetadataFile, changed);
+  grade("with-skill");
+  assertNotComparable();
+}
+const differentInput = structuredClone(comparisonOriginal);
+differentInput.project_input = { canonical_sha256: digest("other source"), snapshot_sha256: digest("other input") };
+save(newMetadataFile, differentInput);
+grade("with-skill");
+assertNotComparable();
+save(newMetadataFile, comparisonOriginal);
+grade("with-skill");
+assert.equal(benchmark().comparable, true);
 const revised = load(newMetadataFile);
 revised.expectations = ["corrected suite expectation"];
 revised.fixture_sha256 = digest("corrected suite fixture");
@@ -999,6 +1019,246 @@ then
   pass "保存済みrubricで再採点しgrader差・旧artifact・改訂fixtureを比較から除外する"
 else
   fail "保存済み採点のprovenanceと起動時runnerを保持する" "behavior regression failed"
+fi
+fi
+
+printf '\n=== 8. LineStore の公開契約と隔離復元 ===\n'
+if node - "$TEST_ROOT" "$SCRIPT_DIR/run-task-evals.mjs" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const cp = require("node:child_process");
+const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
+const [root, runner] = process.argv.slice(2);
+const repo = path.resolve(path.dirname(runner), "../../..");
+const fixture = path.join(repo, "skills/standard-apply/evals/fixtures/line-store");
+const project = path.join(root, "oracle-project");
+const host = path.join(fixture, "host/check.mjs");
+const digest = value => crypto.createHash("sha256").update(value).digest("hex");
+const load = file => JSON.parse(fs.readFileSync(file, "utf8"));
+const save = (file, value) => fs.writeFileSync(file, JSON.stringify(value, null, 2) + "\n");
+fs.cpSync(path.join(fixture, "project"), project, {
+  recursive: true, filter: file => !path.relative(path.join(fixture, "project"), file).split(path.sep).includes("node_modules"),
+});
+const installed = cp.spawnSync("npm", ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: project, encoding: "utf8" });
+assert.equal(installed.status, 0, installed.stdout + installed.stderr);
+const baselineStore = fs.readFileSync(path.join(project, "src/line-store.ts"), "utf8");
+const baselineConsumer = fs.readFileSync(path.join(project, "src/render-selected.ts"), "utf8");
+const consumer = baselineConsumer.replace('{ Err, Ok, type Result }', '{ type Result }')
+  .replace(/  return positions\.map\(\(position\) => \{[\s\S]*?\n  \}\);/, "  return positions.map((position) => store.get(position));");
+assert.notEqual(consumer, baselineConsumer);
+const storage = map => `import { Err, Ok, type Result } from "ts-results-es";
+
+export class LineStore {
+  readonly #lines${map ? " = new Map<number, string>()" : ": string[] = []"};
+
+  append(line: string): void {
+    ${map ? "this.#lines.set(this.#lines.size, line)" : "this.#lines.push(line)"};
+  }
+
+  get(position: number): Result<string, "position-out-of-range"> {
+    const line = ${map ? "this.#lines.get(position)" : "this.#lines[position]"};
+    return line === undefined ? new Err("position-out-of-range" as const) : new Ok(line);
+  }
+}
+`;
+const check = (mode, expected = 0) => {
+  const result = cp.spawnSync(process.execPath, [host, project, ...(mode ? ["--boundary", mode] : [])], { encoding: "utf8" });
+  assert.equal(result.status === 0, expected === 0, result.stdout + result.stderr);
+};
+check();
+fs.writeFileSync(path.join(project, "src/render-selected.ts"), consumer);
+fs.writeFileSync(path.join(project, "src/line-store.ts"), storage(false));
+check("hidden");
+for (const broken of [
+  storage(false).replace("this.#lines.push(line)", "this.#lines.unshift(line)"),
+  storage(false).replace("this.#lines.push(line)", "if (!this.#lines.includes(line)) this.#lines.push(line)"),
+  storage(false).replace("this.#lines[position]", "this.#lines.at(position)"),
+  storage(false).replace("this.#lines[position]", "this.#lines[position + 1]"),
+  storage(false).replace('new Err("position-out-of-range" as const)', 'new Err("wrong-error" as const)'),
+  storage(false).replace("const line = this.#lines[position];", "const line = this.#lines[position];\n    if (line === undefined) this.#lines.pop();"),
+]) {
+  fs.writeFileSync(path.join(project, "src/line-store.ts"), broken);
+  check("", 1);
+}
+for (const leak of [
+  storage(false).replace("  append(", "  get exposed(): readonly string[] {\n    return this.#lines;\n  }\n\n  append("),
+  storage(true).replace("readonly #lines", "readonly lines").replaceAll("this.#lines", "this.lines"),
+]) {
+  fs.writeFileSync(path.join(project, "src/line-store.ts"), leak);
+  check();
+  check(leak.includes("new Map") ? "map" : "hidden", 1);
+}
+fs.writeFileSync(path.join(project, "src/line-store.ts"), storage(true));
+check("map");
+
+const provider = path.join(root, "line-store-provider.mjs");
+fs.writeFileSync(provider, `#!/usr/bin/env node
+import fs from "node:fs";
+import cp from "node:child_process";
+import assert from "node:assert/strict";
+if (process.argv.includes("--json-schema")) {
+  const prompt = fs.readFileSync(0, "utf8");
+  const expectations = JSON.parse(prompt.split("\\n\\n").find(section => section.startsWith("Expectations: ")).slice(14));
+  console.log(JSON.stringify({ type: "result", is_error: false, usage: {}, modelUsage: { "scripted-fixture": {} },
+    structured_output: { expectations: expectations.map(text => ({ text, passed: true,
+      evidence: "adversarial scripted grader; fixed host rejection must prevail" })), feedback: "not model-quality evidence" } }));
+  process.exit(0);
+}
+const payload = JSON.parse(fs.readFileSync(process.env.LINE_STORE_PAYLOAD_FILE, "utf8"));
+if (payload.expected) {
+  for (const [file, content] of Object.entries(payload.expected)) {
+    assert.equal(fs.readFileSync("target-project/" + file, "utf8"), content);
+  }
+}
+if (payload.standard) {
+  for (const [file, content] of Object.entries(payload.standard)) assert.equal(fs.readFileSync(file, "utf8"), content);
+}
+for (const forbidden of [
+  "skills/standard-apply/evals", "skills/standard-update/scripts/run-task-evals.mjs",
+  "skills/standard-update/scripts/skill-test.sh", "docs/minutes", "docs/decisions", "docs/reviews", "docs/research",
+]) {
+  assert(!fs.existsSync(forbidden), "actor oracle leak: " + forbidden);
+  assert.notEqual(cp.spawnSync("git", ["show", "HEAD^:" + forbidden], { stdio: "ignore" }).status, 0);
+}
+assert(!fs.existsSync("target-project/host"));
+for (const [file, content] of Object.entries(payload.files ?? {})) fs.writeFileSync("target-project/" + file, content);
+if (payload.marker) fs.writeFileSync(payload.marker, "launched");
+console.log(JSON.stringify({type:"result",is_error:false,result:"scripted candidate; not a model evaluation",usage:{},modelUsage:{"scripted-fixture":{}}}));
+`, { mode: 0o755 });
+const run = (name, id, payload, snapshot, expectedStatus = 0, extra = []) => {
+  const output = path.join(root, name);
+  const payloadFile = path.join(root, `${name}-payload.json`);
+  save(payloadFile, payload);
+  const result = cp.spawnSync(process.execPath, [runner, "--configuration", "with-skill", "--skill", "standard-apply",
+    "--eval-id", String(id), ...(snapshot ? ["--project-snapshot", snapshot] : []), ...extra], {
+    encoding: "utf8", timeout: 3_600_000,
+    env: { ...process.env, CLAUDE_EVAL_COMMAND: provider, SKILL_EVAL_OUTPUT_ROOT: output,
+      LINE_STORE_PAYLOAD_FILE: payloadFile },
+  });
+  assert.equal(result.status, expectedStatus, JSON.stringify({ error: result.error?.message,
+    signal: result.signal, stdout: result.stdout, stderr: result.stderr }));
+  return path.join(output, "standard-apply", `eval-${id}-sonnet`, "with-skill");
+};
+const hidden = run("hidden", 9, { files: { "src/line-store.ts": storage(false), "src/render-selected.ts": consumer } });
+assert.equal(load(path.join(hidden, "host-after.json")).passed, true);
+const snapshotFile = path.join(hidden, "project-snapshot.json");
+const snapshot = load(snapshotFile);
+for (const [file, entry] of Object.entries(snapshot.files)) assert.equal(entry.sha256, digest(entry.content), file);
+const restored = Object.fromEntries(Object.entries(snapshot.files).map(([file, entry]) => [file, entry.content]));
+const mapped = run("mapped", 10, { expected: restored, files: { "src/line-store.ts": storage(true) } }, snapshotFile);
+const verified = load(path.join(mapped, "host-after.json"));
+assert.equal(verified.passed, true);
+assert.deepEqual(verified.consumer_changes, []);
+assert.equal(fs.readFileSync(path.join(mapped, "consumer-diff.patch"), "utf8"), "");
+assert.equal(load(path.join(mapped, "project-before.json"))["src/line-store.ts"].content, storage(false));
+const changedConsumer = consumer.replace("  const store = new LineStore();", "  const store = new LineStore();\n\n");
+const changed = run("consumer-change", 10, { files: {
+  "src/line-store.ts": storage(true), "src/render-selected.ts": changedConsumer,
+} }, snapshotFile, 1);
+assert.equal(load(path.join(changed, "host-after.json")).passed, false);
+assert.deepEqual(load(path.join(changed, "host-after.json")).consumer_changes, ["src/render-selected.ts"]);
+assert(fs.readFileSync(path.join(changed, "consumer-diff.patch"), "utf8").includes("render-selected.ts"));
+const weakened = run("locked-test-change", 10, { files: {
+  "src/line-store.ts": storage(true), "tests/render-selected.test.ts": "",
+} }, snapshotFile, 1);
+const lockedVerdict = load(path.join(weakened, "host-after.json"));
+assert.equal(lockedVerdict.passed, false);
+assert(lockedVerdict.locked_file_changes.includes("tests/render-selected.test.ts"));
+assert(lockedVerdict.commands.some(command => command.command.includes(host) && command.passed));
+const addedSource = "export function selectPosition(position: number): number {\n  return position;\n}\n";
+const added = run("added-consumer", 10, { files: {
+  "src/line-store.ts": storage(true), "src/selection.ts": addedSource,
+} }, snapshotFile, 1);
+assert.deepEqual(load(path.join(added, "host-after.json")).consumer_changes, ["src/selection.ts"]);
+const addedPatchLines = fs.readFileSync(path.join(added, "consumer-diff.patch"), "utf8").split("\n");
+assert(addedSource.trimEnd().split("\n").every(line => addedPatchLines.includes("+" + line)),
+  "consumer diff must capture added untracked production source");
+const rejectedOutput = path.join(root, "host-rejection-grading");
+const rejectedEval = path.join(rejectedOutput, "standard-apply", "eval-10-sonnet");
+fs.mkdirSync(rejectedEval, { recursive: true });
+fs.cpSync(mapped, path.join(rejectedEval, "old-skill"), { recursive: true });
+fs.cpSync(weakened, path.join(rejectedEval, "with-skill"), { recursive: true });
+for (const configuration of ["old-skill", "with-skill"]) {
+  const graded = cp.spawnSync(process.execPath, [runner, "--configuration", configuration,
+    "--skill", "standard-apply", "--eval-id", "10", "--grade-only"], {
+    encoding: "utf8", env: { ...process.env, CLAUDE_EVAL_COMMAND: provider,
+      SKILL_EVAL_OUTPUT_ROOT: rejectedOutput, LINE_STORE_PAYLOAD: "{}" },
+  });
+  assert.equal(graded.status, 0, graded.stdout + graded.stderr);
+}
+const rejectedGrade = load(path.join(rejectedEval, "with-skill", "grading.json"));
+assert.equal(rejectedGrade.summary.overall_pass, false);
+assert.equal(rejectedGrade.summary.passed, 0, "host-rejected candidate cannot count as successful");
+assert.equal(rejectedGrade.summary.pass_rate, 0);
+assert.equal(load(path.join(rejectedEval, "benchmark.json")).delta_with_minus_old, null);
+const marker = path.join(root, "unsafe-provider-marker");
+for (const [name, mutate] of [
+  ["missing-source", value => { delete value.files["src/render-selected.ts"]; }],
+  ["missing-lock", value => { delete value.files["package-lock.json"]; }],
+  ["changed-contract", value => { value.files["README.md"].content += "weakened"; value.files["README.md"].sha256 = digest(value.files["README.md"].content); }],
+  ["traversal", value => { value.files["src/../../escaped.ts"] = { content: "", sha256: digest("") }; }],
+  ["hash-mismatch", value => { value.files["src/line-store.ts"].content += " "; }],
+]) {
+  const unsafe = structuredClone(snapshot);
+  mutate(unsafe);
+  delete unsafe.sha256;
+  unsafe.sha256 = digest(JSON.stringify(unsafe));
+  const file = path.join(root, `${name}.json`);
+  save(file, unsafe);
+  run(name, 10, { marker }, file, 1);
+  assert(!fs.existsSync(marker), name + " must fail before provider");
+}
+const definitions = load(path.join(repo, "skills/standard-apply/evals/evals.json"));
+const badEval = structuredClone(definitions.evals.find(item => item.id === 10));
+badEval.fixture.command = "arbitrary shell";
+const badFile = path.join(root, "unsafe-eval.json");
+save(badFile, { skill_name: "standard-apply", evals: [badEval] });
+run("unsafe-fixture", 10, { marker }, null, 1, ["--eval-file", badFile]);
+assert(!fs.existsSync(marker));
+const linkedSnapshot = path.join(root, "linked-snapshot.json");
+fs.symlinkSync(snapshotFile, linkedSnapshot);
+run("linked-snapshot", 10, { marker }, linkedSnapshot, 1);
+assert(!fs.existsSync(marker));
+const missingStandard = path.join(root, "incomplete-standard");
+fs.mkdirSync(missingStandard);
+fs.writeFileSync(path.join(missingStandard, "README.md"), "# incomplete\n");
+run("incomplete-standard", 10, { marker }, snapshotFile, 1, ["--standard-snapshot", missingStandard]);
+assert(!fs.existsSync(marker));
+const normBefore = path.join(root, "norm-before");
+const normAfter = path.join(root, "norm-after");
+fs.mkdirSync(normBefore);
+for (const entry of ["README.md", "principles", "concerns", "structure", "tools", "languages", "process"]) {
+  fs.cpSync(path.join(repo, entry), path.join(normBefore, entry), { recursive: true });
+}
+fs.cpSync(normBefore, normAfter, { recursive: true });
+for (const file of ["structure/README.md", "process/design.md"]) fs.appendFileSync(path.join(normAfter, file), "\n");
+const standardInput = norm => Object.fromEntries(["README.md", "structure/README.md", "process/design.md"]
+  .map(file => [file, fs.readFileSync(path.join(norm, file), "utf8")]));
+const normRunBefore = run("norm-before-eval", 7, { standard: standardInput(normBefore) }, null, 0, ["--standard-snapshot", normBefore]);
+const normRunAfter = run("norm-after-eval", 7, { standard: standardInput(normAfter) }, null, 0, ["--standard-snapshot", normAfter]);
+assert.notEqual(load(path.join(normRunBefore, "eval_metadata.json")).standard_sha256,
+  load(path.join(normRunAfter, "eval_metadata.json")).standard_sha256);
+assert.equal(load(path.join(normRunAfter, "standard-files.json"))["process/design.md"].content,
+  fs.readFileSync(path.join(normAfter, "process/design.md"), "utf8"));
+const excludedSymlink = path.join(root, "norm-excluded-symlink");
+fs.cpSync(normBefore, excludedSymlink, { recursive: true });
+fs.symlinkSync(root, path.join(excludedSymlink, "principles", "reports"));
+run("excluded-norm-symlink", 7, { marker }, null, 1, ["--standard-snapshot", excludedSymlink]);
+assert(!fs.existsSync(marker), "excluded-looking normative symlink must fail before provider");
+const generatedName = path.join(normAfter, "principles", "reports");
+fs.mkdirSync(generatedName);
+fs.writeFileSync(path.join(generatedName, "contract.md"), "# Normative contract\n");
+const completeNorm = run("complete-norm-files", 7, { standard: {
+  "principles/reports/contract.md": "# Normative contract\n",
+} }, null, 0, ["--standard-snapshot", normAfter]);
+assert.equal(load(path.join(completeNorm, "standard-files.json"))["principles/reports/contract.md"].content,
+  "# Normative contract\n");
+NODE
+then
+  pass "固定host oracleで振る舞い・漏出・mutation・source復元・consumer不変・unsafe入力を判定する"
+else
+  fail "LineStoreの公開契約と隔離復元" "behavior regression failed"
 fi
 
 printf '\nテスト: %d passed, %d failed\n' "$PASSED" "$FAILED"

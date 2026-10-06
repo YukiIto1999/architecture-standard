@@ -115,6 +115,17 @@ for (const skillName of skillNames) {
         }
         if (!Array.isArray(item.files)) reject(`${skillName}: files は配列であること`);
         if (!allowedModels.has(item.model)) reject(`${skillName}: model が不正`);
+        if (Object.hasOwn(item, "fixture")) {
+          const fixture = item.fixture;
+          const keys = fixture && typeof fixture === "object" && !Array.isArray(fixture) ? Object.keys(fixture) : [];
+          const lineStore = fixture?.kind === "line-store" && ["hide", "map"].includes(fixture.stage)
+            && keys.length === 2 && keys.every(key => ["kind", "stage"].includes(key));
+          const semantic = fixture?.kind === "semantic-boundaries" && ["explicit", "exploration"].includes(fixture.reading)
+            && keys.length === 2 && keys.every(key => ["kind", "reading"].includes(key));
+          if (skillName !== "standard-apply" || (!lineStore && !semantic)) {
+            reject(`${skillName}: fixture は明示された安全なkindとstageまたはreadingだけを持つこと`);
+          }
+        }
       }
       const models = new Set(data.evals.map((item) => item.model));
       for (const model of allowedModels) {

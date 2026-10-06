@@ -1,0 +1,32 @@
+{
+  "name": "line-store-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
+  "scripts": {
+    "check": "node scripts/verify.mjs fast",
+    "verify:fast": "node scripts/verify.mjs fast",
+    "verify": "node scripts/verify.mjs local",
+    "verify:push": "node scripts/verify.mjs push"
+  },
+  "dependencies": {
+    "ts-results-es": "7.1.0"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
+    "@types/node": "24.10.1",
+    "@vitest/coverage-v8": "4.0.18",
+    "eslint-plugin-sonarjs": "4.2.2",
+    "fast-check": "4.10.2",
+    "oxfmt": "0.72.0",
+    "oxlint": "1.87.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "4.0.18"
+  }
+}
