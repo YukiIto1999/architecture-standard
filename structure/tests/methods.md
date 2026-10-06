@@ -117,6 +117,10 @@ replay は、イベントから projection を再構築して検証する。
 protocol 経路の適合は、生成物と実装の drift の検査と conformance で検証する。
 契約 generator の生成結果は、全 variant の判別子と payload を serialize と deserialize で往復する generated-contract round-trip で検証し、repository の検証入口で失敗として扱う。
 
+CLI の契約は、同じ呼び出しについて stdout、stderr、終了 status、状態変化を別々に観測する。
+terminal の所有は、実際の PTY と process を使い、取得済みの mode の復元、失敗、取り消し、一時引き渡しからの復帰を確かめる。
+PTY の実測は、その実依存に従って配置し、状態遷移の property や描画 snapshot の成功で置き換えない。
+
 ## 規範から検証への対応
 
 標準の要求と禁止事項は、観測できる性質ごとに次の検証へ割り当てる。
@@ -134,9 +138,10 @@ protocol 経路の適合は、生成物と実装の drift の検査と conforman
 | 永続化、transaction、messaging | 実 datastore の制約、version conflict、単一の確定点、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |
 | effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test |
 | structure と dependency | root と単位の列挙、依存方向、公開面、配置、循環、複雑さの閾値と統合・削除での変更前後の比較、禁止 import、サブドメイン分類の記録と構造の対応 |
-| lifecycle と configuration | 不正設定での起動拒否、生存と準備、受付停止、期限内 drain、突然死後の回復 |
+| lifecycle と configuration | 不正設定での起動拒否、設定層の競合と未指定の解決、生存と準備、受付停止、期限内 drain、突然死後の回復 |
 | security と privacy | default deny と最小権限、信頼境界ごとの abuse case、標準暗号の設定、secret と個人情報の非流出、保持期限後の消去、供給物と依存の検査 |
 | experience と accessibility | 利用者が観測する状態遷移、keyboard 操作、focus、名前と役割、contrast、回復経路 |
+| console の呼び出しと terminal | stdout・stderr・終了 status と状態変化、TTY と非 TTY、非対話での入力不足、破壊操作の確認、再実行、確定前後の取り消し、terminal の復元と一時引き渡し、cell 幅と resize、入力 loop が処理中も操作を受けること |
 | performance | 固定した workload と環境での SLO 計測、変更前後の比較、計測結果を伴う退行判定 |
 
 canonical operation から core API、surface の binding、公開 interface の scenario までを一つの対応として列挙する。
