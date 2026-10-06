@@ -1,0 +1,22 @@
+[
+  {"query": "CI と人の両方で使う command の引数、機械向け出力、失敗時の終了を設計してください。", "should_trigger": true},
+  {"query": "stdin で CSV を受ける削除 command を、非対話でも安全に使える仕様にしてください。", "should_trigger": true},
+  {"query": "terminal の picker から editor を開いて戻る境界と、選択結果の stream を設計してください。", "should_trigger": true},
+  {"query": "console の公開 option を変えるので、利用例と設定の競合と再実行の契約を詰めてください。", "should_trigger": true},
+  {"query": "矢印キーで一つ選んですぐ終了する単発 picker でも raw mode を取得します。起動失敗と復元を含む CLI 契約を設計してください。", "should_trigger": true},
+  {"query": "検索 command の空結果を成功にする公開仕様を詰め、人の表と script の JSON と stderr の診断を分けてください。", "should_trigger": true},
+  {"query": "処理の確定後に stdout の pipe が閉じる command について、取り消しと同じ request ID の再実行の仕様を設計してください。", "should_trigger": true},
+  {"query": "既存 resolver の設定優先順は決定済みです。false と 0 と未指定を CLI の呼び出しでどう観測するか仕様にしてください。", "should_trigger": true},
+  {"query": "新しい export command の help と version を副作用なしにし、必須入力不足でも CI で待機しない契約を設計してください。", "should_trigger": true},
+  {"query": "公開 service operation の入力と効果は確定済みです。その operation を呼ぶ CLI の command tree と終了 status だけを設計してください。", "should_trigger": true},
+  {"query": "この JSON file の件数を shell で数えて結果を教えてください。", "should_trigger": false},
+  {"query": "画面の modal と色と pointer 操作を設計してください。browser の UI です。", "should_trigger": false},
+  {"query": "CLI の公開契約は変えず、内部の長い関数を分割してください。", "should_trigger": false},
+  {"query": "Rust の parser library の採用候補だけを比較してください。command の UX は決定済みです。", "should_trigger": false},
+  {"query": "architecture-standard 全体を監査してください。console もありますが契約設計は不要です。", "should_trigger": false, "expected_skill": "standard-audit"},
+  {"query": "標準本文そのものへ CLI の規律を追記してください。対象 project の設計ではありません。", "should_trigger": false, "expected_skill": "standard-update"},
+  {"query": "CLI の引数と終了 status は変更しません。既存の shell script を一回実行して観測した結果だけ返してください。", "should_trigger": false},
+  {"query": "native desktop app の menu と keyboard shortcut を設計してください。terminal command はありません。", "should_trigger": false},
+  {"query": "CLI の公開入出力は確定済みです。その JSON Lines 入力を生成し、独立した oracle で拒否と状態を検査する property を設計してください。", "should_trigger": false, "expected_skill": "property-testing"},
+  {"query": "architecture-standard に従って durable worker の並行処理を設計してください。CLI の呼び出し契約は変更しません。", "should_trigger": false, "expected_skill": "standard-apply"}
+]

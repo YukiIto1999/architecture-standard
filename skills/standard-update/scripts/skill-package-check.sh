@@ -20,7 +20,7 @@ node <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
-const skillNames = ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
+const skillNames = ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update", "cli-design", "property-testing"];
 const allowedModels = new Set(["haiku", "sonnet", "opus"]);
 const allowedConfigurations = new Set(["old-skill", "without-skill", "with-skill"]);
 const isolatedSkill = process.env.SKILL_EVAL_ISOLATED_SKILL ?? "";

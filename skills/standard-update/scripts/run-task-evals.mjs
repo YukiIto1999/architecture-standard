@@ -9,7 +9,9 @@ import { fileURLToPath } from "node:url";
 const runnerSha256 = createHash("sha256").update(readFileSync(new URL(import.meta.url))).digest("hex");
 
 const repoRoot = execFileSync("git", ["-C", fileURLToPath(new URL("../../../", import.meta.url)), "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-const allSkillNames = ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
+const baselineSkillNames = ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
+const methodSkillNames = ["cli-design", "property-testing"];
+const allSkillNames = [...baselineSkillNames, ...methodSkillNames];
 const args = process.argv.slice(2);
 const configuration = valueAfter("--configuration");
 const selectedSkill = valueAfter("--skill");
@@ -55,8 +57,8 @@ for (const skillName of skillNames) {
   if (evals.length === 0) throw new Error(`${skillName}: eval ${selectedEvalId} not found`);
   for (const item of evals) {
     if (!gradeOnly) validateFixtureSelection(skillName, item);
-    if (!gradeOnly) await runEval(skillName, item);
-    if (gradeRuns || gradeOnly) await gradeEval(skillName, item);
+    if (!gradeOnly && await runEval(skillName, item) === false) continue;
+    if ((gradeRuns || gradeOnly) && await gradeEval(skillName, item) === false) continue;
     updateBenchmark(skillName, item);
   }
 }
@@ -77,6 +79,7 @@ async function runEval(skillName, item) {
   ] : [];
   const startedAt = new Date();
   const projectFixture = item.fixture?.kind === "line-store";
+  const standardFixture = baselineSkillNames.includes(skillName);
   let projectBefore = null;
   let projectInput = null;
   const projectTools = projectFixture ? [
@@ -89,22 +92,35 @@ async function runEval(skillName, item) {
     if (auditReportDirectory) mkdirSync(auditReportDirectory);
     execFileSync("git", ["clone", "--quiet", "--no-hardlinks", repoRoot, fixtureRoot]);
     execFileSync("git", ["checkout", "--quiet", "--detach", baselineCommit], { cwd: fixtureRoot });
-    for (const baselineSkill of allSkillNames) {
+    for (const baselineSkill of baselineSkillNames) {
       const baselineSkillFile = path.join(skillRoot(baselineSkill), "SKILL.md");
       if (!existsSync(path.join(fixtureRoot, baselineSkillFile))) {
         throw new Error(`baseline ${baselineCommit} lacks neutral skill package ${baselineSkillFile}; use a neutral-layout baseline with --skill-snapshot for historical instructions`);
       }
+    }
+    const baselineSkillAvailable = existsSync(path.join(fixtureRoot, skillRoot(skillName), "SKILL.md"));
+    if (configuration === "old-skill" && !baselineSkillAvailable && !skillSnapshot) {
+      saveJson(runRoot, "historical-unavailable.json", {
+        skill_name: skillName, eval_id: item.id, model: item.model, configuration,
+        baseline_commit: baselineCommit, reason: "historical Skill package is unavailable",
+      });
+      process.stdout.write(`UNAVAILABLE_HISTORICAL_SKILL: ${skillName} eval-${item.id} ${item.model} baseline=${baselineCommit}\n`);
+      return false;
     }
     if (standardSnapshot) overlayStandardSnapshot(fixtureRoot);
     if (skillSnapshot) overlayWorkingFiles(fixtureRoot, skillName, path.resolve(skillSnapshot));
     else if (configuration === "with-skill") overlayWorkingFiles(fixtureRoot, skillName);
     if (contextReadme) cpSync(path.resolve(contextReadme), path.join(fixtureRoot, "README.md"));
     const sharedVerificationFiles = skillName === "standard-update"
-      ? ["skills/standard-conformance/scripts/check-coverage.mjs", "skills/standard-conformance/scripts/check-coverage.test.mjs"]
+      ? ["skills/standard-conformance/scripts/check-coverage.mjs", "skills/standard-conformance/scripts/check-coverage.test.mjs",
+        ...methodSkillNames.map(name => skillRoot(name))]
       : [];
     for (const file of sharedVerificationFiles) {
       mkdirSync(path.dirname(path.join(fixtureRoot, file)), { recursive: true });
-      cpSync(path.join(repoRoot, file), path.join(fixtureRoot, file));
+      if (statSync(path.join(repoRoot, file)).isDirectory()) {
+        rmSync(path.join(fixtureRoot, file), { recursive: true, force: true });
+      }
+      cpSync(path.join(repoRoot, file), path.join(fixtureRoot, file), { recursive: true, force: true });
     }
     const instructionHash = fingerprintDirectory(path.join(fixtureRoot, skillRoot(skillName)));
     const contextHash = createHash("sha256").update(readFileSync(path.join(fixtureRoot, "README.md"))).digest("hex");
@@ -119,15 +135,17 @@ async function runEval(skillName, item) {
       projectInput = prepareLineStore(fixtureRoot, runRoot, item);
     } else if (item.fixture?.kind === "semantic-boundaries") {
       prepareSemanticBoundaries(fixtureRoot);
-    } else {
+    } else if (standardFixture) {
       prepareFixture(fixtureRoot);
     }
-    if (!item.fixture && (skillName === "standard-apply" || item.suite === "semantic-maintenance")) {
-      prepareEvaluationChange(fixtureRoot, skillName, item.id);
-      initializeFixtureCommit(fixtureRoot);
-    } else {
-      initializeFixtureCommit(fixtureRoot);
-      if (!item.fixture) prepareEvaluationChange(fixtureRoot, skillName, item.id);
+    if (standardFixture) {
+      if (!item.fixture && (skillName === "standard-apply" || item.suite === "semantic-maintenance")) {
+        prepareEvaluationChange(fixtureRoot, skillName, item.id);
+        initializeFixtureCommit(fixtureRoot);
+      } else {
+        initializeFixtureCommit(fixtureRoot);
+        if (!item.fixture) prepareEvaluationChange(fixtureRoot, skillName, item.id);
+      }
     }
     if (projectFixture) {
       projectBefore = projectFiles(path.join(fixtureRoot, "target-project"));
@@ -157,9 +175,9 @@ async function runEval(skillName, item) {
       "ls、find、wc、cat、git log、git rev-parse を Bash で実行しないでください。file の読取と探索には Read、Glob、Grep を使えます。どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断してください。",
       ...(projectFixture ? [
         "対象projectの依存はhostがnpm ciで導入済みです。repository rootから `npm --prefix target-project run check`、`npm --prefix target-project run verify`、`npm --prefix target-project run verify:push` だけを対象検証に使えます。任意のnpm/Bash command、依存導入、manifestやlockfileや固定testや検証入口の変更は許可しません。標準側verify.shの成功で対象projectの検証を代替しないでください。",
-      ] : [
+      ] : standardFixture ? [
         "task が file を変更し、使用する skill が検証を要求する場合は、repository root から `bash skills/standard-update/scripts/verify.sh` の形で実行してください。読み取り専用 task へ検証を強制しないでください。",
-      ]),
+      ] : []),
       ...(projectFixture && item.fixture.stage === "map" ? [
         projectInput.origin === "task1"
           ? "このcontextのsource入力はtask1の実source snapshotです。src/line-store.ts以外の全production sourceを入力と同一に保ってください。"
@@ -193,7 +211,7 @@ async function runEval(skillName, item) {
       "Write",
       "WebSearch",
       "WebFetch",
-      ...(!projectFixture ? [
+      ...(!projectFixture && standardFixture ? [
         "Bash(bash skills/standard-update/scripts/verify.sh)",
         "Bash(*skills/standard-update/scripts/verify.sh*)",
         "Bash(bash skills/standard-update/scripts/verify-test.sh)",
@@ -238,6 +256,7 @@ async function runEval(skillName, item) {
       configuration,
       model: item.model,
       baseline_commit: baselineCommit,
+      baseline_skill_available: baselineSkillAvailable,
       skill_snapshot: skillSnapshot ? path.resolve(skillSnapshot) : null,
       instruction_sha256: instructionHash,
       context_readme_sha256: contextHash,
@@ -1394,6 +1413,10 @@ function writeOutcomeEvidence(fixtureRoot, runRoot, initialCommit, item) {
 
 async function gradeEval(skillName, item) {
   const runRoot = path.join(outputRoot, skillName, `eval-${item.id}-${item.model}`, configuration);
+  if (existsSync(path.join(runRoot, "historical-unavailable.json"))) {
+    process.stdout.write(`UNAVAILABLE_HISTORICAL_SKILL: ${skillName} eval-${item.id} ${item.model}; no execution to grade\n`);
+    return false;
+  }
   const savedTask = JSON.parse(readFileSync(path.join(runRoot, "eval_metadata.json"), "utf8"));
   if (savedTask.eval_id !== item.id || savedTask.model !== item.model) throw new Error("saved task identity mismatch");
   item = { ...savedTask, id: savedTask.eval_id };
@@ -1512,8 +1535,20 @@ async function gradeEval(skillName, item) {
 
 function updateBenchmark(skillName, item) {
   const evalRoot = path.join(outputRoot, skillName, `eval-${item.id}-${item.model}`);
+  const newMetadataFile = path.join(evalRoot, "with-skill", "eval_metadata.json");
+  if (!existsSync(newMetadataFile)) {
+    rmSync(path.join(evalRoot, "benchmark.json"), { force: true });
+    return;
+  }
+  const newMetadata = JSON.parse(readFileSync(newMetadataFile, "utf8"));
+  const oldMetadataFile = path.join(evalRoot, "old-skill", "eval_metadata.json");
+  const historicalSnapshot = existsSync(oldMetadataFile)
+    && JSON.parse(readFileSync(oldMetadataFile, "utf8")).skill_snapshot;
+  const comparisonConfiguration = methodSkillNames.includes(skillName)
+    && newMetadata.baseline_skill_available === false && !historicalSnapshot
+    ? "without-skill" : "old-skill";
   const runs = [];
-  for (const candidate of ["old-skill", "with-skill"]) {
+  for (const candidate of [comparisonConfiguration, "with-skill"]) {
     const runRoot = path.join(evalRoot, candidate);
     if (!existsSync(path.join(runRoot, "grading.json"))) {
       rmSync(path.join(evalRoot, "benchmark.json"), { force: true });
@@ -1528,9 +1563,16 @@ function updateBenchmark(skillName, item) {
     const commandContractArgs = metadata.audit_report_directory
       ? metadata.command_args.map(arg => arg.replaceAll(metadata.audit_report_directory, "<audit-report-directory>"))
       : metadata.command_args;
+    const comparisonArgs = comparisonConfiguration === "without-skill"
+      ? commandContractArgs.map((arg, index) => index === commandContractArgs.indexOf("-p") + 1
+        ? arg.replace(candidate === "without-skill"
+          ? "この評価では project skill を使わずに実行してください。"
+          : `これは発火評価ではありません。最初に Read tool で ${skillRoot(skillName)}/SKILL.md を全文読み、その指示に従ってください。Skill(...) のような呼出し文字列を応答するだけで終えないでください。参照 resource は SKILL.md が必要としたものだけを読んでください。`,
+        "<skill instruction condition>") : arg)
+      : commandContractArgs;
     runs.push({
       configuration: candidate, metadata, grading: grading.summary, grading_error: grading.error ?? null,
-      command_contract_args: commandContractArgs,
+      command_contract_args: commandContractArgs, comparison_args: comparisonArgs,
       duration_seconds: timing.executor_duration_seconds, cost_usd: timing.total_cost_usd,
       tokens: result.usage, model_usage: result.model_usage,
       tool_calls: tools.length, tool_errors: tools.filter((tool) => tool.status === "error").length,
@@ -1547,15 +1589,15 @@ function updateBenchmark(skillName, item) {
       .every(field => typeof oldRun.metadata[field] === "string" && typeof newRun.metadata[field] === "string")
     && JSON.stringify(oldRun.metadata.expectations) === JSON.stringify(newRun.metadata.expectations)
     && JSON.stringify(oldRun.metadata.project_input) === JSON.stringify(newRun.metadata.project_input)
-    && JSON.stringify(oldRun.command_contract_args) === JSON.stringify(newRun.command_contract_args)
+    && JSON.stringify(oldRun.comparison_args) === JSON.stringify(newRun.comparison_args)
     && JSON.stringify(Object.keys(oldRun.model_usage ?? {}).sort()) === JSON.stringify(Object.keys(newRun.model_usage ?? {}).sort())
     && Object.keys(oldRun.model_usage ?? {}).length > 0 && Object.keys(newRun.model_usage ?? {}).length > 0
     && oldRun.grading_provenance !== null && newRun.grading_provenance !== null
     && oldRun.grading_provenance.actual_models?.length > 0 && newRun.grading_provenance.actual_models?.length > 0
     && JSON.stringify(oldRun.grading_provenance) === JSON.stringify(newRun.grading_provenance);
   writeFileSync(path.join(evalRoot, "benchmark.json"), `${JSON.stringify({
-    skill_name: skillName, eval_id: item.id, comparable, runs,
-    delta_with_minus_old: comparable && runs.every((run) => !run.grading_error && !run.execution_error
+    skill_name: skillName, eval_id: item.id, comparison_configuration: comparisonConfiguration, comparable, runs,
+    [comparisonConfiguration === "without-skill" ? "delta_with_minus_without" : "delta_with_minus_old"]: comparable && runs.every((run) => !run.grading_error && !run.execution_error
       && !run.model_error && !run.parse_error && run.terminal_result_received
       && run.grading.execution_valid === true) ? {
       passed: newRun.grading.passed - oldRun.grading.passed,
