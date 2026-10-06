@@ -83,6 +83,16 @@ process は principles と concerns に従い、作業順序の入力および�
 1. [process/recovery.md](./process/recovery.md) で既存の意味を回収し、[process/migration.md](./process/migration.md) で段階的移行の順序を設計します。
 2. 振る舞いを変えない改善は [process/refactoring.md](./process/refactoring.md) に従います。
 
+## 運用 Skill
+
+運用 Skill の正本は、このリポジトリの `skills/<id>/` に置き、client の設定 directory では所有しません。
+対象 project への適用は [standard-apply](./skills/standard-apply/SKILL.md)、適合性の全域監査は [standard-conformance](./skills/standard-conformance/SKILL.md)、標準への改訂提案の報告は [standard-feedback](./skills/standard-feedback/SKILL.md) を使います。
+標準自体の変更は [standard-update](./skills/standard-update/SKILL.md)、読み取り専用監査は [standard-audit](./skills/standard-audit/SKILL.md) を入口にします。
+
+dotfiles-wsl は、固定した Nix source と `skills/plugins/module.nix` の明示的な採用表から、選択済み client へ Skill package を配備します。
+Claude Code の `.claude/skills/` など client ごとの配備先は投影先であり、正本の所有先ではありません。
+配備済み source は読み取り専用とし、標準の編集と検証には作業 checkout を使います。
+
 ## 統治の規約
 
 ### 矛盾の解決
@@ -98,7 +108,7 @@ process の記述が他の層と食い違うときは、他の層を正としま
 この優先順位は、現在の標準をプロジェクトへ適用するための規則であり、標準自体を改訂するときの正しさの証明には使いません。
 標準の保守では、外部知見を現在の標準全体を再評価する観測として扱い、現行の上位原則も含めて根拠、前提、因果関係、適用範囲を比較します。
 改訂は、意味的に影響する規律、下位実現、確認点と運用 Skill まで整合させ、今回の知見と同じ設計判断、概念モデル、因果関係に属さない変更を混ぜません。
-更新の手順と評価は、作業 checkout の [standard-update](.claude/skills/standard-update/SKILL.md) が所有します。
+更新の手順と評価は、作業 checkout の [standard-update](./skills/standard-update/SKILL.md) が所有します。
 
 ### 正本の単一
 

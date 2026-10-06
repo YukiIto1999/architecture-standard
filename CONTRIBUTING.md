@@ -67,6 +67,8 @@ docs: Git の誤った履歴操作の防止
 
 コミットを作成する前に、staged な差分が一つの目的に閉じていること、および自動検査を通過することを確認します。
 
+以下の command は、標準の作業 checkout の root から実行します。
+
 ```bash
 # 1. 差分の確認
 git status --short
@@ -75,7 +77,7 @@ git diff --staged --stat
 git diff --staged
 
 # 2. 自動検査の実行
-bash .claude/skills/standard-update/scripts/verify.sh
+bash skills/standard-update/scripts/verify.sh
 ```
 
 skill を変更した場合は、回帰検査、評価、scoped audit を含む追加手順も省略してはなりません。検査が一度でも失敗した状態、あるいは未検証の項目がある状態でのコミットは厳禁です。

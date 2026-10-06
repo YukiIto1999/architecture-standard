@@ -4,8 +4,9 @@
 // fenced code の中は見出しとしても引用としても数えない。
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = process.cwd();
+const ROOT = resolve(fileURLToPath(new URL("../../../", import.meta.url)));
 const AREAS = ["principles", "concerns", "structure", "tools", "languages", "process"];
 
 function mdFiles(dir) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-required_commands=(bash fd git node)
+required_commands=(bash dirname fd git node)
 for required_command in "${required_commands[@]}"; do
   if ! command -v "$required_command" >/dev/null 2>&1; then
     printf 'FAIL: missing required command: %s\n' "$required_command" >&2
@@ -9,7 +9,8 @@ for required_command in "${required_commands[@]}"; do
   fi
 done
 
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT="$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null)" || {
   printf 'FAIL: git repository で実行すること\n' >&2
   exit 1
 }
@@ -46,16 +47,9 @@ if (isolatedEvaluation
   reject("隔離評価では SKILL_EVAL_ISOLATED_SKILL と SKILL_EVAL_CONFIGURATION の有効な組が必要");
 }
 
-// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
-const distributedSkills = new Set(["standard-apply", "standard-conformance", "standard-feedback"]);
-function skillRoot(skillName) {
-  return distributedSkills.has(skillName)
-    ? path.join("skills", skillName)
-    : path.join(".claude", "skills", skillName);
-}
 
 for (const skillName of skillNames) {
-  const root = skillRoot(skillName);
+  const root = path.join("skills", skillName);
   if (!fs.existsSync(root)) {
     if (isolatedEvaluation && skillName === isolatedSkill && isolatedConfiguration === "without-skill") continue;
     reject(`${skillName}: skill directory がない`);
@@ -159,11 +153,11 @@ NODE
 
 while IFS= read -r -d '' script; do
   bash -n "$script"
-done < <(fd --type f --extension sh --print0 . .claude/skills)
+done < <(fd --type f --extension sh --print0 . skills)
 
 while IFS= read -r -d '' script; do
   node --check "$script" >/dev/null
-done < <(fd --type f --extension mjs --print0 . .claude/skills)
+done < <(fd --type f --extension mjs --print0 . skills)
 
 if [ "${SKILL_EVAL_ISOLATED_SKILL:-}" = standard-conformance ] \
   && [ "${SKILL_EVAL_CONFIGURATION:-}" = without-skill ] \

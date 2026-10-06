@@ -11,13 +11,13 @@ for required_command in "${required_commands[@]}"; do
   fi
 done
 
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT=$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null) || {
   printf 'FAIL: git repository で実行すること\n' >&2
   exit 1
 }
 cd "$REPO_ROOT" || exit 1
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=0
 
 pass() { echo "PASS: $1"; }
@@ -335,30 +335,30 @@ while IFS=$'\t' read -r claim_file claim_pattern claim_key; do
   done <<< "$claim_matches"
 done <<'CLAIMS'
 README.md	\d+(?=つの領域)	領域
-.claude/skills/standard-update/SKILL.md	(?<=標準の)\d+(?=領域)	領域
+skills/standard-update/SKILL.md	(?<=標準の)\d+(?=領域)	領域
 README.md	\d+(?=群)	principles の群
 principles/README.md	\d+(?=つの群)	principles の群
-.claude/skills/standard-update/references/principles.md	\d+(?=群)	principles の群
+skills/standard-update/references/principles.md	\d+(?=群)	principles の群
 principles/README.md	(?<=計)\d+(?=の領域)	principles の領域
 README.md	\d+(?=概念)	concerns の概念
 concerns/README.md	\d+(?=の(?:横断的な)?概念)	concerns の概念
-.claude/skills/standard-update/SKILL.md	\d+(?=概念)	concerns の概念
-.claude/skills/standard-update/references/concerns.md	\d+(?=概念)|(?<=この)\d+(?=に)	concerns の概念
+skills/standard-update/SKILL.md	\d+(?=概念)	concerns の概念
+skills/standard-update/references/concerns.md	\d+(?=概念)|(?<=この)\d+(?=に)	concerns の概念
 concerns/README.md	\d+(?=つの群)	concerns の群
-.claude/skills/standard-update/references/structure.md	(?<=固定)\d+(?=境界)	structure の root 境界
-.claude/skills/standard-update/references/structure.md	\d+(?= surface)	structure の surface
+skills/standard-update/references/structure.md	(?<=固定)\d+(?=境界)	structure の root 境界
+skills/standard-update/references/structure.md	\d+(?= surface)	structure の surface
 structure/runtimes/README.md	\d+(?=つの host)	structure の host
 README.md	\d+(?=区分)	tools の区分
 tools/README.md	\d+(?=つの区分)	tools の区分
-.claude/skills/standard-update/references/tools.md	\d+(?=区分)	tools の区分
+skills/standard-update/references/tools.md	\d+(?=区分)	tools の区分
 languages/README.md	\d+(?=言語共通)	languages の言語
-.claude/skills/standard-update/references/tools.md	\d+(?=つの言語)	languages の言語
+skills/standard-update/references/tools.md	\d+(?=つの言語)	languages の言語
 languages/README.md	\d+(?=つの実現軸)	languages の実現軸
-.claude/skills/standard-update/SKILL.md	\d+(?=実現軸)	languages の実現軸
-.claude/skills/standard-update/references/tools.md	\d+(?=つの実現軸)	languages の実現軸
+skills/standard-update/SKILL.md	\d+(?=実現軸)	languages の実現軸
+skills/standard-update/references/tools.md	\d+(?=つの実現軸)	languages の実現軸
 process/bootstrap.md	\d+(?=つの実現軸)	languages の実現軸
 languages/README.md	\d+(?=つの全域規律)	languages の全域規律
-.claude/skills/standard-update/references/tools.md	\d+(?=つの全域規律)	languages の全域規律
+skills/standard-update/references/tools.md	\d+(?=つの全域規律)	languages の全域規律
 README.md	\d+(?=単位)	process の単位
 CLAIMS
 if [ "$count_claims_ok" = 1 ] && [ "$concerns_actual" = "$concerns_readme_rows" ]; then
@@ -497,8 +497,8 @@ while IFS=$'\t' read -r f list_pattern; do
     skill_ok=0
   fi
 done <<'LISTS'
-.claude/skills/standard-update/SKILL.md	(?<=概念。)[a-z][a-z-]*(?:・[a-z][a-z-]*)*(?=。)
-.claude/skills/standard-update/references/concerns.md	^[a-z][a-z-]*(?:・[a-z][a-z-]*)*(?=。$)
+skills/standard-update/SKILL.md	(?<=概念。)[a-z][a-z-]*(?:・[a-z][a-z-]*)*(?=。)
+skills/standard-update/references/concerns.md	^[a-z][a-z-]*(?:・[a-z][a-z-]*)*(?=。$)
 LISTS
 if [ "$skill_ok" = 1 ]; then pass "skill の概念列挙が concerns/ 実ファイルと一致"; else fail "skill の概念列挙が concerns/ 実ファイルと不一致"; fi
 

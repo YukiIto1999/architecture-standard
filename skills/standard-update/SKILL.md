@@ -23,6 +23,10 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 
 ## 参照経路
 
+この Skill の `SKILL.md` を symlink の実体まで辿り、その directory を Skill package root とする。
+`references/` と同梱資材は、この実体からの相対 path で読む。
+標準本文の編集と検証は、依頼された標準の作業 checkout の root で行い、配備済み source や現在の対象 project を編集先にしない。
+
 既知の正本 path は直接読み、再発見の検索をしない。
 所有者が不明なら root `README.md` の領域表と台帳から候補を探す。
 外部知見と意味を変える改訂では、直接所有者の発見を探索の終了とせず、手順2の意味的影響範囲を辿る。
@@ -111,7 +115,8 @@ typo、リンク、書式、正本と参照の同期だけを直し、外部事�
 - principles: 原則ごとのフォルダ。README は H1 直下のリードと `## 規律` の台帳、規律ファイルは規律の H2 と `要求/根拠/完了条件/禁止事項/行動`、必要な場合だけ例。README に `## 概要` と `## 参照` は置かない。
 - concerns: 概念ごとのフォルダ。README は `## 概要`・`## 規律` の台帳・`## 参照`、規律ファイルは規律の H2 と必須5節、必要な場合だけ例。
 - languages の軸 file: `## 概要`、規律ごとの必須5節、必要な場合だけ例、末尾の `## 参照`。
-- structure: 導入の参照文、folder tree、単位表または依存方向表、topical な見出しからなる layout 書式。必須5節を持ち込まない。詳細は `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/references/structure.md` に従う。
+- structure: 導入の参照文、folder tree、単位表または依存方向表、topical な見出しからなる layout 書式を使い、詳細は [structure](references/structure.md) に従う。
+  必須5節を持ち込まない。
 - tools: 用途、採用、判断基準、撤回条件の4行 entry。
 - process: 導入の参照文、`## 順序`、`## 確認点`、`## 範囲外`。必須5節を持ち込まない。
 
@@ -130,7 +135,7 @@ typo、リンク、書式、正本と参照の同期だけを直し、外部事�
 ### 6. 配線と台帳を更新する
 
 concerns を横断規律の正本、structure を参照側にする。
-概念の増減では root `README.md`、`concerns/README.md`、`.claude/skills/standard-update/SKILL.md`、`references/concerns.md` を同期する。
+概念の増減では root `README.md`、`concerns/README.md`、`skills/standard-update/SKILL.md`、`references/concerns.md` を同期する。
 tools の区分や採用名を変えた場合は `tools/README.md`、languages の言語 ecosystem や採用物を変えた場合は `languages/README.md` と該当 ecosystem の台帳を同期する。いずれも領域一覧と該当 reference を同期し、`scripts/naming-registry-check.mjs` の動的 registry で検査する。永続する別の registry file は作らない。
 
 ### 7. 検証して閉じる
@@ -152,14 +157,14 @@ tools の区分や採用名を変えた場合は `tools/README.md`、languages �
 削除した正本の参照と旧い判断を残さず、各影響先を変更したか、既存で一致するか、不足証拠があるか明示する。
 
 変更箇所だけを直接検査する linter、test、構造検査があれば focused check として先に実行する。対応する機械検査がなければ、対象 file と直接参照の差分照合を行い、機械検査済みとは扱わない。
-次に `${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/scripts/verify.sh` を repository root から実行する。
+次に、標準の作業 checkout の root から `bash skills/standard-update/scripts/verify.sh` を実行する。
 失敗した場合は原因を直し、同じ検査を再実行して PASS になるまで完了としない。
 
 本 skill、`references/*.md`、`scripts/*`、`evals/*.json` を変更した場合は、次も実行する。
 
 ```bash
-bash "${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/scripts/verify-test.sh"
-bash "${CLAUDE_SKILL_DIR:-.claude/skills/standard-update}/scripts/skill-package-check.sh"
+bash skills/standard-update/scripts/verify-test.sh
+bash skills/standard-update/scripts/skill-package-check.sh
 ```
 
 `skill-package-check.sh` の役割と、変更面ごとの model eval の範囲は [evaluation](references/evaluation.md) に従う。
@@ -172,9 +177,8 @@ subagent が利用できれば変更の経緯を持たない reviewer に依頼�
 
 検証 script は Bash、Git、ripgrep (`rg`)、fd、awk、sed、find、coreutils、Node.js を必要とする。
 不足時は検査を skip せず失敗する。
-fallback evaluator は、これらに加えて Claude Code CLI を必要とする。
-skill の場所が current directory にない host では、host が与える `CLAUDE_SKILL_DIR` を使う。
-`CLAUDE_SKILL_DIR` がない場合は、repository root から `.claude/skills/standard-update` を skill root として使う。
+同梱の model evaluator は Claude Code 専用の任意の consumer であり、利用時だけ Claude Code CLI を追加で必要とする。
+Skill の通常利用と検証 script は、Claude Code の配備先や環境変数に依存しない。
 
 ## 不変条件
 

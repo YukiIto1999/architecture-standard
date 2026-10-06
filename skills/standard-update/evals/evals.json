@@ -45,7 +45,7 @@
     {
       "id": 4,
       "model": "haiku",
-      "prompt": "fixture の unstaged diff は standard-audit/SKILL.md の instruction 本文だけを変更しています。実行も編集もしません。git diff と standard-audit の task eval 定義を読み、この変更を評価する task ID と configuration を最小範囲で決めてください。選ばない task と without-skill、trigger eval を除外する根拠、および全taskの3条件と全trigger queryが必要になる境界も示してください。",
+      "prompt": "fixture の unstaged diff は skills/standard-audit/SKILL.md の instruction 本文だけを変更しています。実行も編集もしません。git diff と standard-audit の task eval 定義を読み、この変更を評価する task ID と configuration を最小範囲で決めてください。選ばない task と without-skill、trigger eval を除外する根拠、および全taskの3条件と全trigger queryが必要になる境界も示してください。",
       "expected_output": "実diffと各taskの目的を照合し、root READMEを思想基準にする変更が直接影響するstandard-audit eval-2だけをold-skillとwith-skillで比較し、eval-1/3、without-skill、trigger evalを除外する。",
       "files": [],
       "expectations": [

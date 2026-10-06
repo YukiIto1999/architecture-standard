@@ -17,8 +17,9 @@
 //   候補から外れる。これは、規格・頭字語と、市場から選ぶ製品名を区別するための意図的な絞り込みである。
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = process.cwd();
+const ROOT = path.resolve(fileURLToPath(new URL("../../../", import.meta.url)));
 
 function extractRegistry() {
   const AXIS_FILES = new Set(

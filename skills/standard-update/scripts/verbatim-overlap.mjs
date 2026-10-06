@@ -3,11 +3,11 @@
 // 手法: line 単位のseed-and-extend部分文字列一致(シード長10文字→最大一致まで拡張)。
 // 日本語は分かち書きが無いため、5文節をおよそ18文字以上の連続一致として近似する。
 // 閾値未満は出力しない。閾値以上は真陽性か偽陽性かを人が判定する(短い定型句の一致は偽陽性になりうる)。
-// verify.sh から呼ばれ、repo の root で実行する前提(cwd 基準で principles/・concerns/ を読む)。
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = process.cwd();
+const ROOT = path.resolve(fileURLToPath(new URL("../../../", import.meta.url)));
 const SEED = 10;
 const THRESHOLD = 18;
 

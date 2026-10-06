@@ -10,6 +10,14 @@ standard-conformance 自身の `without-skill` 隔離で、その package が完
 通常実行や片方だけの指定では、skill または eval 一式がなければ失敗する。
 `skill-test.sh` は期待する解答と mutation を検査する外側の evaluator 回帰検査であり、評価対象 agent へ公開せず、実作業の完了条件にも使わない。
 
+同梱の `run-task-evals.mjs` と `run-trigger-evals.mjs` は、Claude Code 専用の任意の consumer である。
+正本は `skills/<id>/` に置く。
+trigger eval は、所有する一時 fixture の `.claude/skills/<id>/SKILL.md` へ5 Skill の本文だけをコピーし、Claude Code に発火先を発見させる。
+reference、script、eval はその投影先へ複製せず、一時 fixture 全体を評価終了時に除去する。
+task eval は `skills/<id>/SKILL.md` を Read tool で明示的に読み、この client adapter を設置しない。
+evaluator は従来どおり `CLAUDE_EVAL_COMMAND` で指定した command、未指定なら `claude` を起動する。
+通常の Skill 利用や Nix による配備は、この evaluator を必要としない。
+
 変更の種類に応じて model eval の範囲を決める。
 
 - script の決定的な処理だけを変更し、agent への instruction を変えない場合は、回帰検査を行う。script が生成する prompt を変える場合は instruction の変更として扱う。
@@ -24,6 +32,14 @@ task eval は本 task の完遂を、trigger eval は発火先だけを測る。
 
 `run-task-evals.mjs` は `--suite` で評価集合を選び、`--eval-id` に一件の ID または comma で区切った ID を渡して対象を絞れる。
 `--baseline-ref` は fixture の標準本文を固定する commit、`--skill-snapshot` は比較する skill directory、`--context-readme` は両条件へ同じ内容で渡す root README を指定する。
+`--baseline-ref` の commit は、5 Skill すべての `skills/<id>/SKILL.md` を含む client-neutral な配置でなければならない。
+旧配置の commit を直接指定すると、evaluator は provider の起動前に失敗する。
+過去の instruction を比較するときは、client-neutral な標準本文の基線を固定し、その配置で使える過去の Skill package を `--skill-snapshot` で別に渡す。
+旧配置の package はそのまま渡さず、本文、reference、product 検査 script の locator と root 解決だけを移行した snapshot を用意し、過去の意味上の instruction を現在版へ置き換えない。
+元の commit または取得先と、元の package、配置移行後の package の hash を実際の資材から記録し、配置の移行と意味の変更を区別する。
+`instruction_sha256` は評価対象へ実際に渡した移行後の資材を指し、元の package の hash の代わりにはしない。
+evaluator は snapshot の `SKILL.md` に残る既知の旧配置 locator を provider 起動前に拒否するが、package 全体の互換性まで保証しない。
+この前提と拒否は新しい task の実行だけに適用し、保存済み成果物の `--grade-only` には適用しない。
 保存した eval 定義を再利用するときは `--skill` と `--eval-file` を指定し、両条件へ同じ file を渡す。
 旧版は変更開始前の Git commit または保存した snapshot から取得し、新版は instruction の変更が揃ってから別 directory へ保存する。
 両条件の実行中に snapshot を変更しない。
@@ -54,19 +70,19 @@ grader は空の一時 directory で tools と skill を無効化して起動す
 採点 provenance または実際の model の記録がない過去の結果は、比較可能としない。
 時間、費用、token、tool call、tool error は品質と別に記録する。
 
-次の command は、repository root から保存済みの二つの skill directory と共通 README を比較する入口である。
+次の command は、標準の作業 checkout の root から保存済みの二つの skill directory と共通 README を比較する入口である。
 `EVAL_SUITE` と `EVAL_IDS` は今回の変更が必要とする集合とケースにし、`EVAL_OUTPUT_ROOT` と snapshot は host が割り当てた一時 directory または依頼で指定された保存先を使う。
 
 ```bash
 SKILL_EVAL_OUTPUT_ROOT="$EVAL_OUTPUT_ROOT" \
-  node .claude/skills/standard-update/scripts/run-task-evals.mjs \
+  node skills/standard-update/scripts/run-task-evals.mjs \
   --configuration old-skill --skill standard-update \
   --suite "$EVAL_SUITE" --eval-id "$EVAL_IDS" \
   --eval-file "$EVAL_FILE" \
   --baseline-ref "$BASELINE_COMMIT" --skill-snapshot "$OLD_SKILL" \
   --context-readme "$CONTEXT_README" --grade
 SKILL_EVAL_OUTPUT_ROOT="$EVAL_OUTPUT_ROOT" \
-  node .claude/skills/standard-update/scripts/run-task-evals.mjs \
+  node skills/standard-update/scripts/run-task-evals.mjs \
   --configuration with-skill --skill standard-update \
   --suite "$EVAL_SUITE" --eval-id "$EVAL_IDS" \
   --eval-file "$EVAL_FILE" \

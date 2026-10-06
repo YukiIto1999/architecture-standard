@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT="$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null)" || {
   printf 'FAIL: git repository で実行すること\n' >&2
   exit 1
 }
-VERIFY_REL=".claude/skills/standard-update/scripts/verify.sh"
+VERIFY_REL="skills/standard-update/scripts/verify.sh"
 TEMP_BASE="${TMPDIR:-/tmp}"
 TEMP_BASE="$(cd "$TEMP_BASE" 2>/dev/null && pwd -P)" || {
   printf 'FAIL: 一時ディレクトリを作成できない\n' >&2
@@ -41,7 +42,7 @@ make_fixture() {
   local name="$1"
   local fixture="$TEST_ROOT/$name"
 
-  mkdir -p "$fixture/.claude/skills/standard-update" || return 1
+  mkdir -p "$fixture" || return 1
   cp -a \
     "$REPO_ROOT/README.md" \
     "$REPO_ROOT/skills" \
@@ -52,11 +53,6 @@ make_fixture() {
     "$REPO_ROOT/languages" \
     "$REPO_ROOT/process" \
     "$fixture/" || return 1
-  cp -a \
-    "$REPO_ROOT/.claude/skills/standard-update/SKILL.md" \
-    "$REPO_ROOT/.claude/skills/standard-update/references" \
-    "$REPO_ROOT/.claude/skills/standard-update/scripts" \
-    "$fixture/.claude/skills/standard-update/" || return 1
   git -C "$fixture" init --quiet || return 1
   printf '%s\n' "$fixture"
 }
@@ -116,23 +112,23 @@ mkdir -p "$fixture/concerns/extra"
 cp "$fixture/concerns/privacy/minimize-and-expire.md" "$fixture/concerns/extra/minimize-and-expire.md"
 printf '# extra\n\n## 概要\n\n検査用の概念である。\n\n## 規律\n\n- [個人情報は最小化して載せ、期限で消す](./minimize-and-expire.md) — レビュー(検査用)\n' > "$fixture/concerns/extra/README.md"
 sed -i '/^| \[accessibility\]/a | [extra](./extra/README.md) | 利用者面 | 台帳から追加した検査用の概念 |' "$fixture/concerns/README.md"
-sed -i 's/24概念/25概念/' "$fixture/README.md" "$fixture/.claude/skills/standard-update/SKILL.md"
+sed -i 's/24概念/25概念/' "$fixture/README.md" "$fixture/skills/standard-update/SKILL.md"
 sed -i 's/24の/25の/' "$fixture/concerns/README.md"
-sed -i 's/24概念/25概念/;s/この24に/この25に/' "$fixture/.claude/skills/standard-update/references/concerns.md"
+sed -i 's/24概念/25概念/;s/この24に/この25に/' "$fixture/skills/standard-update/references/concerns.md"
 sed -i 's/・accessibility。/・accessibility・extra。/' \
-  "$fixture/.claude/skills/standard-update/SKILL.md" \
-  "$fixture/.claude/skills/standard-update/references/concerns.md"
+  "$fixture/skills/standard-update/SKILL.md" \
+  "$fixture/skills/standard-update/references/concerns.md"
 printf '検査用の横断規律は [concerns/extra](../../concerns/extra/README.md) に従う。\n' >> "$fixture/structure/core/domain.md"
 expect_pass "concerns の期待数を台帳から導出する" "$fixture"
 
 fixture=$(make_fixture concept-list-order)
 sed -i 's/effect・\(.*\)・accessibility。/\1・accessibility・effect。/' \
-  "$fixture/.claude/skills/standard-update/SKILL.md" \
-  "$fixture/.claude/skills/standard-update/references/concerns.md"
+  "$fixture/skills/standard-update/SKILL.md" \
+  "$fixture/skills/standard-update/references/concerns.md"
 expect_pass "skill の概念列挙を並びに依らず照合する" "$fixture"
 
 fixture=$(make_fixture concept-list-drift)
-sed -i 's/・accessibility。/。/' "$fixture/.claude/skills/standard-update/references/concerns.md"
+sed -i 's/・accessibility。/。/' "$fixture/skills/standard-update/references/concerns.md"
 expect_fail "skill の概念列挙から欠けた概念を検出する" "$fixture" "references/concerns.md: concerns/ 実ファイルと不一致"
 
 fixture=$(make_fixture concept-claim-drift)

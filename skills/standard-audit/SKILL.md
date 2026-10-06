@@ -8,6 +8,11 @@ description: architecture-standard 自体を読み取り専用で監査し、重
 標準自体を白紙の目で監査する。
 **読み取りと報告だけを行い、ファイルを編集しない。**
 
+## 参照経路
+
+この Skill の `SKILL.md` を symlink の実体まで辿り、その directory を Skill package root とする。
+補助 reference の `../standard-update/references/` は、この実体から同じ source にある sibling package へ辿る相対 path とする。
+
 ## 監査範囲
 
 - **scoped audit**: 差分、指定 file、commit 前監査の既定。
@@ -23,8 +28,15 @@ description: architecture-standard 自体を読み取り専用で監査し、重
 ## 手順
 
 1. root `README.md` が監査対象または判定 context にある場合は領域表と判定の枠を読む。scoped / full を決め、対象と未監査範囲を固定する。読取を許可されていなければ、root の枠を要する判定を未確認にする。
-2. 監査対象と、判定 context にある領域 README を読み、下の10軸から判定を変えうる軸だけを使う。`.claude/skills/standard-update/references/` は必要な観点を得る補助資料に限り、違反を確定する規範の根拠には使わない。closed list では、reference や検査 script が必要か判断するために一覧外を読まず、許可された file だけで判定する。判定 context は基準としてだけ使い、その file から別の指摘を作らない。`.claude/skills/` は標準の6領域ではなく運用入口なので、領域本文の書式を適用せず、skill 自身の役割、実行可能性、発火境界で判定する。
-3. full audit では `.claude/skills/standard-update/scripts/verify.sh` を機械検査として使う。scoped audit では、指定範囲だけを読む focused check がある場合に限って使い、範囲外の本文まで読む全域 verifier は実行しない。機械検査の PASS を意味監査の代用にしない。必要な検査を利用できない場合は未実行理由を報告する。
+2. 監査対象と、判定 context にある領域 README を読み、下の10軸から判定を変えうる軸だけを使う。
+   `../standard-update/references/` は必要な観点を得る補助資料に限り、違反を確定する規範の根拠には使わない。
+   closed list では、reference や検査 script が必要か判断するために一覧外を読まず、許可された file だけで判定する。
+   判定 context は基準としてだけ使い、その file から別の指摘を作らない。
+   `skills/` は標準の6領域ではなく運用入口なので、領域本文の書式を適用せず、skill 自身の役割、実行可能性、発火境界で判定する。
+3. full audit では、監査対象の標準 checkout の root から `bash skills/standard-update/scripts/verify.sh` を機械検査として使う。
+   scoped audit では、指定範囲だけを読む focused check がある場合に限って使い、範囲外の本文まで読む全域 verifier は実行しない。
+   機械検査の PASS を意味監査の代用にしない。
+   必要な検査を利用できない場合は未実行理由を報告する。
 4. full audit は独立したスライスへ分け、利用可能なら変更の経緯を持たない subagent を並行に使う。scoped audit は対象が独立して分割できる場合だけ使う。subagent が利用できなければ新しい独立 session、どちらも利用できなければ自己監査へ代替し、独立監査済みとは主張しない。
 5. 外部事実が候補の成否を左右する場合だけ一次資料で確認する。外部の挙動について「矛盾しない」「正しい」と結論する場合も確認を要する。一次資料の本文を取得できた技術だけを確認済みとし、404、検索結果、snippet は確認の根拠にしない。取得した一次資料が判定に必要な関係を明記していなければ、推論で補わず未確認へ分け、その関係を critical / major の根拠にしない。未解決の issue や過去版の報告だけでは現行版の挙動を確定せず、現行 release の文書、source、または再現結果で裏付けられなければ未確認として分ける。調べていない技術を一括して問題なしとしない。
 6. 実行可能性は、文書が指定する実際の呼び出し方で判定する。たとえば `bash path/to/script.sh` は readable な file を Bash が読むため、file 自体の executable bit を要求しない。

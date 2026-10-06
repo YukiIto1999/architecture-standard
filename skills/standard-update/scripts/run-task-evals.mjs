@@ -5,10 +5,11 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, 
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 const runnerSha256 = createHash("sha256").update(readFileSync(new URL(import.meta.url))).digest("hex");
 
-const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-const distributedSkills = new Set(["standard-apply", "standard-conformance", "standard-feedback"]);
+const repoRoot = execFileSync("git", ["-C", fileURLToPath(new URL("../../../", import.meta.url)), "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+const allSkillNames = ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
 const args = process.argv.slice(2);
 const configuration = valueAfter("--configuration");
 const selectedSkill = valueAfter("--skill");
@@ -31,9 +32,7 @@ if (!new Set(["old-skill", "without-skill", "with-skill"]).has(configuration)) {
   throw new Error("--configuration must be old-skill, without-skill, or with-skill");
 }
 
-const skillNames = selectedSkill
-  ? [selectedSkill]
-  : ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
+const skillNames = selectedSkill ? [selectedSkill] : allSkillNames;
 const outputRoot = process.env.SKILL_EVAL_OUTPUT_ROOT
   ? path.resolve(process.env.SKILL_EVAL_OUTPUT_ROOT)
   : path.join(repoRoot, "docs", "reviews", "skill-evals", "iteration-1");
@@ -78,6 +77,12 @@ async function runEval(skillName, item) {
     if (auditReportDirectory) mkdirSync(auditReportDirectory);
     execFileSync("git", ["clone", "--quiet", "--no-hardlinks", repoRoot, fixtureRoot]);
     execFileSync("git", ["checkout", "--quiet", "--detach", baselineCommit], { cwd: fixtureRoot });
+    for (const baselineSkill of allSkillNames) {
+      const baselineSkillFile = path.join(skillRoot(baselineSkill), "SKILL.md");
+      if (!existsSync(path.join(fixtureRoot, baselineSkillFile))) {
+        throw new Error(`baseline ${baselineCommit} lacks neutral skill package ${baselineSkillFile}; use a neutral-layout baseline with --skill-snapshot for historical instructions`);
+      }
+    }
     if (skillSnapshot) overlayWorkingFiles(fixtureRoot, skillName, path.resolve(skillSnapshot));
     else if (configuration === "with-skill") overlayWorkingFiles(fixtureRoot, skillName);
     if (contextReadme) cpSync(path.resolve(contextReadme), path.join(fixtureRoot, "README.md"));
@@ -113,7 +118,7 @@ async function runEval(skillName, item) {
         : "作業対象は現在の一時fixtureだけです。元のrepositoryへは書き込まないでください。",
       `task の path は現在の作業directoryからの相対pathです。外部事実の確認が task に必要なら WebSearch と WebFetch を使えます。Bash は許可済みの検証 script と git show/status/diff${auditReportDirectory ? "、下記の conformance CLI の二つの prefix" : ""} だけに使ってください。`,
       "ls、find、wc、cat、git log、git rev-parse を Bash で実行しないでください。file の読取と探索には Read、Glob、Grep を使えます。どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断してください。",
-      "task が file を変更し、使用する skill が検証を要求する場合は、repository root から `bash .claude/skills/standard-update/scripts/verify.sh` の形で実行してください。読み取り専用 task へ検証を強制しないでください。",
+      "task が file を変更し、使用する skill が検証を要求する場合は、repository root から `bash skills/standard-update/scripts/verify.sh` の形で実行してください。読み取り専用 task へ検証を強制しないでください。",
       "この隔離評価では subagent は利用できません。skill が独立 reviewer を明示的に要求する場合だけ、その fallback として同じ session で scoped self-audit を行い、Agent や background task を起動して待たないでください。skill が要求しない self-audit は追加せず、閉じた経路が tool または file を制限する場合は fallback でもその範囲を広げないでください。",
       configuration === "without-skill"
         ? "この評価では project skill を使わずに実行してください。"
@@ -142,10 +147,10 @@ async function runEval(skillName, item) {
       "Write",
       "WebSearch",
       "WebFetch",
-      "Bash(bash .claude/skills/standard-update/scripts/verify.sh)",
-      "Bash(*.claude/skills/standard-update/scripts/verify.sh*)",
-      "Bash(bash .claude/skills/standard-update/scripts/verify-test.sh)",
-      "Bash(bash .claude/skills/standard-update/scripts/skill-package-check.sh)",
+      "Bash(bash skills/standard-update/scripts/verify.sh)",
+      "Bash(*skills/standard-update/scripts/verify.sh*)",
+      "Bash(bash skills/standard-update/scripts/verify-test.sh)",
+      "Bash(bash skills/standard-update/scripts/skill-package-check.sh)",
       "Bash(git show *)",
       "Bash(git status *)",
       "Bash(git diff *)",
@@ -354,16 +359,19 @@ function timeoutFor(model) {
   return { haiku: 600_000, sonnet: 900_000, opus: 900_000 }[model];
 }
 
-// 全 skill を .claude/skills へ揃えない。dotfiles の plugin loader は repository root の skills/ だけを走査するため、配布する skill はそこが正本になる
 function skillRoot(skillName) {
-  return distributedSkills.has(skillName)
-    ? path.join("skills", skillName)
-    : path.join(".claude", "skills", skillName);
+  return path.join("skills", skillName);
 }
 
 function overlayWorkingFiles(fixtureRoot, skillName, snapshotRoot = null) {
   const source = skillRoot(skillName);
   const from = snapshotRoot ?? path.join(repoRoot, source);
+  if (snapshotRoot) {
+    const instruction = readFileSync(path.join(from, "SKILL.md"), "utf8");
+    if ([".claude/skills/standard-update", ".claude/skills/standard-audit", "CLAUDE_SKILL_DIR"].some((locator) => instruction.includes(locator))) {
+      throw new Error("snapshot uses retired canonical Skill locations; prepare the full package with location-only migration and record original/prepared hashes before comparison");
+    }
+  }
   const to = path.join(fixtureRoot, source);
   const baselineEvals = path.join(fixtureRoot, ".git", `baseline-evals-${skillName}`);
   const fixtureEvals = path.join(to, "evals");
@@ -391,9 +399,9 @@ function hideCurrentSkillEvaluationOracles(fixtureRoot, skillName) {
   const prefix = path.resolve(fixtureRoot) + path.sep;
   const targets = [
     path.join(fixtureRoot, skillRoot(skillName), "evals"),
-    path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "run-task-evals.mjs"),
-    path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "run-trigger-evals.mjs"),
-    path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "skill-test.sh"),
+    path.join(fixtureRoot, "skills", "standard-update", "scripts", "run-task-evals.mjs"),
+    path.join(fixtureRoot, "skills", "standard-update", "scripts", "run-trigger-evals.mjs"),
+    path.join(fixtureRoot, "skills", "standard-update", "scripts", "skill-test.sh"),
   ];
   for (const target of targets) {
     if (!path.resolve(target).startsWith(prefix)) throw new Error(`evaluation oracle outside fixture: ${target}`);
@@ -512,7 +520,7 @@ function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
 
   // fixture-mutation:start
   if (skillName === "standard-update" && evalId === 4) {
-    const auditSkill = path.join(fixtureRoot, ".claude", "skills", "standard-audit", "SKILL.md");
+    const auditSkill = path.join(fixtureRoot, "skills", "standard-audit", "SKILL.md");
     replaceKnownStateOnce(auditSkill, [
       "- **A 思想の足場**: root `README.md` の目的、領域、標準の単一性、配置規則に照らし、各規律の前提と所有者がずれていないか。",
     ],
@@ -673,7 +681,7 @@ function replaceKnownStateOnce(filePath, knownStates, replacement) {
 }
 
 function scrubFixtureMutationSource(fixtureRoot) {
-  const runnerPath = path.join(fixtureRoot, ".claude", "skills", "standard-update", "scripts", "run-task-evals.mjs");
+  const runnerPath = path.join(fixtureRoot, "skills", "standard-update", "scripts", "run-task-evals.mjs");
   if (!existsSync(runnerPath)) return;
   const source = readFileSync(runnerPath, "utf8");
   let sanitized = source.replace(
