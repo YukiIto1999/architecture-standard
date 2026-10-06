@@ -539,6 +539,123 @@ else
   fail "neutral baseline拒否fixtureを構築" "fixture setup failed"
 fi
 
+printf '\n=== 新設 Skill の歴史的不存在と共通設計入力 ===\n'
+if node - "$TEST_ROOT" "$SCRIPT_DIR/run-task-evals.mjs" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const cp = require("node:child_process");
+const assert = require("node:assert/strict");
+const [root, sourceRunner] = process.argv.slice(2);
+const repo = path.resolve(path.dirname(sourceRunner), "../../..");
+const fixture = path.join(root, "new-skill-baseline");
+const names = ["cli-design", "property-testing"];
+const load = file => JSON.parse(fs.readFileSync(file, "utf8"));
+const git = args => cp.execFileSync("git", ["-C", fixture, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+cp.execFileSync("git", ["clone", "--quiet", "--no-hardlinks", repo, fixture]);
+fs.cpSync(path.join(repo, "skills"), path.join(fixture, "skills"), { recursive: true, force: true });
+for (const name of names) fs.rmSync(path.join(fixture, "skills", name), { recursive: true, force: true });
+git(["add", "-A", "--", "skills"]);
+git(["-c", "user.name=Skill Test", "-c", "user.email=skill-test@example.invalid",
+  "-c", "commit.gpgSign=false", "commit", "--quiet", "--allow-empty", "-m", "test: 手法Skill導入前の評価基線の作成"]);
+const baseline = git(["rev-parse", "HEAD"]).trim();
+for (const name of names) fs.cpSync(path.join(repo, "skills", name),
+  path.join(fixture, "skills", name), { recursive: true });
+const runner = path.join(fixture, "skills/standard-update/scripts/run-task-evals.mjs");
+const output = path.join(root, "new-skill-evals");
+const marker = path.join(root, "new-skill-provider-calls");
+const provider = path.join(root, "claude-new-skill-probe");
+fs.writeFileSync(provider, `#!/usr/bin/env node
+const fs = require("node:fs");
+const cp = require("node:child_process");
+const assert = require("node:assert/strict");
+const args = process.argv.slice(2);
+fs.appendFileSync(process.env.PROBE_CALLS, "called\\n");
+const result = {type:"result",is_error:false,result:"runner regression only",usage:{input_tokens:1,output_tokens:1},modelUsage:{"probe-model":{}},total_cost_usd:0};
+if (args.includes("--json-schema")) {
+  assert.equal(args[args.indexOf("--tools")+1], "");
+  const prompt = fs.readFileSync(0,"utf8");
+  const expectations = JSON.parse(prompt.split("\\n\\n").find(line => line.startsWith("Expectations: ")).slice(14));
+  result.structured_output = {expectations:expectations.map(text => ({text,passed:true,evidence:"runner probe only; no method efficacy measured"})),feedback:"regression only"};
+} else {
+  const name = process.env.SKILL_EVAL_ISOLATED_SKILL;
+  const selected = "skills/"+name;
+  assert.equal(fs.existsSync(selected+"/SKILL.md"), process.env.SKILL_EVAL_CONFIGURATION !== "without-skill");
+  assert.equal(cp.execFileSync("git",["status","--porcelain"],{encoding:"utf8"}), "");
+  for (const file of ["target-project", "project-decisions", "architecture-decisions",
+    selected+"/evals", "skills/standard-update/scripts/run-task-evals.mjs",
+    "skills/standard-update/scripts/run-trigger-evals.mjs", "skills/standard-update/scripts/skill-test.sh", ".claude", ".mcp.json"]) {
+    assert(!fs.existsSync(file), "unrelated fixture or oracle present: "+file);
+  }
+  assert(!args.some(arg => arg.startsWith("Bash(") && arg.includes("skills/standard-update/scripts/")));
+  for (const file of [selected+"/evals/evals.json", "skills/standard-update/scripts/run-task-evals.mjs"]) {
+    assert.throws(() => cp.execFileSync("git",["show","HEAD:"+file],{stdio:"pipe"}));
+  }
+}
+console.log(JSON.stringify(result));
+`, { mode: 0o755 });
+const calls = () => fs.existsSync(marker) ? fs.readFileSync(marker, "utf8") : "";
+const run = (name, configuration, extra = []) => {
+  const result = cp.spawnSync(process.execPath, [runner, "--configuration", configuration,
+    "--skill", name, "--baseline-ref", baseline, ...extra], {
+    env: { ...process.env, CLAUDE_EVAL_COMMAND: provider, SKILL_EVAL_OUTPUT_ROOT: output, PROBE_CALLS: marker },
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  return result;
+};
+for (const name of names) {
+  const definitions = load(path.join(repo, "skills", name, "evals/evals.json"));
+  for (const configuration of ["without-skill", "with-skill"]) run(name, configuration, ["--grade"]);
+  const beforeUnavailable = calls();
+  run(name, "old-skill", ["--grade"]);
+  run(name, "old-skill", ["--grade-only"]);
+  assert.equal(calls(), beforeUnavailable, "historical absence launched a provider or grader");
+  for (const item of definitions.evals) {
+    const evalRoot = path.join(output, name, "eval-"+item.id+"-"+item.model);
+    const absent = load(path.join(evalRoot, "old-skill/historical-unavailable.json"));
+    assert.equal(absent.baseline_commit, baseline);
+    assert.equal(absent.skill_name, name);
+    assert(!fs.existsSync(path.join(evalRoot, "old-skill/eval_metadata.json")));
+    assert(!fs.existsSync(path.join(evalRoot, "old-skill/grading.json")));
+    const without = load(path.join(evalRoot, "without-skill/eval_metadata.json"));
+    const withSkill = load(path.join(evalRoot, "with-skill/eval_metadata.json"));
+    for (const field of ["fixture_sha256", "target_input_sha256", "standard_sha256", "task_sha256",
+      "execution_settings_sha256", "baseline_commit"]) assert.equal(without[field], withSkill[field], field);
+    assert.equal(withSkill.baseline_skill_available, false);
+    assert.equal(without.instruction_sha256, null);
+    assert.equal(typeof withSkill.instruction_sha256, "string");
+    assert.deepEqual(load(path.join(evalRoot, "without-skill/target-input.json")), {});
+  }
+  run(name, "with-skill", ["--grade-only"]);
+  const first = definitions.evals[0];
+  const evalRoot = path.join(output, name, "eval-"+first.id+"-"+first.model);
+  const benchmark = () => load(path.join(evalRoot, "benchmark.json"));
+  assert.equal(benchmark().comparison_configuration, "without-skill");
+  assert.equal(benchmark().comparable, true);
+  assert.deepEqual(benchmark().runs.map(run => run.configuration), ["without-skill", "with-skill"]);
+  assert(benchmark().delta_with_minus_without);
+  assert(!Object.hasOwn(benchmark(), "delta_with_minus_old"));
+  const metadataFile = path.join(evalRoot, "with-skill/eval_metadata.json");
+  const savedMetadata = fs.readFileSync(metadataFile, "utf8");
+  const metadata = JSON.parse(savedMetadata);
+  metadata.command_args[metadata.command_args.indexOf("-p") + 1] += "\\n\\nchanged common harness input";
+  fs.writeFileSync(metadataFile, JSON.stringify(metadata));
+  run(name, "with-skill", ["--eval-id", String(first.id), "--grade-only"]);
+  assert.equal(benchmark().comparable, false);
+  assert.equal(benchmark().delta_with_minus_without, null);
+  fs.writeFileSync(metadataFile, savedMetadata);
+  run(name, "old-skill", ["--eval-id", String(first.id), "--skill-snapshot", path.join(repo, "skills", name), "--grade"]);
+  assert.equal(benchmark().comparison_configuration, "old-skill");
+  assert.equal(benchmark().comparable, true);
+  assert(benchmark().delta_with_minus_old);
+}
+NODE
+then
+  pass "新設Skillの不存在を捏造せず、共通入力と明示snapshotだけを比較する"
+else
+  fail "新設Skillの歴史的不存在と共通設計入力を保持する" "runner boundary regression failed"
+fi
+
 fake_task_harness_probe="$TEST_ROOT/claude-task-harness-probe"
 printf '%s\n' \
   '#!/usr/bin/env bash' \

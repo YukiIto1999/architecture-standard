@@ -38,6 +38,9 @@ symlinkを含む本文snapshotは受け付けず、`standard-files.json` に実�
 比較の同一性にはsnapshotの一時pathではなく、この実内容のdigestを使う。
 `--baseline-ref` の commit は、既存の `standard-apply`、`standard-audit`、`standard-conformance`、`standard-feedback`、`standard-update` の `skills/<id>/SKILL.md` を含む client-neutral な配置でなければならない。
 既存 Skill の旧配置の commit を直接指定すると、evaluator は provider の起動前に失敗する。
+`cli-design` と `property-testing` は通常の task と trigger の選択対象に含み、基線に新設 package がなくても `without-skill` と `with-skill` を実行できる。
+基線に選択 Skill がなく、過去の package snapshot も渡されていない `old-skill` は、`UNAVAILABLE_HISTORICAL_SKILL` と `historical-unavailable.json` に不存在を記録し、provider と grader を起動しない。
+不存在を空の旧版や現行本文で代用せず、保存済みの不存在に対する `--grade-only` も採点しない。
 過去の instruction を比較するときは、client-neutral な標準本文の基線を固定し、その配置で使える過去の Skill package を `--skill-snapshot` で別に渡す。
 旧配置の package はそのまま渡さず、本文、reference、product 検査 script の locator と root 解決だけを移行した snapshot を用意し、過去の意味上の instruction を現在版へ置き換えない。
 元の commit または取得先と、元の package、配置移行後の package の hash を実際の資材から記録し、配置の移行と意味の変更を区別する。
@@ -54,8 +57,9 @@ root README 自身を同時に改訂する場合は、両条件へ同じ README 
 選択中skillの `evals/`、外側のevaluator script、`docs/minutes/`、`docs/decisions/`、`docs/reviews/`、`docs/research/` の履歴材料を、sanitized Gitの初期化前に一時repositoryから除く。
 複製元の `.claude/` と `.mcp.json` も除き、複製元のhookやclient設定を実行条件へ混ぜない。
 実作業のproduct検査と一般のreferenceは残し、taskが必要とする対象projectのAcceptedな契約や決定は隔離後にhostが置く。
-standard-update の product 検査が使う conformance checker とその回帰検査は、全比較条件へ同じ source から配置し、`fixture_sha256` の対象に含める。
+standard-update の product 検査が使う conformance checker とその回帰検査、および package checker の対象である CLI と PBT の package は、全比較条件へ同じ source から配置し、`fixture_sha256` の対象に含める。
 選択した Skill の本文だけを新しくした混在版でも検査の依存が欠けないようにし、検査機構の差を instruction の効果へ混ぜない。
+CLI と PBT の task は prompt 内の設計入力を使い、既存 Skill 用の worker fixture、標準本文の mutation、標準 repository の検証 command を追加しない。
 共通の本文 snapshot、README、task と model、target 入力は両条件へ同じものを渡す。
 `before-files.json` と `after-files.json` は評価に必要な本文と全変更 file の内容を持ち、`changed-files.json` は tracked、untracked、ignored の変更を列挙する。
 `target-input.json` は従来fixtureも含めて対象の全sourceとtest、およびproject外の決定の記録をhashつきで保存し、`fixture_sha256` と `target_input_sha256` に入力の同一性を反映する。
@@ -75,6 +79,10 @@ grader は空の一時 directory で tools と skill を無効化して起動す
 各 expectation の成否と根拠、実際の task と rubric、grader の runner、instruction、schema、command 設定、指定 model と観測した model を `grading.json` へ残す。
 実際に送った grader prompt は外側の `grader-prompt.txt` へ保存する。
 両条件の採点が揃った時点で `benchmark.json` を生成し、本文、task定義、対象入力、runner、providerと実行設定、command契約、実model、採点provenanceが一致しない比較から品質の改善量を算出しない。
+基線に新設 Skill がなく、明示的な過去の package snapshot による実行もない比較では、`comparison_configuration` を `without-skill` とし、`delta_with_minus_without` に差を残す。
+この比較だけは、raw command を保持したまま、prompt 内の Skill 使用条件の一段落だけを比較用に正規化する。
+それ以外の prompt、許可 tool、task、本文、target 入力、model、採点 provenance の差は従来どおり比較を不成立にする。
+旧版がある比較は `old-skill` と `delta_with_minus_old` を使い、過去の測定結果を新設 Skill の評価へ読み替えない。
 本文の改訂比較は、同じSkillを固定して本文条件ごとに別output rootの `with-skill` で実行し、規範改訂間の差を旧新版Skillの自動deltaへ入れない。
 採点 provenance または実際の model の記録がない過去の結果は、比較可能としない。
 時間、費用、token、tool call、tool error は品質と別に記録する。

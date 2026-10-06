@@ -84,6 +84,7 @@ process は順序と確認点だけを所有し、性質の規範を再定義し
 運用 Skill の正本は、このリポジトリの `skills/<id>/` に置き、client の設定 directory では所有しません。
 対象 project への適用は [standard-apply](./skills/standard-apply/SKILL.md)、適合性の全域監査は [standard-conformance](./skills/standard-conformance/SKILL.md)、標準への改訂提案の報告は [standard-feedback](./skills/standard-feedback/SKILL.md) を使います。
 標準自体の変更は [standard-update](./skills/standard-update/SKILL.md)、読み取り専用監査は [standard-audit](./skills/standard-audit/SKILL.md) を入口にします。
+CLI の人と script の呼び出しの設計は [cli-design](./skills/cli-design/SKILL.md)、契約から生成器と oracle、操作列、反例の分類へ落とす検査は [property-testing](./skills/property-testing/SKILL.md) を使います。
 
 dotfiles-wsl は、固定した Nix source と `skills/plugins/module.nix` の明示的な採用表から、選択済み client へ Skill package を配備します。
 Claude Code の `.claude/skills/` など client ごとの配備先は投影先であり、正本の所有先ではありません。

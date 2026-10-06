@@ -1,0 +1,61 @@
+{
+  "skill_name": "property-testing",
+  "evals": [
+    {
+      "id": 1,
+      "model": "sonnet",
+      "prompt": "architecture-standard に従って invoice の入力と計算を生成で検査する設計を返してください。入口は JSON の text です。受け入れる値は、整数の単価と数量を持つ非空の lines、currency、整数の discount です。各値の許容範囲と currency の候補は契約にあり、discount は計算前の合計以下です。拒否は理由付きの InvalidInvoice で返し、ledger に書き込みません。現在の検査は handler の Invoice 型だけを生成し、合計を実装の calculateTotal を呼んで期待値にしています。コード変更と実行はせず、入力領域、生成の組み立て、独立した期待値、拒否とその効果、件数の観測までを具体化してください。契約にない数値範囲は発明しないでください。",
+      "expected_output": "JSON text の領域と parse 後の値を区別し、discount を合計へ従属させて有効値を構築し、別の期待値と拒否領域を持つ検査を提案する。",
+      "files": [],
+      "expectations": [
+        "不正 JSON、欠落、型違い、余分な項目、境界を channel の契約と照合し、handler の型だけを領域にしない。",
+        "lines の値から discount の許容域を作り、大量の filter を主たる生成にしない。",
+        "calculateTotal を oracle に再利用せず、独立した仕様の値か参照計算を採る。",
+        "拒否する入力を別に作り、理由と ledger への書込みがないことを観測する。",
+        "生成数、棄却数、判定数、区分の通過を残し、判定 0 件を成功にしない。"
+      ]
+    },
+    {
+      "id": 2,
+      "model": "opus",
+      "prompt": "TTL cache の操作列の検査を設計してください。契約は put(key,value,ttl) で now+ttl を期限にし、advance(delta) は時刻を単調に進め、get は now が期限以上なら Missing を返します。clear は全項目を消します。key と ttl と delta の有効域は契約から取ります。現在の検査はランダムな操作列の最後だけで cache とモデルを比較し、時刻の進め方と get を同じ production helper でモデルにも使っています。期限切れでも古い値を返す変更の後に clear が来る場合を含めて、独立したモデル、操作の前提、観測、縮小と再現の方法を返してください。実装や検証の実行はしません。",
+      "expected_output": "モデルの時計と期限の計算を独立に置き、各操作直後の戻り値と公開状態を観測し、clear が消す途中の誤りと前提を保った縮小を扱う。",
+      "files": [],
+      "expectations": [
+        "現在のモデルから有効な key、ttl、delta と操作を構築する。",
+        "production helper をモデルの時計や get の oracle に使わない。",
+        "期限ちょうど、期限前、期限後の get の結果を各操作直後に比較し、最後だけで判定しない。",
+        "clear 後の一致だけでは過去の誤った get を検出できない理由を具体的に示す。",
+        "縮小後の操作列も advance の前提と期限の違反を保ち、値と列、seed、replay 情報、版を残す。"
+      ]
+    },
+    {
+      "id": 3,
+      "model": "haiku",
+      "prompt": "architecture-standard のテスト有効性の基準で、次の実測をどう扱うか分類し、必要な次の検査だけを設計してください。normalizeAmount は整数を契約の範囲へ丸める処理ですが、normalizeAmount(normalizeAmount(x))=normalizeAmount(x) だけを検査しています。test に常に false の assertion を足すと runner は赤になりました。一方、production が常に範囲の下端を返す mutant は、その property を実行して生存しました。この生存 report と入力と runner の版は現在と同じです。全量の mutation で生成 0 件の別 report もあります。実行や report の再確認はせず、赤の意味、契約の oracle、証跡の再利用、0 件の扱いを返してください。",
+      "expected_output": "runner の赤を保証の検出へ昇格させず、生存した定数 mutant が示す不足に契約の独立した値の判定を割り当て、既存の証跡を再利用する。",
+      "files": [],
+      "expectations": [
+        "強制 false の赤は runner の失敗報告だけの証拠と分類する。",
+        "冪等性を外部契約の値の正しさへ代用せず、境界と範囲内の入力に独立した期待結果を設計する。",
+        "性質の名前による強弱の序列で oracle を選ばない。",
+        "同じ条件の既存の生存 report を使い、同じ mutant の再実行や全量実行を提案しない。",
+        "全量の生成 0 件を合格にせず、未検出 0 件と検査の成立を分ける。"
+      ]
+    },
+    {
+      "id": 4,
+      "model": "sonnet",
+      "prompt": "JSON Lines の取込集計を変更する設計で、隠れた前提を実際の consumer へ辿ってください。契約は、一つの入力 row を accepted または rejected のどちらかへ一度だけ数え、受入率は accepted/(accepted+rejected) とします。診断は rejected row に複数ありえます。現在は診断数が row 数と偶然一致しています。開発者は診断を細かくしたいだけで、受入率の意味は変えません。architecture-standard に従って、小さい合理的な変更で何が破れるか、consumer が観測する入力例、独立した検査と hardening を設計してください。incident は起きておらず、コード変更と実行も依頼しません。",
+      "expected_output": "診断の粒度を増やす変更と row の一回だけの分類の不変条件を分け、同じ row の診断が増えても受入率が変わらない観測と型または集計境界の保証を設計する。",
+      "files": [],
+      "expectations": [
+        "診断を増やす変更から row の分類数と受入率の consumer-visible な失敗まで因果関係を辿る。",
+        "診断数を rejected row 数として oracle に再利用しない。",
+        "同じ row の診断数だけを変えた独立した入力例と期待する同じ率を示す。",
+        "row 分類と診断 collection を分ける保証と、判定する検査を具体化する。",
+        "思考実験を発生済み incident や検出済みの実測にせず、検証の完了条件へ渡す。"
+      ]
+    }
+  ]
+}

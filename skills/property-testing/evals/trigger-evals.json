@@ -1,0 +1,22 @@
+[
+  {"query": "この parser が外部入力を取りこぼさないか、入力を生成して性質を検査してください。", "should_trigger": true},
+  {"query": "state machine をモデルと操作列で検査し、最小の失敗列を残してください。", "should_trigger": true},
+  {"query": "property の実行は緑ですが、precondition が入力を全部捨てています。有効性を直してください。", "should_trigger": true},
+  {"query": "失敗した生成テストが製品の bug か、性質の誤りか、仕様の未確定かを分けてください。", "should_trigger": true},
+  {"query": "往復の検査だけで外部データの契約を保証できるか、独立した oracle と入力領域を設計してください。", "should_trigger": true},
+  {"query": "合計以下の discount を持つ invoice の有効値を従属生成し、不正 JSON と拒否後の書込みなしを別の property で検査してください。", "should_trigger": true},
+  {"query": "queue の最後だけをモデルと比べるテストでは clear が enqueue 欠落を隠します。各操作直後の観測を持つ生成テストへ直してください。", "should_trigger": true},
+  {"query": "冪等性の property を実行して定数を返す mutant が生存しました。同じ証跡を使い、契約の値を判定する独立した oracle を補ってください。", "should_trigger": true},
+  {"query": "縮小した cache の失敗列が時刻の単調性を破っています。操作の前提を保つ shrink と seed 以外の replay 入力を設計してください。", "should_trigger": true},
+  {"query": "CLI の公開入力は確定済みです。stdin の byte 列から生成し、parse 後の型だけでは落ちる encoding の境界を property で検査してください。", "should_trigger": true},
+  {"query": "ログにある例外の根本原因を診断してください。生成テストの設計は不要です。", "should_trigger": false},
+  {"query": "新しいログイン機能を TDD で実装してください。property の作成は依頼していません。", "should_trigger": false},
+  {"query": "処理の latency と allocation を計測して bottleneck を特定してください。", "should_trigger": false},
+  {"query": "binary decoder に libFuzzer の入口を追加してください。", "should_trigger": false},
+  {"query": "terminal の raw mode の復元だけを実際の PTY で確認してください。", "should_trigger": false},
+  {"query": "変更 branch の diff 全体を code review してください。", "should_trigger": false},
+  {"query": "architecture-standard の PBT 規律そのものを改訂してください。", "should_trigger": false, "expected_skill": "standard-update"},
+  {"query": "全関数へ固定の unit test を自動追加してください。入力生成や property-based testing への変更は求めていません。", "should_trigger": false},
+  {"query": "破壊操作の承認と非対話の拒否を含む、新しい CLI の公開呼び出し仕様を設計してください。生成テストの作成は不要です。", "should_trigger": false, "expected_skill": "cli-design"},
+  {"query": "architecture-standard に従って database adapter の境界を設計してください。テスト生成の設計は今回の対象ではありません。", "should_trigger": false, "expected_skill": "standard-apply"}
+]
