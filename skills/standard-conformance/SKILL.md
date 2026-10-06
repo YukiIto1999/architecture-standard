@@ -60,6 +60,8 @@ captured digest だけを新しい値へ書き換え、以前の証拠を新し�
    実行結果には command と結果の locator、レビュー結果には対象と判断の locator を残す。
    独立レビューと報告する場合は、独立した context の実際の記録を示す。
    正本や source を読んだ記録は `entries[].evidence` に残し、それだけで実行や独立レビューを済ませた `checks` にしない。
+   意味を伴う判断は root README の適用判断に従い、既存の `reason`、`evidence`、review の locator の参照先へ、規律の条件と対象の事実から結論を導いた根拠を残す。
+   見出しの名指しや形式検査の成功だけで適合とせず、読取、適用判断、実検証を区別する。
    文書の一部の規律だけが条件を満たさない場合は、その rule の適用判断を `kind: applicability`、`status: not-applicable` として理由と source、project の出典とともに残す。
    適用判断は実行検査の成功ではなく、同じ rule の machine や review と併記しない。
 5. 違反を root README と process/audit の引用規則に従って記録し、project の実基線台帳と照合する。
