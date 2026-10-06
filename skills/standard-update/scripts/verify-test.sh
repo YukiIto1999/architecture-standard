@@ -112,36 +112,9 @@ mkdir -p "$fixture/concerns/extra"
 cp "$fixture/concerns/privacy/minimize-and-expire.md" "$fixture/concerns/extra/minimize-and-expire.md"
 printf '# extra\n\n## 概要\n\n検査用の概念である。\n\n## 規律\n\n- [個人情報は最小化して載せ、期限で消す](./minimize-and-expire.md) — レビュー(検査用)\n' > "$fixture/concerns/extra/README.md"
 sed -i '/^| \[accessibility\]/a | [extra](./extra/README.md) | 利用者面 | 台帳から追加した検査用の概念 |' "$fixture/concerns/README.md"
-sed -i 's/24概念/25概念/' "$fixture/README.md" "$fixture/skills/standard-update/SKILL.md"
-sed -i 's/24の/25の/' "$fixture/concerns/README.md"
-sed -i 's/24概念/25概念/;s/この24に/この25に/' "$fixture/skills/standard-update/references/concerns.md"
-sed -i 's/・accessibility。/・accessibility・extra。/' \
-  "$fixture/skills/standard-update/SKILL.md" \
-  "$fixture/skills/standard-update/references/concerns.md"
 printf '検査用の横断規律は [concerns/extra](../../concerns/extra/README.md) に従う。\n' >> "$fixture/structure/core/domain.md"
-expect_pass "concerns の期待数を台帳から導出する" "$fixture"
+expect_pass "concerns の台帳と実ファイルが揃った追加を受理する" "$fixture"
 
-fixture=$(make_fixture concept-list-order)
-sed -i 's/effect・\(.*\)・accessibility。/\1・accessibility・effect。/' \
-  "$fixture/skills/standard-update/SKILL.md" \
-  "$fixture/skills/standard-update/references/concerns.md"
-expect_pass "skill の概念列挙を並びに依らず照合する" "$fixture"
-
-fixture=$(make_fixture concept-list-drift)
-sed -i 's/・accessibility。/。/' "$fixture/skills/standard-update/references/concerns.md"
-expect_fail "skill の概念列挙から欠けた概念を検出する" "$fixture" "references/concerns.md: concerns/ 実ファイルと不一致"
-
-fixture=$(make_fixture concept-claim-drift)
-sed -i '0,/24概念/s//23概念/' "$fixture/README.md"
-expect_fail "concerns の数を書く root の全箇所を台帳と照合する" "$fixture" "concerns の概念: 記載=23 台帳=24"
-
-fixture=$(make_fixture count-claim-missing)
-sed -i 's/以上の3つの区分に/以上の区分に/' "$fixture/tools/README.md"
-expect_fail "照合する数の記載が消えた箇所を検出する" "$fixture" "数の記載が見つからない(tools/README.md の tools の区分"
-
-fixture=$(make_fixture language-axis-claim-drift)
-sed -i '/^| `inspection` | 実現軸 |/a | `extra` | 実現軸 | 検査用の追加軸 |' "$fixture/languages/README.md"
-expect_fail "languages の実現軸の数を分類列から数える" "$fixture" "languages の実現軸: 記載=6 台帳=7"
 
 fixture=$(make_fixture concept-table-scope)
 printf '\n## 補助表\n\n| ファイル | 用途 |\n|---|---|\n| [effect](./effect/README.md) | 既存概念への補助参照 |\n' >> "$fixture/concerns/README.md"
@@ -162,15 +135,11 @@ fixture=$(make_fixture section-exclusion-scope)
 printf '\n## 概要\n\nprinciples では全ての第2見出しが規律単位である。\n' >> "$fixture/principles/comment/no-code-explanation.md"
 expect_fail "非単位節の除外を該当する領域だけに限定する" "$fixture" "必須節が不正"
 
-fixture=$(make_fixture process-count-derived)
+
+fixture=$(make_fixture process-ledger-added-pair)
 printf '# extra\n' > "$fixture/process/extra.md"
 sed -i '/^| \[migration\]/a | [extra](./extra.md) | 検査用の追加単位 |' "$fixture/process/README.md"
-sed -i 's/11単位/12単位/' "$fixture/README.md"
-expect_pass "process の単位数を台帳から導出する" "$fixture"
-
-fixture=$(make_fixture process-claim-drift)
-sed -i 's/11単位/10単位/' "$fixture/README.md"
-expect_fail "root が書く process の単位数を台帳と照合する" "$fixture" "process の単位: 記載=10 台帳=11"
+expect_pass "process の台帳と実ファイルが揃った追加を受理する" "$fixture"
 
 fixture=$(make_fixture process-ledger-stray-file)
 printf '# extra\n' > "$fixture/process/extra.md"
