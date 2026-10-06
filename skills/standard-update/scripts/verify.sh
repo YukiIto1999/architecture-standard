@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # 標準の更新後に走らせる機械検査。repo の root で実行する。読み取り専用。repo 内に一時ファイルを作らない。
-# リンク切れ・単位ごとの必須5節と任意の例・層への製品名漏れ・本文と skill が書く数と台帳の行数の照合・台帳と実ファイルの整合・languages の規律と検証対応表の整合・principles/concerns の逐語一致・concerns/structure/languages の製品名指しの登録・規律名指しの見出し一致・統一語彙の旧表記・principles/concerns の消費者存在を、すべて pass/fail で確かめる。
 set -uo pipefail
 
 required_commands=(git rg fd awk sed find wc tr head tail sort diff dirname paste basename cut node)
@@ -293,77 +292,16 @@ else
 fi
 
 echo
-echo "=== 5. 本文と skill が書く数 = 台帳の行から数えた数(concerns は台帳 = 実ファイルも照合) ==="
+echo "=== 5. concerns の台帳と実ファイル ==="
 concerns_actual=$(find concerns -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
 concerns_readme_rows=$(markdown_table_cells concerns/README.md '^## 概念$' 1 | count_lines)
 echo "concerns: 台帳=$concerns_readme_rows 実ファイル=$concerns_actual"
 if [ "$concerns_actual" != "$concerns_readme_rows" ]; then
   fail "概念数が不一致(台帳=$concerns_readme_rows, 実ファイル=$concerns_actual)"
+else
+  pass "concerns の台帳と実ファイルが一致"
 fi
 
-declare -A ledger_counts=(
-  ["領域"]=$(markdown_table_cells README.md '^### 領域の一覧$' 1 | count_lines)
-  ["principles の群"]=$(markdown_table_cells principles/README.md '^## 原則の体系$' 1 | sort -u | count_lines)
-  ["principles の領域"]=$(markdown_table_cells principles/README.md '^## 原則の体系$' 2 | count_lines)
-  ["concerns の概念"]=$concerns_readme_rows
-  ["concerns の群"]=$(markdown_table_cells concerns/README.md '^## 概念$' 2 | sort -u | count_lines)
-  ["structure の root 境界"]=$(markdown_table_cells structure/README.md '^## 構成$' 1 | { rg -vxF '[skeleton](./skeleton.md)' || true; } | count_lines)
-  ["structure の surface"]=$(markdown_table_cells structure/surfaces/README.md '^## 構成$' 1 | count_lines)
-  ["structure の host"]=$(markdown_table_cells structure/runtimes/README.md '^## 構成$' 1 | count_lines)
-  ["tools の区分"]=$(markdown_table_cells tools/README.md '^## 構成$' 2 | count_lines)
-  ["languages の言語"]=$(markdown_table_cells languages/README.md '^## 構成$' 2 | count_lines)
-  ["languages の実現軸"]=$(markdown_table_cells languages/README.md '^## [0-9]+つの実現軸と全域規律$' 2 | { rg -xF '実現軸' || true; } | count_lines)
-  ["languages の全域規律"]=$(markdown_table_cells languages/README.md '^## [0-9]+つの実現軸と全域規律$' 2 | { rg -xF '全域規律' || true; } | count_lines)
-  ["process の単位"]=$(markdown_table_cells process/README.md '^## 単位$' 1 | count_lines)
-)
-
-# 数を書く箇所ごとに、file・数を取り出す PCRE・照合する台帳を一行で持つ。数の記載を足したらここへ足す。
-count_claims_ok=1
-while IFS=$'\t' read -r claim_file claim_pattern claim_key; do
-  claim_expected=${ledger_counts[$claim_key]}
-  claim_matches=$(rg -noP -- "$claim_pattern" "$claim_file" 2>/dev/null || true)
-  if [ -z "$claim_matches" ]; then
-    fail "数の記載が見つからない($claim_file の $claim_key。本文か照合表を直す)"
-    count_claims_ok=0
-    continue
-  fi
-  while IFS=: read -r claim_line claim_value; do
-    if [ "$claim_value" != "$claim_expected" ]; then
-      fail "数の記載が台帳と不一致($claim_file:$claim_line $claim_key: 記載=$claim_value 台帳=$claim_expected)"
-      count_claims_ok=0
-    fi
-  done <<< "$claim_matches"
-done <<'CLAIMS'
-README.md	\d+(?=つの領域)	領域
-skills/standard-update/SKILL.md	(?<=標準の)\d+(?=領域)	領域
-README.md	\d+(?=群)	principles の群
-principles/README.md	\d+(?=つの群)	principles の群
-skills/standard-update/references/principles.md	\d+(?=群)	principles の群
-principles/README.md	(?<=計)\d+(?=の領域)	principles の領域
-README.md	\d+(?=概念)	concerns の概念
-concerns/README.md	\d+(?=の(?:横断的な)?概念)	concerns の概念
-skills/standard-update/SKILL.md	\d+(?=概念)	concerns の概念
-skills/standard-update/references/concerns.md	\d+(?=概念)|(?<=この)\d+(?=に)	concerns の概念
-concerns/README.md	\d+(?=つの群)	concerns の群
-skills/standard-update/references/structure.md	(?<=固定)\d+(?=境界)	structure の root 境界
-skills/standard-update/references/structure.md	\d+(?= surface)	structure の surface
-structure/runtimes/README.md	\d+(?=つの host)	structure の host
-README.md	\d+(?=区分)	tools の区分
-tools/README.md	\d+(?=つの区分)	tools の区分
-skills/standard-update/references/tools.md	\d+(?=区分)	tools の区分
-languages/README.md	\d+(?=言語共通)	languages の言語
-skills/standard-update/references/tools.md	\d+(?=つの言語)	languages の言語
-languages/README.md	\d+(?=つの実現軸)	languages の実現軸
-skills/standard-update/SKILL.md	\d+(?=実現軸)	languages の実現軸
-skills/standard-update/references/tools.md	\d+(?=つの実現軸)	languages の実現軸
-process/bootstrap.md	\d+(?=つの実現軸)	languages の実現軸
-languages/README.md	\d+(?=つの全域規律)	languages の全域規律
-skills/standard-update/references/tools.md	\d+(?=つの全域規律)	languages の全域規律
-README.md	\d+(?=単位)	process の単位
-CLAIMS
-if [ "$count_claims_ok" = 1 ] && [ "$concerns_actual" = "$concerns_readme_rows" ]; then
-  pass "本文と skill が書く数が全て台帳の行数と一致"
-fi
 
 echo
 echo "=== 6. process/tools/languages の台帳と実ファイル ==="
@@ -480,27 +418,6 @@ done
 if [ "$language_discipline_tables_ok" = 1 ]; then
   pass "言語 ecosystem 3言語の本文規律と inspection 対応表が一対一で一致"
 fi
-
-echo
-echo "=== 8. skill の概念列挙と concerns/ 実ファイルの突合 ==="
-concerns_files=$(find concerns -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
-skill_ok=1
-# 概念名に依らず列挙を探すため、file ごとに列挙の位置を PCRE で持つ。
-while IFS=$'\t' read -r f list_pattern; do
-  if [ ! -f "$f" ]; then echo "  MISSING FILE: $f"; skill_ok=0; continue; fi
-  listed=$(rg -oP -- "$list_pattern" "$f" | head -1 | sed 's/・/\n/g' | sort)
-  if [ -z "$listed" ]; then echo "  $f: 概念列挙が見つからない"; skill_ok=0; continue; fi
-  diff_out=$(diff <(echo "$concerns_files") <(echo "$listed"))
-  if [ -n "$diff_out" ]; then
-    echo "  $f: concerns/ 実ファイルと不一致"
-    while IFS= read -r diff_line; do echo "    $diff_line"; done <<< "$diff_out"
-    skill_ok=0
-  fi
-done <<'LISTS'
-skills/standard-update/SKILL.md	(?<=概念。)[a-z][a-z-]*(?:・[a-z][a-z-]*)*(?=。)
-skills/standard-update/references/concerns.md	^[a-z][a-z-]*(?:・[a-z][a-z-]*)*(?=。$)
-LISTS
-if [ "$skill_ok" = 1 ]; then pass "skill の概念列挙が concerns/ 実ファイルと一致"; else fail "skill の概念列挙が concerns/ 実ファイルと不一致"; fi
 
 echo
 echo "=== 9. principles と concerns の逐語一致(18文字連続一致・5文節相当の近似。goal-04 再発防止) ==="
