@@ -2,7 +2,7 @@
 
 `verify-test.sh` と `skill-package-check.sh` を実行した後、model eval の要否と範囲を決めるときに読む。
 
-`skill-package-check.sh` は実作業へ公開する product 検査であり、frontmatter、5 skill の eval 定義、script 構文、conformance CLI の behavior tests を検査する。
+`skill-package-check.sh` は実作業へ公開する product 検査であり、frontmatter、対象 Skill の eval 定義、script 構文、conformance CLI の behavior tests を検査する。
 `run-task-evals.mjs` が `SKILL_EVAL_ISOLATED_SKILL` と `SKILL_EVAL_CONFIGURATION` の有効な組を渡した隔離評価だけは、選択中 skill の隠された `evals/` を欠落としない。
 configuration が `without-skill` なら、選択中 skill directory 全体の不存在だけを許可し、directory の一部が残る状態は失敗にする。
 standard-conformance 自身の `without-skill` 隔離で、その package が完全に存在しない場合だけは同梱 behavior tests も実行対象から外す。
@@ -12,7 +12,7 @@ standard-conformance 自身の `without-skill` 隔離で、その package が完
 
 同梱の `run-task-evals.mjs` と `run-trigger-evals.mjs` は、Claude Code 専用の任意の consumer である。
 正本は `skills/<id>/` に置く。
-trigger eval は、所有する一時 fixture の `.claude/skills/<id>/SKILL.md` へ5 Skill の本文だけをコピーし、Claude Code に発火先を発見させる。
+trigger eval は、所有する一時 fixture の `.claude/skills/<id>/SKILL.md` へ evaluator が選択対象とする Skill の本文だけをコピーし、Claude Code に発火先を発見させる。
 reference、script、eval はその投影先へ複製せず、一時 fixture 全体を評価終了時に除去する。
 task eval は `skills/<id>/SKILL.md` を Read tool で明示的に読み、この client adapter を設置しない。
 evaluator は従来どおり `CLAUDE_EVAL_COMMAND` で指定した command、未指定なら `claude` を起動する。
@@ -23,7 +23,7 @@ evaluator は従来どおり `CLAUDE_EVAL_COMMAND` で指定した command、未
 - script の決定的な処理だけを変更し、agent への instruction を変えない場合は、回帰検査を行う。script が生成する prompt を変える場合は instruction の変更として扱う。
 - SKILL.md または reference の instruction を変更した場合は、変更した判断を実際に必要とする task を `old-skill` と `with-skill` の2条件で隔離実行する。変更された file を監査対象に含むだけの task や、同じ skill を使うだけの task は選ばない。expectation、最終応答、tool event、diff、tracked / ignored status、実行 error、時間、token を比較する。新規 skill で旧版がない場合だけ `without-skill` を比較対象にする。
 - `evals/evals.json` だけを変更した場合は、変更した task を `with-skill` で実行する。現行 instruction の不足が失敗として再現した後に instruction を変更し、その段階で `old-skill` と `with-skill` を比較する。
-- description または `evals/trigger-evals.json` を変更した場合は、`scripts/run-trigger-evals.mjs` で `trigger-evals.json` の全 query を実行する。5 skill を同時に置いた条件で expected skill または非発火を測り、Skill tool の完全な入力、観測中の実行 error、発火先を記録する。
+- description または `evals/trigger-evals.json` を変更した場合は、`scripts/run-trigger-evals.mjs` で `trigger-evals.json` の全 query を実行する。evaluator の選択対象を同時に置いた条件で expected skill または非発火を測り、Skill tool の完全な入力、観測中の実行 error、発火先を記録する。
 - release 前、または instruction と description の双方を横断して変更したときは、全 task の3条件比較と full trigger eval の両方を行う。それ以外は変更面ごとの上記範囲に限定する。instruction と `evals/trigger-evals.json` の変更を組み合わせた場合は、影響 task の2条件比較と full trigger eval をそれぞれ行い、全 task や `without-skill` へ広げない。
 
 task eval は本 task の完遂を、trigger eval は発火先だけを測る。起動成功を PASS とせず、別 context の grader が expectation ごとの成否と event または成果物の根拠を `grading.json` に残す。複数条件を比較した場合は、対象 task の集計を `benchmark.json` に残す。隔離 evaluator が実行できなければ model eval 完了とは扱わず、阻害要因を報告する。
@@ -31,9 +31,13 @@ task eval は本 task の完遂を、trigger eval は発火先だけを測る。
 ## 隔離比較
 
 `run-task-evals.mjs` は `--suite` で評価集合を選び、`--eval-id` に一件の ID または comma で区切った ID を渡して対象を絞れる。
-`--baseline-ref` は fixture の標準本文を固定する commit、`--skill-snapshot` は比較する skill directory、`--context-readme` は両条件へ同じ内容で渡す root README を指定する。
-`--baseline-ref` の commit は、5 Skill すべての `skills/<id>/SKILL.md` を含む client-neutral な配置でなければならない。
-旧配置の commit を直接指定すると、evaluator は provider の起動前に失敗する。
+`--baseline-ref` は一時repositoryの出発点となるcommit、`--standard-snapshot` はroot READMEと六領域の本文snapshot、`--skill-snapshot` は比較するskill directory、`--context-readme` はroot READMEだけの共通差替えを指定する。
+本文snapshotを先に適用し、選択Skillを次に配置し、指定があれば共通READMEを最後に差し替える。
+本文snapshotはrootの `README.md` と `principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/` を持ち、出発点の全本文fileを含めなければprovider起動前に失敗する。
+symlinkを含む本文snapshotは受け付けず、`standard-files.json` に実内容とfileごとのSHA-256、`standard_sha256` に全本文のdigestを保存する。
+比較の同一性にはsnapshotの一時pathではなく、この実内容のdigestを使う。
+`--baseline-ref` の commit は、既存の `standard-apply`、`standard-audit`、`standard-conformance`、`standard-feedback`、`standard-update` の `skills/<id>/SKILL.md` を含む client-neutral な配置でなければならない。
+既存 Skill の旧配置の commit を直接指定すると、evaluator は provider の起動前に失敗する。
 過去の instruction を比較するときは、client-neutral な標準本文の基線を固定し、その配置で使える過去の Skill package を `--skill-snapshot` で別に渡す。
 旧配置の package はそのまま渡さず、本文、reference、product 検査 script の locator と root 解決だけを移行した snapshot を用意し、過去の意味上の instruction を現在版へ置き換えない。
 元の commit または取得先と、元の package、配置移行後の package の hash を実際の資材から記録し、配置の移行と意味の変更を区別する。
@@ -47,10 +51,14 @@ root README 自身を同時に改訂する場合は、両条件へ同じ README 
 ケースごとの期待結果、fixture の欠陥、採点情報は評価対象へ公開する reference に置かず、一時 repository の外側で管理する。
 
 評価対象へ渡す task は `item.prompt` だけを使い、expectation、fixture mutation、grader は渡さない。
-選択中 skill の `evals/` と外側の evaluator script を一時 repository と Git 履歴から除き、実作業の product 検査と一般の reference は残す。
+選択中skillの `evals/`、外側のevaluator script、`docs/minutes/`、`docs/decisions/`、`docs/reviews/`、`docs/research/` の履歴材料を、sanitized Gitの初期化前に一時repositoryから除く。
+複製元の `.claude/` と `.mcp.json` も除き、複製元のhookやclient設定を実行条件へ混ぜない。
+実作業のproduct検査と一般のreferenceは残し、taskが必要とする対象projectのAcceptedな契約や決定は隔離後にhostが置く。
 standard-update の product 検査が使う conformance checker とその回帰検査は、全比較条件へ同じ source から配置し、`fixture_sha256` の対象に含める。
 選択した Skill の本文だけを新しくした混在版でも検査の依存が欠けないようにし、検査機構の差を instruction の効果へ混ぜない。
+共通の本文 snapshot、README、task と model、target 入力は両条件へ同じものを渡す。
 `before-files.json` と `after-files.json` は評価に必要な本文と全変更 file の内容を持ち、`changed-files.json` は tracked、untracked、ignored の変更を列挙する。
+`target-input.json` は従来fixtureも含めて対象の全sourceとtest、およびproject外の決定の記録をhashつきで保存し、`fixture_sha256` と `target_input_sha256` に入力の同一性を反映する。
 `tool-evidence.json` は tool の完全な入力と結果を保存し、未実施の読取や検証を最終応答の主張だけで補わない。
 
 standard-conformance の task では、host が `node skills/standard-conformance/scripts/check-coverage.mjs inventory` と `check` の prefix だけを Bash の追加許可へ渡す。
@@ -66,7 +74,8 @@ standard-conformance の task では、host が `node skills/standard-conformanc
 grader は空の一時 directory で tools と skill を無効化して起動する。
 各 expectation の成否と根拠、実際の task と rubric、grader の runner、instruction、schema、command 設定、指定 model と観測した model を `grading.json` へ残す。
 実際に送った grader prompt は外側の `grader-prompt.txt` へ保存する。
-両条件の採点が揃った時点で `benchmark.json` を生成し、実行条件と実採点の provenance が一致しない比較から品質の改善量を算出しない。
+両条件の採点が揃った時点で `benchmark.json` を生成し、本文、task定義、対象入力、runner、providerと実行設定、command契約、実model、採点provenanceが一致しない比較から品質の改善量を算出しない。
+本文の改訂比較は、同じSkillを固定して本文条件ごとに別output rootの `with-skill` で実行し、規範改訂間の差を旧新版Skillの自動deltaへ入れない。
 採点 provenance または実際の model の記録がない過去の結果は、比較可能としない。
 時間、費用、token、tool call、tool error は品質と別に記録する。
 
@@ -95,3 +104,123 @@ reference や影響追跡の寄与を分けて測る場合は、新版から対�
 reference を消しただけで未解決 link や読取義務を残す状態は、寄与の比較として扱わない。
 モデル、認証、tool 実行または必要な binary が利用できなければ、実行 error と不足する前提を報告する。
 mock の harness 回帰検査を model eval の代替や改善の証拠にしない。
+
+## 境界判断の評価
+
+`standard-apply` のeval-7は関連本文のpathを明示して八例を読む条件、eval-8は対象の公開入口から必要な本文を自力で探す条件である。
+どちらもA1からA4とB1からB4に、順応の記録だけで未検証wire入力を通す反例を加える。
+期待値は `split-by-change-reason.md`、`context-relationships.md`、`information-hiding.md` と境界検証の直接参照先から導き、六領域の分類名の一致を採点しない。
+本文pathを渡した条件の成功を探索能力の証拠にせず、読み取り、対象条件、意味判断、実検証を分ける。
+既存のeval-6は、実caller、決定、authority、testへ進む探索の回帰として別に残す。
+
+```bash
+SKILL_EVAL_OUTPUT_ROOT="$BOUNDARY_OUTPUT" \
+  node skills/standard-update/scripts/run-task-evals.mjs \
+  --configuration with-skill --skill standard-apply \
+  --suite semantic-boundaries --eval-id 7,8 \
+  --baseline-ref "$BASELINE_COMMIT" --standard-snapshot "$STANDARD_SNAPSHOT" \
+  --skill-snapshot "$SKILL_SNAPSHOT" --grade
+```
+
+本文効果を比較する場合は、上のcommandのSkill、task、model、runnerを固定し、`STANDARD_SNAPSHOT` と `BOUNDARY_OUTPUT` だけを本文条件に合わせる。
+Skill効果を比較する場合は本文snapshotと対象入力を固定し、既存の `old-skill` と `with-skill` を使う。
+同じ入力を独立した三回のsessionへ渡す場合は各pairに別output rootを割り当て、旧新版の順序を交互にし、個別の失敗や未完了も残す。
+三回の反復は統計的な保証でも全判断の理解の証明でもない。
+
+## 実行可能な格納fixture
+
+eval-9とeval-10は明示的な `fixture.kind: line-store` を選び、それぞれ `stage: hide` と `stage: map` を使う。
+kindを持たない従来taskは既存fixtureのまま実行でき、fixtureへ任意のpath、shell command、oracleを渡す設定はprovider起動前に拒否する。
+正本は `skills/standard-apply/evals/fixtures/line-store/project/` であり、runnerは選択Skillのeval資材を隠した後、このprojectだけを `target-project/` に配置する。
+`host/` の独立oracleは対象repositoryとそのGit履歴へコピーせず、外側のgraderだけへsourceと実出力を渡す。
+このfixture固有のsource境界検査はproject全体の適合性検査ではない。
+
+公開入口は `renderSelected(lines: readonly string[], positions: readonly number[])` であり、各要求の成功を `ts-results-es` の `Result<string, "position-out-of-range">` として返す。
+整数位置を前提とし、追加順と重複を保持し、空状態、負の位置、行数以上の位置ではErrを返して状態を変えない。
+eval-9ではLineStoreの内部配列を隠すcutoverのconsumer変更を認めるが、eval-10のtask1後の条件では `src/line-store.ts` 以外の全production sourceを入力と同一に保つ。
+是正前のcanonical sourceでeval-10を実行する条件では、必要なconsumerのcutoverを認め、後続入力の条件と混ぜない。
+いずれも格納の所有者とexported LineStore classを固定し、Mapを新たな公開契約へ漏らさない。
+
+格納fixtureはmanifestとlockfileが定めるNode.js `>=24.21.0 <25` を必要とし、固定した依存の要求を満たすhostで実行する。
+hostはprovider起動前に `npm --prefix target-project ci --ignore-scripts --no-audit --no-fund` を実行し、modelへ依存導入を要求しない。
+actorのBash追加許可はrepository rootからの次の三つに限定し、任意のnpm、Node、Bashを許可しない。
+
+```bash
+npm --prefix target-project run check
+npm --prefix target-project run verify
+npm --prefix target-project run verify:push
+```
+
+hostの実検証は、actorのtestやmanifestやnode_modulesを使わず、正本projectを別の新規directoryへ置いて実sourceだけを復元する。
+そこで次のcommandを使い、全commandのstdout、stderr、exit status、signal、error、時間を `host-before.json` と `host-after.json` に残す。
+`HOST_PROJECT` はhostだけが割り当てるdirectoryであり、`HOST_BASE` は入力sourceを固定したそのrepositoryのcommitである。
+
+```bash
+npm --prefix "$HOST_PROJECT" ci --ignore-scripts --no-audit --no-fund
+npm --prefix "$HOST_PROJECT" run verify
+node skills/standard-apply/evals/fixtures/line-store/host/check.mjs "$HOST_PROJECT" --boundary hidden
+npm --prefix "$HOST_PROJECT" run verify:push -- --base "$HOST_BASE"
+```
+
+変更前は最後のmutation検証を実行せず、canonical入力は振る舞いだけを、task1入力はhidden境界も検査する。
+変更後のMap taskではoracleの `--boundary` を `map` にする。
+T0のcheckは10秒、T1のverifyは2分、T2のverify:pushは15分を上限とし、依存導入とevaluatorとgraderの時間はprojectの各段の実測と区別する。
+hostでは `verify` がT0も実行するため、同じsourceの `check` を直前に重ねない。
+各commandが失敗したら後続の検証を実行せず、未実施を成功へ数えない。
+変更行diffの取得不能、未検出mutant、型・静的検査・固定test・独立oracleの失敗は合格にしない。
+固定testなどの変更も不合格であり、actorが弱めたtestの成功でhostの検証を代替しない。
+hostの棄却や実行不成立がある結果は、graderが全項目を合格としても `summary.passed` と `pass_rate` を0、`overall_pass` をfalseにする。
+grader単体の判定件数は `grader_passed` に残し、実行と固定host検証の成立は `execution_valid` で区別する。
+どちらかの実行が成立しない比較では、`delta_with_minus_old` を算出しない。
+
+`canonical-project.json` はprojectとhost oracleの固定資材、`project-before.json` と `project-after.json` は対象の全source、固定test、manifest、lockfile、契約、検証入口の実内容とSHA-256を持つ。
+`host-before-reports.json` と `host-after-reports.json` に検証reportとmutation reportを保存し、gateと変更行の情報は `host-after.json` からgraderにも渡す。
+`consumer-diff.patch` は追加されたuntracked sourceを含む境界外production sourceの実差分であり、変更file名だけで局所性を推定しない。
+`node_modules/`、`.git/`、`.stryker-tmp/`、`reports/`、`coverage/` はsource snapshotに含めない。
+
+## 後続sourceの復元
+
+eval-9の `project-snapshot.json` をeval-10の `--project-snapshot` に渡すと、新規contextへ実candidateの全production sourceを復元する。
+snapshotはversion 1のline-store hide入力であり、全fileの内容とSHA-256、固定projectとhost oracleのdigest、payload全体のdigestを持つ。
+全固定資材の一致と全sourceの存在を確認し、symlink、path traversal、内容とhashの不一致、契約やtestやmanifestやlockfileの改変、不完全なsnapshotをprovider起動前に拒否する。
+task1の成功を最終応答から推定せず、復元後の入力にも実host検証を行い、不合格ならproviderを起動しない。
+snapshotに含まれるtestや設定は復元せず、正本の固定資材を保持する。
+
+```bash
+SKILL_EVAL_OUTPUT_ROOT="$HIDE_OUTPUT" \
+  node skills/standard-update/scripts/run-task-evals.mjs \
+  --configuration with-skill --skill standard-apply --eval-id 9 \
+  --baseline-ref "$BASELINE_COMMIT" --standard-snapshot "$STANDARD_SNAPSHOT" \
+  --skill-snapshot "$SKILL_SNAPSHOT" --grade
+SKILL_EVAL_OUTPUT_ROOT="$MAP_BEFORE_OUTPUT" \
+  node skills/standard-update/scripts/run-task-evals.mjs \
+  --configuration with-skill --skill standard-apply --eval-id 10 \
+  --baseline-ref "$BASELINE_COMMIT" --standard-snapshot "$STANDARD_SNAPSHOT" \
+  --skill-snapshot "$SKILL_SNAPSHOT" --grade
+SKILL_EVAL_OUTPUT_ROOT="$MAP_AFTER_OUTPUT" \
+  node skills/standard-update/scripts/run-task-evals.mjs \
+  --configuration with-skill --skill standard-apply --eval-id 10 \
+  --baseline-ref "$BASELINE_COMMIT" --standard-snapshot "$STANDARD_SNAPSHOT" \
+  --skill-snapshot "$SKILL_SNAPSHOT" \
+  --project-snapshot "$HIDE_OUTPUT/standard-apply/eval-9-sonnet/with-skill/project-snapshot.json" --grade
+```
+
+是正前と是正後のMap taskは入力が異なるため、結果とconsumer変更理由を比較する観測であり、同じ入力によるSkill改善量ではない。
+本文条件やtask1 candidateや実行設定が違う比較を、自動benchmarkの改善量へ混ぜない。
+成功しても、この小さいfixtureの契約と変更影響に限る観測であり、実projectの品質向上や全般的な理解を主張しない。
+
+## 回帰と実modelの入口
+
+focused harnessは次の入口を使い、順序、重複、範囲、状態不変、公開collection漏出、source復元、consumer変更、固定test改変、unsafe入力を実oracleで検査する。
+scripted providerは候補sourceを置く回帰用の入力であり、modelの理解や完遂の証拠にはしない。
+
+```bash
+bash skills/standard-update/scripts/skill-test.sh --line-store-only
+node --test skills/standard-apply/evals/fixtures/line-store/host/mutation-gate.test.mjs
+bash skills/standard-update/scripts/skill-test.sh
+bash skills/standard-update/scripts/skill-package-check.sh
+```
+
+実model smokeは上のeval-7、eval-8とeval-9、eval-10のcommandを本物のClaude Codeで実行し、taskとgraderの両artifactを確認する。
+model、認証、依存取得、実command policy、時間上限のどれかが成立しなければ、その失敗を残して未実行または不合格とし、回帰検査や説明で成功に置き換えない。
+directoryと履歴の隔離は評価情報の混入を減らすためのものであり、OS全体のfilesystem sandboxを保証するものではない。

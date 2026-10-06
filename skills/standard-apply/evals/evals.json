@@ -103,6 +103,77 @@
         "標準が要求する失敗伝播、取消、外部 cancellation または deadline の未確認契約を隠さず、設定化、retry、監視、無関係な cleanup へ scope を広げない",
         "設計だけに留め、target-project の source、decision record、test、設定を編集しない"
       ]
+    },
+    {
+      "id": 7,
+      "model": "sonnet",
+      "suite": "semantic-boundaries",
+      "fixture": { "kind": "semantic-boundaries", "reading": "explicit" },
+      "prompt": "`target-project/README.md` から対象の事実を読み、A1からA4とB1からB4、およびB4-invalidについて、共有と変更影響の設計判断をarchitecture-standardに照らして示してください。今回は読み取り専用です。関連本文は `principles/separation/split-by-change-reason.md`、`principles/separation/context-relationships.md`、`principles/separation/information-hiding.md`、`principles/modeling/parse-at-boundary.md`、`principles/modeling/logical-physical-separation.md` とその直接参照先です。結論だけでなく、要求・完了条件・禁止事項と対象の事実の対応、不足する条件、判断を変える事実を示してください。六領域の分類名を答える課題ではありません。",
+      "expected_output": "指定本文の全体と直接参照先から八例の条件を読み分け、同じ知識と偶然の一致、許可と必須、内部決定と依頼単位、順応の意味とwire表現の保証を区別する。A4は不足事実を残し、B4-invalidの未検証入力を順応で許可しない。",
+      "files": ["target-project/README.md", "target-project/cases.md", "README.md", "principles/separation/split-by-change-reason.md", "principles/separation/context-relationships.md", "principles/separation/information-hiding.md", "principles/modeling/parse-at-boundary.md", "principles/modeling/logical-physical-separation.md", "structure/core/infrastructure.md"],
+      "expectations": [
+        "A1: 同じコンテキスト・同じ業務規程の知識を入口の違いだけで二重正本にしないと、split-by-change-reason.md の要求と知識による重複判定から導き、WebとCLIの入口固有の責務まで統合しない",
+        "A2: 販売施策と会計規程の変更理由の相違を、split-by-change-reason.md の偶然の一致と context-relationships.md の業務判断共有禁止へ対応づけ、式の一致だけで共通化しない",
+        "A3: 全利用者で記録済みの意味・不変条件・変更理由の一致と最小の値型という条件を context-relationships.md の共有条件へ対応づけ、共有の許可を必須や全実装の適合へ読み替えない",
+        "A4: 要件・所属コンテキスト・変更根拠が不明な事実を split-by-change-reason.md の要件整理とモデリングの先行条件へ対応づけ、共通化も独立保持の正しさも確定せず不足事実と結論への影響を残す",
+        "B1: 不変の公開契約と内部配列へ直接依存する利用側を information-hiding.md の要求と完了条件へ対応づけて内部決定の漏出を指摘し、論理位置の引数や添字の構文だけを違反理由にしない",
+        "B2: 意味上の操作だけを使い公開契約が不変という条件から今回の格納変更では利用側変更が不要と支持するが、未実測の変更件数や全変更・全projectの適合を断定しない",
+        "B3: 独立した販売施策と表示規則の決定を split-by-change-reason.md の決定ごとの分割と異なる変更理由の混在禁止へ対応づけ、一件の依頼という理由だけで統合や違反を認定しない",
+        "B4: context-relationships.md の順応条件と記録された前提から語彙変更の波及を引き受ける判断を導き、意味を保ったadapterの表現変換・検証を翻訳と順応の混在と即断しない",
+        "B4-invalid: 順応の記録は未検証wire入力の許可でないと、information-hiding.md の直接参照先 parse-at-boundary.md と logical-physical-separation.md および infrastructure.md のwire隔離から導き、不正値を内側へ通す判断を否定する",
+        "結論を左右する本文を実際に読み、対象の事実・適用条件・導出・結論・未実行の検証を対応づけ、fixtureや標準本文を変更しない"
+      ]
+    },
+    {
+      "id": 8,
+      "model": "sonnet",
+      "suite": "semantic-boundaries",
+      "fixture": { "kind": "semantic-boundaries", "reading": "exploration" },
+      "prompt": "`target-project/README.md` から対象の事実を読み、A1からA4とB1からB4、およびB4-invalidについて、共有と変更影響の設計判断をarchitecture-standardに従って示してください。今回は読み取り専用です。必要な標準本文を自力で特定し、要求・完了条件・禁止事項と対象の事実の対応、不足する条件、判断を変える事実を示してください。六領域の分類名や一般的なベストプラクティスの一覧を返す課題ではありません。",
+      "expected_output": "対象の公開入口から事実へ到達し、判断を所有する現行本文と直接参照先を発見する。八例と未検証入力の反例について、知識・変更理由・契約・順応・表現保証の条件に基づく判断を示し、不足条件を推測で埋めない。",
+      "files": ["target-project/README.md", "target-project/cases.md", "README.md", "principles/separation/split-by-change-reason.md", "principles/separation/context-relationships.md", "principles/separation/information-hiding.md", "principles/modeling/parse-at-boundary.md", "principles/modeling/logical-physical-separation.md", "structure/core/infrastructure.md"],
+      "expectations": [
+        "対象のREADMEからcases.mdを読み、pathを事前指定されなくても判断を所有する split-by-change-reason.md、context-relationships.md、information-hiding.md と必要な直接参照先へ到達し、現行本文を根拠にする",
+        "A1とA2: 同じコンテキストの同じ業務規程の二重正本と、独立した販売施策・会計規程の偶然の式一致を区別し、split-by-change-reason.md の知識による判定と context-relationships.md の業務判断共有禁止から結論を導く",
+        "A3とA4: context-relationships.md の記録済み同一性と最小値型の共有許可を必須にせず、要件・所属・変更根拠が不明なA4は split-by-change-reason.md の先行条件に照らして共通化も独立保持も確定しない",
+        "B1とB2: information-hiding.md から内部配列依存の漏出と意味上の操作だけの境界を区別し、論理位置の構文だけを違反にせず、今回の不変契約の変更以上の局所性や全域適合を断定しない",
+        "B3: split-by-change-reason.md の決定ごとの分割と異なる変更理由の混在禁止から、一件の依頼という事実だけで独立した販売施策と表示規則を統合したり違反にしたりしない",
+        "B4とB4-invalid: context-relationships.md の記録済み順応による語彙変更の波及を許容する一方、parse-at-boundary.md と logical-physical-separation.md および infrastructure.md の保証に照らし、意味を保つadapter変換を翻訳との混在にせず、未検証wire入力は順応で正当化しない",
+        "本文の読取と対象の適用条件と意味判断と未実行の検証を区別し、対象にない契約や変更理由を創作せず、fixtureと標準本文を変更しない"
+      ]
+    },
+    {
+      "id": 9,
+      "model": "sonnet",
+      "suite": "line-store",
+      "fixture": { "kind": "line-store", "stage": "hide" },
+      "prompt": "`target-project/README.md` のAcceptedな公開契約を維持し、architecture-standardに従ってLineStoreの内部配列を利用側から隠す変更を実装してください。格納の所有者は `src/line-store.ts` のexported LineStore classのままとし、公開メソッド名は目的に合う最小の操作として選べます。既存consumerは意味上の操作へ切り替え、旧linesアクセスや配列を公開する別名・getter・互換経路を残さないでください。この段でconsumerが変わることは許可します。renderSelectedの署名とResultの成功・失敗、順序、重複、空状態、整数の負の位置と末尾境界、失敗時の状態不変を保ち、固定test・契約・manifest・lockfile・検証入口は変更しません。初期の格納は配列のままとし、今回依頼していないMap化や機能を加えないでください。対象projectの実検証結果と未確認事項を報告してください。",
+      "expected_output": "LineStoreの配列表現を私有化し、consumerを意味上の操作へclean cutoverする。公開Result契約と固定host oracleを満たし、内部表現の漏出と旧経路がなく、固定検証と変更行mutationの実出力を残す。",
+      "files": ["target-project/README.md", "target-project/src/line-store.ts", "target-project/src/render-selected.ts", "principles/separation/information-hiding.md", "principles/separation/split-by-change-reason.md", "structure/tests/methods.md"],
+      "expectations": [
+        "information-hiding.md の要求・完了条件・禁止事項と、公開配列へ依存する実consumerを対応づけ、目的を表す最小の契約に是正する",
+        "LineStoreの内部配列と内部状態を私有化し、旧linesアクセス、公開Array/Mapの別名やgetter、互換経路を残さず、consumerを意味上の操作へ移す",
+        "固定host oracleでrenderSelectedのResultの成功・position-out-of-range、追加順序、重複、空・単一・複数、負・末尾・範囲外、失敗時の状態不変を維持する",
+        "固定source契約とtest・manifest・lockfile・検証入口を変更せず、格納の所有者とexported LineStore classを維持し、この段ではMap化や無関係な機能を加えない",
+        "対象projectのcheck・verify・verify:pushと変更行mutationの実観測を残し、hostの独立検査に失敗・未検出mutant・diff欠落があれば合格を主張せず、標準側verify.shや説明だけで代替しない"
+      ]
+    },
+    {
+      "id": 10,
+      "model": "sonnet",
+      "suite": "line-store",
+      "fixture": { "kind": "line-store", "stage": "map" },
+      "prompt": "`target-project/README.md` のAcceptedな公開契約を維持し、architecture-standardに従ってLineStoreの内部格納を配列からMapへ変更してください。格納の所有者は `src/line-store.ts` のexported LineStore classのままとし、Mapを公開契約へ漏らさないでください。task1のsource snapshotから始まる条件では、格納境界の外の全production consumerを変更しません。是正前のcanonical sourceから始まる条件では、必要なconsumerのcutoverを許可し、その変更理由と差分を残してください。renderSelectedの署名とResultの成功・失敗、順序、重複、空状態、整数の負の位置と末尾境界、失敗時の状態不変を保ち、固定test・契約・manifest・lockfile・検証入口は変更しません。対象projectの実検証結果とconsumerへの変更影響と未確認事項を報告してください。",
+      "expected_output": "新規contextへ渡されたsourceを正確に使用し、私有Mapで論理位置・順序・重複・Result契約を維持する。task1後の条件は全boundary-external production consumerが不変であり、canonical条件は必要なcutoverの差分を記録する。hostの固定oracle・検証・変更行mutationを満たす。",
+      "files": ["target-project/README.md", "target-project/src/line-store.ts", "target-project/src/render-selected.ts", "principles/separation/information-hiding.md", "principles/separation/split-by-change-reason.md", "structure/tests/methods.md"],
+      "expectations": [
+        "source入力の由来を確認し、information-hiding.md と不変のAccepted契約から内部決定だけの変更として設計し、公開契約変更や全変更への一般化をしない",
+        "exported LineStore classを保持して格納に真に私有のMapを使い、MapやArrayの公開、別名、getter、旧lines経路を残さない",
+        "固定host oracleでrenderSelectedのResultの成功・position-out-of-range、追加順序、重複、空・単一・複数、負・末尾・範囲外、失敗時の状態不変を維持する",
+        "task1 snapshot入力では全boundary-external production consumerを入力sourceから一切変更せず、canonical入力では必要なconsumer変更を実差分と理由で示し、二条件を同じ入力の改善量へ混ぜない",
+        "固定test・契約・manifest・lockfile・検証入口を弱めず、host側のcheck・verify・verify:pushと変更行mutationの実観測を残し、失敗・未検出mutant・diff欠落を成功として代替しない"
+      ]
     }
   ]
 }
