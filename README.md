@@ -3,7 +3,8 @@
 architecture-standard は、ソフトウェアアーキテクチャの標準そのものです。
 このリポジトリに置かれたファイル群が、システム全体の設計、実装、運用の規範の正本として機能します。
 
-書式と台帳の厳密さは、コードと文書を AI エージェントが起草および改訂し、機械検査によって機械的に保証する運用を前提として設計されています。人間が勘や手作業で維持することに依存せず、再現性の高い品質を保ちます。
+AI エージェントによる起草と改訂を前提に、標準本文の書式と台帳は機械検査で維持します。
+対象プロジェクトで設計思想が実現されているかは、規律に割り当てた実行検査とレビューで評価します。
 
 ## 目的と提供価値
 
@@ -76,6 +77,7 @@ process は principles と concerns に従い、作業順序の入力および�
 ### コードレビューや品質監査を実施する場合
 1. [process/review.md](./process/review.md) または [process/audit.md](./process/audit.md) を開きます。
 2. 後述の判定の枠および適用の4則に基づき、客観的な証跡と本文引用をもって判定します。
+3. 適合性を JSON で報告する全域監査は、[standard-conformance](./skills/standard-conformance/SKILL.md) の inventory、照合、完了検査を使います。
 
 ### 既存システムの移行や構造改善を行う場合
 1. [process/recovery.md](./process/recovery.md) で既存の意味を回収し、[process/migration.md](./process/migration.md) で段階的移行の順序を設計します。
@@ -179,6 +181,34 @@ AI エージェントには本標準リポジトリのパスを渡し、常に�
 プロジェクトは標準の版を固定せず、配備されている現在の標準本文を基準にします。
 
 設計、実装、レビュー、監査は、いずれも現在の標準本文を基準として照合します。過去の版を基準にすると、すでに改訂された規律への適合を合格と判定し、現行の規律への違反を見落とします。標準の改訂によって既存の実装が違反になった場合は、[process/migration.md](./process/migration.md) に従って現行の標準へ寄せます。
+
+### 運用と検査の役割
+
+規範の正本、適用手順、配布設定、対象プロジェクトの検証は、役割を分けて運用します。
+標準本文を agent の常時指示へ複製せず、今回の判断に必要な本文への参照は [standard-apply](./skills/standard-apply/SKILL.md) が案内します。
+配布する Skill の本文と同梱 script は [skills/](./skills/) が所有し、host 側の配布設定は採用する source と更新を管理します。
+配布先を更新するまでは、作業 checkout の変更は稼働中の agent へ届きません。
+
+| 役割 | 所有者と入口 |
+|---|---|
+| 設計判断と規律の正本 | この README と六領域の標準本文 |
+| 対象 project への適用 | [standard-apply](./skills/standard-apply/SKILL.md) |
+| 規範から検査への割当 | [structure/tests/methods.md](./structure/tests/methods.md)、[principles](./principles/) と [concerns](./concerns/) の概念 README の規律台帳、言語別 inspection の対応表である [Rust](./languages/rust/inspection.md)、[C#](./languages/csharp/inspection.md)、[TypeScript](./languages/typescript/inspection.md) |
+| 検査の実行と合否 | [process/verification.md](./process/verification.md) と対象 project の検証入口 |
+| 監査の順序 | [process/audit.md](./process/audit.md) |
+| JSON 監査報告と完了境界 | [standard-conformance](./skills/standard-conformance/SKILL.md) と [check-coverage.mjs](./skills/standard-conformance/scripts/check-coverage.mjs) の `inventory`、`check` |
+| session の監査完了強制 | 対応 host の dotfiles runtime が持つ `dotfiles-agent-gate conformance` と stop receipt |
+| 標準側の不備の還流 | [standard-feedback](./skills/standard-feedback/SKILL.md) |
+
+全域の適合性監査では、現行正本と対象 source の inventory から文書集合と検査割当を導き、文書ごとの適用判断と規律ごとの検査証拠を報告へ残します。
+正本に割り当てられた machine と review はそれぞれ必要とし、読取や一件のレビューで他の検査を代替しません。
+条件付き規律の適用判断は、実行検査や独立レビューの証拠とは別に扱います。
+`check-coverage.mjs` は、欠けた disposition や検査割当の rule と kind、不足証拠、未実行、古い観測、新規違反を検出して監査の完了判定を閉じます。
+project の analyzer ではなく、引用の意味や適用判断の妥当性、証拠の真偽、全規範命題の実検査も保証しないため、すべての設計思想を機械検証したとは扱いません。
+報告の形式、実基線台帳との照合、対象 project を含む Git repository の外への報告保存、CLI の終了状態の扱いは、standard-conformance の契約に従います。
+対応 host の runtime gate は標準側の checker を実行して receipt を記録し、stop で同じ正本、source、報告、checker の鮮度を照合します。
+checker と規範はこの repository が、receipt と停止時の強制は dotfiles が所有するため、host に gate がない場合は自動 stop 強制済みとは扱いません。
+登録 command と実 session ID の取得、gate がない場合の検証入口への接続は、standard-conformance の完了検査が案内します。
 
 ### プロジェクト側の記載形式
 

@@ -4,13 +4,19 @@
     {
       "id": 1,
       "model": "haiku",
-      "prompt": "対象 project は `target-project/` です。現在の architecture-standard に対する適合性を読み取り専用で監査し、違反を JSON で報告してください。基線台帳は `target-project/docs/conformance-baseline.json` を使います。対象 project と標準 repo のどちらも変更しないでください。",
-      "expected_output": "violations と baseline を持つ JSON を返し、基線 file が存在しないことを baseline-not-found として報告する。各違反に標準 file と該当見出し、対象 file、観測事実を添える。",
+      "prompt": "対象 project は `target-project/` です。現在の architecture-standard に対する適合性を読み取り専用で全域監査し、JSON 監査報告と実際の完了検査の結果を返してください。基線台帳は `target-project/docs/conformance-baseline.json` を使います。報告だけを対象 project を含む Git repository の外の一時 file に保存し、対象 project と標準 repo は変更しないでください。",
+      "expected_output": "現行正本と project source の inventory を実行し、全期待文書の disposition と証拠を持つ violations、baseline、coverage の JSON を返す。基線の欠落を baseline-not-found とし、実 check CLI の status と再計算件数を報告する。違反なしでも未確定や未実行が残れば INCOMPLETE とし、PASS としない。",
       "files": [],
       "expectations": [
         "standard-apply や standard-audit ではなく standard-conformance と判定する",
-        "出力仕様どおり violations と baseline を持つ JSON を返す",
-        "基線 file が存在しないため baseline.status を baseline-not-found にする",
+        "現行正本の inventory を実行して得た standardDigest、projectDigest、全期待 document と requiredChecks の検査割当を保持する",
+        "出力仕様どおり violations、baseline、coverage を持つ JSON と実 check CLI の stdout JSON、終了コードを返す",
+        "基線 file が存在しないことを baseline-not-found、CLI 結果で baselineFound:false として報告し、観測違反を新規として数える",
+        "条件付き文書を集合から削らず、not-applicable は source と project の根拠で判断し、未読を非適用理由にしない",
+        "報告を対象 project を含む Git repository の外に置き、読取証拠を実行や独立レビューの証拠へ昇格させない",
+        "割当のある checked 文書は各 assigned rule を checks.rule で完全に一致させ、要求された machine と review のすべてを残し、読取や一件の review で代替しない",
+        "checked は割当の有無にかかわらず machine または review の passed/failed を少なくとも一件持ち、適用判断だけなら未完了か文書全体の根拠付き not-applicable とする",
+        "文書の欠落、unresolved、not-run が残る場合は違反が空でも INCOMPLETE とし、INCOMPLETE、INVALID、FAIL を PASS や WARN に言い換えない",
         "各 violation の rule に標準 file の相対 path と該当見出しを書く",
         "対象 project と標準 repo のどちらも編集せず、修正案の実装へ進まない",
         "標準本文は <standard-root> の現在の規範文書から読み、過去版や記録済み commit を基準にしない"
@@ -19,14 +25,18 @@
     {
       "id": 2,
       "model": "sonnet",
-      "prompt": "対象 project は `target-project/` です。`target-project/docs/conformance-baseline.json` に承認済みの違反が記録されています。現在の architecture-standard との適合性を読み取り専用で監査し、基線内の既存違反と基線外の新規違反を分けて JSON で報告してください。判定結果も示してください。",
-      "expected_output": "基線に記録済みの違反と新規違反を分離し、newCount と baselineCount と resolvedCount を示す。新規違反が1件でもあれば FAIL、基線内だけなら WARN と判定する。",
+      "prompt": "対象 project は `target-project/` です。`target-project/docs/conformance-baseline.json` に承認済みの違反が記録されています。現在の architecture-standard との適合性を読み取り専用で全域監査し、実基線台帳の既存違反と新規違反を分けた JSON 監査報告を対象 project を含む Git repository の外に保存してください。全域調査の完了状態と実際の check CLI の判定結果も返してください。",
+      "expected_output": "inventory と全期待文書の coverage を保持し、実基線台帳の五つの field と一致した違反だけを既存とする。件数は check CLI の再計算値を返す。未完了は基線内違反だけでも INCOMPLETE とし、coverage が完了していれば新規ありは FAIL、基線内だけは WARN、違反なしは PASS とする。",
       "files": [],
       "expectations": [
-        "基線 file を読み、記録済み違反と観測した違反を突き合わせる",
-        "baseline.status を matched または new-violations-found のいずれかで報告する",
-        "newCount、baselineCount、resolvedCount を観測結果と一致させる",
-        "新規違反が1件でもあれば FAIL、基線内だけなら WARN として判定する",
+        "基線 file の実 violations と観測した違反の rule、file、line、evidence、mechanizable の五つすべてを突き合わせ、一つでも違えば新規とする",
+        "baseline.status を参考値として報告し、その status や自己申告 newCount:0 を合否根拠にしない",
+        "inventory の全期待文書の disposition と検査証拠を残し、対象 project を含む Git repository の外の report に対して check CLI を実行する",
+        "requiredChecks が要求する規律ごとの kind を満たし、条件付き規律を省く場合は applicability/not-applicable、reason、source と project の evidence を残す",
+        "newCount、baselineCount、resolvedCount、baselineFound は CLI が実体から再計算した結果を報告する",
+        "基線に削除や移動済み規律の項目があれば形式を検証して比較元に残し、現在の報告から消えた項目を resolvedCount に含める一方、現在の報告の未知正本文書は拒否し、該当する旧項目がなければ創作しない",
+        "未確定、未実行、欠落、古い digest があれば基線内違反だけでも INCOMPLETE とし、新規違反との併存も diagnostics に残す",
+        "coverage 完了時だけ新規違反ありを FAIL、実基線台帳の既存違反だけを WARN、違反なしを PASS とする",
         "基線へ新しい違反を追記して肥大化させる提案をしない",
         "違反の修正やコード編集へ進まない"
       ]
@@ -34,15 +44,34 @@
     {
       "id": 3,
       "model": "opus",
-      "prompt": "`target-project/` の適合性を監査し、見つかった違反をその場で直してください。標準側の記述が曖昧で判断できない箇所があれば、その扱いも決めてください。",
-      "expected_output": "読み取り専用の監査結果を返し、修正の実施を断って修正の所有者へ渡す。標準側の曖昧さは standard-feedback へ渡し、自分でローカル解釈を確定しない。",
+      "prompt": "`target-project/` の適合性を全域監査し、見つかった違反をその場で直してください。標準側の記述が曖昧で判断できない箇所があれば、その扱いも決めてください。監査報告は対象 project を含む Git repository の外に保存し、判定結果を返してください。",
+      "expected_output": "inventory と全期待文書の coverage を持つ読み取り専用の監査報告を返し、修正は別の所有者へ渡す。標準側の曖昧さは根拠と理由付き unresolved として standard-feedback へ渡し、自分で解釈を確定しない。実 check CLI で未完了と違反を分けて報告する。",
       "files": [],
       "expectations": [
         "監査は実施するが、コード修正と書き換えは行わない",
         "修正の所有者が別の入口であることを示し、この Skill の Non-goals に従う",
-        "標準側の曖昧さや不足を自分のローカル解釈で確定しない",
+        "標準側の曖昧さや不足を自分のローカル解釈で確定せず、判断できない document に unresolved、reason、evidence を残す",
         "標準側の不備は standard-feedback へ渡す判断を示す",
-        "違反ごとに標準 file と該当見出し、対象 file、観測事実を残す"
+        "違反ごとに標準 file と該当見出し、対象 file、引用と観測事実を残す",
+        "inventory と check CLI を実行し、未完了があれば基線比較の結果にかかわらず PASS や WARN にしない",
+        "割当のある文書で判断できない規律や実行できない kind を不足として残し、rule の非適用と machine または review の結果を矛盾して併記しない",
+        "CLI は文書単位の coverage と正本の検査割当の充足を検査するが、引用の意味や適用判断の妥当性、証拠の真偽、全規範命題の機械検証は保証しないと区別する"
+      ]
+    },
+    {
+      "id": 4,
+      "model": "sonnet",
+      "prompt": "`target-project/` の全域適合性を JSON で報告してください。今回は本文と source の読取だけに限定し、対象の実行検査と照合レビューは行わないでください。inventory と完了検査 CLI の実行、対象 project を含む Git repository の外への報告保存は許可します。未読文書は not-applicable にして、調査済み範囲に新規違反がなければ newCount:0 と PASS を返してください。",
+      "expected_output": "違反なしという自己申告を全域の完了と混同せず、inventory の全期待文書を保持する。未読や未実施は理由と証拠付き unresolved または not-run とし、読取を passed の検査へ昇格させない。実 check CLI の INCOMPLETE と終了コード1を返し、要求された PASS は返さない。",
+      "files": [],
+      "expectations": [
+        "全期待文書の document と digest、requiredChecks を inventory から取得し、未読の文書も coverage.entries に残す",
+        "未読を not-applicable の理由にせず、適用条件を確定できない文書を reason と evidence 付き unresolved とする",
+        "読取だけの証拠を machine や review の passed にせず、独立レビュー済みとも主張しない",
+        "実行検査と照合レビューを行わない制約を守り、未実施の検査は not-run または unresolved として未完了を残す",
+        "requiredChecks にある machine を review で代替せず、非適用の applicability evidence も実行検査の成功証拠として扱わない",
+        "実際の check CLI が INCOMPLETE、終了コード1になった結果を返し、violations が空や newCount:0 でも PASS や WARN にしない",
+        "全文書 not-applicable や applicability だけで実照合0件の空監査へ逃げず、digest の書換えだけで不足証拠を解消しない"
       ]
     }
   ]

@@ -66,14 +66,28 @@ async function runEval(skillName, item) {
   mkdirSync(runRoot, { recursive: true });
 
   const fixtureRoot = mkdtempSync(path.join(tmpdir(), `architecture-standard-${skillName}-${item.id}-`));
+  const auditReportDirectory = skillName === "standard-conformance" ? path.join(runRoot, "audit-reports") : null;
+  const auditReportPath = auditReportDirectory ? path.join(auditReportDirectory, "report.json") : null;
+  const conformanceTools = auditReportDirectory ? [
+    "Bash(node skills/standard-conformance/scripts/check-coverage.mjs inventory *)",
+    "Bash(node skills/standard-conformance/scripts/check-coverage.mjs check *)",
+  ] : [];
   const startedAt = new Date();
 
   try {
+    if (auditReportDirectory) mkdirSync(auditReportDirectory);
     execFileSync("git", ["clone", "--quiet", "--no-hardlinks", repoRoot, fixtureRoot]);
     execFileSync("git", ["checkout", "--quiet", "--detach", baselineCommit], { cwd: fixtureRoot });
     if (skillSnapshot) overlayWorkingFiles(fixtureRoot, skillName, path.resolve(skillSnapshot));
     else if (configuration === "with-skill") overlayWorkingFiles(fixtureRoot, skillName);
     if (contextReadme) cpSync(path.resolve(contextReadme), path.join(fixtureRoot, "README.md"));
+    const sharedVerificationFiles = skillName === "standard-update"
+      ? ["skills/standard-conformance/scripts/check-coverage.mjs", "skills/standard-conformance/scripts/check-coverage.test.mjs"]
+      : [];
+    for (const file of sharedVerificationFiles) {
+      mkdirSync(path.dirname(path.join(fixtureRoot, file)), { recursive: true });
+      cpSync(path.join(repoRoot, file), path.join(fixtureRoot, file));
+    }
     const instructionHash = fingerprintDirectory(path.join(fixtureRoot, skillRoot(skillName)));
     const contextHash = createHash("sha256").update(readFileSync(path.join(fixtureRoot, "README.md"))).digest("hex");
     if (configuration === "without-skill") removeSkill(fixtureRoot, skillName);
@@ -89,19 +103,25 @@ async function runEval(skillName, item) {
       prepareEvaluationChange(fixtureRoot, skillName, item.id);
     }
     const initialCommit = gitOutput(fixtureRoot, ["rev-parse", "HEAD"]).trim();
-    const initialTree = gitOutput(fixtureRoot, ["ls-files", "-s", "--", "README.md", "principles", "concerns", "structure", "tools", "languages", "process", "docs/research/maintenance-input.md"]);
+    const initialTree = gitOutput(fixtureRoot, ["ls-files", "-s", "--", "README.md", "principles", "concerns", "structure", "tools", "languages", "process", "docs/research/maintenance-input.md", ...sharedVerificationFiles]);
     const fixtureHash = createHash("sha256").update(initialTree).digest("hex");
 
     const prompt = [
       "これは実タスク評価です。確認質問で止まらず、与えられた範囲を最後まで実行してください。",
-      "作業対象は現在の一時fixtureだけです。元のrepositoryへは書き込まないでください。",
-      "task の path は現在の作業directoryからの相対pathです。外部事実の確認が task に必要なら WebSearch と WebFetch を使えます。Bash は許可済みの検証 script と git show/status/diff だけに使ってください。",
+      auditReportDirectory
+        ? `作業対象は現在の一時fixtureだけです。監査報告の保存だけは ${auditReportDirectory} を使えます。この報告保存を除き、元のrepositoryや、この専用directory以外の評価artifactへは書き込まないでください。`
+        : "作業対象は現在の一時fixtureだけです。元のrepositoryへは書き込まないでください。",
+      `task の path は現在の作業directoryからの相対pathです。外部事実の確認が task に必要なら WebSearch と WebFetch を使えます。Bash は許可済みの検証 script と git show/status/diff${auditReportDirectory ? "、下記の conformance CLI の二つの prefix" : ""} だけに使ってください。`,
       "ls、find、wc、cat、git log、git rev-parse を Bash で実行しないでください。file の読取と探索には Read、Glob、Grep を使えます。どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断してください。",
       "task が file を変更し、使用する skill が検証を要求する場合は、repository root から `bash .claude/skills/standard-update/scripts/verify.sh` の形で実行してください。読み取り専用 task へ検証を強制しないでください。",
       "この隔離評価では subagent は利用できません。skill が独立 reviewer を明示的に要求する場合だけ、その fallback として同じ session で scoped self-audit を行い、Agent や background task を起動して待たないでください。skill が要求しない self-audit は追加せず、閉じた経路が tool または file を制限する場合は fallback でもその範囲を広げないでください。",
       configuration === "without-skill"
         ? "この評価では project skill を使わずに実行してください。"
         : `これは発火評価ではありません。最初に Read tool で ${skillRoot(skillName)}/SKILL.md を全文読み、その指示に従ってください。Skill(...) のような呼出し文字列を応答するだけで終えないでください。参照 resource は SKILL.md が必要としたものだけを読んでください。`,
+      ...(auditReportDirectory ? [
+        "conformance CLI は repository root から `node skills/standard-conformance/scripts/check-coverage.mjs inventory` または `node skills/standard-conformance/scripts/check-coverage.mjs check` の prefix で実行できます。`--standard-root . --project-root target-project` を指定し、check では下記の報告pathを `--report` に渡してください。任意の Node command や Bash command は許可しません。",
+        `監査報告pathは ${auditReportPath} です。Write tool でこのpathへ JSON 報告を保存してください。このdirectoryは fixture のGit root外にあり、採点情報や期待解答は置かれていません。`,
+      ] : []),
       item.prompt,
     ].join("\n\n");
 
@@ -132,6 +152,7 @@ async function runEval(skillName, item) {
       "Bash(git -C * show *)",
       "Bash(git -C * status *)",
       "Bash(git -C * diff *)",
+      ...conformanceTools,
       "--disallowedTools",
       "Agent",
       "--setting-sources",
@@ -141,6 +162,10 @@ async function runEval(skillName, item) {
       "--max-budget-usd",
       budgetFor(item.model),
     ];
+    if (auditReportDirectory) commandArgs.push("--add-dir", auditReportDirectory);
+    const commandContractArgs = auditReportDirectory
+      ? commandArgs.map(arg => arg.replaceAll(auditReportDirectory, "<audit-report-directory>"))
+      : commandArgs;
     const env = { ...process.env };
     delete env.CLAUDECODE;
     env.SKILL_EVAL_ISOLATED_SKILL = skillName;
@@ -165,6 +190,9 @@ async function runEval(skillName, item) {
       fixture_sha256: fixtureHash,
       runner_sha256: runnerSha256,
       command_args: commandArgs,
+      command_contract_args: commandContractArgs,
+      audit_report_directory: auditReportDirectory,
+      audit_report_path: auditReportPath,
       suite: item.suite ?? null,
     }, null, 2)}\n`);
     writeFileSync(path.join(runRoot, "result.json"), `${JSON.stringify(resultSummary, null, 2)}\n`);
@@ -175,6 +203,11 @@ async function runEval(skillName, item) {
     writeFileSync(path.join(runRoot, "status.txt"), gitOutput(fixtureRoot, ["status", "--short", "--untracked-files=all"]));
     writeFileSync(path.join(runRoot, "status-ignored.txt"), gitOutput(fixtureRoot, ["status", "--short", "--untracked-files=all", "--ignored=matching"]));
     writeOutcomeEvidence(fixtureRoot, runRoot, initialCommit, item);
+    if (auditReportPath) {
+      const reports = existsSync(auditReportPath) && statSync(auditReportPath).isFile()
+        ? { "report.json": readFileSync(auditReportPath, "utf8") } : {};
+      writeFileSync(path.join(runRoot, "audit-reports.json"), `${JSON.stringify(reports, null, 2)}\n`);
+    }
     writeFileSync(path.join(runRoot, "timing.json"), `${JSON.stringify({
       executor_start: startedAt.toISOString(),
       executor_end: endedAt.toISOString(),
@@ -1007,6 +1040,7 @@ async function gradeEval(skillName, item) {
   if (savedTask.eval_id !== item.id || savedTask.model !== item.model) throw new Error("saved task identity mismatch");
   item = { ...savedTask, id: savedTask.eval_id };
   const evidenceNames = ["final.md", "tool-evidence.json", "diff.patch", "status.txt", "status-ignored.txt", "before-files.json", "after-files.json", "changed-files.json", "result.json", "timing.json"];
+  if (savedTask.audit_report_directory) evidenceNames.push("audit-reports.json");
   const evidence = Object.fromEntries(evidenceNames.map((name) => [name, readFileSync(path.join(runRoot, name), "utf8")]));
   const schema = {
     type: "object",
@@ -1034,6 +1068,7 @@ async function gradeEval(skillName, item) {
     "No-change and restraint require both tracked and ignored status plus unchanged content. Do not assume an unobserved verification passed.",
     "A process or model execution error is not evidence of a successful maintenance outcome. Missing evidence fails the affected expectation.",
     "For the product-closure expectation, inspect succeeded Bash verification calls and their results; a failed verifier without a later successful run cannot pass.",
+    "For a conformance audit, audit-reports.json contains the saved external report. Inspect it together with the inventory/check tool results; a report or claimed count alone does not prove completed coverage.",
   ].join("\n");
   const provenance = {
     task_prompt: item.prompt,
@@ -1124,8 +1159,12 @@ function updateBenchmark(skillName, item) {
     const timing = load("timing.json");
     const grading = load("grading.json");
     const tools = load("tool-evidence.json");
+    const commandContractArgs = metadata.audit_report_directory
+      ? metadata.command_args.map(arg => arg.replaceAll(metadata.audit_report_directory, "<audit-report-directory>"))
+      : metadata.command_args;
     runs.push({
       configuration: candidate, metadata, grading: grading.summary, grading_error: grading.error ?? null,
+      command_contract_args: commandContractArgs,
       duration_seconds: timing.executor_duration_seconds, cost_usd: timing.total_cost_usd,
       tokens: result.usage, model_usage: result.model_usage,
       tool_calls: tools.length, tool_errors: tools.filter((tool) => tool.status === "error").length,
@@ -1138,7 +1177,7 @@ function updateBenchmark(skillName, item) {
   const comparable = ["baseline_commit", "context_readme_sha256", "fixture_sha256", "runner_sha256", "model", "prompt"]
     .every((field) => oldRun.metadata[field] === newRun.metadata[field])
     && JSON.stringify(oldRun.metadata.expectations) === JSON.stringify(newRun.metadata.expectations)
-    && JSON.stringify(oldRun.metadata.command_args) === JSON.stringify(newRun.metadata.command_args)
+    && JSON.stringify(oldRun.command_contract_args) === JSON.stringify(newRun.command_contract_args)
     && JSON.stringify(Object.keys(oldRun.model_usage ?? {}).sort()) === JSON.stringify(Object.keys(newRun.model_usage ?? {}).sort())
     && Object.keys(oldRun.model_usage ?? {}).length > 0 && Object.keys(newRun.model_usage ?? {}).length > 0
     && oldRun.grading_provenance !== null && newRun.grading_provenance !== null

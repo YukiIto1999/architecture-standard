@@ -2,7 +2,13 @@
 
 `verify-test.sh` と `skill-package-check.sh` を実行した後、model eval の要否と範囲を決めるときに読む。
 
-`skill-package-check.sh` は実作業へ公開する product 検査であり、frontmatter、5 skill の eval 定義、script 構文を検査する。`run-task-evals.mjs` が `SKILL_EVAL_ISOLATED_SKILL` と `SKILL_EVAL_CONFIGURATION` の有効な組を渡した隔離評価だけは、選択中 skill の隠された `evals/` を欠落としない。configuration が `without-skill` なら、選択中 skill directory 全体の不存在だけを許可し、directory の一部が残る状態は失敗にする。通常実行や片方だけの指定では、skill または eval 一式がなければ失敗する。`skill-test.sh` は期待する解答と mutation を検査する外側の evaluator 回帰検査であり、評価対象 agent へ公開せず、実作業の完了条件にも使わない。
+`skill-package-check.sh` は実作業へ公開する product 検査であり、frontmatter、5 skill の eval 定義、script 構文、conformance CLI の behavior tests を検査する。
+`run-task-evals.mjs` が `SKILL_EVAL_ISOLATED_SKILL` と `SKILL_EVAL_CONFIGURATION` の有効な組を渡した隔離評価だけは、選択中 skill の隠された `evals/` を欠落としない。
+configuration が `without-skill` なら、選択中 skill directory 全体の不存在だけを許可し、directory の一部が残る状態は失敗にする。
+standard-conformance 自身の `without-skill` 隔離で、その package が完全に存在しない場合だけは同梱 behavior tests も実行対象から外す。
+通常構成、他の skill の隔離、package の部分残存では、この例外を使わず、test file の欠落も失敗にする。
+通常実行や片方だけの指定では、skill または eval 一式がなければ失敗する。
+`skill-test.sh` は期待する解答と mutation を検査する外側の evaluator 回帰検査であり、評価対象 agent へ公開せず、実作業の完了条件にも使わない。
 
 変更の種類に応じて model eval の範囲を決める。
 
@@ -26,8 +32,17 @@ root README 自身を同時に改訂する場合は、両条件へ同じ README 
 
 評価対象へ渡す task は `item.prompt` だけを使い、expectation、fixture mutation、grader は渡さない。
 選択中 skill の `evals/` と外側の evaluator script を一時 repository と Git 履歴から除き、実作業の product 検査と一般の reference は残す。
+standard-update の product 検査が使う conformance checker とその回帰検査は、全比較条件へ同じ source から配置し、`fixture_sha256` の対象に含める。
+選択した Skill の本文だけを新しくした混在版でも検査の依存が欠けないようにし、検査機構の差を instruction の効果へ混ぜない。
 `before-files.json` と `after-files.json` は評価に必要な本文と全変更 file の内容を持ち、`changed-files.json` は tracked、untracked、ignored の変更を列挙する。
 `tool-evidence.json` は tool の完全な入力と結果を保存し、未実施の読取や検証を最終応答の主張だけで補わない。
+
+standard-conformance の task では、host が `node skills/standard-conformance/scripts/check-coverage.mjs inventory` と `check` の prefix だけを Bash の追加許可へ渡す。
+報告は `runRoot/audit-reports/report.json` へ保存し、fixture の Git root 外にあるその専用 directory だけを `--add-dir` と prompt で書込先に指定する。
+評価対象へ採点情報や期待解答を渡さず、保存した報告は外側の `audit-reports.json` として tool 結果とともに grader へ渡す。
+`command_args` は host へ渡した実入力を保持し、比較用の `command_contract_args` は報告専用 directory の割当だけを正規化する。
+比較時は保存済みの正規化値を信用して raw command の差を隠さず、`command_args` から同じ正規化を再計算する。
+これらの argument と artifact の schema 検査は、Claude の実 command policy の適用や model の完遂を証明しない。
 
 `--grade` は実行直後に別 context の grader を起動し、`--grade-only` は保存済みの `eval_metadata.json` にある task と expectation で成果物を採点する。
 現在の eval 定義を変えても、過去の成果物へ新しい rubric を適用しない。

@@ -165,4 +165,13 @@ while IFS= read -r -d '' script; do
   node --check "$script" >/dev/null
 done < <(fd --type f --extension mjs --print0 . .claude/skills)
 
-printf 'PASS: skill package structure and script syntax\n'
+if [ "${SKILL_EVAL_ISOLATED_SKILL:-}" = standard-conformance ] \
+  && [ "${SKILL_EVAL_CONFIGURATION:-}" = without-skill ] \
+  && [ ! -e skills/standard-conformance ] \
+  && [ ! -L skills/standard-conformance ]; then
+  printf 'SKIP: standard-conformance is absent in its without-skill fixture\n'
+else
+  node --test skills/standard-conformance/scripts/check-coverage.test.mjs
+fi
+
+printf 'PASS: skill package structure and applicable checks\n'
