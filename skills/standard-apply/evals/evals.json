@@ -150,14 +150,14 @@
       "suite": "line-store",
       "fixture": { "kind": "line-store", "stage": "hide" },
       "prompt": "`target-project/README.md` のAcceptedな公開契約を維持し、architecture-standardに従ってLineStoreの内部配列を利用側から隠す変更を実装してください。格納の所有者は `src/line-store.ts` のexported LineStore classのままとし、公開メソッド名は目的に合う最小の操作として選べます。既存consumerは意味上の操作へ切り替え、旧linesアクセスや配列を公開する別名・getter・互換経路を残さないでください。この段でconsumerが変わることは許可します。renderSelectedの署名とResultの成功・失敗、順序、重複、空状態、整数の負の位置と末尾境界、失敗時の状態不変を保ち、固定test・契約・manifest・lockfile・検証入口は変更しません。初期の格納は配列のままとし、今回依頼していないMap化や機能を加えないでください。対象projectの実検証結果と未確認事項を報告してください。",
-      "expected_output": "LineStoreの配列表現を私有化し、consumerを意味上の操作へclean cutoverする。公開Result契約と固定host oracleを満たし、内部表現の漏出と旧経路がなく、固定検証と変更行mutationの実出力を残す。",
+      "expected_output": "LineStoreの配列表現を私有化し、consumerを意味上の操作へclean cutoverする。公開Result契約と固定host oracleを満たし、内部表現の漏出と旧経路がなく、固定検証と変更・影響範囲mutationの実出力を残す。",
       "files": ["target-project/README.md", "target-project/src/line-store.ts", "target-project/src/render-selected.ts", "principles/separation/information-hiding.md", "principles/separation/split-by-change-reason.md", "structure/tests/methods.md"],
       "expectations": [
         "information-hiding.md の要求・完了条件・禁止事項と、公開配列へ依存する実consumerを対応づけ、目的を表す最小の契約に是正する",
         "LineStoreの内部配列と内部状態を私有化し、旧linesアクセス、公開Array/Mapの別名やgetter、互換経路を残さず、consumerを意味上の操作へ移す",
         "固定host oracleでrenderSelectedのResultの成功・position-out-of-range、追加順序、重複、空・単一・複数、負・末尾・範囲外、失敗時の状態不変を維持する",
         "固定source契約とtest・manifest・lockfile・検証入口を変更せず、格納の所有者とexported LineStore classを維持し、この段ではMap化や無関係な機能を加えない",
-        "対象projectのcheck・verify・verify:pushと変更行mutationの実観測を残し、hostの独立検査に失敗・未検出mutant・diff欠落があれば合格を主張せず、標準側verify.shや説明だけで代替しない"
+        "対象projectのcheck・verify・verify:pushと変更・影響範囲mutationの実観測を残し、hostの独立検査に失敗・未検出mutant・対象選択の欠落・判定未完了があれば合格を主張せず、標準側verify.shや説明だけで代替しない"
       ]
     },
     {
@@ -166,14 +166,14 @@
       "suite": "line-store",
       "fixture": { "kind": "line-store", "stage": "map" },
       "prompt": "`target-project/README.md` のAcceptedな公開契約を維持し、architecture-standardに従ってLineStoreの内部格納を配列からMapへ変更してください。格納の所有者は `src/line-store.ts` のexported LineStore classのままとし、Mapを公開契約へ漏らさないでください。task1のsource snapshotから始まる条件では、格納境界の外の全production consumerを変更しません。是正前のcanonical sourceから始まる条件では、必要なconsumerのcutoverを許可し、その変更理由と差分を残してください。renderSelectedの署名とResultの成功・失敗、順序、重複、空状態、整数の負の位置と末尾境界、失敗時の状態不変を保ち、固定test・契約・manifest・lockfile・検証入口は変更しません。対象projectの実検証結果とconsumerへの変更影響と未確認事項を報告してください。",
-      "expected_output": "新規contextへ渡されたsourceを正確に使用し、私有Mapで論理位置・順序・重複・Result契約を維持する。task1後の条件は全boundary-external production consumerが不変であり、canonical条件は必要なcutoverの差分を記録する。hostの固定oracle・検証・変更行mutationを満たす。",
+      "expected_output": "新規contextへ渡されたsourceを正確に使用し、私有Mapで論理位置・順序・重複・Result契約を維持する。task1後の条件は全boundary-external production consumerが不変であり、canonical条件は必要なcutoverの差分を記録する。hostの固定oracle・検証と未変更consumerを含む変更・影響範囲mutationを満たす。",
       "files": ["target-project/README.md", "target-project/src/line-store.ts", "target-project/src/render-selected.ts", "principles/separation/information-hiding.md", "principles/separation/split-by-change-reason.md", "structure/tests/methods.md"],
       "expectations": [
         "source入力の由来を確認し、information-hiding.md と不変のAccepted契約から内部決定だけの変更として設計し、公開契約変更や全変更への一般化をしない",
         "exported LineStore classを保持して格納に真に私有のMapを使い、MapやArrayの公開、別名、getter、旧lines経路を残さない",
         "固定host oracleでrenderSelectedのResultの成功・position-out-of-range、追加順序、重複、空・単一・複数、負・末尾・範囲外、失敗時の状態不変を維持する",
         "task1 snapshot入力では全boundary-external production consumerを入力sourceから一切変更せず、canonical入力では必要なconsumer変更を実差分と理由で示し、二条件を同じ入力の改善量へ混ぜない",
-        "固定test・契約・manifest・lockfile・検証入口を弱めず、host側のcheck・verify・verify:pushと変更行mutationの実観測を残し、失敗・未検出mutant・diff欠落を成功として代替しない"
+        "固定test・契約・manifest・lockfile・検証入口を弱めず、host側のcheck・verify・verify:pushと未変更consumerを含む変更・影響範囲mutationの実観測を残し、失敗・未検出mutant・対象選択の欠落・判定未完了を成功として代替しない"
       ]
     }
   ]

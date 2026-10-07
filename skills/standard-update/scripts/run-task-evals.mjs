@@ -742,7 +742,7 @@ function verifyLineStore(fixtureRoot, runRoot, item, before, after) {
       require_consumer_stability: requireConsumerStability,
       source_sha256: digest(JSON.stringify(candidate)), canonical_sha256: canonical.canonical_sha256, commands,
       verification_reports: Object.fromEntries(Object.entries(reports).filter(([file]) =>
-        file.startsWith("verification-") || ["mutation/gate.json", "mutation/changed-lines.json", "mutation/failure.json"].includes(file))) };
+        file.startsWith("verification-") || ["mutation/gate.json", "mutation/scope.json", "mutation/failure.json"].includes(file))) };
   } finally {
     assertOwnedFixture(verificationRoot);
     rmSync(verificationRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });

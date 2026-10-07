@@ -175,16 +175,19 @@ npm --prefix "$HOST_PROJECT" run verify:push -- --base "$HOST_BASE"
 T0のcheckは10秒、T1のverifyは2分、T2のverify:pushは15分を上限とし、依存導入とevaluatorとgraderの時間はprojectの各段の実測と区別する。
 hostでは `verify` がT0も実行するため、同じsourceの `check` を直前に重ねない。
 各commandが失敗したら後続の検証を実行せず、未実施を成功へ数えない。
-変更行diffの取得不能、未検出mutant、型・静的検査・固定test・独立oracleの失敗は合格にしない。
+変更と影響範囲の選択不能、生成0件、未検出mutant、test未実行、判定未完了、型・静的検査・固定test・独立oracleの失敗は合格にしない。
 固定testなどの変更も不合格であり、actorが弱めたtestの成功でhostの検証を代替しない。
 hostの棄却や実行不成立がある結果は、graderが全項目を合格としても `summary.passed` と `pass_rate` を0、`overall_pass` をfalseにする。
 grader単体の判定件数は `grader_passed` に残し、実行と固定host検証の成立は `execution_valid` で区別する。
 どちらかの実行が成立しない比較では、`delta_with_minus_old` を算出しない。
 
 `canonical-project.json` はprojectとhost oracleの固定資材、`project-before.json` と `project-after.json` は対象の全source、固定test、manifest、lockfile、契約、検証入口の実内容とSHA-256を持つ。
-`host-before-reports.json` と `host-after-reports.json` に検証reportとmutation reportを保存し、gateと変更行の情報は `host-after.json` からgraderにも渡す。
+`host-before-reports.json` と `host-after-reports.json` に検証reportとmutation reportを保存し、gateと `mutation/scope.json` の対象選択情報は `host-after.json` からgraderにも渡す。
 `consumer-diff.patch` は追加されたuntracked sourceを含む境界外production sourceの実差分であり、変更file名だけで局所性を推定しない。
 `node_modules/`、`.git/`、`.stryker-tmp/`、`reports/`、`coverage/` はsource snapshotに含めない。
+変更入力があれば未変更consumerを含む全production sourceを生成対象にし、production以外の入力や削除、rename、untrackedな入力の影響も省略しない。
+固定gateは実行不能な `CompileError` の除外を検出と分け、実行証拠の無い結果や根拠の無いtimeoutを不合格にする。
+比較条件間でこの固定gate、test、sourceの同一性を保ち、actorによる固定資材の変更を対象範囲の拡張で正当化しない。
 
 ## 後続sourceの復元
 
