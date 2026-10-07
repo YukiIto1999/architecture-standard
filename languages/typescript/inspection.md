@@ -199,9 +199,9 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | conventions | ドキュメントコメントを書く | 構造検査(TypeScript compiler API と @microsoft/tsdoc。存在・構文・宣言と tag の対応・`@throws {@link ErrorType} 条件`・外へ伝播する直接の throw の型と link・try/catch で吸収される throw の除外・先頭行の一行と句読点)+レビュー(実効的な可視境界に応じた外部契約または内部契約、call/rejected Promise から伝播する欠陥と @throws、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(TypeScript compiler API による命名照合) |
 | vitest | カバレッジ | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定) |
-| valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・境界の parse の単体テスト) |
+| valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・生成 schema と生成 DTO の対応・全 variant と入れ子・配列内 object の未知キーの受容と位置捕捉、境界の警告到達、捕捉値の非流入、必須項目欠落・制約違反・判別子と payload の不一致の拒否)+構造検査(公開契約の schema の生成元と受信側固有の schema の区別) |
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |
-| http-client-js | 生成した契約を使い、drift を検査の gate にする | 実行テスト(契約からの生成、再生成の差分、判別付き直和の判別子つき union と網羅の型検査、生成 client への transport の注入、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
+| http-client-js | 生成した契約を使い、drift を検査の gate にする | 構造検査(データ型の公開入口の runtime 依存 closure の通信 client と transport からの分離)+実行テスト(契約からの生成、再生成の差分、判別付き直和の判別子つき union と網羅の型検査、生成 client への transport の注入、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
 | connection | 生成型を型としてのみ使い、通信を port に通す | 構造検査(TypeScript compiler API。viewer からの生成 client の import と runtime の import の検出、生成 client の import を ui port の実装へ限定)+型(import type) |
 | ts-results-es | 効果を遅延した関数で表す | 構造検査(TypeScript compiler API。Effect が unique symbol の nominal brand を持ち、deferEffect だけが branded value を構築し、全ての公開 Effect factory に parameter initializer がなく、本体が実行用の関数リテラルを deferEffect へ直接渡すこと)+実行テスト(deferEffect の構築時は副作用0件で、返した Effect の呼出後にだけ開始すること)+型(Effect の nominal brand・環境・AbortSignal・wall-clock の絶対期限・AsyncResult のシグネチャ) |
 | ts-results-es | 想定内失敗を Result で返す | 型(ts-results-es の Result・判別子つき union) |

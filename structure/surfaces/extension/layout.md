@@ -47,8 +47,9 @@ extension と viewer は、それぞれの shared を統合しない。
 
 extension は、core を直接埋め込まない。
 remote の関心は、host が port として注入する client で server の API を呼ぶ。
-extension 自身は、[contracts/generated](../../contracts/generated.md) の型の import にとどめる。
-local の関心は、core を埋め込んだ埋め込み surface へ、[contracts/protocol](../../contracts/protocol.md) の言語非依存の protocol で接続する。
+extension 自身は、remote と local のどちらも [contracts/generated](../../contracts/generated.md) のデータ型の import にとどめる。
+local の関心は、core を埋め込んだ埋め込み surface へ、host が port として注入する protocol の client・stub で接続する。
+protocol の意味と wire の binding は [contracts/protocol](../../contracts/protocol.md) が定め、extension がそのスキーマや通信実装を実行時に直接 import しない。
 local の接続は、host が要求する場合に限って使う。
 server の API を、この接続で置き換えない。
 extension は、注入された client または protocol の operation を呼び、業務判断を持たない。

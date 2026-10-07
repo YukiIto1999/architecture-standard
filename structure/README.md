@@ -17,7 +17,7 @@ libs は core の子ではなく、他の root 境界を参照しません。
                               │
                          [ runtimes ]
 
- [ core ] ──────────────► [ contracts の許可された層 ]
+ [ core/composition ] ──► [ contracts/generated のデータ型 ]
  [ surfaces ] ──────────► [ contracts の許可された層 ]
  [ runtimes ] ──────────► [ contracts の許可された層 ]
 ```

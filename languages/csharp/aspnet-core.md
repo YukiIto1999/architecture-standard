@@ -10,8 +10,10 @@
 ### 要求
 server は ASP.NET Core の Minimal API で組み、endpoint の登録はコンテキストごとの登録に分ける。
 境界の仕込みは middleware で一括して積み、認証を認可の前に、認可を業務の前に置く。
-server の認証境界は検証済み `ClaimsPrincipal` を actor へ写し、endpoint から埋め込んだ core の公開 API へ actor だけを渡す。
+server の認証境界は検証済み `ClaimsPrincipal` を actor へ写し、認証に関する値は actor としてだけ埋め込んだ core の公開 API へ渡す。
 `ClaimsPrincipal`、token、claim を core の公開 API または業務へ渡さない。
+handler の契約のデータは generated の DTO で受け渡し、形式と制約を通った入力を core の公開 operation へ渡す。
+生成 DTO の decode と未知項目の捕捉は [translation](./translation.md)、DTO と application の写像の所有者は [structure/core/composition](../../structure/core/composition.md) に従う。
 冪等な endpoint は、認証済み actor ID、匿名の安定した session または client の opaque scope、logical system actor ID を要求の種別に応じた actor scope として retention へ渡す。
 multi-tenant operation は、認証済み claim または membership、authorization 済み選択、匿名の検証済み host または route と session/client context、system の logical actor 設定のいずれかから `TenantId` を構築する。
 single-tenant operation は正準な single-tenant sentinel を、tenant の概念を持たない operation は正準な no-tenant sentinel を retention へ渡す。
@@ -27,7 +29,7 @@ endpoint の登録をコンテキストごとに分ければ、面が変更理�
 server が、Minimal API で組まれている。
 endpoint の登録が、コンテキストごとの登録に分かれている。
 境界の仕込みが middleware で一括して積まれ、認証・認可・業務の順序になっている。
-検証済み `ClaimsPrincipal` が server の認証境界で actor へ写され、core の公開 API が actor だけを受け取っている。
+検証済み `ClaimsPrincipal` が server の認証境界で actor へ写され、core の公開 API が認証に関する値を actor としてだけ受け取っている。
 冪等な endpoint が actor と tenant の全種別を retention の scope へ写し、未検証 tenant と `TenantId`・single-tenant sentinel・no-tenant sentinel の相互混同を拒否し、proof のない別 client へ保存済み response を返さないことが結合テストで検証されている。
 
 ### 禁止事項
@@ -41,7 +43,7 @@ endpoint を、一箇所にまとめてベタ書きすること。
 ### 行動
 endpoint の登録をコンテキストごとの拡張メソッドに分け、Program.cs は合成だけにする。
 middleware を認証・認可・業務の順に積む。
-検証済み `ClaimsPrincipal` を認証 middleware で actor へ写し、endpoint から actor と検証済み入力だけを core の公開 API へ渡す。
+検証済み `ClaimsPrincipal` を認証 middleware で actor へ写し、endpoint から actor と契約の形式と制約を通った生成 DTO を core の公開 API へ渡す。
 actor と tenant の種別を retention の scope へ写し、安定した匿名 scope がなければ server 発行 key と proof を使う。
 multi-tenant は認証済み、匿名、system の検証済み context から `TenantId` を構築する。
 single-tenant は正準な single-tenant sentinel、tenant の概念外は正準な no-tenant sentinel を使う。
@@ -183,7 +185,9 @@ public sealed class ValkeyTicketStore(IDistributedCache cache) : ITicketStore { 
 ## 公開するエラーを境界で problem+json へ写す
 
 ### 要求
-`Result` から HTTP の応答への写像は handler の終端に置き、`ProblemDetails` の機構で RFC 9457 の problem+json へ写す。
+`Result` から HTTP の応答への写像は handler の終端に置き、binding から生成したエラーの DTO を RFC 9457 の problem+json として返す。
+HTTP status、header、content type は Minimal API の応答で組み立て、`ProblemDetails` の機構の出力にも生成したエラーの契約を適用する。
+公開契約の field を、別の手書き DTO へ写し直さない。
 未処理の例外は例外 handler の middleware が一括で problem+json へ変換する。
 内部の実装の詳細を、応答に出さない。
 
@@ -197,11 +201,13 @@ problem+json の標準の形に従えば、利用側が機械的に扱える。
 失敗が、problem+json へ写されている。
 写像が handler の終端と例外 handler の middleware に集約され、各所に散っていない。
 応答に、内部の実装の詳細が出ていない。
+公開契約のエラーの body が binding から生成した DTO に従い、handler がコンテキストの domain エラーや内部詳細を直接公開していない。
 
 ### 禁止事項
 エラーの写像を、handler の各所に散らすこと。
 内部の実装の詳細を、応答に出すこと。
 
 ### 行動
-`Result` から応答への写像を handler の終端に置き、`ProblemDetails` で problem+json へ写す。
+core の公開 operation が返す生成されたエラーの DTO と binding を使い、handler の終端で HTTP status と problem+json の応答を組み立てる。
+`ProblemDetails` の機構の serializer と例外 handler も、公開する body が generated の契約に一致するように設定する。
 未処理の例外を例外 handler の middleware で一括変換する。

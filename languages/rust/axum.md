@@ -11,8 +11,10 @@
 server は axum で組み、依存は State で handler へ渡す。
 router はコンテキストごとに分けて合成し、境界の仕込みは tower の middleware で一括して積む。
 認証は route の一致時にだけ走る層に置く。
-server の認証境界は検証済み principal を actor へ写し、route から埋め込んだ core の公開 API へ actor だけを渡す。
+server の認証境界は検証済み principal を actor へ写し、認証に関する値は actor としてだけ埋め込んだ core の公開 API へ渡す。
 principal、token、claim を core の公開 API または業務へ渡さない。
+handler の契約のデータは generated の DTO で受け渡し、形式と制約を通った入力を core の公開 operation へ渡す。
+serde の decode と未知項目の捕捉は [serde](./serde.md)、DTO と application の写像の所有者は [structure/core/composition](../../structure/core/composition.md)、surface 固有の応答 wrapper は [translation](./translation.md) に従う。
 server の想定内の失敗は、RFC 9457 の problem+json へ `IntoResponse` の実装で写す。
 server の未処理の panic は、`CatchPanicLayer` で捕捉して内部の詳細を含まない problem+json へ写す。
 server の取り消しは、想定内の失敗の応答へ変換しない。
@@ -33,7 +35,7 @@ router をコンテキストごとに分けて合成すれば、面が変更理�
 server が axum で組まれ、依存が State で handler へ渡されている。
 router が、コンテキストごとに合成されている。
 境界の仕込みが middleware で一括して積まれ、認証が route の一致時にだけ走る層に置かれている。
-検証済み principal が server の認証境界で actor へ写され、core の公開 API が actor だけを受け取っている。
+検証済み principal が server の認証境界で actor へ写され、core の公開 API が認証に関する値を actor としてだけ受け取っている。
 想定内の失敗が、`IntoResponse` の実装で problem+json へ写されている。
 未処理の panic が、`CatchPanicLayer` で内部の詳細を含まない problem+json へ写されている。
 取り消しが、想定内の失敗の応答へ変換されていない。
@@ -53,8 +55,8 @@ principal、token、claim を core の公開 API または業務へ渡すこと�
 ### 行動
 依存を State で渡し、router をコンテキストごとに nest・merge で合成する。
 境界の仕込みを ServiceBuilder で積み、認証は route の一致時にだけ走る層に置く。
-検証済み principal を認証 middleware で actor へ写し、route から actor と検証済み入力だけを core の公開 API へ渡す。
-想定内の失敗を `IntoResponse` の実装で problem+json へ写す。
+検証済み principal を認証 middleware で actor へ写し、route から actor と契約の形式と制約を通った生成 DTO を core の公開 API へ渡す。
+想定内の失敗は、生成 DTO を保持する surface の応答 wrapper に `IntoResponse` を実装して problem+json と HTTP status へ写す。
 `CatchPanicLayer` を ServiceBuilder に積み、未処理の panic を内部詳細のない problem+json へ写す。
 actor と tenant の種別を retention の scope へ写し、安定した匿名 scope がなければ server 発行 key と proof を使う。
 multi-tenant は認証済み、匿名、system の検証済み context から `TenantId` を構築する。

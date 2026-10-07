@@ -188,9 +188,9 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化。公開要素のコメント欠落)+analyzer(Roslyn analyzer。全宣言のコメント存在・param/typeparam/returns/value・先頭行・当該宣言内で機械判定できる欠陥の exception)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET の命名照合) |
 | coverlet-mtp | カバレッジ | 計測(branch を数える設定は `--coverlet` で有効にする coverlet.MTP の cobertura 出力であり、その `branches-covered` と `branches-valid` から project 記録の branch 下限を検証入口で判定) |
-| translation | 境界で一度だけ parse してドメイン型へ移す | 型(JsonSerializerContext・required・JsonExtensionData)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
+| translation | 境界で一度だけ parse してドメイン型へ移す | 型(生成 DTO・JsonSerializerContext・required・生成 converter・JsonExtensionData)+構造検査(composition の Mapper とコンテキストの検証付き入力構築の配置)+実行テスト(既知項目の不正の拒否、全 variant と入れ子 object の未知キーの位置捕捉とログ到達、捕捉値の domain と応答への非流入) |
 | aspnet-core | 公開するエラーを境界で problem+json へ写す | 実行テスト(ProblemDetails の単体テスト) |
-| nswag | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
+| nswag | 生成した契約を使い、drift を検査の gate にする | 構造検査(データ型の assembly の runtime 依存 closure の通信 client と実行機構からの分離)+実行テスト(drift 検査・conformance と生成 serializer の能力の検証入口の判定) |
 | connection | 効果を Effect 型で組む | 型(readonly struct、Deadline と CancellationToken を受けて ValueTask を返す delegate の内包)+analyzer(Roslyn analyzer。明示的 `default(Effect<...>)`、Effect への `default` literal の代入、型解決で Effect と判定できる `default(T)` の検出)+実行テスト(配列、field、未解決の generic 由来の default を EffectRuntime.Run で実行すると Defected の `UninitializedEffectException` になること) |
 | connection | 効果の生成と combinator と資源を備える | 型(EffectContext の Success/Try は引数から TValue を推論し、Fail<TValue>/Defect<TValue> は値型を明示する生成関数、Try body は Deadline、CancellationToken、ValueTask の delegate、AcquireRelease release は Deadline を受けるが CancellationToken を受け取らない ValueTask の delegate、拡張 method の combinator のシグネチャ)+analyzer(Roslyn analyzer。全 combinator が Run から受けた同じ Deadline を下流の Effect と release へ渡し、release を非取消の後始末にすること)+実行テスト(AcquireRelease の単体テスト、取消済み token の下でも release が同じ Deadline を受けて一度完了すること、複数の Bind を通っても期限が引き直されないこと) |
 | connection | 終了を成功と失敗と欠陥と取り消しに分ける | 型(sealed record 階層の EffectExit、Result の tag 0 は未初期化)+analyzer(Roslyn analyzer。明示的 default(Result)、Result への default literal の代入、型解決できる default(T) の検出)+実行テスト(配列・field・generic 由来の default が全 observer・Match・unwrap 相当で欠陥になること)+構造検査(formation の階層外派生の検出に従う) |

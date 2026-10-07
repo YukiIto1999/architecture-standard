@@ -52,7 +52,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [tower](./tower.md) | HTTP の経路の横断処理を、層として合成する機構である | Rust は tower と tower-http である |
 | [tower-lsp-server](./tower-lsp-server.md) | 言語サービスの公開・extension が接続する core への JSON-RPC | tower-lsp-server である |
 | [tower-sessions](./tower-sessions.md) | BFF の token 管理・BFF の session 管理 | Rust は tower-sessions のサーバー側セッション、redis の Valkey client と openidconnect のトークンエンドポイントクライアントである |
-| [typify](./typify.md) | HTTP を持たない契約の JSON Schema から Rust の型を生成する道具である | Rust は typify である |
+| [typify](./typify.md) | JSON Schema から Rust のデータ型を生成し、HTTP と非 HTTP の契約の decode と未知項目の捕捉の生成規律を定める道具である | Rust は typify である |
 
 ## 言語機構で満たす用途
 

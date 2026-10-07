@@ -9,6 +9,7 @@
 
 ### 要求
 contracts/generated の TypeScript の client と型は、契約から `@typespec/http-client-js` で生成する。
+データ型の公開入口を transport と通信 client から分離し、[structure/contracts/generated](../../structure/contracts/generated.md) が定める具体的な field と variant と依存単位の分離を満たす。
 生成物を、手で編集しない。
 生成した client は、host が実装する transport を引数で受け取る。
 client の既定の transport と既定の再試行・redirect・logging の設定に、依存しない。
@@ -32,6 +33,7 @@ client と型が、契約から `@typespec/http-client-js` で生成され、con
 生成した client を import しているのが、ui port の実装だけである。
 viewer が、生成物の型だけを型として import している。
 生成物が、製品が採用する TypeScript の型検査を通っている。
+データ型だけの公開入口の runtime 依存 closure に、通信 client と transport の実行機構が入っていない。
 
 ### 禁止事項
 生成物を手で編集すること。
@@ -42,6 +44,8 @@ viewer から、生成した client を import すること。
 
 ### 行動
 契約から `@typespec/http-client-js` で client と型を生成し、contracts/generated へ書き出して commit する。
+データ型の公開入口を通信 client とは独立して生成し、接尾辞のための同義 DTO や alias を追加しない。
+公開契約の runtime 検証は [valibot](./valibot.md) が定める生成 schema に接続し、その生成処理を同じ contracts 生成 task に含める。
 検証入口で再生成し、差分が出たら失敗させる。
 host の transport を client の引数へ渡し、TLS・proxy・timeout・再試行の判断を host 側に置く。
 ui port の実装から生成 client を呼び、viewer には型だけを渡す。

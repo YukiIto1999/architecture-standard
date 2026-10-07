@@ -1,13 +1,15 @@
 # canonical 層
 
-canonical 層は、契約の意味の正本を定める層である。
-操作・型・エラーを、媒体に依らない意味として記述する。
+canonical 層は、外部へ公開する契約の意味の正本を定める層である。
+操作・型・エラー・制約を、媒体に依らない意味として記述する。
 canonical は [layout](./layout.md) の依存に従う。
 
 ## 意味の定義
 
-canonical は、操作・型・エラーを意味として定義する。
-canonical は、HTTP やプロトコルの詳細を含まない。
+canonical は、公開する操作の入出力、型の field、直和の variant、値の制約、エラーを定義する。
+公開契約に必要な共有の field、variant、制約を、利用側の手書き DTO にだけ持たせない。
+canonical は HTTP や protocol の詳細を含まず、媒体固有の表現は binding が所有する。
+core の業務モデルは canonical の写しではなく、各コンテキストが所有する責務と保証で定める。
 
 ## 単一の正本
 
@@ -23,6 +25,7 @@ canonical は、コンテキストごとのファイルに分け、一枚のフ�
 
 canonical は、単一の契約記述言語で記述し、その記述を契約の単一の正本とする。
 契約記述言語と生成器の採用は、[tools/build/typespec](../../tools/build/typespec.md) が定める。
+生成した DTO が公開契約を具体的に表せない場合は、意味の欠落を canonical で、wire への写像の欠落を binding で、生成表現の欠落を生成器で直す。
 
 ## 集合の操作
 

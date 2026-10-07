@@ -21,7 +21,7 @@ server/
 
 `routes` は、1 route を1ファイルに置く。
 `bff` は、Web の資格情報を検証し、token を仲介する認証境界を置く。
-`bff` は、検証済み principal を actor へ写し、actor と検証済み入力だけを routes と core へ渡す。
+`bff` は、検証済み principal を actor へ写し、その actor を routes と core へ渡す。
 `bff` は、内部の機構を外へ公開せず、抽象の interface だけを公開する。
 `composition` は単一の組立点である。
 
@@ -36,8 +36,10 @@ server 自身の技術的な処理は、[libs](../../libs/layout.md) の公開 A
 
 ## 入口と handler
 
-handler は、http の要求を core API の operation へ写像する。
-handler は、業務判断を持たず、入力の変換と operation の呼び出しだけを行う。
+handler は、http の要求を生成 DTO として decode し、binding 固有の path、header、query と body を core API の operation の入出力へ写像する。
+handler は、契約の形式と制約を通った生成 DTO を operation へ渡し、その結果の生成 DTO を応答へ encode する。
+公開契約の DTO とコンテキストの application 入出力の写像は [core/composition](../../core/composition.md) が所有し、handler は業務判断やドメイン型への変換を持たない。
+生成 DTO と通信 client の分離、未知項目の扱い、生成能力の不足の解消は [contracts/generated](../../contracts/generated.md) に従う。
 API の様式と表現の形式は [contracts/http](../../contracts/http.md) に、操作の意味は [contracts/canonical](../../contracts/canonical.md) に従う。
 認可の規律は [concerns/authorization](../../../concerns/authorization/README.md) に従う。
 port は [structure/core/application](../../core/application.md) に、engine は [structure/core/infrastructure](../../core/infrastructure.md) に従う。
@@ -47,7 +49,7 @@ port は [structure/core/application](../../core/application.md) に、engine �
 server は、Web BFF として OIDC の authorization code flow と PKCE を終端する。
 認証境界は ID Token の署名、issuer、audience、期限、nonce を検証し、`at_hash` がある場合は access token との対応も検証してから principal を actor へ一度だけ写す。
 implicit grant と resource owner password credentials grant を使わない。
-route は actor と検証済み入力だけを core の公開 API へ渡し、資格情報、principal、token、claim、認証方式の型を渡さない。
+route は actor と契約の形式と制約を通った生成 DTO だけを core の公開 API へ渡し、資格情報、principal、token、claim、認証方式の型を渡さない。
 
 token broker は access token と refresh token の交換、保持、更新、失効を担う。
 token と認証 flow の一時状態は server 側の session に保持し、ブラウザへは session を指す推測不能で opaque な cookie だけを渡す。

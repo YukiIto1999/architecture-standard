@@ -8,6 +8,9 @@ protocol は [layout](./layout.md) の依存に従い、canonical を参照す�
 
 protocol は、canonical の操作を、選んだ protocol の要求と応答へ写像する。
 protocol は固有の意味を持たず、canonical の意味を wire へ表すだけである。
+この binding から生成したデータ型を、提供側と利用側の要求と応答に使う。
+通信 stub はその通信を所有する境界に置き、core の composition にはデータ型だけを渡す。
+データ型と stub の分離と生成能力は [generated](./generated.md) に従う。
 
 ## スタイル
 
