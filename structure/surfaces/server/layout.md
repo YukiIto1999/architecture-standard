@@ -31,6 +31,7 @@ server/
 composition が routes と bff を組み立て、core を埋め込む。
 routes と bff は、composition を参照しない。
 server の外との依存は [skeleton](../../skeleton.md) に従う。
+server 自身の技術的な処理は、[libs](../../libs/layout.md) の公開 API を直接使え、core の operation を仲介にしない。
 依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## 入口と handler

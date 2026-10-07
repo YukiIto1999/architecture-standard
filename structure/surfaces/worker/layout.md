@@ -28,12 +28,14 @@ worker/
 composition が jobs・queue・schedule を組み立て、core を埋め込む。
 jobs・queue・schedule は、composition を参照しない。
 worker の外との依存は [skeleton](../../skeleton.md) に従う。
+worker 自身の技術的な処理は、[libs](../../libs/layout.md) の公開 API を直接使え、core の operation を仲介にしない。
 依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## job と application
 
-job は、core の公開 API だけを呼び出す。
-libs の port の配線と駆動は、[core/composition](../../core/composition.md) に閉じる。
+job が業務の operation を起動する経路は、core の公開 API に限る。
+core の業務処理が必要とする libs の port は、[core/composition](../../core/composition.md) が配線する。
+worker が所有する技術機構の配線は worker の composition に置き、queue と schedule の runner はその公開 API を直接使う。
 job は、業務判断を持たず、配線された処理を呼ぶだけである。
 job は、queue や schedule の機構の型を core へ持ち込まず、core API の operation へ写像する。
 worker は、派生読みモデルの定常・定期の再構築 workflow を job として起動する役割を担う。

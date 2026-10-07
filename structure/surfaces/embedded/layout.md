@@ -24,6 +24,7 @@ surface の名は、公開する protocol の対話様式で付ける。
 composition が endpoints を組み立て、core を埋め込む。
 endpoints は composition を参照しない。
 埋め込み surface の外との依存は [skeleton](../../skeleton.md) に従う。
+埋め込み surface 自身の技術的な処理は、[libs](../../libs/layout.md) の公開 API を直接使え、core の operation を仲介にしない。
 依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## 入口と protocol

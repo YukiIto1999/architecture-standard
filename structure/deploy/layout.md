@@ -75,7 +75,8 @@ running な配備先を、手続きで直接書き換えない。
 delivery の内部は、反映する配備先の単位に対応させて分ける。
 一つの配備先への反映定義を一つの単位にまとめる。
 delivery には、その project の配備への反映定義だけを置く。
-配備先の種別に共通する反映の機構は、project の中に実装せず、独立した機構リポジトリを正本とする tool として扱う。
+配備先の種別に共通する反映は、採用した tool の標準機構を再利用し、配備先ごとに同じ機構の実装を複製しない。
+不足を補う技術機構の成立条件と正本の管理は [libs](../libs/layout.md) に従い、独立した repository や公開を成立条件にしない。
 migration が満たす拡張・移行・収縮の段の区切りは [concerns/migration](../../concerns/migration/README.md) に従う。
 
 ## provenance

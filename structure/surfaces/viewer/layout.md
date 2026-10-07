@@ -36,6 +36,7 @@ app が composition root であり、各層を組み立てる。
 下位の層は、上位の層を参照しない。
 技術カテゴリでまとめず、feature と entity で分ける。
 viewer の外との依存は [skeleton](../../skeleton.md) に従う。
+host 非依存の技術的な処理は、[libs](../../libs/layout.md) の公開 API を直接利用し、core や host を仲介にしない。
 依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## 画面の形
