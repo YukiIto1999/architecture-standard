@@ -1,7 +1,7 @@
 # composition 単位
 
 composition 単位は、独立したコンテキストを組み立て、外部への入口を公開する。
-配線、canonical の写像、トランザクション境界の適用を担う。
+配線、生成した公開契約の DTO とコンテキストの入出力の写像、トランザクション境界の適用を担う。
 composition は [layout](./layout.md) の単位と依存に従う。
 
 ## build_core
@@ -37,8 +37,14 @@ operations は、外部の operation を、一つのコンテキストの公開 
 公開 application 入口は use-case または workflow である。
 operations は、use-case の順序、結果による分岐、補償、コンテキストをまたぐ同期呼び出しを持たない。
 派生読みモデルへの問い合わせは、読みモデルを所有するコンテキストの application に置く。
-canonical の写像は、composition のみが持つ。
-canonical の定義は [contracts](../contracts/layout.md) で規定する。
+公開契約の DTO とコンテキストの application 入出力との写像は、composition のみが持つ。
+公開契約を持つ operation は generated のデータ型を受け、コンテキストの公開 command へ写し、公開 result・outcome を generated の結果型とエラー型へ戻す。
+公開契約の形式と制約は generated の decoder または契約から導く境界の変換器で検証し、コンテキスト固有の不変条件は application の入力構築から domain の検証付き constructor へ通す。
+同じ性質を内側で再検証せず、業務型の構築と検証はコンテキストが所有する一点に保つ。
+ドメイン型や constructor をこの写像のためにコンテキストの外へ公開しない。
+generated の型がその境界で必要な責務と保証を満たすなら、その型を再利用し、層を通ることだけを理由に同義の中間 DTO を作らない。
+公開契約と利用側の型の区別は [contracts/layout](../contracts/layout.md) の「利用側の型との区別」に従う。
+canonical の意味と binding からコードの型を生成し、canonical のスキーマを実行時の型として import しない。
 イベントの公開と配送は [application](./application.md) と [concerns/messaging](../../concerns/messaging/README.md) に従う。
 
 ## トランザクションと冪等性
@@ -49,7 +55,7 @@ use-case は、UnitOfWork のハンドルを受け取らない。
 composition の実行ラッパーは、use-case ごとに宣言された原子性を適用する。
 composition は、各 use-case の実行ラッパーを組み立て、その呼び出し口を operation と workflow へ渡す。
 workflow 全体を一つの UnitOfWork で包まない。
-composition は、request context または canonical から冪等キーを取り出し、公開 application 入口の入力へ写像する。
+composition は、request context または generated の公開契約 DTO から冪等キーを取り出し、公開 application 入口の入力へ写像する。
 実行ラッパーは、状態変更と公開 outcome に含まれる integration event の outbox 記録を同じ UnitOfWork で確定する。
 workflow から呼ぶ実行ラッパーは、workflow と step の識別子を受け取り、その組の一意性、状態変更、outbox 記録、step の完了記録を同じ UnitOfWork で確定する。
 composition は、outbox への記録経路と、確定済み outbox を読む配送経路を別々に配線する。

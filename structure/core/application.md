@@ -42,8 +42,10 @@ workflow は use-case の実装を直接構築せず、composition がトラン�
 
 ## 入口での検証と認可
 
-use-case と workflow は、公開入口で入力を parse し、型付きの command として受け取る。
-parse の規律は [concerns/types](../../concerns/types/README.md) に従う。
+use-case と workflow は、コンテキストが所有する型付きの command を公開入口で受け取る。
+command の公開入力構築は、composition が生成 DTO から渡した field を domain の検証付き constructor へ通し、コンテキスト固有の不変条件を型に残す。
+公開契約の DTO を application や domain へ import せず、業務型を外から直接構築できるように公開しない。
+公開契約の形式と制約の検証と業務の保証の分担は [composition](./composition.md)、検証を一点に集める規律は [concerns/types](../../concerns/types/README.md) に従う。
 workflow は全体の入力検証と認可を最初の確定前に行い、各 use-case も自身の操作に対する認可を入口で評価する。
 認可の判定の port は目的で宣言し、engine への写像は adapter が担う。
 認可の規律は [concerns/authorization](../../concerns/authorization/README.md) に従う。

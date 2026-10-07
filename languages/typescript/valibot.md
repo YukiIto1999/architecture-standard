@@ -62,7 +62,13 @@ function toEmail(value: string): Result<Email, EmailError> {
 外部入力は `unknown` で受け、境界の parse は valibot で書く。
 `safeParse` の失敗は Result の err へ変換する。
 HTTP の応答と postMessage の受信は、どちらもこの parse を通す。
-業務の値の schema は [formation](./formation.md) が定める型封入に合わせ、境界の schema はそれを組み込んで一つの真実源にする。
+公開契約の境界 schema は canonical と binding から valibot の schema として生成し、生成 DTO と field、variant、制約を共有する。
+公開契約の decode は通信を所有する host の adapter で行い、viewer と extension へは検証済みの生成 DTO を port から渡す。
+生成した decode は、既知の必須項目、値の制約、判別子と variant の対応を検証し、全 variant と入れ子・配列内の object で契約にないキーの位置と名前を捕捉する。
+未知キーを受容しても既知項目の不正を受容せず、捕捉情報を生成 DTO の業務データと送信 payload へ混ぜない。
+decode を所有する host の adapter は、捕捉した位置とキーを警告として記録し、値そのものや未知の資格情報をログに載せない。
+受信側固有の業務型の schema は formation が定める型封入に合わせ、その受信側が新たに保証する性質だけを所有する。
+生成 DTO が受信側で必要な保証を満たすならその型を再利用し、全ての応答を別の branded type へ写すことを要求しない。
 
 ### 根拠
 TypeScript の静的な型は、外部から来る値を保証しない。
@@ -70,20 +76,28 @@ TypeScript の静的な型は、外部から来る値を保証しない。
 valibot の schema は Standard Schema V1 に適合し、`~standard.validate` を通じてベンダー非依存に検証できるので、境界の parse を valibot に一本化しても他の Standard Schema 対応ツールとの相互運用を失わない。
 業務の値の schema を formation の定義に一本化すれば、型と検証が別々に定義されてずれることも、同じ brand 名を複数箇所で宣言して機構が割れることもない。
 境界の HTTP も postMessage も同じ parse に通せば、検証の漏れる経路がない。
+生成 schema が未知キーを取り除く前に捕捉すれば、既知の契約だけを内側へ渡しながら、契約の進化による追加を検知できる。
 
 ### 完了条件
 外部入力が、`unknown` で受けられている。
 parse が valibot の schema を通し、失敗が Result の err になっている。
-型が、schema から導出されている。
+公開契約の DTO と schema が同じ canonical と binding から生成され、受信側固有の型はその責務と保証を所有する schema から導出されている。
+全 variant と入れ子・配列内の object の未知キーが受容され、位置と名前が捕捉されて境界の警告へ到達し、捕捉した値が業務データと送信 payload へ流入していない。
+既知の必須項目の欠落、制約違反、判別子と payload の不一致が拒否されている。
 HTTP の応答と postMessage の受信が、同じ parse を通っている。
 
 ### 禁止事項
 外部入力を、型アサーションで信頼すること。
-型と検証を、別々に定義すること。
+公開契約の field、variant、制約を手書き schema へ写し、生成 DTO とは別の正本にすること。
+未知キーを記録せずに捨てることや、捕捉を理由に既知項目の検証を省くこと。
 
 ### 行動
 外部入力を `unknown` で受け、valibot の schema で `safeParse` し、失敗を Result の err にする。
-型は schema から導出し、境界の到達点を formation の branded type にする。
+公開契約は生成した valibot の schema で parse し、型の出力が生成 DTO と対応することを検証する。
+valibot の schema の出力を、canonical と binding を使う単一の contracts 生成 task に含め、生成器の既定で出せない処理は schema 駆動の生成処理として管理する。
+未知キーの捕捉も生成経路へ含め、全 variant と入れ子・配列内の object の位置とキーを decode の結果とは別に境界へ返し、host の adapter で警告を記録する。
+未知キーの受容と記録、既知項目の不正の拒否、捕捉値の非流入を、生成された decode の実行で確かめる。
+受信側で検証や解決の知識が増える場合は formation の schema でその保証を持つ型へ変換し、同じ性質を再検証しない。
 
 ### 例
 型アサーションでは、検証していない外部入力がそのまま内側へ入る。
@@ -92,13 +106,12 @@ HTTP の応答と postMessage の受信が、同じ parse を通っている。
 const user = (await response.json()) as User;
 ```
 
-`unknown` で受け、formation が定義した `EmailSchema` を再利用して `safeParse` する。検証成功時の `email` は `Email` になる。
+`UserViewSchema` は canonical と binding から生成した schema であり、その出力型は生成 DTO の `UserView` に対応する。
+受信側に追加の業務の保証が不要なら、その出力をそのまま使う。
 
 ```typescript
-const UserSchema = v.object({ email: EmailSchema });
-type User = v.InferOutput<typeof UserSchema>;
 const raw: unknown = await response.json();
-const result = v.safeParse(UserSchema, raw);
+const result = v.safeParse(UserViewSchema, raw);
 if (!result.success) return Err(result.issues);
 const user = result.output;
 ```
@@ -106,7 +119,7 @@ const user = result.output;
 ## 受け取ったエラーを parse し、想定された失敗と欠陥を分ける
 
 ### 要求
-client は problem+json を schema で `safeParse` する。
+client は problem+json を canonical と binding から生成した schema で `safeParse` する。
 HTTP status は、契約が定める公開表現として扱う。
 operation の契約に宣言された失敗は、Result で返す。
 契約に無い応答と problem+json の parse 失敗は、契約違反の欠陥として上位へ投げる。

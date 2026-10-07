@@ -23,15 +23,17 @@ console/
 依存の向きは [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 composition が commands を組み立て、core を埋め込む。
 commands は composition を参照しない。
-起動の流れは main → composition → command の一方向であり、command は組み立て済みの core API と検証済み入力を composition から受け取って実行する。
+起動の流れは main → composition → command の一方向であり、command は組み立て済みの core API と、引数の形式と契約の制約を通った入力を composition から受け取って実行する。
 console の外との依存は [skeleton](../../skeleton.md) に従う。
 console 自身の技術的な処理は、[libs](../../libs/layout.md) の公開 API を直接使え、core の operation を仲介にしない。
 依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## 入口とコマンド
 
-command は、引数を core API の operation へ写像する。
-command は、業務判断を持たず、入力の解析と operation の呼び出しだけを行う。
+command は、引数を公開契約の生成 DTO へ写像し、core API の operation を呼ぶ。
+引数の未完成入力と生成 DTO は保証が異なるため区別し、生成 DTO の field と同じ意味の中間 DTO は手書きしない。
+command は業務判断やドメイン型への変換を持たず、公開契約とコンテキストの入出力の写像は [core/composition](../../core/composition.md) が所有する。
+機械向け出力が canonical の契約を使う場合も、[contracts/generated](../../contracts/generated.md) の生成 DTO を使い、人向け表示とは別の責務として扱う。
 console は wire の binding を持たないが、引数、標準入出力、終了 status は人と script に公開する契約として扱う。
 console は、派生読みモデルの臨時・手動の再構築 workflow を command として起動する役割を担う。
 引数の解析の機構は [languages](../../../languages/) が定める。
@@ -100,7 +102,7 @@ console の公開と配布は、[deploy](../../deploy/layout.md) の「公開と
 
 composition は、build_core で core を埋め込み、自身でプロセスを起動する。
 composition は、実行環境が渡す起動主体の資格情報を認証境界で検証し、actor を一度だけ構築する。
-command は actor または資格情報を引数から受け取らず、composition が構築した actor と検証済み入力だけを core の公開 API へ渡す。
+command は actor または資格情報を引数から受け取らず、composition が構築した actor と契約の形式と制約を通った生成 DTO だけを core の公開 API へ渡す。
 資格情報と認証方式の型を、core の公開 API へ渡さない。
 終了の規律は [concerns/lifecycle](../../../concerns/lifecycle/README.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。

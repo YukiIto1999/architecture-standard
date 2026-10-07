@@ -65,7 +65,7 @@ core 直下の単位の役割を示す。
 |---|---|
 | `<context>/` | 境界付けられたコンテキストを境界ごとに置く。コンテキストは互いに参照しない |
 | `shared/` | 複数のコンテキストが共有する値・エラーの型を置く |
-| `composition/` | コンテキストと adapter を配線し、canonical の写像と外部への入口を公開する |
+| `composition/` | コンテキストと adapter を配線し、生成した公開契約の DTO とコンテキストの入出力を写像して外部への入口を公開する |
 
 同じコンテキストの複数の use-case にまたがる流れは、そのコンテキストの application workflow が担う。
 コンテキストをまたぐ状態変更は、integration event で非同期に連携する。
@@ -104,9 +104,10 @@ infrastructure は公開面に含まれない。
 ## 正本契約の独立
 
 canonical は contracts の正本スキーマであり、契約の定義と層は [contracts](../contracts/layout.md) で規定する。
-wire 契約と生成物も contracts の層であり、これらを利用するのは [surfaces](../surfaces/) と [runtimes](../runtimes/) である。
+wire の binding と生成物も contracts が所有し、canonical と binding は生成器の入力であって core の業務モデルではない。
 core と contracts のあいだで許す参照は [skeleton](../skeleton.md) に従う。
-core の内部では composition だけが canonical に触れ、canonical とコンテキストの入出力の写像を [composition](./composition.md) に置く。
+core の内部では composition だけが generated のデータ型を使い、公開契約の DTO とコンテキストの application 入出力の写像を [composition](./composition.md) に置く。
+コンテキスト固有の command、result、検証済みの domain 型はそのコンテキストに置き、外部契約全体をコンテキストや shared へ import しない。
 
 ## 1 ファイル 1 概念
 

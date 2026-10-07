@@ -29,8 +29,10 @@ endpoints は composition を参照しない。
 
 ## 入口と protocol
 
-endpoint は、protocol の要求を core API の operation へ写像する。
-endpoint は、業務判断を持たず、入力の解析と operation の呼び出しだけを行う。
+endpoint は、protocol の要求を生成 DTO として decode し、core API の operation へ渡し、その結果の生成 DTO を protocol の応答へ encode する。
+endpoint は、契約の形式と制約の検証と operation の呼び出しを担い、業務判断やドメイン型への変換を持たない。
+公開契約の DTO とコンテキストの application 入出力の写像は [core/composition](../../core/composition.md) が所有する。
+提供側 stub とデータ型の分離、未知項目の扱い、生成能力の不足の解消は [contracts/generated](../../contracts/generated.md) に従う。
 protocol の要求から operation を識別して endpoint へ振り分ける dispatch は、composition が持つ。
 認証境界は、要求に含まれる資格情報の発行元、対象、完全性、有効性を検証して actor を一度だけ構築する。
 endpoint は、振り分け済みの単一 operation と actor を受け取る。
@@ -46,6 +48,6 @@ composition は、build_core で core を埋め込み、protocol の listener �
 host は準備を確認してから要求を振り分ける。
 lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle/README.md) に従う。
 認証境界が構築した actor を、core の公開 API へ渡す。
-要求側が指定した actor を受け入れず、actor と検証済み入力だけを core の公開 API へ渡す。
+要求側が指定した actor を受け入れず、actor と契約の形式と制約を通った生成 DTO だけを core の公開 API へ渡す。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration/README.md) に従う。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。

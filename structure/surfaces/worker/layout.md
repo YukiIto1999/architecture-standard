@@ -37,7 +37,9 @@ job が業務の operation を起動する経路は、core の公開 API に限�
 core の業務処理が必要とする libs の port は、[core/composition](../../core/composition.md) が配線する。
 worker が所有する技術機構の配線は worker の composition に置き、queue と schedule の runner はその公開 API を直接使う。
 job は、業務判断を持たず、配線された処理を呼ぶだけである。
-job は、queue や schedule の機構の型を core へ持ち込まず、core API の operation へ写像する。
+job は、queue や schedule の機構の型を core へ持ち込まず、公開契約の生成 DTO を core API の operation へ渡す。
+payload の decode と契約の形式と制約の検証は境界で行い、公開契約とコンテキストの application 入出力の写像は [core/composition](../../core/composition.md) が所有する。
+生成 DTO、未知項目の扱い、生成能力の不足の解消は [contracts/generated](../../contracts/generated.md) に従い、job が同義の DTO を手書きしない。
 worker は、派生読みモデルの定常・定期の再構築 workflow を job として起動する役割を担う。
 
 ## queue と schedule
@@ -52,7 +54,7 @@ queue と schedule の engine は、project の選択の対象でなく、[langu
 
 composition は、build_core で core を埋め込み、自身でプロセスを起動する。
 queue と schedule の runner は、job context の発行元、対象、完全性、有効性を認証境界で検証し、actor を一度だけ構築する。
-job は actor または資格情報を payload から受け取らず、認証境界が構築した actor と検証済み入力だけを core の公開 API へ渡す。
+job は actor または資格情報を payload から受け取らず、認証境界が構築した actor と契約の形式と制約を通った生成 DTO だけを core の公開 API へ渡す。
 資格情報、job context に含まれる認証素材、queue と schedule の認証方式の型を、core の公開 API へ渡さない。
 worker は、生存と準備の面を公開する。
 lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle/README.md) に従う。

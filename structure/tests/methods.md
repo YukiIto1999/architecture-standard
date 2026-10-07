@@ -115,7 +115,12 @@ replay は、イベントから projection を再構築して検証する。
 契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools/build](../../tools/build/README.md) が定める。
 公開 API の契約への適合も、同じ機構で検証する。
 protocol 経路の適合は、生成物と実装の drift の検査と conformance で検証する。
-契約 generator の生成結果は、全 variant の判別子と payload を serialize と deserialize で往復する generated-contract round-trip で検証し、repository の検証入口で失敗として扱う。
+契約 generator の生成結果は、[contracts/generated](../contracts/generated.md) の「生成能力」に照合し、全 variant の判別子と payload を serialize と deserialize で往復する generated-contract round-trip で検証する。
+未知項目を検知する生成経路は、全 variant、入れ子の object と配列内の object に未知キーを加え、その受容、捕捉と境界の報告を各言語の規律に照合する。
+同じ入力集合について、既知の必須項目の欠落、値の制約違反、判別子と payload の不一致が拒否されることも検証し、未知項目の受容で既知項目の検証を失わないことを確かめる。
+捕捉した未知項目の位置とキーの報告、捕捉した値の domain や応答への非流入など、各言語が定める捕捉結果の扱いも検証する。
+生成能力の不足は repository の検証入口で失敗として扱い、再生成の drift がないことだけで生成物の正しさを判定しない。
+生成したデータ型の依存単位は [contracts/generated](../contracts/generated.md) の「生成物」に照合し、その実行時の依存閉包に通信 client・stub、HTTP client と通信 runtime が含まれないことを構造検査で確かめる。
 
 CLI の契約は、同じ呼び出しについて stdout、stderr、終了 status、状態変化を別々に観測する。
 terminal の所有は、実際の PTY と process を使い、取得済みの mode の復元、失敗、取り消し、一時引き渡しからの復帰を確かめる。
@@ -133,7 +138,7 @@ PTY の実測は、その実依存に従って配置し、状態遷移の proper
 |---|---|
 | domain の不変条件と状態遷移 | constructor の拒否、状態遷移の property、網羅する outcome |
 | use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、中間状態の面ごとの通過集合、未検出 mutant |
-| canonical と binding | operation・型・error の欠落と余剰、generated drift、serialize round-trip、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
+| canonical と binding | operation・型・error の欠落と余剰、generated drift、全 variant の serialize round-trip、未知項目の受容・捕捉・報告と既知項目の不正の拒否、generated のデータ型と通信の依存単位の分離、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
 | 認証と認可 | 各認証境界の credential 拒否と actor 構築、credential の core 非流入、主体・操作・資源・条件の許可と拒否 |
 | 永続化、transaction、messaging | 実 datastore の制約、version conflict、単一の確定点、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |
 | effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test |

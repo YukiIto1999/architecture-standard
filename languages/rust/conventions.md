@@ -78,7 +78,7 @@ pub fn place(cart: ValidCart) -> Result<Order, OrderError> { /* ... */ }
 
 ### 要求
 永続化から読んだ行を表す型には Record を付ける。
-境界の wire の型には Request・Response を付ける。
+binding 固有の wire envelope の型には Request・Response を付け、生成 DTO は canonical の command・query・result・view の意味の名前を保つ。
 一方の型からもう一方への変換を担う専用の関数やモジュールには mapper を含む名前を付ける。
 
 ### 根拠
@@ -86,7 +86,7 @@ pub fn place(cart: ValidCart) -> Result<Order, OrderError> { /* ... */ }
 
 ### 完了条件
 永続化から読んだ行の型名が、Record で終わっている。
-境界の wire の型名が、Request または Response で終わっている。
+binding 固有の wire envelope の型名が Request または Response で終わり、生成 DTO の意味の名前が canonical と対応している。
 変換を担う専用の関数やモジュールの名前が、mapper を含んでいる。
 
 ### 禁止事項
@@ -94,7 +94,8 @@ pub fn place(cart: ValidCart) -> Result<Order, OrderError> { /* ... */ }
 接尾辞なしに、役割を型名から判別できない名前を付けること。
 
 ### 行動
-永続化の行の型は `<対象>Record`、境界の wire の型は `<対象>Request`・`<対象>Response` の名前にする。
+永続化の行の型は `<対象>Record`、binding 固有の wire envelope は `<対象>Request`・`<対象>Response` の名前にする。
+生成 DTO は canonical の意味の名前を使い、接尾辞を揃えるためだけの同義 DTO や alias を追加しない。
 `From`・`TryFrom` の実装でなく専用の変換関数やモジュールを置くときは、名前に mapper を含める。
 
 ### 例

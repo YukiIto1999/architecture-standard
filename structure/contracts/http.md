@@ -12,6 +12,8 @@ http は、canonical の意味を、method が定める protocol semantics と�
 path の階層に、リソースの親子関係を深く刻まない。
 階層は、一度公開すると変えにくい。
 提供しない method は、405 で拒む。
+この binding から生成したデータ型を、提供側の要求と応答にも使う。
+提供側の handler と core の接続は [surfaces/server](../surfaces/server/layout.md) が、DTO の生成能力と通信 client との分離は [generated](./generated.md) が定める。
 
 ## method の選択
 

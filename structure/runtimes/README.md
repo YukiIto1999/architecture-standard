@@ -24,8 +24,10 @@ runtime は、surface の公開する port と起動の入口に依存し、surf
 runtime は、技術基盤が必要な場合に [libs](../libs/layout.md) の公開 API を直接使い、その機構への依存を自分の package で宣言する。
 この利用は core の埋め込みと無関係であり、surface や core を経由した再公開を要求しない。
 libs の利用範囲は [skeleton](../skeleton.md) の実行時依存表と libs の公開面に従う。
-[skeleton](../skeleton.md) の実行時依存表が host に core の埋め込みを許す場合に限り、runtime は core と contracts/canonical に直接依存してよい。
-core を埋め込まない runtime は、core と contracts/canonical に直接依存しない。
-core を埋め込む runtime は、core の公開 API を port の実装として surface へ注入する。
+[skeleton](../skeleton.md) の実行時依存表が host に core の埋め込みを許す場合に限り、runtime は core に直接依存してよい。
+core を埋め込まない runtime は core に直接依存しない。
+core を埋め込む runtime は、generated のデータ型を使う core の公開 operation を port の実装として surface へ注入する。
+runtime は canonical や binding のスキーマを実行時に import せず、core の内部のコンテキスト型を port へ露出しない。
+HTTP を持たず core の公開 operation を直接渡す構成は、server の routes に依存しない。
 runtime どうしは、互いを参照しない。
 同じ surface をホストする別の runtime は、surface への依存として並列に表す。

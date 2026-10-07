@@ -48,7 +48,8 @@ composition は、adapters を viewer へ注入する。
 composition は、mobile の shell を構築する。
 その shell の中で viewer を起動する。
 offline で動かす project は、host がプロセス内に core を抱けるかで置き方が決まる。
-host がプロセス内に core を抱けるなら、composition が core を埋め込み、その操作を remote の ui port の実装として渡す。
+host がプロセス内に core を抱けるなら、composition が core を埋め込み、generated のデータ型を使う公開 operation を ui port の実装として渡す。
+その構成に HTTP がなければ、server の routes や生成した HTTP client を要求しない。
 別プロセスや別言語で抱けないなら、embedded surface を同梱起動し、protocol で繋ぐ。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 shell と bundler の機構は [languages](../../../languages/) が定める。

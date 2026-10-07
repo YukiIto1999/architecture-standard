@@ -15,6 +15,8 @@ normal の参照先が proc-macro crate で、macro の展開だけに使われ�
 通常の library の normal edge は runtime、dev edge は test、build edge は build に分類し、proc-macro の実行時混入を許す例外を作らない。
 root の構造検査は、skeleton の実行時表と build・test-only 表から runtime・build・test phase の許可 edge を生成する。
 root の構造検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
+generated のデータ型と通信 client・stub を別 crate として照合し、データ型の runtime 依存 closure に通信 client、HTTP client、通信 runtime が入った場合は失敗する。
+生成 DTO とコンテキストの application 入出力の mapper の配置と signature を検査し、composition 以外から外部契約の型がコンテキストや shared へ流入する構成を拒否する。
 
 ### 根拠
 依存方向を crate の依存グラフにすれば、下位が上位を参照できず、向きがビルドで強制される。
@@ -26,6 +28,8 @@ import の走査は型を介さない静的な呼び出しを見ないので、�
 crate 依存に乗らない規則が、import を走査する構造検査で検証されている。
 root の構造検査が、skeleton の両表から phase ごとの許可 edge を生成している。
 build または test の edge が runtime の成果物へ混入した場合に、構造検査が失敗している。
+generated のデータ型の crate に通信の依存がなく、core の composition と提供側がその crate の型を使っている。
+公開契約の DTO と application 入出力の mapper が composition にあり、ドメイン型がそのために公開されていない。
 
 ### 禁止事項
 構造の規則を、コメントや約束だけで守らせること。
@@ -36,6 +40,8 @@ skeleton の境界を workspace の crate で分け、依存方向を Cargo の�
 skeleton の両表から許可 edge を生成し、`dep_kinds` と参照先 target の kind・crate type で phase を分類した実際の crate 依存と照合する。
 runtime edge を辿った成果物の依存 closure に build または test 専用の成果物が混入した場合は失敗させる。
 compile-time に使う proc-macro とその host 依存を runtime の成果物に数えない。
+generated のデータ型と通信 client・stub の crate を区別し、型の crate の runtime 依存 closure と各利用側の import を照合する。
+mapper の配置、コンテキストの公開 application 入力構築の呼び出し、domain の非公開性を構造検査で確かめる。
 
 ## 予防
 
@@ -209,7 +215,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | cucumber | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber を実装と同じ検証入口で実行) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`cargo nextest list --message-format json` の binary と test name の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。doctest と cucumber scenario は各実行入口の native ID を同じ集合へ加える) |
 | cargo-mutants | 有効性 | mutation(保存した diff を渡した `--in-diff` で変更した行の mutant を試し、終了コードで判定する。baseline のテストが走らない実行の失敗) |
-| inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` と参照先 target の kind・crate type から分類した edge と照合し、runtime 成果物への build・test edge 混入を失敗にする) |
+| inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` と参照先 target の kind・crate type から分類した edge と照合し、runtime 成果物への build・test edge 混入を失敗にする。generated のデータ型の runtime 依存 closure の通信分離、composition の mapper 配置と domain 非公開性も照合する) |
 | syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(rustc・clippy の設定と診断、cognitive_complexity による関数の複雑さのしきい値、未使用の要素と crate 依存の検出を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
 | inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
@@ -222,9 +228,10 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、引数・型引数・戻り値の記述、伝播する欠陥、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(命名照合) |
 | cargo-llvm-cov | カバレッジ | 計測(stable toolchain の `cargo llvm-cov nextest` が region と line を数え、`--fail-under-regions` と `--fail-under-lines` を与えた終了値で project 記録の下限を検証入口で判定し、`--json` の出力を記録に残す) |
-| serde | 境界で一度だけ parse してドメイン型へ移す | 型(TryFrom)+実行テスト(境界の parse の単体テスト・未知フィールドのログ出力の単体テスト) |
-| translation | 境界表現の型を surface の crate に置き、From で写す | 構造検査(syn。枠組みの trait の実装先が surface の crate の型であること、`Into` と `TryInto` の実装が無いこと、`From` の本体が失敗の enum を網羅すること)+実行テスト(variant ごとの境界表現の値と、console の entry point が返す終了の値) |
-| progenitor | 生成した契約を使い、drift を検査の gate にする | 実行テスト(drift 検査・conformance の検証入口の判定) |
+| serde | 境界で一度だけ parse してドメイン型へ移す | 型(生成 DTO・Result を返す composition の mapper・コンテキストの検証付き入力構築)+構造検査(crate の型所有と変換の配置)+実行テスト(既知項目の不正の拒否、全 variant と入れ子 object の未知キーの位置捕捉とログ到達、捕捉値の domain と応答への非流入) |
+| translation | 境界表現の型を surface の crate に置き、From で写す | 構造検査(syn。生成 DTO を保持または参照する surface 固有の型への枠組みの trait 実装、`Into` と `TryInto` の不在、失敗を写す `From` の enum 網羅)+実行テスト(variant ごとの status と終了の値、生成 DTO の body の保持) |
+| progenitor | 生成した契約を使い、drift を検査の gate にする | 構造検査(データ型の crate と reqwest を使う client の crate の依存分離)+実行テスト(drift 検査・conformance の検証入口の判定) |
+| typify | 契約から decode と未知項目の捕捉を生成する | 実行テスト(全 variant と入れ子・配列内 object の未知キー受容と位置捕捉、必須項目欠落・制約違反・判別子と payload の不一致の拒否、捕捉値の非流入、再生成の一致) |
 | connection | 効果を言語の効果型で表す | 型(Future・Result)+レビュー(domain の同期性の判断) |
 | connection | 失敗を Result に、欠陥を panic にする | analyzer/lint(clippy unwrap_used・expect_used deny)+型(Result) |
 | connection | 要求する依存を能力の trait bound で型に出す | 型(trait bound) |
