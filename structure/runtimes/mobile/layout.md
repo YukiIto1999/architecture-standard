@@ -55,4 +55,6 @@ shell と bundler の機構は [languages](../../../languages/) が定める。
 
 ## 配布
 
-mobile は、OS の store を経て配布する。
+mobile の公開と配布は、[deploy](../../deploy/layout.md) の「公開と配布の選択」に従う。
+OS の store を配布 channel に選ぶ場合は、その提出と更新の条件を満たす。
+手元での利用は OS が認めるインストール経路を使い、公開を選ばないことと OS の署名や実行権限の条件を免れることを同一視しない。

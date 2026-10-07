@@ -93,7 +93,8 @@ terminal を所有する描画先へ、非同期の log や診断を割り込ま
 
 ## 配布
 
-console は、単一の配布 channel で配布する。
+console の公開と配布は、[deploy](../../deploy/layout.md) の「公開と配布の選択」に従う。
+配布を選ぶ場合は単一の channel を使い、手元だけで利用する場合に配布 channel の運用を要求しない。
 
 ## 組み立てと起動
 

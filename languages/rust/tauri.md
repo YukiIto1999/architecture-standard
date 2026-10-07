@@ -56,6 +56,7 @@ fn place_order(state: State<AppState>, request: OrderRequest) -> Result<OrderId,
 ## desktop の自動更新
 
 ### 要求
+自動更新を使う desktop に、この節を適用する。
 desktop の自動更新は Tauri の updater plugin で行い、Tauri CLI で生成した公開鍵を設定に置いて updater bundle の signature を検証する。
 Tauri CLI で生成した秘密鍵を `TAURI_SIGNING_PRIVATE_KEY` から読み、`bundle.createUpdaterArtifacts` を有効にして updater bundle と signature を生成する。
 生成した updater bundle と signature を、TLS の endpoint から配布する。
