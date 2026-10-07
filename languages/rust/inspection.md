@@ -214,7 +214,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | proptest | 性質 | 実行テスト(proptest の生成・縮小・stateful property と回帰 seed の再実行) |
 | cucumber | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber を実装と同じ検証入口で実行) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`cargo nextest list --message-format json` の binary と test name の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。doctest と cucumber scenario は各実行入口の native ID を同じ集合へ加える) |
-| cargo-mutants | 有効性 | mutation(保存した diff を渡した `--in-diff` で変更した行の mutant を試し、終了コードで判定する。baseline のテストが走らない実行の失敗) |
+| cargo-mutants | 有効性 | mutation(変更部分は保存した diff を渡した `--in-diff`、未変更の影響部分は採用版で扱える別の対象指定で選び、和集合を検査する。生成対象と被覆テストの選択を分け、終了コードと report で実行可能な mutant の全検出、未検出、対象全体の完了を判定する。型として成立しない変異は検出に数えず、runner などの未完了は失敗にする。有効な baseline の成功証跡と実行テスト件数を確認する) |
 | inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` と参照先 target の kind・crate type から分類した edge と照合し、runtime 成果物への build・test edge 混入を失敗にする。generated のデータ型の runtime 依存 closure の通信分離、composition の mapper 配置と domain 非公開性も照合する) |
 | syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(rustc・clippy の設定と診断、cognitive_complexity による関数の複雑さのしきい値、未使用の要素と crate 依存の検出を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |

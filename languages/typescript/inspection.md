@@ -185,7 +185,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | axe-core-playwright | accessibility | 実行テスト(@axe-core/playwright による自動判定可能な違反、Playwright による keyboard 操作・pointer target の bounding box・WCAG 2.2 Level AA の text/non-text contrast と例外記録の照合)+レビュー(自動判定できない WCAG 2.2 Level AA の確認) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`vitest list --json` と Playwright `--list` が返す project・file・suite・test の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。cucumber-js scenario は URI・line・name の組を同じ集合へ加える) |
 | knip | 未使用 | analyzer/lint(knip で未使用のファイル・export・依存を検出し検証入口で失敗) |
-| stryker-js | 有効性 | mutation(`mutate` の行範囲で変更した行を変異させ、totalUndetected または Survived+NoCoverage を数える。選んだテストの実行0件の失敗、既知の欠陥を仕込んだ確認での検出の成立) |
+| stryker-js | 有効性 | mutation(diff から作る変更部分と別に導く未変更の影響部分の和集合を `mutate` へ渡し、生成対象と被覆テストの選択を分ける。実行可能な mutant の全検出と対象全体の完了を確認し、totalUndetected または Survived+NoCoverage を数える。型として成立しない変異は検出に数えず、非空の選択集合を runner が実行しないなどの未完了は失敗にする。既知の欠陥を仕込んだ確認で検出の成立を確認する) |
 | inspection | 構造 | 構造検査(TypeScript compiler API が解決した依存 edge と skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
 | typescript-compiler-api | 構造検査 | 構造検査(@typescript/typescript6 の compiler API による call expression の symbol・callee expression の型・parameter の initializer・destructuring の binding element・module specifier の解決先 file と型だけの import かどうかの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(tsc・oxlint・`oxlint --type-aware`・`oxlint-tsgolint` の設定と診断を検証入口でエラー化) |

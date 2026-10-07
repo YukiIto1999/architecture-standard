@@ -57,7 +57,7 @@ try {
       cwd: root,
       timeoutMs: remaining(),
     });
-    steps.push({ name: "changed-line-mutation", elapsed_ms: result.elapsedMs });
+    steps.push({ name: "changed-and-affected-mutation", elapsed_ms: result.elapsedMs });
   }
   if (remaining() < 0) throw new Error(`${stage} exceeded its time budget`);
 } catch (error) {
