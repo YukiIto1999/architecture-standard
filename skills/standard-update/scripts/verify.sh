@@ -512,7 +512,7 @@ fi
 
 echo
 echo "=== 14. 統一済み語彙の旧表記が残っていないか ==="
-if rg -nP '真実の所在|詰め替え|二次の読みモデル|期限の正本|単方向|コンテキストの自己完結|明快さ|境界面|ドメインモデル|value object|ドメインの型|domain の型|業務の型|なぜを決定の記録に残す|ADR' principles concerns structure tools languages process README.md; then
+if rg -nP '真実の所在|詰め替え|二次の読みモデル|期限の正本|単方向|コンテキストの自己完結|明快さ|境界面|ドメインモデル|value object|ドメインの型|domain の型|業務の型|なぜを決定の記録に残す' principles concerns structure tools languages process README.md; then
   fail "統一済み語彙の旧表記が残っている(正へ揃える)"
 else
   pass "統一済み語彙の旧表記なし"

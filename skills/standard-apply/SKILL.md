@@ -14,7 +14,7 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 
 既知の path を再発見するための列挙はしない。探索が必要な場合は target root と確認する関係を明示し、ignore 境界を維持する。空の検索結果や初回の候補集合だけで、project 全体に契約、writer、test が存在しないとは判断しない。
 
-受入条件に completion、state、success、failure など意味と authority の確認が必要な語がある設計では、[target scoping](references/target-scoping.md) に従って対象の根拠を追う。
+設計では、変更契約を固定する前に [target scoping](references/target-scoping.md) を読み、対象の明示契約、入力要件と直接参照された資料を確認する。
 
 ## 前提
 
@@ -32,7 +32,7 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 - concern から別 concern の link へ無条件に再帰しない。queue、過負荷、retry、deadline、lifecycle など、その規律の対象が変更契約に含まれるかで判断する。process の全 step を消し込むことと、条件付き link を全て読むことを混同しない。
 - 依頼または process が全域照合を要求する場合は、その要求を探索範囲の根拠にする。局所変更の参照節約を、全域監査や対象 project の調査不足へ転用しない。
 
-対象 project は README、manifest、直接の参照先を手掛かりに、caller、consumer、state authority、writer、effect、test、decision record を一段ずつ追う。宣言された置き場を優先するが、最初の検索で見つからなければ、観測した別名、公開 route、返却値、型などから必要な範囲だけ再探索する。決定の記録の正本の置き場は最上位 README の宣言で確認する。宣言がなければ置き場と契約の authority は Unknown とし、他の場所から読めた記録を正本へ昇格させない。
+対象 project は README、manifest、直接の参照先を手掛かりに、caller、consumer、state authority、writer、effect、test と、判断に関係する要件、宣言の契約、変更理由、Why not を一段ずつ追う。所在が未特定なら、観測した別名、公開 route、返却値、型などから必要な範囲だけ再探索する。決定の意味の所在は現在の `principles/documentation/decision-records.md` と `principles/README.md` の情報の正本に照合し、README が外部 ADR の置き場を宣言していないことだけで契約の authority を Unknown にしない。直接参照された外部資料があれば対応する読取手段で追い、読めない資料の内容と現在のコードから観測できる事実を分ける。
 
 探索の完了は tool の綴り、検索回数、決め打ちの directory 名では判定しない。判断を左右する主張ごとに根拠と確認範囲が示せたら止める。追加の探索で解消できる不足は追い、利用可能な資料では確定できない契約だけを Unknown として残す。未確認の関係を推測で埋めない。
 
@@ -49,7 +49,7 @@ description: architecture-standard 以外の標準には使わず、「別 repos
    設計では `process/design.md` の順序1から8と確認点を省略しない。番号付き step または確認点が `従う` と定める直接参照は、対象が小さくても読んで照合する。directory 参照はその `README.md` から一つに絞る。
    並行処理を設計する場合は、子処理の失敗伝播と cancellation を、依頼の受入条件に列挙がなくても標準の必須条件として変更契約へ残す。現行契約が不明なら具体的な継続・停止・戻り値を決めず、未確定の必須条件にする。受入条件外の別件として落とさない。
 3. process の順序と確認点を内部チェックリストとして管理し、変更契約を固定する。応答へ全文を転写せず、依頼に関係する進捗、見送り、未確認事項だけを報告する。
-4. 標準が決めている事項と project 固有の決定を分ける。標準が沈黙する事項や逸脱は、一般則で埋めず、採用理由、撤回条件、単一採用、置き換える規律、技術的制約の実証を project の決定の記録に残す。
+4. 標準が決めている事項と project 固有の決定を分け、root README の標準の単一性が要求する情報を、`principles/documentation/decision-records.md` に従って残す。未実装の要件と入力契約は、現在の実装の観測と区別する。設計だけの依頼では、その判断を応答で示し、記録 file の作成や実装へ広げない。
 5. 変更契約が許可する作業と focused check を実行する。読み取り専用の監査やレビューでは、報告を応答で返し、依頼されていない報告 file を作らない。判定や変更ごとに、根拠とした標準の file と該当規律を記録する。標準内の矛盾は root README の裁定規則に従い、黙って読み替えない。
 6. 実装または構造改善では、完了前に変更の経緯を持たない独立した reviewer context で照合する。subagent が利用できなければ新しい独立 session を使う。どちらも利用できない場合は自己照合を行うが、独立レビュー済みとは主張せず、その制約を報告する。
 

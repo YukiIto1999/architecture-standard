@@ -29,16 +29,21 @@ principles は、ソフトウェア設計におけるすべての判断の土台
 
 ## 情報の正本
 
-すべての情報は、「その内容と最も強く同期する場所に一度だけ置く」ことを徹底します。現在のコード自身で表現できる内容を、コメントや外部文書へ重複して書くことは禁止します。
+情報は、その内容と最も強く同期する場所に一度だけ正本を置きます。
+現在の実装の説明を、コードや検査とは独立した規範としてコメントや文書へ複製しません。
+読者向けの投影と未実装の要件の扱いは、[documentation](./documentation/bake-into-code.md) の「コードの意味を文書で代用しない」に従います。
 
 | 情報の種類 | 正本の所在 | 準拠する規律 |
 |---|---|---|
-| 現在の責務、境界、処理の流れ | ディレクトリ、ファイル、型、関数の構造と命名、コード本体 | [legibility](./legibility/README.md)、[naming](./naming/README.md) |
+| 現在の概念、責務、境界、不変条件、実現方法 | ディレクトリ、ファイル、型、関数の構造と命名、制約、コード本体 | [legibility](./legibility/README.md)、[naming](./naming/README.md) |
 | 外から観測できる振る舞い | テスト本体とテスト名 | [verification](./verification/README.md)、[naming](./naming/README.md) |
 | 公開宣言の外部契約、非公開宣言の内部契約 | ドキュメントコメント | [comment](./comment/README.md) |
 | 自然に見える実装を採らなかった理由 | 実装コメント | [comment](./comment/README.md) |
-| 変更を行う直接の目的 | commit log | [documentation](./documentation/README.md) |
-| 構造に影響する判断の文脈、代替案、帰結 | 決定の記録 | [documentation](./documentation/README.md) |
+| 変更を行う直接の理由 | 一つの目的と取り消し理由へ絞った commit の件名 | [documentation](./documentation/commit-purpose.md) |
+| 未実装の要件、入力契約、変更先 | 根拠と決定状態を示した要件と契約 | [requirements](./requirements/README.md)、[documentation](./documentation/README.md) |
+
+構造に影響する判断の文脈と帰結は、この分担に沿う正本とその対応から辿ります。
+決定の記録の意味と更新は、[documentation](./documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」に従います。
 
 変更履歴や使われなくなった古いコードは、現在のソースコード内にコメントアウト等で残さず、版管理の履歴に委ねます。
 
