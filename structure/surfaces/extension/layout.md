@@ -57,4 +57,7 @@ extension は、注入された client または protocol の operation を呼�
 
 ## 配布
 
-extension は、marketplace を経て配布する。
+extension の公開と配布は、[deploy](../../deploy/layout.md) の「公開と配布の選択」に従う。
+公開または配布を選び、その channel が marketplace の場合に、marketplace へ成果物を提出する。
+手元だけで利用する extension は、host が認めるローカルの読み込みを使い、marketplace への登録と提出を必須にしない。
+公開用とローカル用で実装を分けず、配布経路に応じて必要な metadata と接続設定を組み立てる。

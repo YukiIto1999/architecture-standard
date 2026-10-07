@@ -8,6 +8,7 @@
 ## desktop の自動更新
 
 ### 要求
+自動更新を使う desktop に、この節を適用する。
 C# の desktop は `NetSparkleUpdater.SparkleUpdater` の `Ed25519Checker(SecurityMode.Strict, ...)` を使い、app cast と更新 package の署名を検証してから更新する。
 app cast の署名ファイルと更新 package の `sparkle:signature` を、更新を適用する前に必ず検証する。
 更新 feed と更新 package は、project が管理する HTTPS の配布先から取得する。
