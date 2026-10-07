@@ -25,6 +25,7 @@ composition が commands を組み立て、core を埋め込む。
 commands は composition を参照しない。
 起動の流れは main → composition → command の一方向であり、command は組み立て済みの core API と検証済み入力を composition から受け取って実行する。
 console の外との依存は [skeleton](../../skeleton.md) に従う。
+console 自身の技術的な処理は、[libs](../../libs/layout.md) の公開 API を直接使え、core の operation を仲介にしない。
 依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## 入口とコマンド

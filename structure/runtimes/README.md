@@ -21,6 +21,9 @@ adapters が、surface の定義する port を platform の API で実装する
 1 port を、1ファイルとして実装する。
 composition が、port を注入し、surface を起動する。
 runtime は、surface の公開する port と起動の入口に依存し、surface の内部へ踏み込まない。
+runtime は、技術基盤が必要な場合に [libs](../libs/layout.md) の公開 API を直接使い、その機構への依存を自分の package で宣言する。
+この利用は core の埋め込みと無関係であり、surface や core を経由した再公開を要求しない。
+libs の利用範囲は [skeleton](../skeleton.md) の実行時依存表と libs の公開面に従う。
 [skeleton](../skeleton.md) の実行時依存表が host に core の埋め込みを許す場合に限り、runtime は core と contracts/canonical に直接依存してよい。
 core を埋め込まない runtime は、core と contracts/canonical に直接依存しない。
 core を埋め込む runtime は、core の公開 API を port の実装として surface へ注入する。

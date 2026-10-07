@@ -7,31 +7,31 @@ structure は、ターゲットプロジェクト全体と各部の責務、境�
 
 ## システム構造の全体像
 
-プロジェクトは、以下の境界と依存関係に基づいて階層化されます。
+core・surfaces・runtimes は、業務非依存の技術基盤である libs の公開 API を直接利用します。
+libs は core の子ではなく、他の root 境界を参照しません。
+次の図は libs の直接利用と、contracts を使う境界を示します。
 
 ```text
- [ runtimes ]        Webブラウザ、Desktop、Mobileなどのホスト環境
-      │
- [ surfaces ]        対話様式ごとの入口 / server, console, worker, viewer など
-      │
-      ▼
-   [ core ] ───────► [ contracts ]  外界との通信・データ交換規約
-  業務ロジックの核          ▲
-      │                    │
-      ▼                    │
-   [ libs ] ───────────────┘
- 業務非依存の技術基盤
+ [ core ] ───────────────► [ libs ] ◄─────────────── [ surfaces ]
+                              ▲
+                              │
+                         [ runtimes ]
 
- 統括: [ skeleton ] がリポジトリ全体の境界、命名、依存方向を定義
- 運用と検証: [ deploy ] が配備を、[ tests ] が統合検証を担う
+ [ core ] ──────────────► [ contracts の許可された層 ]
+ [ surfaces ] ──────────► [ contracts の許可された層 ]
+ [ runtimes ] ──────────► [ contracts の許可された層 ]
 ```
+
+surface と core の接続、runtime がホストする surface と core の埋め込み条件を含む全ての依存許可は、[skeleton](./skeleton.md) が定めます。
+配備は [deploy](./deploy/layout.md) が、root の検証は [tests](./tests/layout.md) が担います。
+
 ## 構成
 
 | 対象 | ファイル | 内容 |
 |---|---|---|
 | [skeleton](./skeleton.md) | skeleton | root の境界・命名・依存方向・workspace |
 | [core](./core/layout.md) | layout・domain・application・infrastructure・composition | 業務の核。コンテキストごとの層と、配線に限定した composition の単位 |
-| [libs](./libs/layout.md) | layout | 言語拡張と技術基盤の機構。機構は業務を参照しない |
+| [libs](./libs/layout.md) | layout | 業務非依存の技術基盤と、言語・library・framework の不足を補う機構。各消費側が公開 API を直接利用する |
 | [contracts](./contracts/layout.md) | layout・canonical・http・protocol・generated | 契約 |
 | [surfaces](./surfaces/) | 一覧の [README](./surfaces/README.md) が定める | 対話様式ごとの入口。server・console・worker・viewer・extension・embedded |
 | [runtimes](./runtimes/) | 一覧の [README](./runtimes/README.md) が定める | 被ホスト surface の具体 host。web・desktop・mobile・ide |

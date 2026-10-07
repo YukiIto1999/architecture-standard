@@ -25,6 +25,8 @@ ide/
 composition が adapters を組み立て、extension へ注入する。
 adapters は、extension の host port を実装し、composition を参照しない。
 ide の外との依存は [skeleton](../../skeleton.md) に従う。
+adapters と composition は、必要な技術基盤を [libs](../../libs/layout.md) の公開 API から直接利用する。
+ide が core を埋め込まないことは、libs の利用を制限しない。
 同じ extension をホストする runtime どうしは、互いに依存しない。
 それぞれが extension に依存する。
 依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
