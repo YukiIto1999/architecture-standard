@@ -9,7 +9,10 @@ principles の [verification](../../principles/verification/README.md) が定め
 ### 要求
 依存方向は workspace の crate 依存で強制し、crate 依存に乗らない規則は root の tests/ に置く構造検査で検証する。
 検査は syn の構文木を走査する import の照合で、層の参照禁止・公開面・配置の文法を確かめる。
-phase ごとの実際の edge は、`cargo metadata` の `dep_kinds` が返す normal・dev・build から得る。
+phase ごとの実際の edge は、`cargo metadata` の `dep_kinds` と参照先の target の kind・crate type から得る。
+normal・dev・build は Cargo の参照の種類であり、そのまま runtime・test・build の成果物 phase と同一視しない。
+normal の参照先が proc-macro crate で、macro の展開だけに使われる場合は compile-time の build edge に分類する。
+通常の library の normal edge は runtime、dev edge は test、build edge は build に分類し、proc-macro の実行時混入を許す例外を作らない。
 root の構造検査は、skeleton の実行時表と build・test-only 表から runtime・build・test phase の許可 edge を生成する。
 root の構造検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
 
@@ -30,8 +33,9 @@ build または test の edge が runtime の成果物へ混入した場合に�
 ### 行動
 skeleton の境界を workspace の crate で分け、依存方向を Cargo の依存で強制する。
 残りの規則を root の tests/ の構造検査で確かめる。
-skeleton の両表を読み、runtime・build・test phase の許可 edge を生成して、`cargo metadata` の `dep_kinds` から得た実際の crate 依存と照合する。
-runtime の成果物を構成する依存 closure に build または test の edge があれば失敗させる。
+skeleton の両表から許可 edge を生成し、`dep_kinds` と参照先 target の kind・crate type で phase を分類した実際の crate 依存と照合する。
+runtime edge を辿った成果物の依存 closure に build または test 専用の成果物が混入した場合は失敗させる。
+compile-time に使う proc-macro とその host 依存を runtime の成果物に数えない。
 
 ## 予防
 
@@ -205,7 +209,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | cucumber | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber を実装と同じ検証入口で実行) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`cargo nextest list --message-format json` の binary と test name の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。doctest と cucumber scenario は各実行入口の native ID を同じ集合へ加える) |
 | cargo-mutants | 有効性 | mutation(保存した diff を渡した `--in-diff` で変更した行の mutant を試し、終了コードで判定する。baseline のテストが走らない実行の失敗) |
-| inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` から得た実際の edge と照合し、runtime 成果物への build・test edge 混入を失敗にする) |
+| inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` と参照先 target の kind・crate type から分類した edge と照合し、runtime 成果物への build・test edge 混入を失敗にする) |
 | syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(rustc・clippy の設定と診断、cognitive_complexity による関数の複雑さのしきい値、未使用の要素と crate 依存の検出を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
 | inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
