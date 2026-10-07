@@ -1,14 +1,14 @@
 # 実装の順序
 
 実装は、作業単位の宣言から始め、テストリストと red・green・refactor の反復で進める。
-作業単位は、独立した反復の並びでなく、一つの範囲へ段階的に及ぶ一続きの過程である。
-反復のたびに及ぶ範囲は外へ広がり、確かめ終えた内側は型と検証に委ねて固める。
-範囲に含まれる複数の関心は、初めに分けて別々に閉じるのでなく、一つずつ加えながら組み上げる。
+着手する作業単位は、一つの目的と一つの取り消し理由を持ち、検証して commit できる範囲にする。
+一つの作業単位の中では、型と振る舞いの検証で確かめながら段階的に組み上げる。
+別の目的や取り消し理由が現れたら、現在の単位を検証して確定してから次の単位へ進み、全ての作業を終えた後の差分選別へ分割を先送りしない。
 テストの規律は [principles/verification](../principles/verification/README.md) と [principles/naming](../principles/naming/README.md) に、コードの表現は [principles/legibility](../principles/legibility/README.md) と [principles/comment](../principles/comment/README.md) に、変更の作法は [principles/evolution](../principles/evolution/README.md) と [principles/documentation](../principles/documentation/README.md) に従う。
 
 ## 順序
 
-1. 作業単位の名前と範囲を宣言する([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」に従う)。
+1. 一つの目的と取り消し理由を持つ作業単位の名前と範囲を宣言する([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」と [principles/documentation](../principles/documentation/commit-purpose.md) の「変更の目的を commit log に残す」に従う)。
 2. 変更がどのアクターのどのuse-caseに属するかを答え、答えられなければ [design](./design.md) へ戻る([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
 3. 着手時点で分かっている、検証すべき振る舞いを、テストリストに列挙する。
 4. 初回は、公開 interface を越して確かめられる最小の振る舞いをリストから選ぶ。
@@ -20,13 +20,16 @@
 10. 手順8の型検査を最初の赤にした場合は、振る舞いのテストを書き、振る舞いを満たさない最小の変更で既存の implementation と caller を新しい型へ適合させ、型検査を通してから振る舞いのテストが赤になることを確かめる。
 11. 振る舞いのテストが赤にならなければ、テストの検証力を疑って書き直す。
 12. テストを通す最小の実装を書いて緑にし、形を整える判断は次の段へ譲る。
-13. 緑の間に感じた痛みと臭いを手がかりに、触れた範囲の構造を改善する([refactoring](./refactoring.md) に従う)。
-14. 緑になった項目を外し、直前の反復が明らかにした依存と痛みを手がかりに次の振る舞いを選び、作業が明らかにした振る舞いを加えたリストが空になるまで、5 から 13 を繰り返す。
+13. 緑の間に感じた痛みと臭いを手がかりに、現在の目的に必要な構造改善を [refactoring](./refactoring.md) に従って進める。
+    異なる取り消し理由を持つ改善は別の作業単位へ分け、現在の単位を 15 から 19 で検証して確定した後に着手する。
+14. 緑になった項目を外し、同じ目的に必要な残りの振る舞いは 5 から 13 を繰り返す。
+    現在の目的を満たしたら 15 から 19 へ進み、異なる目的の振る舞いは次の作業単位へ分ける。
 15. 公開 interface から観測できる振る舞いを変えた作業単位では、変えた振る舞いと、それと組み合わさる機能を対象に探索的テストを行う([structure/tests/methods](../structure/tests/methods.md) に従う)。
 16. 探索で見つけた欠陥はテストリストへ足してリストが空になるまで 5 から 14 を繰り返し、仕様の漏れは [design](./design.md) へ戻す。
 17. 手順16を終えた時点で、探索の記録を取り除く([structure/tests/methods](../structure/tests/methods.md) に従う)。
-18. 出荷の前に、作業中に生まれた差分から目的に属するものだけを選別し、振る舞いの変更と構造の改善を別のコミットに分ける([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」に従う)。各コミットには、[principles/documentation](../principles/documentation/README.md) に従い、変更を行う直接の目的を記録する。
-19. 変更が触れた規律の完了条件・禁止事項と、[structure/tests](../structure/tests/layout.md) の機械検証に照合する。
+18. 変更が触れた規律の完了条件・禁止事項と、[structure/tests](../structure/tests/layout.md) の機械検証に照合する。
+19. 現在の目的に属する差分だけを選別し、変更の Why を短い件名へ記録して commit する([principles/documentation](../principles/documentation/commit-purpose.md) に従う)。
+    別の目的の変更と構造改善をまとめてから分割せず、単位ごとの検証と commit を積み上げる。
 
 ## 確認点
 

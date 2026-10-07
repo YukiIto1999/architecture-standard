@@ -20,7 +20,7 @@
 構造を確定する前に、principles の modeling・separation の完了条件・禁止事項と、変更が触れる concerns の完了条件・禁止事項に照合する。
 意味を伴う適合判断は、root の [README](../README.md) の適用判断に照らし、対象の事実と規律の条件から結論を導いた根拠が設計の記録から追えることを確かめる。
 採用する道具は、[tools](../tools/) と [languages](../languages/) の採用に従う。
-決定は、project の決定の記録に残す([principles/documentation](../principles/documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」に従う)。
+実装へ渡す判断の対象、採る案、その理由と帰結を定め、後の保守に必要な意味の所在を確かめる([principles/documentation](../principles/documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」に従う)。
 アクターと処理の図示は、設計の時点と、実装を書いた後の検証の両方で行い、[principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」の完了条件に照合する。
 新しい型・抽象・設定・依存を選んだ場合は、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の完了条件と禁止事項に照合する。
 暗黙の制約を反実仮想で検討した場合は、[structure/tests/methods](../structure/tests/methods.md) の「反実仮想で検証を選ぶ」に照らし、仮定と観測事実、強制する保証、検出済みか未実行かを区別して完了条件へ渡す。
