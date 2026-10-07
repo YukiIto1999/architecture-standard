@@ -337,8 +337,8 @@ expect(operationStarted).toBe(false);
 task の rejection も観測し、最初の defect で残りの兄弟を abort する。
 abort 後も、各 task の Result と rejection を観測する Promise に `Promise.allSettled` で合流する。
 controller の abort が兄弟に生じさせた rejection は、独立した defect として数えない。
-全兄弟への合流後に独立した rejection defect があれば、`Err` より優先して最初の defect を送出する。
-独立した rejection defect が無ければ、最初に観測した `Err` を Result のまま返す。
+全兄弟への合流後に独立した rejection defect があれば、最初の defect を cause とする AggregateError を送出し、元の `Err` と追加の独立した失敗も task の識別と種類とともに保持する。
+独立した rejection defect が無ければ、最初に観測した失敗を primary とし、全ての独立した失敗を伴う Result の err を返す。
 `Err` と独立した rejection が同時に成立した場合も、観測順にかかわらず rejection defect を優先する。
 並行度の上限を固定する機構は、標準が固定せず project が単一の採用を決定の記録に明記する。
 各 Effect は、決定の記録で固定した単一の limiter が需要枠を与えた callback の内側で開始する。
@@ -349,6 +349,7 @@ AsyncResult の `Err` は Promise の解決値なので、task 自体を Promise
 abort 後に観測用 Promise へ Promise.allSettled で合流すれば、未完了の兄弟を範囲の外へ残さない。
 controller 由来の rejection を除外すれば、`Err` による sibling abort を新しい defect と取り違えない。
 独立した rejection defect を `Err` より優先すれば、回復不能な欠陥を想定内失敗として返さない。
+primary の選択と失敗の保持を分ければ、欠陥を優先しても、元の想定内失敗や兄弟の後始末の失敗を失わない。
 JavaScript の標準実行環境は並行度を上限で絞る組み込みの機構を持たないので、上限を固定する具体の機構は project の決定の記録に単一採用を明記させる。
 Effect の生成と開始を分け、limiter の callback 内で `withDeadlineEffect` を呼べば、需要枠を得る前に外部 I/O を開始しない。
 
@@ -358,8 +359,8 @@ Effect の生成と開始を分け、limiter の callback 内で `withDeadlineEf
 task の rejection が観測され、最初の defect で残りの兄弟が abort されている。
 abort 後も、Result と rejection の観測用 Promise が Promise.allSettled で全ての兄弟へ合流している。
 controller 由来の sibling cancellation rejection が、独立した defect から除外されている。
-全兄弟への合流後に独立した rejection defect があれば、最初の `Err` より優先して最初の defect が送出されている。
-独立した rejection defect が無ければ、最初に観測した `Err` が Result として返されている。
+全兄弟への合流後に独立した rejection defect があれば、その最初の defect が AggregateError の cause となり、元の `Err` と追加の独立した失敗も task の識別と種類とともに保持されている。
+独立した rejection defect が無ければ、最初に観測した失敗を primary とし、全ての独立した失敗を保持する Result の err が返されている。
 `Err` と独立した rejection が同時に成立した場合も、rejection defect が優先されている。
 並行度の上限を固定する機構が、project の決定の記録に明記されている。
 全ての Effect が、決定の記録で固定した単一の limiter の需要枠内で開始されている。
@@ -370,6 +371,7 @@ AsyncResult の `Err` を Promise の成功だけとみなし、兄弟を走ら�
 最初の `Err` または rejection を伝播し、兄弟への合流を飛ばすこと。
 `Err` による controller の abort が生じさせた rejection を独立した defect とみなすこと。
 独立した rejection defect を `Err` で隠すこと。
+primary だけを残し、元の失敗や追加の独立した失敗を捨てること。
 limiter の需要枠を得る前に `withDeadlineEffect` を呼び、Effect を開始すること。
 
 ### 行動
@@ -378,6 +380,7 @@ limiter の需要枠を得る前に `withDeadlineEffect` を呼び、Effect を�
 controller 由来の sibling cancellation rejection を独立した defect から除外する。
 観測用 Promise に Promise.allSettled で合流してから、独立した rejection defect、最初に観測した `Err`、成功値の順に結果を決める。
 `Err` と独立した rejection が同時に成立した場合は、観測順にかかわらず rejection defect を優先する。
+各独立した失敗の task の識別、種類と元の値を保持し、defect があれば全てを伴う AggregateError を送出し、無ければ全てを伴う Result の err を返す。
 project の決定の記録で固定した単一の limiter を使い、その callback の内側で `withDeadlineEffect` を呼ぶ。
 
 ### 例
@@ -393,9 +396,18 @@ const requestUrl = (url: URL): Effect<HasHttp, RequestError, Response> =>
     ));
 ```
 
-最初の `Err` または rejection で abort し、全兄弟へ合流してから結果を決める。limiter は project の決定の記録で一つに固定し、その需要枠の内側で初めて Effect を開始する。
+最初の `Err` または rejection で abort し、全兄弟へ合流してから primary を決め、独立した失敗を全て保持する。
+limiter は project の決定の記録で一つに固定し、その需要枠の内側で初めて Effect を開始する。
 
 ```typescript
+type ChildFailure =
+  | { readonly index: number; readonly kind: "expected"; readonly error: RequestError | DeadlineExceeded }
+  | { readonly index: number; readonly kind: "defect"; readonly error: unknown };
+type ParallelFailure = {
+  readonly primary: RequestError | DeadlineExceeded;
+  readonly failures: readonly ChildFailure[];
+};
+
 const controller = new AbortController();
 const signal = AbortSignal.any([parentSignal, controller.signal]);
 const tasks = urls
@@ -408,10 +420,11 @@ const tasks = urls
       signal,
       resumeSource,
     )));
-const combinedResult = await (async (): Promise<Result<readonly Response[], RequestError | DeadlineExceeded>> => {
+const combinedResult = await (async (): Promise<Result<readonly Response[], ParallelFailure>> => {
   const responses = new Array<Response>(tasks.length);
   let firstFailure: { error: RequestError | DeadlineExceeded } | undefined;
   let firstDefect: { error: unknown } | undefined;
+  const failures: ChildFailure[] = [];
   const abortSiblings = (trigger: unknown): void => {
     if (!controller.signal.aborted) {
       controller.abort(new Error("sibling canceled", { cause: trigger }));
@@ -423,6 +436,7 @@ const combinedResult = await (async (): Promise<Result<readonly Response[], Requ
       const result = await task;
       if (result.isErr()) {
         firstFailure ??= { error: result.error };
+        failures.push({ index, kind: "expected", error: result.error });
         abortSiblings(result.error);
         return;
       }
@@ -433,13 +447,16 @@ const combinedResult = await (async (): Promise<Result<readonly Response[], Requ
          hasCause(error, controller.signal.reason));
       if (causedBySiblingAbort) return;
       firstDefect ??= { error };
+      failures.push({ index, kind: "defect", error });
       abortSiblings(error);
     }
   });
 
   await Promise.allSettled(observations);
-  if (firstDefect) throw firstDefect.error;
-  if (firstFailure) return Err(firstFailure.error);
+  if (firstDefect) {
+    throw new AggregateError(failures, "parallel operation failed", { cause: firstDefect.error });
+  }
+  if (firstFailure) return Err({ primary: firstFailure.error, failures });
   return Ok(responses);
 })();
 ```
