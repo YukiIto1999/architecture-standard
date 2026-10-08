@@ -18,7 +18,8 @@ production の diff が空の場合も、テスト、契約、設定、依存、
 採用する StrykerJS とテスト実行系の版の組は、既知の欠陥を仕込んだ確認で mutant が検出側に数えられることを確かめてから固定する。
 被覆の確認でテストを選べなかった mutant は `NoCoverage` として未検出に数える。
 被覆によって選んだテストがあるのに一件も実行しなかった場合は、未検出でも検出でもなく、検証入口を止める失敗として扱う。
-生成対象、除外と合否は、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」に従う。
+初期 dry run でテストが一件も見つからなかった場合も、検証入口を止める実行失敗として扱い、検出にも未検出にも算入しない。
+生成対象、除外、合否、結果の分類と修正後の再実行は、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」に従う。
 
 ### 根拠
 テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
@@ -33,23 +34,26 @@ mutant ごとのテストの絞り込みが壊れると、検出できるはず�
 変更部分と影響部分の和集合が `mutate` の対象指定で検査されているか、有効な同一検査の証跡で覆われている。
 検出されなかった mutant の件数が report の `totalUndetected`、または `Survived` と `NoCoverage` の合計で数えられ、型として成立しない変異と runner などによる未完了が検出件数へ加えられていない。
 既知の欠陥を仕込んだ確認で、その mutant が検出側に数えられている。
-未被覆の mutant が `NoCoverage` として未検出に数えられ、選んだテストがあるのに実行しなかった場合は検証入口を失敗で止めている。
-生成対象、除外と合否が、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」を満たしている。
+未被覆の mutant が `NoCoverage` として未検出に数えられ、選んだテストがあるのに実行しなかった場合と初期 dry run のテスト未発見は検証入口を失敗で止めている。
+生成対象、除外、合否、結果の分類と修正後の再実行が、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」を満たしている。
 
 ### 禁止事項
 `Survived` だけを数え、`NoCoverage` を件数から除くこと。
 mutant ごとのテストの絞り込みが効かない版の組で、mutation の結果を判定に使うこと。
-被覆によって選んだテストがあるのに実行しなかった mutant を、未検出または検出として数えること。
+被覆によって選んだテストがあるのに実行しなかった mutant と初期 dry run のテスト未発見を、未検出または検出として数えること。
 影響する箇所を未変更という理由で生成対象から外すことと、変更部分の成功で影響部分の検査を代替すること。
 未確定の影響と関係のない保証も含む全量を繰り返すこと。
 
 ### 行動
 変更入力から生成対象の変更部分と影響部分を計画し、diff から作る変更部分の行範囲と、別に導いた影響部分の範囲を `mutate` に渡して StrykerJS を検証入口で回す。
-生成対象の選択と被覆テストの選択を別に確認し、生き残った欠陥にテストを足す。
+生成対象の選択と被覆テストの選択を別に確認する。
 生成と判定の source と条件の同一性、生成対象全体の生成と判定の完了を確認する。
 影響する既存証跡を無効化し、影響しない証跡は [process/verification](../../process/verification.md) の同一性が成立する間再利用する。
-StrykerJS の機械可読な report から `totalUndetected` を読み、無い場合は `Survived` と `NoCoverage` の件数を合計して、件数を合否の判定に渡す。
+StrykerJS の機械可読な report から `totalUndetected` を読み、無い場合は `Survived` と `NoCoverage` の件数を合計して、report と終了 status を保持したまま合否の判定に渡す。
 StrykerJS とテスト実行系の版を上げるときは、既知の欠陥を仕込んだ確認で検出が成立することを確かめる。
-各 mutant について、被覆の確認からテストの選択と実行までを照合し、未被覆と runner の未実行を分けて報告する。
+各 mutant について、被覆の確認からテストの選択と実行までを照合し、未被覆と runner の未実行を分けて報告し、初期 dry run のテスト未発見も実行失敗として止める。
 影響範囲として選んだ mutation の対象内での除外は、変異演算子と低リスク要素に限る。
-対象と絞り方は、[structure/tests の methods](../../structure/tests/methods.md) に従う。
+対象と絞り方、結果の分類と修正後の再実行は、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」に従う。
+
+## 参照
+- [StrykerJS Configuration](https://stryker-mutator.io/docs/stryker-js/configuration/) の `coverageAnalysis` と `allowEmpty`。
