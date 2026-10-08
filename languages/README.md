@@ -2,7 +2,8 @@
 
 languages は、採用した言語ごとに、上位規律をその言語の機構でどう満たすかと、その言語 ecosystem に属する採用物を定める正本です。
 
-languages は、上位の設計原則である [principles](../principles/)、横断規律である [concerns](../concerns/)、構造設計である [structure](../structure/) が要求する性質に従い、採用と選定の枠組みは [tools](../tools/) に従います。その性質を各言語の機構と採用物でどう満たすかだけを定め、上位規律を再定義しません。
+languages は、上位の設計原則である [principles](../principles/)、横断規律である [concerns](../concerns/)、構造設計である [structure](../structure/) が要求する性質に従い、採用と選定の枠組みは [tools](../tools/) に従います。
+その性質を各言語の機構と採用物でどう満たすかだけを定め、上位規律を再定義しません。
 
 ## 設計思想
 
@@ -42,7 +43,7 @@ languages は、上位の設計原則である [principles](../principles/)、�
 |---|---|
 | [rust](./rust/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセスと言語サービス |
 | [csharp](./csharp/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセス |
-| [typescript](./typescript/) | viewer・extension・web と ide の host |
+| [typescript](./typescript/) | viewer・extension・web、ide と browser-extension の host |
 
 言語の間で揃えるのは保証、すなわち満たす性質とその検証であり、実装の形の双子性ではありません。
 実装単位と言語の対応を適用時の入力とし、各 ecosystem の README が定める言語の採用のうち使用する各言語の規律を適用する。
@@ -62,7 +63,8 @@ web の host の platform は browser であり、言語を持たない。
 ## 言語 ecosystem の書式
 
 各ファイルは、`## 概要` で従う上位規律への参照を述べる。
-その下に軸内の規律ごとの `## 規律名` を置き、各規律を必須の5節で書く。末尾に `## 参照` を置く。
+その下に軸内の規律ごとの `## 規律名` を置き、各規律を必須の5節で書く。
+末尾に `## 参照` を置く。
 conventions.md も同じ書式に従うが、置き場を持たず全ての実現軸に一様に適用する規律である点だけが異なる。
 inspection.md は、`## 参照` の直前に `## 規則と検証機構の対応` の付表を置き、規律ごとの検証手段を一覧にする。
 

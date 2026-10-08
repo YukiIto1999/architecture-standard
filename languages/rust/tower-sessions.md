@@ -33,7 +33,7 @@ back-channel logout token の token ID は、一度だけ受理して replay を
 back-channel logout token に sid があれば `(issuer, sid)` で、なければ `(issuer, subject)` で共有 store の session を特定して失効させる。
 token ID の replay 防止記録と session の失効は、共有 store の同じ原子的な操作で確定する。
 token の更新は、単一の更新に制御し、競合による上書きを防ぐ。
-検証済みの principal は、BFF の認証境界で actor へ写す。
+検証済みの principal は、[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) が定める authentication の境界で actor へ写し、BFF に別の actor 構築を置かない。
 BFF の route は、actor と境界で検証した入力を、埋め込んだ core の公開 API へ渡す。
 
 ### 根拠
@@ -69,7 +69,7 @@ back-channel logout token の token ID が、一度だけ受理されている�
 sid がある logout token は `(issuer, sid)` で、sid がない token は `(issuer, subject)` で共有 store の session を失効させている。
 token ID の replay 防止記録と session の失効が、共有 store の同じ原子的な操作で確定している。
 token の更新が、単一の更新に制御されている。
-検証済みの principal が、BFF の認証境界で actor へ写されている。
+検証済みの principal が、server の authentication の境界で actor へ写され、BFF が actor を再構築していない。
 BFF の route が、actor と検証済みの入力を、埋め込んだ core の公開 API へ渡している。
 CSRF の検査が、[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) の方式で行われている。
 
@@ -113,7 +113,9 @@ token をブラウザへ渡すと、持ち出しの面が開く。
 Json(TokenResponse { access_token, refresh_token })
 ```
 
-cookie 属性を builder で明示し、Domain 属性は設定しない。OIDC の claim と token の対応を検証し、認証後に session ID を再生成して、principal を actor へ写す。
+cookie 属性を builder で明示し、Domain 属性は設定しない。
+OIDC の callback では claim と token の対応を検証して session ID を再生成し、actor を構築しない。
+受信要求では、session の検証と actor の構築を共通の認証 middleware で終え、route が受け取った actor と検証済み入力を core へ渡す。
 
 ```rust
 let session_layer = SessionManagerLayer::new(store)
@@ -128,10 +130,6 @@ if let Some(at_hash) = claims.access_token_hash() {
 }
 regenerate_session_id(&session).await?;
 set_session_expiry(&session, idle_expiry, absolute_expiry).await?;
-session.insert("actor", to_actor(claims)).await?;
-
-let actor = session.required_actor().await?;
-let result = state.core.register(actor, request.try_into()?).await;
 
 delete_session_on_logout(&session, session_store).await?;
 let logout = verify_backchannel_logout_token(raw_token, expected_issuer, client_id)?;

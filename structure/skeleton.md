@@ -42,7 +42,7 @@ libs は、対応する機構があるときに置く。
 | libs | 業務非依存の技術基盤と、言語・library・framework の不足を補う機構を収める。core の子ではなく、各消費側が公開 API を直接使う。 |
 | contracts | 公開契約を canonical・http・protocol・generated に分ける。意味と binding からデータ型と通信実装を生成する。 |
 | surfaces | 対話様式ごとの入口を束ねる。直下に server・console・worker・viewer・extension・埋め込み surface を置く。 |
-| server | API の surface。core を埋め込み、http を公開し、token を仲介する。 |
+| server | API の surface。core を埋め込み、http を公開する。Web BFF を提供する場合は、token を仲介する。 |
 | console | CLI の surface。core を埋め込む。 |
 | worker | 背景処理・定期実行の daemon。core を埋め込む。 |
 | viewer | GUI の surface。被ホストで、host は runtimes に置く。 |
@@ -135,7 +135,7 @@ core を埋め込む host は core と generated のデータ型に依存し、p
 extension は、core を直接埋め込まない。
 extension の local の関心は、core を埋め込んだ別プロセスへ、言語非依存の protocol で接続する。
 そのプロセスは、対応する runtime が同梱して起動する。
-extension が UI を持つ場合は viewer を再利用し、ide の host が viewer もホストして ui port を注入する。
+extension が UI を持つ場合は viewer を再利用し、対応する host が viewer もホストして ui port を注入する。
 contracts への依存を core で持てるのは composition だけであり、各コンテキストと shared は表の core 行に従う。
 自己ホスト surface が持つ一時 store の置き場は、各 surface の layout が定める。
 

@@ -1,7 +1,7 @@
 # extension の構造
 
 extension は、拡張の surface である。
-host は、runtimes の ide が担う。
+host は、runtimes の [ide](../../runtimes/ide/layout.md) または [browser-extension](../../runtimes/browser-extension/layout.md) が担う。
 host の機能を remote API または埋め込み protocol の operation へ写像する。
 host に求める能力を port として定義する。
 host 非依存で、host の分岐を持たない。
@@ -15,18 +15,19 @@ extension/
 ├─ features/
 │  └─ <feature>     remote API または埋め込み protocol を呼ぶ拡張の機能。
 ├─ shared/          host 非依存の primitive と host port。
-└─ composition      core への接続・host port の注入・機能の登録。
+└─ composition      host port の注入・features の組み立て。
 ```
 
 `features` は、1 feature を1ファイルに置く。
 `shared` は host 非依存の primitive と、host の能力を表す port を置く。
-`composition` は単一の組立点である。
+`composition` は、host が呼び出す組み立ての所有単位である。
+host の実行 context ごとに必要な features を組み立て、単一の常駐 instance を前提にしない。
 
 ## 依存方向
 
 依存の向きは [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 composition が features を組み立て、host port を注入する。
-core への接続も composition が持つ。
+core への接続は、host が注入した client または protocol の port を使う。
 features は shared を参照できる。
 features と shared は、composition を参照しない。
 extension の外との依存は [skeleton](../../skeleton.md) に従う。
@@ -39,9 +40,13 @@ extension は、host に求める能力を port として定義する。
 host が、port の実装を注入する。
 一つの extension surface は、複数の host から port の実装を注入される。
 extension は、host の分岐を持たない。
+port は目的と operation を表し、host の API 型、実行 context、message の wire 型を公開契約に含めない。
 具体 host ごとの実装は [runtimes](../../runtimes/) に置く。
 UI を持つ機能は、独立した surface である [viewer](../viewer/) を再利用し、その公開 API を参照する。
 extension と viewer は、それぞれの shared を統合しない。
+実行 context ごとの entry、host への登録、起動と停止は host が所有し、extension は host から呼ばれる公開入口を提供する。
+実行 context 間の通信は host の adapters に閉じ、extension は限定した operation と検証済みの入力だけを受け取る。
+資格情報の取得と認証付き通信は host が所有し、extension と viewer の状態や port のデータ型に資格情報を含めない。
 
 ## core への接続
 

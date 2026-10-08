@@ -2,7 +2,7 @@
 
 runtime は、被ホストの surface をホストする具体の host である。
 ターゲットの runtimes/ 直下は、具体の host 名で命名する。
-本書の web・desktop・mobile・ide は、host の種類を表す見出しである。
+本書の各 host は、host の種類を表す見出しであり、具体の host 名ではない。
 
 ## 構成
 
@@ -12,14 +12,20 @@ runtime は、被ホストの surface をホストする具体の host である
 | [desktop](./desktop/layout.md) | viewer | native の shell | layout |
 | [mobile](./mobile/layout.md) | viewer | mobile の shell | layout |
 | [ide](./ide/layout.md) | extension。UI を持つ場合は viewer も | IDE | layout |
+| [browser-extension](./browser-extension/layout.md) | extension。UI を持つ場合は viewer も | browser の拡張 | layout |
 
 ## 共通の形
 
-4つの host は、adapters と composition の2単位という意味で同形である。
+各 host は、adapters と composition の2単位という意味で同形である。
 core を埋め込むかは、host ごとに layout が定める。
 adapters が、surface の定義する port を platform の API で実装する。
 1 port を、1ファイルとして実装する。
 composition が、port を注入し、surface を起動する。
+composition は組み立ての所有単位であり、単一の常駐 process や共有 instance を要求しない。
+複数の実行 context を持つ host は、context ごとの entry、登録と起動、資源の寿命を composition で所有する。
+実行 context の分割と具体の機構は、各 host の layout と [languages](../../languages/) が定める。
+処理の寿命は [concerns/concurrency](../../concerns/concurrency/README.md)、停止と再生成は [concerns/lifecycle](../../concerns/lifecycle/README.md) に従う。
+可変のグローバル状態の扱いは [principles/separation](../../principles/separation/coupling-by-distance.md) の「結合を距離に見合う強さにする」に従う。
 runtime は、surface の公開する port と起動の入口に依存し、surface の内部へ踏み込まない。
 runtime は、技術基盤が必要な場合に [libs](../libs/layout.md) の公開 API を直接使い、その機構への依存を自分の package で宣言する。
 この利用は core の埋め込みと無関係であり、surface や core を経由した再公開を要求しない。

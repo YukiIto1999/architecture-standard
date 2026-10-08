@@ -34,7 +34,7 @@ surface と core の接続、runtime がホストする surface と core の埋�
 | [libs](./libs/layout.md) | layout | 業務非依存の技術基盤と、言語・library・framework の不足を補う機構。各消費側が公開 API を直接利用する |
 | [contracts](./contracts/layout.md) | layout・canonical・http・protocol・generated | 契約 |
 | [surfaces](./surfaces/) | 一覧の [README](./surfaces/README.md) が定める | 対話様式ごとの入口。server・console・worker・viewer・extension・embedded |
-| [runtimes](./runtimes/) | 一覧の [README](./runtimes/README.md) が定める | 被ホスト surface の具体 host。web・desktop・mobile・ide |
+| [runtimes](./runtimes/) | 一覧の [README](./runtimes/README.md) が定める | 被ホスト surface の具体 host。web・desktop・mobile・ide・browser-extension |
 | [deploy](./deploy/layout.md) | layout | 配備。infrastructure・delivery・provenance・secrets は layout の節である |
 | [tests](./tests/layout.md) | layout・methods・doubles | root の規模の検証と、検証技法およびダブルの設計 |
 
@@ -52,4 +52,5 @@ root をまたぐ具体的な許可依存は skeleton が一元管理し、各�
 
 - 各部のレイアウト: core、libs、contracts、deploy、tests ではそれぞれの layout.md、surfaces と runtimes では各一覧の README.md が地図の役割を果たします。
 - 内部構造と依存方向: surfaces および runtimes のフォルダ構成、依存方向、固有の規律は、各 surface や runtime ごとの layout.md で確認します。
-- 固有の規律: レイヤーや単位ごとの具体的な仕様は、単位ごとの個別ファイルで確認します。構成表のファイル列が各部の本文ファイルの正本であり、台帳にない本文ファイルを置かず、台帳にあるファイルを欠かしてはなりません。
+- 固有の規律: レイヤーや単位ごとの具体的な仕様は、単位ごとの個別ファイルで確認します。
+  構成表のファイル列が各部の本文ファイルの正本であり、台帳にない本文ファイルを置かず、台帳にあるファイルを欠かしてはなりません。

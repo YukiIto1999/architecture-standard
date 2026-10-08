@@ -3,7 +3,8 @@
 ## 概要
 authorization は、アクセス制御の流れを全系で統べる規律である。
 principles の [separation](../../principles/separation/README.md) が定める変更理由での分割・関心の隠蔽・副作用の隔離を、全系のアクセス制御として具象化する。
-authorization は認証境界による構築済みの actor の権限評価を扱い、資格情報の検証と actor の構築は [authentication](../authentication/README.md) が扱う。
+authorization は、検証済み資格情報の許可範囲と、認証境界が構築した actor の業務権限を独立に評価し、操作と対象へのアクセスを制限する。
+資格情報の検証と actor の構築は [authentication](../authentication/README.md) が扱う。
 
 ## 規律
 

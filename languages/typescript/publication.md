@@ -3,8 +3,8 @@
 ## 概要
 publication は、TypeScript で外部公開面と host を扱う実現軸である。
 principles の [separation](../../principles/separation/README.md) が定める境界と依存の向きと、concerns の [authorization](../../concerns/authorization/README.md) が定める入口での評価・[security](../../concerns/security/README.md) が定める攻撃面の最小化を、TypeScript の機構で満たす。
-surface ごとの規律は、[solidjs](./solidjs.md)・[tailwind](./tailwind.md)・[opentelemetry-js](./opentelemetry-js.md)・[vite](./vite.md)・[vscode](./vscode.md)・[vscode-jsonrpc](./vscode-jsonrpc.md) が持つ。
-browser の store へ置かない規律は [connection](./connection.md) が持つ。
+surface ごとの規律は、[solidjs](./solidjs.md)・[tailwind](./tailwind.md)・[opentelemetry-js](./opentelemetry-js.md)・[vite](./vite.md)・[vscode](./vscode.md)・[chromium](./chromium.md)・[vscode-jsonrpc](./vscode-jsonrpc.md) が持つ。
+Web BFF frontend の token 非公開と host ごとの資格情報の利用は [connection](./connection.md) が持つ。
 
 ## extension
 
