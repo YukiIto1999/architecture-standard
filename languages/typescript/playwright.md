@@ -5,6 +5,11 @@
 判断基準は、browser の操作と screenshot 比較を test runner として実行でき、操作の入力から表示までの時刻を測定でき、baseline 画像と実行環境の記録を版管理してレビューできることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
+UI の受入と smoke の判定は、[structure/tests/methods](../../structure/tests/methods.md) の「利用者面の受入」に従う。
+Playwright の操作対象は、利用者向けの role、label、text の locator で一意にし、固定の待機でなく、期待する文言、値、件数、状態への web-first assertion で結果を待って判定する。
+受入画像の取得には、業務結果を assertion した同じ page の screenshot を使い、対応する scenario と表示条件を test の出力へ添える。
+継続的な visual の差分の検査は、この file の「baseline 画像と環境指紋を一つの更新単位で版管理する」に従う。
+
 ## 表示までの時間を E2E で測る
 
 ### 要求

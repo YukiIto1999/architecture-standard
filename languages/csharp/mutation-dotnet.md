@@ -18,7 +18,7 @@ production の diff が空の場合も、テスト、契約、設定、依存、
 検証入口は、生成対象と被覆テストの選択を分け、生成時と判定時の source、比較元と実行条件の同一性を確認する。
 既存証跡は [process/verification](../../process/verification.md) の同一性を満たす範囲だけで再利用し、既存の report を現在の diff に当てるだけで合格にしない。
 未検出の mutant は、報告の状態別件数のうち生存と未被覆の合計で数える。
-生成対象、除外と合否は、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」に従う。
+生成対象、除外、合否、結果の分類と修正後の再実行は、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」に従う。
 
 ### 根拠
 テストの有効性を mutation で測る理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
@@ -31,7 +31,7 @@ production の diff が空の場合も、テスト、契約、設定、依存、
 未検出の mutant が報告の生存と未被覆の合計で数えられ、型として成立しない変異と runner などによる未完了が検出件数へ加えられていない。
 テストが一件も見つからない実行が、検証入口を失敗で止めている。
 mutation-dotnet の取得が、release タグが指す commit ID で固定されている。
-生成対象、除外と合否が、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」を満たしている。
+生成対象、除外、合否、結果の分類と修正後の再実行が、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」を満たしている。
 
 ### 禁止事項
 生存だけを数え、未被覆を未検出の件数から除くこと。
@@ -49,5 +49,5 @@ mutation-dotnet と、その build が参照する上流 repository を、releas
 検査全体の mutant の生存と未被覆の合計を合否の判定へ渡し、変更行だけを抽出した件数で影響部分の結果を捨てない。
 影響する既存証跡を無効化し、影響しない証跡は同一性が成立する間再利用する。
 生成と判定のあいだで入力が変わった report、対象の完了を確認できない report、理由のない生成 0 件を、成功の証跡にしない。
-生き残った欠陥に、テストを足す。
+report と `run` および `changed-lines` の終了 status を保持し、結果の分類と修正後の再実行は [structure/tests/methods](../../structure/tests/methods.md) の「テストの有効性」に従う。
 影響範囲として選んだ mutation の対象内での除外は、変異演算子と低リスク要素に限る。
