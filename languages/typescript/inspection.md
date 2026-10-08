@@ -202,7 +202,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・生成 schema と生成 DTO の対応・全 variant と入れ子・配列内 object の未知キーの受容と位置捕捉、境界の警告到達、捕捉値の非流入、必須項目欠落・制約違反・判別子と payload の不一致の拒否)+構造検査(公開契約の schema の生成元と受信側固有の schema の区別) |
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |
 | http-client-js | 生成した契約を使い、drift を検査の gate にする | 構造検査(データ型の公開入口の runtime 依存 closure の通信 client と transport からの分離)+実行テスト(契約からの生成、再生成の差分、判別付き直和の判別子つき union と網羅の型検査、生成 client への transport の注入、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
-| connection | 生成型を型としてのみ使い、通信を port に通す | 構造検査(TypeScript compiler API。viewer からの生成 client の import と runtime の import の検出、生成 client の import を ui port の実装へ限定)+型(import type) |
+| connection | 生成型を型としてのみ使い、通信を port に通す | 構造検査(TypeScript compiler API。viewer と extension からの生成 client の import と runtime の import の検出、生成 client の import を viewer の ui port または extension の host port を実装する host の adapters へ限定)+型(import type) |
 | ts-results-es | 効果を遅延した関数で表す | 構造検査(TypeScript compiler API。Effect が unique symbol の nominal brand を持ち、deferEffect だけが branded value を構築し、全ての公開 Effect factory に parameter initializer がなく、本体が実行用の関数リテラルを deferEffect へ直接渡すこと)+実行テスト(deferEffect の構築時は副作用0件で、返した Effect の呼出後にだけ開始すること)+型(Effect の nominal brand・環境・AbortSignal・wall-clock の絶対期限・AsyncResult のシグネチャ) |
 | ts-results-es | 想定内失敗を Result で返す | 型(ts-results-es の Result・判別子つき union) |
 | ts-results-es | 非同期 API の送出を AsyncResult へ変換する | 構造検査(TypeScript compiler API。設定した Promise を返す境界 API の呼出しを `Result.wrapAsync` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(関数呼出時の同期 throw と返した Promise の rejection を同じ mapper が Err にし、欠陥と AbortError は元の error のまま rejection になること) |
@@ -211,8 +211,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | inspection | 型消去の cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | solidjs | 状態の機構 | レビュー(structure の分類に対応する remote/URL/横断/一時 の機構の選択) |
 | solidjs | remote の規律 | レビュー(local の横断 store への複製禁止の判断) |
-| connection | 保存の禁止 | analyzer/lint(oxlint の no-restricted-properties で localStorage・sessionStorage の直呼びを禁止) |
-| vscode | extension の保持状態 | 型(state port・secret port)+レビュー(保持する状態の範囲と secret の扱いの判断) |
+| connection | Web BFF frontend に認証 token を公開しない | analyzer/lint(Web BFF frontend の localStorage・sessionStorage・IndexedDB の直呼びを oxlint の no-restricted-properties で禁止)+レビュー(frontend の JavaScript 可読 store と応答に認証 token が無いこと、host の資格情報契約の適用範囲)+実行テスト(cookie と CSRF header の送信、不一致の拒否、session 再生成・失効後の古い CSRF 値の破棄) |
+| vscode | extension の保持状態 | 型(秘密を含まない state port)+レビュー(Memento と secret storage の使い分け、資格情報の取得と認証付き通信を host の adapter に閉じること、surface に資格情報を返す port が無いこと)+実行テスト(利用する host の backend と鍵の保護が永続保管の契約を満たすこと) |
 | coordination | 非同期 | 構造検査(TypeScript compiler API。公開非同期 API の戻り型と、domain の関数に非同期が現れないことの照合)+レビュー(domain の純粋性の判断) |
 | coordination | 取り消し | 型(Effect 専用 withDeadlineEffect が AsyncResult<T, E &#124; DeadlineExceeded> を返すこと)+構造検査(TypeScript compiler API。設定に列挙した外部 I/O と待機の symbol と、callee expression の nominal brand または branded Effect への代入可能性で識別した下流 Effect を withDeadlineEffect の operation からだけ呼び、wrapper 内の window と document の直接参照を拒否すること)+実行テスト(host ごとの ResumeSource、wall-clock の絶対期限の伝播、非同期境界の前後と再開時の期限確認、購読解除後の判定、解決済み Err の保持と overrun 診断、期限 reason と同一または cause chain に持つ rejection の DeadlineExceeded Err 変換、wrapper 開始前から親取消と期限超過が同時に成立した場合に AbortSignal.any が選んだ親 reason の保持、別 defect の保持と期限超過診断、Ok 後の期限超過を DeadlineExceeded Err にすること、AbortSignal.timeout が active time の局所補助であること、親 signal と期限用 controller の AbortSignal.any 合成) |
 | coordination | 並行の組 | 構造検査(TypeScript compiler API。Promise.all または Promise.allSettled に渡す並行 task collection を生成する箇所では、branded Effect を開始する withDeadlineEffect の呼出しを、project の決定の記録で固定した単一 limiter の需要枠 callback 内へ限定)+実行テスト(最初の Err と最初の rejection の各経路で abort、controller 由来の sibling cancellation rejection の除外、allSettled で全兄弟へ合流、defect が無い場合は最初の失敗を primary とする Result の err を返すこと、独立した defect があれば drain 後に最初の defect を cause とする AggregateError を送出すること、元の Err と追加の独立した失敗の task 識別・種類・値の全保持、実行中の Effect が決定の記録の上限を越えない最大同時実行数) |
@@ -224,6 +224,10 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | vite | viewer を載せる host の entry と build | レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
 | publication | extension | 型(port の interface) |
 | vscode | ide の host | 型(判別子つき union の schema・safeParse)+実行テスト(postMessage 受信の単体テスト) |
+| chromium | 実行 context ごとに組み立てる | 構造検査(manifest の宣言と動的な登録・注入の build 出力への対応、Chrome の API・型の参照を runtime へ限定、listener が非同期準備より先に同期登録されること)+実行テスト(worker 停止・再開、依存準備の失敗、tab 切替と document 変更時の操作拒否) |
+| chromium | 権限と message の操作を限定する | 構造検査(manifest の権限・host・message 操作集合の照合)+analyzer/lint(surface から Chrome global API を呼ぶ形の禁止)+実行テスト(sender・操作・対象・通信先の拒否、権限拒否・撤回、注入禁止ページ、secret を返さない応答) |
+| chromium | 資格情報を host の通信 adapter に閉じる | 型(非秘密状態と資格情報の分離)+レビュー(保管 backend と鍵の実際の保証)+実行テスト(session のアクセス制限、worker 停止後の復元、browser 再起動・拡張 reload・update・disable 後の欠落、期限・失効・logout、通信先変更時の旧資格情報の不送信) |
+| chromium | 認証の取得経路と API の権限を照合する | レビュー(単一の取得方式と認証基盤・API の契約)+実行テスト(採用経路の実行、public OAuth client 採用時の配布 channel ごとの callback・code 再利用と PKCE 不一致の拒否、許可操作を越える要求と owner cookie による迂回の拒否、cookie 経路の CSRF・browser 設定) |
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |
 | publication | 可視性 | 構造検査(package.json の exports フィールドの検査と、exports に無い path への import の拒否) |
 | oxlint | 汎用名と裸ループと自由文出力を lint で止める | analyzer/lint(id-denylist・typescript/prefer-for-of・no-console をエラー化) |

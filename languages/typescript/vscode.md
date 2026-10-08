@@ -54,17 +54,18 @@ window.addEventListener("message", (event: MessageEvent<unknown>) => {
 
 ### 要求
 extension の状態は、秘密を含まない値に限り host の Memento(globalState・workspaceState)に置く。
-秘密は host の secret storage に委ね、Memento に置かない。
+秘密は host の secret storage に委ね、実際の backend と鍵の保護が [secrets](../../concerns/secrets/sealed-secret-type.md) の永続保管の契約を満たすことを確認し、Memento に置かない。
 surface は状態を state port で受け取り、host の状態 API を直接呼ばない。
+secret storage からの資格情報の取得と認証付き通信は host の adapter に閉じ、surface に資格情報を返す port を注入しない。
 
 ### 根拠
 Memento は host の実装で永続化されるが平文で保存されるので、秘密を置くと漏れる。
-host の secret storage は暗号化して保持するので、秘密の置き場はそちらに限る。
+secret storage の API 名だけでは backend と鍵の保護を保証できず、[VSCode の keychain の説明](https://code.visualstudio.com/docs/configure/settings-sync#troubleshooting-keychain-issues) が示すように、実環境で選ばれる backend を確認する必要がある。
 surface が host の状態 API を直接呼ぶと、publication が定める host 非依存の境界が崩れる。
 
 ### 完了条件
 extension の状態が、秘密を含まない値に限り host の Memento に置かれている。
-秘密が、host の secret storage に置かれ Memento に無い。
+秘密が host の secret storage に置かれ Memento に無く、実際の backend と鍵の保護が永続保管の契約を満たすと確認されている。
 surface が、状態を state port で受け取り host の状態 API を直接呼んでいない。
 
 ### 禁止事項
@@ -73,7 +74,9 @@ surface から、host の状態 API を直接呼ぶこと。
 
 ### 行動
 状態を秘密と非秘密に分け、非秘密は state port 経由で host の Memento に、秘密は host の secret storage に置く。
-adapter が host 固有の Memento・secret storage の API を実装し、surface は port にだけ依存する。
+adapter が host 固有の Memento の API を実装し、surface は state port にだけ依存する。
+secret storage の API は host 内の認証付き通信 adapter が利用する。
+利用する host の backend と鍵の保護を実環境で確認し、永続保管の契約を満たすと確認できない環境では資格情報を永続保管しない。
 
 ### 例
 surface が host の Memento を直接呼ぶと、host に縛られる。
@@ -82,9 +85,8 @@ surface が host の Memento を直接呼ぶと、host に縛られる。
 context.globalState.update("draftCount", count);
 ```
 
-surface は port にだけ依存し、adapter が host の Memento と secret storage を使い分ける。
+surface は秘密を含まない state port にだけ依存し、adapter が host の Memento を使う。
 
 ```typescript
 interface StatePort { getDraftCount(): number; setDraftCount(count: number): Promise<void>; }
-interface SecretPort { getToken(): Promise<string | undefined>; }
 ```
