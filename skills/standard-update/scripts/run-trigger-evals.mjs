@@ -1,20 +1,19 @@
 #!/usr/bin/env node
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { loadedSkill, ompTimeout, resolveOmpModel, runOmp } from "./omp-eval-adapter.mjs";
 
 const repoRoot = execFileSync("git", ["-C", fileURLToPath(new URL("../../../", import.meta.url)), "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 const skillName = process.argv[2];
 const allowedSkills = new Set(["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update", "cli-design", "property-testing"]);
 if (!allowedSkills.has(skillName)) throw new Error(`skill must be one of ${[...allowedSkills].join(", ")}`);
-const claudeCommand = process.env.CLAUDE_EVAL_COMMAND || "claude";
-const timeoutMs = Number(process.env.CLAUDE_EVAL_TIMEOUT_MS || "60000");
-if (!Number.isFinite(timeoutMs) || timeoutMs < 1) throw new Error("CLAUDE_EVAL_TIMEOUT_MS must be a positive number");
-
-const sourceRoot = path.join(repoRoot, skillRoot(skillName));
+const timeoutMs = ompTimeout(60_000);
+const resolvedModel = resolveOmpModel();
+const sourceRoot = path.join(repoRoot, "skills", skillName);
 const allQueries = JSON.parse(readFileSync(path.join(sourceRoot, "evals", "trigger-evals.json"), "utf8"));
 const selectedQuery = process.argv[3] === undefined ? null : Number(process.argv[3]);
 if (selectedQuery !== null && (!Number.isInteger(selectedQuery) || selectedQuery < 0 || selectedQuery >= allQueries.length)) {
@@ -22,324 +21,58 @@ if (selectedQuery !== null && (!Number.isInteger(selectedQuery) || selectedQuery
 }
 const queries = selectedQuery === null ? allQueries : allQueries.filter((_, index) => index === selectedQuery);
 const fixtureRoot = mkdtempSync(path.join(tmpdir(), `architecture-standard-trigger-${skillName}-`));
-
+const skills = {};
 try {
-  execFileSync("git", ["clone", "--quiet", "--no-hardlinks", repoRoot, fixtureRoot]);
-  const claudeSkillDestination = path.join(fixtureRoot, ".claude", "skills");
-  assertInside(fixtureRoot, claudeSkillDestination);
-  rmSync(claudeSkillDestination, { recursive: true, force: true });
   for (const candidate of allowedSkills) {
-    const candidateRoot = skillRoot(candidate);
-    const candidatePath = path.join(fixtureRoot, candidateRoot);
-    assertInside(fixtureRoot, candidatePath);
-    rmSync(candidatePath, { recursive: true, force: true });
-    cpSync(path.join(repoRoot, candidateRoot), candidatePath, { recursive: true, force: true });
-    const claudeSkillPath = path.join(claudeSkillDestination, candidate);
-    assertInside(fixtureRoot, claudeSkillPath);
-    mkdirSync(claudeSkillPath, { recursive: true });
-    cpSync(path.join(candidatePath, "SKILL.md"), path.join(claudeSkillPath, "SKILL.md"));
+    const candidatePath = path.join(fixtureRoot, "skills", candidate);
+    mkdirSync(candidatePath, { recursive: true });
+    const skillFile = path.join(candidatePath, "SKILL.md");
+    cpSync(path.join(repoRoot, "skills", candidate, "SKILL.md"), skillFile);
+    skills[candidate] = skillFile;
   }
-
   const results = [];
   for (const item of queries) {
     const evaluation = await evaluateQuery(item.query);
     const expectedSkill = Object.hasOwn(item, "expected_skill")
-      ? item.expected_skill
-      : item.should_trigger ? skillName : null;
+      ? item.expected_skill : item.should_trigger ? skillName : null;
     const passed = evaluation.error === null && evaluation.selected_skill === expectedSkill;
     results.push({ query: item.query, expected_skill: expectedSkill, ...evaluation, pass: passed });
     process.stderr.write(`${passed ? "PASS" : "FAIL"}: selected=${evaluation.selected_skill ?? "none"} expected=${expectedSkill ?? "none"} error=${evaluation.error ?? "none"} trace=${JSON.stringify(evaluation.trace)} ${item.query}\n`);
   }
-
-  const passed = results.filter((item) => item.pass).length;
-  process.stdout.write(`${JSON.stringify({ skill_name: skillName, results, summary: { total: results.length, passed, failed: results.length - passed } }, null, 2)}\n`);
+  const passed = results.filter(item => item.pass).length;
+  process.stdout.write(`${JSON.stringify({ skill_name: skillName, results,
+    summary: { total: results.length, passed, failed: results.length - passed } }, null, 2)}\n`);
   process.exitCode = passed === results.length ? 0 : 1;
 } finally {
-  assertOwnedFixture(fixtureRoot);
+  const resolved = path.resolve(fixtureRoot);
+  if (!resolved.startsWith(path.resolve(tmpdir()) + path.sep) || !path.basename(resolved).startsWith("architecture-standard-trigger-")) {
+    throw new Error(`refusing to remove unowned fixture: ${resolved}`);
+  }
   rmSync(fixtureRoot, { recursive: true, force: true });
 }
 
-function skillRoot(skillName) {
-  return path.join("skills", skillName);
-}
-
-function evaluateQuery(query) {
-  return new Promise((resolve) => {
-    const routingPrompt = [
-      "これは Skill の発火先だけを測る隔離評価です。依頼そのものは実行しないでください。",
-      "installed Skill の name と description だけから、依頼に一致する Skill があれば最初かつ唯一の tool call として選んでください。対象 path の探索、確認質問、作業計画、他の tool call を先に行わないでください。",
-      "一致する Skill がなければ tool を呼ばず、該当なしとだけ応答してください。",
-      `依頼: ${query}`,
-    ].join("\n\n");
-    const args = [
-      "-p", routingPrompt,
-      "--output-format", "stream-json",
-      "--verbose",
-      "--include-partial-messages",
-      "--no-session-persistence",
-      "--permission-mode", "plan",
-      "--allowedTools", "Skill",
-      "--setting-sources", "project",
-      "--model", "haiku",
-    ];
-    const env = { ...process.env };
-    delete env.CLAUDECODE;
-    const child = spawn(claudeCommand, args, {
-      cwd: fixtureRoot,
-      env,
-      stdio: ["ignore", "pipe", "pipe"],
-      detached: process.platform !== "win32",
-    });
-    let buffer = "";
-    let pendingSkillTool = false;
-    let partialInput = "";
-    let settled = false;
-    let stderr = "";
-    const trace = [];
-    let selectedSkill = null;
-    const otherSkills = [];
-    let firstCompetingTool = null;
-    let streamParseError = null;
-    let selectionError = null;
-    let sawTerminalResult = false;
-    let resultError = null;
-    let spawnError = null;
-    let observationWindowExpired = false;
-    let terminationRequestedAfterResult = false;
-    let terminationRequestedAfterSelection = false;
-    let terminationRequestedAfterObservation = false;
-    let terminationRequestedAfterCompetingTool = false;
-    let resultTimer = null;
-    let forceTimer = null;
-    let timeoutForceTimer = null;
-
-    const finish = (code, signal) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      if (resultTimer !== null) clearTimeout(resultTimer);
-      if (forceTimer !== null) clearTimeout(forceTimer);
-      if (timeoutForceTimer !== null) clearTimeout(timeoutForceTimer);
-      const cleanExit = code === 0 && signal === null;
-      const runnerTerminationRequested = terminationRequestedAfterResult
-        || terminationRequestedAfterSelection
-        || terminationRequestedAfterObservation
-        || terminationRequestedAfterCompetingTool;
-      const expectedRunnerExit = isExpectedRunnerExit(code, signal, runnerTerminationRequested);
-      const evaluationComplete = sawTerminalResult
-        || selectedSkill !== null
-        || terminationRequestedAfterSelection
-        || observationWindowExpired
-        || firstCompetingTool !== null;
-      const unexpectedExit = selectedSkill === null && evaluationComplete && !cleanExit && !expectedRunnerExit;
-      const error = spawnError
-        ?? streamParseError
-        ?? selectionError
-        ?? resultError
-        ?? (!evaluationComplete ? `exit=${code} signal=${signal} terminal=false stderr=${stderr.trim()}` : null)
-        ?? (unexpectedExit ? `unexpected exit after evaluation completion: status=${code} signal=${signal}` : null);
-      resolve({
-        selected_skill: selectedSkill,
-        triggered: selectedSkill !== null,
-        other_skills: otherSkills,
-        first_competing_tool: firstCompetingTool,
-        observation_window_expired: observationWindowExpired,
-        error,
-        trace,
-      });
-    };
-
-    const timer = setTimeout(() => {
-      inspectBufferedFragment();
-      observationWindowExpired = true;
-      terminationRequestedAfterObservation = terminateProcessGroup(child, "SIGTERM");
-      if (terminationRequestedAfterObservation) {
-        timeoutForceTimer = setTimeout(() => {
-          terminateProcessGroup(child, "SIGKILL");
-        }, 2000);
-      }
-    }, timeoutMs);
-    child.on("error", (error) => {
-      spawnError = error.message;
-      finish(null, null);
-    });
-    child.on("close", (code, signal) => {
-      inspectBufferedFragment();
-      finish(code, signal);
-    });
-    child.stderr.on("data", (chunk) => { stderr += chunk.toString("utf8"); });
-    child.stdout.on("data", (chunk) => {
-      buffer += chunk.toString("utf8");
-      while (buffer.includes("\n")) {
-        const newline = buffer.indexOf("\n");
-        const line = buffer.slice(0, newline).trim();
-        buffer = buffer.slice(newline + 1);
-        if (!line) continue;
-        if (isObservationClosed()) continue;
-        let event;
-        try {
-          event = JSON.parse(line);
-        } catch {
-          streamParseError ??= "malformed stream-json event";
-          continue;
-        }
-        inspectEvent(event);
-      }
-    });
-
-    function inspectBufferedFragment() {
-      const fragment = buffer.trim();
-      buffer = "";
-      if (!fragment) return;
-      if (isObservationClosed()) return;
-      try {
-        inspectEvent(JSON.parse(fragment));
-      } catch {
-        streamParseError ??= "malformed stream-json event";
-      }
-    }
-
-    function isObservationClosed() {
-      return observationWindowExpired
-        || selectedSkill !== null
-        || sawTerminalResult
-        || firstCompetingTool !== null
-        || terminationRequestedAfterSelection
-        || terminationRequestedAfterCompetingTool;
-    }
-
-    function inspectEvent(event) {
-      if (event.type !== "result" && isObservationClosed()) return;
-      if (event.type === "stream_event") {
-        const streamEvent = event.event ?? {};
-        if (streamEvent.type === "content_block_start") {
-          const block = streamEvent.content_block ?? {};
-          if (block.type !== "tool_use") return;
-          pendingSkillTool = block.name === "Skill";
-          partialInput = "";
-          if (!pendingSkillTool) recordCompetingTool(block.name);
-        } else if (streamEvent.type === "content_block_delta" && pendingSkillTool) {
-          const delta = streamEvent.delta ?? {};
-          if (delta.type !== "input_json_delta") return;
-          partialInput += delta.partial_json ?? "";
-        } else if (streamEvent.type === "content_block_stop" && pendingSkillTool) {
-          recordSkillSelection(parseSkillInput(partialInput));
-          pendingSkillTool = false;
-        }
-      } else if (event.type === "assistant") {
-        for (const block of event.message?.content ?? []) {
-          if (trace.length < 8) trace.push(block.type === "tool_use" ? `tool:${block.name}:${JSON.stringify(block.input)}` : `${block.type}:${String(block.text ?? "").slice(0, 160)}`);
-          if (block.type !== "tool_use") continue;
-          if (block.name === "Skill") {
-            recordSkillSelection(parseSkillInput(block.input));
-          } else {
-            recordCompetingTool(block.name);
-          }
-        }
-      } else if (event.type === "result") {
-        sawTerminalResult = true;
-        clearTimeout(timer);
-        if (selectedSkill !== null
-          || terminationRequestedAfterSelection
-          || terminationRequestedAfterObservation
-          || terminationRequestedAfterCompetingTool) return;
-        resultError = event.is_error === true ? `result error: ${event.result ?? "unknown"}` : null;
-        resultTimer = setTimeout(() => {
-          terminationRequestedAfterResult = terminateProcessGroup(child, "SIGTERM");
-          if (terminationRequestedAfterResult) {
-            forceTimer = setTimeout(() => {
-              terminateProcessGroup(child, "SIGKILL");
-            }, 2000);
-          }
-        }, 250);
-      }
-    }
-
-    function recordSkillSelection(candidate) {
-      if (candidate === null) {
-        selectionError = "Skill tool called without an exact recognized skill";
-        return;
-      }
-      if (allowedSkills.has(candidate) && firstCompetingTool !== null) {
-        selectionError = `Skill selected after competing tool: ${firstCompetingTool}`;
-        return;
-      }
-      if (!allowedSkills.has(candidate)) {
-        if (candidate.startsWith("standard-")) {
-          selectionError = `Skill tool called with an unrecognized standard skill: ${candidate}`;
-        } else if (!otherSkills.includes(candidate)) {
-          otherSkills.push(candidate);
-        }
-        recordCompetingTool(`Skill(${candidate})`);
-        return;
-      }
-      if (selectedSkill !== null && selectedSkill !== candidate) {
-        selectionError = `multiple skills selected: ${selectedSkill}, ${candidate}`;
-        return;
-      }
-      selectedSkill = candidate;
-      if (!sawTerminalResult && !terminationRequestedAfterSelection) {
-        clearTimeout(timer);
-        terminationRequestedAfterSelection = terminateProcessGroup(child, "SIGTERM");
-        if (terminationRequestedAfterSelection) {
-          forceTimer = setTimeout(() => {
-            terminateProcessGroup(child, "SIGKILL");
-          }, 2000);
-        }
-      }
-    }
-
-    function recordCompetingTool(toolName) {
-      if (selectedSkill !== null || firstCompetingTool !== null || sawTerminalResult) return;
-      firstCompetingTool = toolName;
-      clearTimeout(timer);
-      terminationRequestedAfterCompetingTool = terminateProcessGroup(child, "SIGTERM");
-      if (terminationRequestedAfterCompetingTool) {
-        forceTimer = setTimeout(() => {
-          terminateProcessGroup(child, "SIGKILL");
-        }, 2000);
-      }
-    }
-  });
-}
-
-function isExpectedRunnerExit(status, signal, terminationRequested) {
-  if (!terminationRequested) return false;
-  if (new Set(["SIGTERM", "SIGKILL"]).has(signal)) return true;
-  return signal === null && new Set([143, 137]).has(status);
-}
-
-function terminateProcessGroup(child, signal) {
-  if (!child.pid) return false;
-  if (process.platform !== "win32") {
-    try {
-      process.kill(-child.pid, signal);
-      return true;
-    } catch (error) {
-      if (error.code === "ESRCH") return false;
-    }
-  }
-  return child.kill(signal);
-}
-
-function parseSkillInput(value) {
-  let input = value;
-  if (typeof input === "string") {
-    try { input = JSON.parse(input); } catch { return null; }
-  }
-  const name = input?.skill;
-  return typeof name === "string" && name.length > 0 ? name : null;
-}
-
-function assertInside(root, target) {
-  const prefix = path.resolve(root) + path.sep;
-  if (!path.resolve(target).startsWith(prefix)) throw new Error(`path outside fixture: ${target}`);
-}
-
-function assertOwnedFixture(target) {
-  const resolved = path.resolve(target);
-  const prefix = path.resolve(tmpdir()) + path.sep;
-  if (!resolved.startsWith(prefix) || !path.basename(resolved).startsWith("architecture-standard-trigger-")) {
-    throw new Error(`refusing to remove unowned fixture: ${resolved}`);
-  }
+async function evaluateQuery(query) {
+  const prompt = [
+    "これは Skill の発火先だけを測る隔離評価です。依頼そのものは実行しないでください。",
+    "利用可能な Skill の name と description だけから依頼に一致する Skill を選んでください。一致すれば最初かつ唯一の tool call として read(path=skill://ID) でその SKILL.md の本文全体を読み、終えてください。",
+    "対象 path の探索、確認質問、作業計画、他の tool call を先に行わないでください。一致しなければ tool を呼ばず、該当なしとだけ応答してください。",
+    `依頼: ${query}`,
+  ].join("\n\n");
+  const execution = await runOmp({ cwd: fixtureRoot, prompt, resolvedModel, tools: ["read"], skills, timeoutMs,
+    systemPrompt: "You are an isolated Skill routing evaluator. Select solely from the available isolated Skill names and descriptions. Load one matching Skill using read, or do not call tools when no Skill matches. Do not execute the task." });
+  const calls = execution.toolEvidence;
+  const first = calls[0];
+  const selectedSkill = first ? loadedSkill(first, skills, fixtureRoot) : null;
+  const firstCompetingTool = first && selectedSkill === null ? first.name : null;
+  let error = execution.error;
+  if (calls.length > 1) error ??= "multiple tool calls in Skill routing evaluation";
+  if (first && selectedSkill === null) error ??= "first tool did not successfully load a complete recognized Skill";
+  const trace = calls.slice(0, 8).map(call => `tool:${call.name}:${JSON.stringify(call.input)}:${call.status}`);
+  return { selected_skill: selectedSkill, triggered: selectedSkill !== null,
+    first_competing_tool: firstCompetingTool, observation_window_expired: execution.error === "OMP execution timeout",
+    terminal_result_received: execution.terminalResultReceived, exit_status: execution.status, signal: execution.signal,
+    requested_model: process.env.OMP_EVAL_MODEL || "default", resolved_model_selector: execution.resolvedModel,
+    actual_models: execution.parsed.actual_models, model_usage: execution.parsed.model_usage,
+    usage: execution.parsed.usage, total_cost_usd: execution.parsed.total_cost_usd,
+    error, trace, tool_evidence: calls };
 }

@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "model": "haiku",
+      "model": "default",
       "prompt": "architecture-standard に従って、保管済み report を探して一覧を出す archive list と、指定 ID の report を消す archive remove の CLI 契約を設計してください。人の terminal と CI の両方で使い、一覧は空でも成功します。人は表で読み、CI は機械向けの形式を使います。stdin には一覧の絞り込み対象 ID を渡せます。削除は取り返せず、対象 ID が変わったら以前の確認は無効です。実装と実行はせず、command と入力、stream と終了 status、確認、再実行、具体的な呼び出しごとの期待結果を返してください。既存 parser の選定はこの依頼に含みません。",
       "expected_output": "人と script の入力と結果を区別した仕様を返し、stdin のデータを確認へ流用せず、非対話の入力不足と破壊操作を効果の前に拒否し、呼び出しを stdout、stderr、status、状態へ対応させる。",
       "files": [],
@@ -17,7 +17,7 @@
     },
     {
       "id": 2,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "architecture-standard を基準に、sync export の設定解決と入出力を設計してください。起動時設定の源は、system、user、project の設定 file を一つの resolver で解決する方式として採用済みで、優先順は project > user > system です。compress は boolean、limit は非負整数で、false と 0 は明示値として有効です。command の --config は project file を選択するだけで、実行時 feature flag ではありません。未指定と空値の扱いはまだ決定していません。利用者からは、環境変数へ secret を入れる慣習に合わせてほしいという提案もあります。実装と検証はせず、確定できる契約、未確定の判断、競合を判定する呼び出し条件を返してください。",
       "expected_output": "採用済みの resolver と優先順を保持し、false と 0 を未指定にせず、未確定の空値を実装慣習で補わず、標準が禁止する環境変数の secret 供給を追加しない。",
       "files": [],
@@ -31,7 +31,7 @@
     },
     {
       "id": 3,
-      "model": "opus",
+      "model": "default",
       "prompt": "architecture-standard に従って、terminal 上の release picker の設計を具体化してください。選択 ID は stdout で script に渡しますが、選択中に外部 editor で説明文を直して picker へ戻る操作があります。既存 framework が raw mode と stdin reader を所有し、editor を待つ API もあります。背景で metadata を取得し、日本語名と結合文字と emoji を表示します。起動途中の失敗、editor の失敗、割込み、resize、非 TTY の利用を含む設計と観測計画を返してください。実装、実行、framework の切替は依頼しません。",
       "expected_output": "選択結果の channel を保ち、最終終了と一時引き渡しを分けた terminal 所有の設計を返し、復帰時のデータ再読込と実 PTY の検査、cell 幅と非同期入力 loop を対応させる。",
       "files": [],
@@ -45,7 +45,7 @@
     },
     {
       "id": 4,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "新しい command を足すのではなく、既存の snapshot pack を公開契約どおり実装する前の呼び出し仕様を詰めてください。全対象は同じ request ID で確定し、確定前の取り消しは書込みなし、確定後は書込みを維持してその request ID の再実行で同じ結果を返します。機械向け出力を consumer が途中で閉じたときにも再実行で追加の pack を作ってはいけません。preview は対象の現在の version を読み、実行時に version が変われば拒否します。architecture-standard に照らし、結果と終了、取り消しと部分出力、再実行の受入条件だけを設計してください。実行はしません。",
       "expected_output": "確定点と出力の完了を区別し、取り消しと出力切断で確定済みの効果を消えたものとして扱わず、request ID の再実行と preview の再照合を検査へ落とす。",
       "files": [],
@@ -58,7 +58,7 @@
     },
     {
       "id": 5,
-      "model": "haiku",
+      "model": "default",
       "prompt": "workspace choose は候補を矢印キーで選んで ID を一つ出し、その場で終了する単発 command です。継続する TUI に広げず、CLI の呼び出し契約を設計してください。既存 framework は raw mode、cursor、stdin reader を取得し、解除用の lifecycle API を持ちます。stdout は次の command へ pipe され、stderr は terminal です。候補の取得前後に失敗し得て、利用者は Esc または割込みで取り消せます。入力が非 TTY なら、明示 ID がある場合だけ選択を省いて同じ結果を返します。実装と実行はせず、取得途中の失敗、通常終了、取り消し、突然死の保証範囲、具体的な呼び出しと実 PTY の観測計画を返してください。",
       "expected_output": "単発の選択でも terminal 状態の取得と復元を設計し、結果 ID と UI の channel を分け、framework の所有を保持した終了条件と非 TTY の経路を示す。",
       "files": [],

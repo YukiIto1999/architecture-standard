@@ -89,7 +89,7 @@ process は順序と確認点だけを所有し、性質の規範を再定義し
 CLI の人と script の呼び出しの設計は [cli-design](./skills/cli-design/SKILL.md)、契約から生成器と oracle、操作列、反例の分類へ落とす検査は [property-testing](./skills/property-testing/SKILL.md) を使います。
 
 dotfiles-wsl は、固定した Nix source と `skills/plugins/module.nix` の明示的な採用表から、選択済み client へ Skill package を配備します。
-Claude Code の `.claude/skills/` など client ごとの配備先は投影先であり、正本の所有先ではありません。
+OMP の `.omp/agent/skills/` など client ごとの配備先は投影先であり、正本の所有先ではありません。
 配備済み source は読み取り専用とし、標準の編集と検証には作業 checkout を使います。
 
 ## 統治の規約

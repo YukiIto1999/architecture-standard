@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "model": "haiku",
+      "model": "default",
       "prompt": "`target-project/` へ標準を適用中に、`concerns/concurrency/bounded-concurrency-backpressure.md` の完了条件と `languages/rust/inspection.md` の検査割当が衝突し、`target-project/app/worker.rs:1` の設計を一意に決められませんでした。標準リポジトリへ改訂提案を還流してください。",
       "expected_output": "対象規律の相対 path と見出し、対象 project の file:line、観測事実を実測証跡として固定し、重複起票を防ぐ事前検索を経て、固定フォーマットの Issue 本文を作る。GitHub MCP を使えない場合は送信せず、その理由と作成した本文を報告する。",
       "files": [],
@@ -17,7 +17,7 @@
     },
     {
       "id": 2,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "同じ規律について、標準リポジトリに既存のオープン Issue が見つかりました。今回の実測証跡は既存 Issue より具体的で、対象 project の再現コマンド出力も持っています。この情報を標準側へ届けてください。",
       "expected_output": "既存 Issue を検出したため新規起票せず、その Issue へ実測証跡と補足提案をコメントとして追記する経路を選ぶ。",
       "files": [],
@@ -30,7 +30,7 @@
     },
     {
       "id": 3,
-      "model": "opus",
+      "model": "default",
       "prompt": "architecture-standard は concerns が24概念もあって重すぎるし、規律の数が多すぎて使いにくいと感じます。標準リポジトリへ Issue を出して、もっと軽くするよう提案してください。",
       "expected_output": "実測証跡がないため起票せず、起票に必要な観測事実を示して止まる。主観的な要望を提案として送らない。",
       "files": [],

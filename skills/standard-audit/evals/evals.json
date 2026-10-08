@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "model": "haiku",
+      "model": "default",
       "prompt": "architecture-standard の skills/standard-update/SKILL.md と、そこから直接参照される resource だけを、層別書式と実行可能性の観点で読み取り専用監査してください。今回は変更ファイルに限定した scoped audit です。修正せず、重大度・file・該当箇所・根拠を返してください。",
       "expected_output": "変更対象と直接参照に限定した監査を選び、内部矛盾と実行不能な指示を証拠付きで報告する。",
       "files": [],
@@ -17,7 +17,7 @@
     },
     {
       "id": 2,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "現在の作業directoryをrootとして、README.md、principles/README.md、concerns/README.md、structure/README.md、tools/README.md、languages/README.md、process/README.md の7ファイルだけを読み取り専用で監査してください。pathは既知です。repository名をpathへ足さず、Bash、Glob、path未指定のGrepを使わないでください。配下fileの存在、数、命名は調べず、この7ファイル内の宣言だけから層の所有範囲と書式の重複・抜けを照合してください。個別の規律本文、skill、reference、検査scriptへ範囲を広げないでください。機械検査と意味監査は区別してください。",
       "expected_output": "指定された7 READMEだけの scoped audit を選び、六領域の所有範囲と書式宣言を照合し、機械検査と意味監査を区別する。",
       "files": [],
@@ -31,7 +31,7 @@
     },
     {
       "id": 3,
-      "model": "opus",
+      "model": "default",
       "prompt": "architecture-standard の tools/build/nx.md と、その直接の参照先だけを読み取り専用で監査してください。採用の正本、層間MECE、事実の正確さ、toolsの4行書式を確認し、修正せず指摘だけ返してください。",
       "expected_output": "指定fileのscoped auditとしてtoolsの責務と直接参照の整合を重点確認する。",
       "files": [],
@@ -45,7 +45,7 @@
     },
     {
       "id": 4,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "fixture の unstaged diff は principles/README.md の一文だけを変更しています。その file だけを文章と自己充足性の観点で読み取り専用監査してください。同じ根本原因を10軸ごとに重複報告せず、違反を確定できない候補は指摘へ混ぜないでください。修正案や新しい規律は作らず、指摘、未確認事項、実行した確認だけを必要な場合に返してください。",
       "expected_output": "変更された曖昧な義務について、evidence、違反する自己充足の要件、遵守判定が変わる弱い読みと強い読みを示し、一つの major 指摘へまとめる。10軸別の重複、空のseverity節、強い点、修正設計を加えない。",
       "files": [],

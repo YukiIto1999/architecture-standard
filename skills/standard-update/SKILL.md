@@ -181,8 +181,8 @@ subagent が利用できれば変更の経緯を持たない reviewer に依頼�
 
 検証 script は Bash、Git、ripgrep (`rg`)、fd、awk、sed、find、coreutils、Node.js を必要とする。
 不足時は検査を skip せず失敗する。
-同梱の model evaluator は Claude Code 専用の任意の consumer であり、利用時だけ Claude Code CLI を追加で必要とする。
-Skill の通常利用と検証 script は、Claude Code の配備先や環境変数に依存しない。
+同梱の model evaluator は OMP CLI を使い、認証と既定 model は host の OMP runtime から受け取る。
+Skill の通常利用と検証 script は、評価 runner の一時設定や配備先に依存しない。
 
 ## 不変条件
 
@@ -201,9 +201,9 @@ Skill の通常利用と検証 script は、Claude Code の配備先や環境変
 - `references/evaluation.md` — product 検査の役割と model eval の範囲。
 - `scripts/verify.sh` — 標準本文の機械検査。
 - `scripts/verify-test.sh` — verifier の回帰検査。
-- `scripts/skill-package-check.sh` — 実作業用の frontmatter、5 skill の eval schema、script 構文の検査。
+- `scripts/skill-package-check.sh` — 実作業用の frontmatter、7 Skill の eval schema、script 構文の検査。
 - `scripts/skill-test.sh` — 評価対象へ公開しない、期待解答と mutation を含む evaluator 回帰検査。
-- `scripts/run-task-evals.mjs` / `scripts/run-trigger-evals.mjs` — skill-creator を使えない host の隔離評価入口。
+- `scripts/run-task-evals.mjs` / `scripts/run-trigger-evals.mjs` — OMP の隔離評価入口。
 - `scripts/discipline-sections.awk` / `scripts/naming-registry-check.mjs` / `scripts/verbatim-overlap.mjs` / `scripts/heading-citation-check.mjs` — verifier が呼び出す内部実装。個別の公開入口にはしない。
 - `evals/evals.json` / `evals/trigger-evals.json` — task 品質と発火境界の評価集合。
 - `standard-audit` — 標準自体の読み取り専用監査。
