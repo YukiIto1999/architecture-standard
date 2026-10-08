@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-import { execFileSync, spawn, spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-const runnerSha256 = createHash("sha256").update(readFileSync(new URL(import.meta.url))).digest("hex");
+import { loadedSkill, ompAdapterSha256, ompTimeout, resolveOmpModel, runOmp } from "./omp-eval-adapter.mjs";
+const runnerSha256 = createHash("sha256").update(readFileSync(new URL(import.meta.url))).update(ompAdapterSha256).digest("hex");
 
 const repoRoot = execFileSync("git", ["-C", fileURLToPath(new URL("../../../", import.meta.url)), "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 const baselineSkillNames = ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
@@ -41,7 +42,7 @@ const skillNames = selectedSkill ? [selectedSkill] : allSkillNames;
 const outputRoot = process.env.SKILL_EVAL_OUTPUT_ROOT
   ? path.resolve(process.env.SKILL_EVAL_OUTPUT_ROOT)
   : path.join(repoRoot, "docs", "reviews", "skill-evals", "iteration-1");
-const claudeCommand = process.env.CLAUDE_EVAL_COMMAND || "claude";
+const ompCommand = process.env.OMP_EVAL_COMMAND || "omp";
 let hadError = false;
 
 for (const skillName of skillNames) {
@@ -65,7 +66,7 @@ for (const skillName of skillNames) {
 if (hadError) process.exitCode = 1;
 
 async function runEval(skillName, item) {
-  const runRoot = path.join(outputRoot, skillName, `eval-${item.id}-${item.model}`, configuration);
+  const runRoot = path.join(outputRoot, skillName, `eval-${item.id}-${encodeURIComponent(item.model)}`, configuration);
   rmSync(path.join(path.dirname(runRoot), "benchmark.json"), { force: true });
   rmSync(runRoot, { recursive: true, force: true });
   mkdirSync(runRoot, { recursive: true });
@@ -73,20 +74,11 @@ async function runEval(skillName, item) {
   const fixtureRoot = mkdtempSync(path.join(tmpdir(), `architecture-standard-${skillName}-${item.id}-`));
   const auditReportDirectory = skillName === "standard-conformance" ? path.join(runRoot, "audit-reports") : null;
   const auditReportPath = auditReportDirectory ? path.join(auditReportDirectory, "report.json") : null;
-  const conformanceTools = auditReportDirectory ? [
-    "Bash(node skills/standard-conformance/scripts/check-coverage.mjs inventory *)",
-    "Bash(node skills/standard-conformance/scripts/check-coverage.mjs check *)",
-  ] : [];
   const startedAt = new Date();
   const projectFixture = item.fixture?.kind === "line-store";
   const standardFixture = baselineSkillNames.includes(skillName);
   let projectBefore = null;
   let projectInput = null;
-  const projectTools = projectFixture ? [
-    "Bash(npm --prefix target-project run check)",
-    "Bash(npm --prefix target-project run verify)",
-    "Bash(npm --prefix target-project run verify:push)",
-  ] : [];
 
   try {
     if (auditReportDirectory) mkdirSync(auditReportDirectory);
@@ -113,8 +105,8 @@ async function runEval(skillName, item) {
     if (contextReadme) cpSync(path.resolve(contextReadme), path.join(fixtureRoot, "README.md"));
     const sharedVerificationFiles = skillName === "standard-update"
       ? ["skills/standard-conformance/scripts/check-coverage.mjs", "skills/standard-conformance/scripts/check-coverage.test.mjs",
-        ...methodSkillNames.map(name => skillRoot(name))]
-      : [];
+        "skills/standard-update/scripts/skill-package-check.sh", ...methodSkillNames.map(name => skillRoot(name))]
+      : skillName === "standard-conformance" ? ["skills/standard-update/scripts/skill-package-check.sh"] : [];
     for (const file of sharedVerificationFiles) {
       mkdirSync(path.dirname(path.join(fixtureRoot, file)), { recursive: true });
       if (statSync(path.join(repoRoot, file)).isDirectory()) {
@@ -128,8 +120,19 @@ async function runEval(skillName, item) {
     const standardHash = digest(JSON.stringify(standardFiles));
     saveJson(runRoot, "standard-files.json", standardFiles);
     if (configuration === "without-skill") removeSkill(fixtureRoot, skillName);
-    scrubFixtureMutationSource(fixtureRoot);
-    hideCurrentSkillEvaluationOracles(fixtureRoot, skillName);
+    const exposedSkills = configuration === "without-skill" ? [] : [skillName, ...(skillName === "standard-update" ? methodSkillNames : [])];
+    const scopeSelectionInput = skillName === "standard-update" && item.id === 4;
+    const auditEvalInput = scopeSelectionInput
+      ? JSON.parse(readFileSync(path.join(fixtureRoot, "skills", "standard-audit", "evals", "evals.json"), "utf8")) : null;
+    const readableFiles = scopeSelectionInput ? ["skills/standard-audit/SKILL.md", "skills/standard-audit/evals/evals.json"] : [];
+    hideUnselectedSkillInstructions(fixtureRoot, exposedSkills, scopeSelectionInput ? ["standard-audit"] : []);
+    hideCurrentSkillEvaluationOracles(fixtureRoot);
+    if (auditEvalInput) {
+      mkdirSync(path.join(fixtureRoot, "skills", "standard-audit", "evals"), { recursive: true });
+      saveJson(path.join(fixtureRoot, "skills", "standard-audit", "evals"), "evals.json", {
+        skill_name: auditEvalInput.skill_name, evals: auditEvalInput.evals.map(({ id, prompt }) => ({ id, prompt })),
+      });
+    }
     initializeSanitizedRepository(fixtureRoot);
     if (projectFixture) {
       projectInput = prepareLineStore(fixtureRoot, runRoot, item);
@@ -160,19 +163,24 @@ async function runEval(skillName, item) {
     const initialCommit = gitOutput(fixtureRoot, ["rev-parse", "HEAD"]).trim();
     const initialTree = gitOutput(fixtureRoot, ["ls-files", "-s", "--", "README.md", "principles", "concerns", "structure", "tools", "languages", "process", "docs/research/maintenance-input.md", ...sharedVerificationFiles]);
     const targetInput = targetInputFiles(fixtureRoot);
+    for (const file of readableFiles) {
+      const content = readFileSync(path.join(fixtureRoot, file), "utf8");
+      targetInput[file] = { content, sha256: digest(content) };
+    }
     saveJson(runRoot, "target-input.json", targetInput);
     const fixtureHash = digest(JSON.stringify([initialTree, projectInput?.canonical_sha256 ?? null, targetInput]));
-    const executionSettingsHash = digest(JSON.stringify({ provider: claudeCommand,
-      settings: fingerprintDirectory(path.join(fixtureRoot, ".claude")),
-      timeout_ms: timeoutFor(item.model) }));
+    const resolvedModel = resolveOmpModel(item.model);
+    const timeoutMs = ompTimeout(900_000);
+    const skills = Object.fromEntries(exposedSkills.filter(name => existsSync(path.join(fixtureRoot, skillRoot(name), "SKILL.md")))
+      .map(name => [name, path.join(fixtureRoot, skillRoot(name), "SKILL.md")]));
 
     const prompt = [
       "これは実タスク評価です。確認質問で止まらず、与えられた範囲を最後まで実行してください。",
       auditReportDirectory
         ? `作業対象は現在の一時fixtureだけです。監査報告の保存だけは ${auditReportDirectory} を使えます。この報告保存を除き、元のrepositoryや、この専用directory以外の評価artifactへは書き込まないでください。`
         : "作業対象は現在の一時fixtureだけです。元のrepositoryへは書き込まないでください。",
-      `task の path は現在の作業directoryからの相対pathです。外部事実の確認が task に必要なら WebSearch と WebFetch を使えます。Bash は許可済みの検証 script と git show/status/diff${auditReportDirectory ? "、下記の conformance CLI の二つの prefix" : ""}${projectFixture ? "、下記の対象projectの固定command" : ""} だけに使ってください。`,
-      "ls、find、wc、cat、git log、git rev-parse を Bash で実行しないでください。file の読取と探索には Read、Glob、Grep を使えます。どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断してください。",
+      `task の path は現在の作業directoryからの相対pathです。外部事実の確認が task に必要なら web_search と read(URL) を使えます。bash は許可済みの検証 script と git show/status/diff${auditReportDirectory ? "、下記の conformance CLI の二つの prefix" : ""}${projectFixture ? "、下記の対象projectの固定command" : ""} だけに使えます。`,
+      "ls、find、wc、cat、git log、git rev-parse は許可していません。file の読取と探索には read、glob、grep を使えます。どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断してください。",
       ...(projectFixture ? [
         "対象projectの依存はhostがnpm ciで導入済みです。repository rootから `npm --prefix target-project run check`、`npm --prefix target-project run verify`、`npm --prefix target-project run verify:push` だけを対象検証に使えます。任意のnpm/Bash command、依存導入、manifestやlockfileや固定testや検証入口の変更は許可しません。標準側verify.shの成功で対象projectの検証を代替しないでください。",
       ] : standardFixture ? [
@@ -185,68 +193,40 @@ async function runEval(skillName, item) {
       ] : []),
       "この隔離評価では subagent は利用できません。skill が独立 reviewer を明示的に要求する場合だけ、その fallback として同じ session で scoped self-audit を行い、Agent や background task を起動して待たないでください。skill が要求しない self-audit は追加せず、閉じた経路が tool または file を制限する場合は fallback でもその範囲を広げないでください。",
       configuration === "without-skill"
-        ? "この評価では project skill を使わずに実行してください。"
-        : `これは発火評価ではありません。最初に Read tool で ${skillRoot(skillName)}/SKILL.md を全文読み、その指示に従ってください。Skill(...) のような呼出し文字列を応答するだけで終えないでください。参照 resource は SKILL.md が必要としたものだけを読んでください。`,
+        ? "この評価では Skill を使わずに実行してください。"
+        : `これは発火評価ではありません。最初に read tool で skill://${skillName} を全文読み、その指示に従ってください。呼出し文字列を応答するだけで終えないでください。参照 resource は SKILL.md が必要としたものだけを読んでください。`,
       ...(auditReportDirectory ? [
         "conformance CLI は repository root から `node skills/standard-conformance/scripts/check-coverage.mjs inventory` または `node skills/standard-conformance/scripts/check-coverage.mjs check` の prefix で実行できます。`--standard-root . --project-root target-project` を指定し、check では下記の報告pathを `--report` に渡してください。任意の Node command や Bash command は許可しません。",
-        `監査報告pathは ${auditReportPath} です。Write tool でこのpathへ JSON 報告を保存してください。このdirectoryは fixture のGit root外にあり、採点情報や期待解答は置かれていません。`,
+        `監査報告pathは ${auditReportPath} です。write tool でこのpathへ JSON 報告を保存してください。このdirectoryは fixture のGit root外にあり、採点情報や期待解答は置かれていません。`,
       ] : []),
       item.prompt,
     ].join("\n\n");
 
-    const commandArgs = [
-      "-p",
-      prompt,
-      "--output-format",
-      "stream-json",
-      "--verbose",
-      "--no-session-persistence",
-      "--permission-mode",
-      "acceptEdits",
-      "--allowedTools",
-      "Read",
-      "Glob",
-      "Grep",
-      "Edit",
-      "Write",
-      "WebSearch",
-      "WebFetch",
-      ...(!projectFixture && standardFixture ? [
-        "Bash(bash skills/standard-update/scripts/verify.sh)",
-        "Bash(*skills/standard-update/scripts/verify.sh*)",
-        "Bash(bash skills/standard-update/scripts/verify-test.sh)",
-        "Bash(bash skills/standard-update/scripts/skill-package-check.sh)",
-      ] : []),
-      "Bash(git show *)",
-      "Bash(git status *)",
-      "Bash(git diff *)",
-      "Bash(git -C * show *)",
-      "Bash(git -C * status *)",
-      "Bash(git -C * diff *)",
-      ...conformanceTools,
-      ...projectTools,
-      "--disallowedTools",
-      "Agent",
-      "--setting-sources",
-      "project",
-      "--model",
-      item.model,
-      "--max-budget-usd",
-      budgetFor(item.model),
-    ];
-    if (auditReportDirectory) commandArgs.push("--add-dir", auditReportDirectory);
-    const commandContractArgs = auditReportDirectory
-      ? commandArgs.map(arg => arg.replaceAll(auditReportDirectory, "<audit-report-directory>"))
-      : commandArgs;
-    const env = { ...process.env };
-    delete env.CLAUDECODE;
-    env.SKILL_EVAL_ISOLATED_SKILL = skillName;
-    env.SKILL_EVAL_CONFIGURATION = configuration;
-    const result = await executeClaude(commandArgs, fixtureRoot, env, timeoutFor(item.model));
+    const result = await runOmp({
+      cwd: fixtureRoot, prompt, model: item.model, resolvedModel, timeoutMs, skills,
+      tools: ["read", "glob", "grep", "edit", "write", "web_search", "bash"],
+      bashPolicy: { standardVerification: !projectFixture && standardFixture,
+        projectVerification: projectFixture, conformance: auditReportDirectory !== null },
+      reportPath: auditReportPath,
+      readableFiles: readableFiles.map(file => path.join(fixtureRoot, file)),
+      environment: { SKILL_EVAL_ISOLATED_SKILL: skillName, SKILL_EVAL_CONFIGURATION: configuration },
+      systemPrompt: "You are an isolated task evaluator. Execute the user's task, using only the supplied workspace and explicitly loaded Skill instructions. Tool permissions are enforced by the evaluator.",
+    });
     const endedAt = new Date();
-    const parsed = parseClaudeResult(result.stdout);
-    const toolEvidence = collectToolEvidence(parsed.events);
-    const { events, ...resultSummary } = parsed;
+    const parsed = result.parsed;
+    const toolEvidence = result.toolEvidence;
+    if (configuration !== "without-skill" && !toolEvidence.some(call => loadedSkill(call, skills, fixtureRoot) === skillName)) {
+      result.error ??= "task did not successfully load the complete selected Skill";
+    }
+    const { tool_evidence, error, terminal_received, ...resultSummary } = parsed;
+    const { config: executionConfig, policy: executionPolicy, ...executionIdentity } = result.settingsContract;
+    const { skills: discoveryCondition, ...commonConfig } = executionConfig;
+    const { skills: readCondition, ...commonPolicy } = executionPolicy;
+    const executionSettingsHash = digest(JSON.stringify({ command: ompCommand, timeout_ms: timeoutMs,
+      config: commonConfig, policy: commonPolicy, ...executionIdentity }));
+    const commandArgs = result.commandArgs;
+    const commandContractArgs = result.commandContractArgs;
+    saveJson(runRoot, "execution-settings.json", result.settingsContract);
 
     writeFileSync(path.join(runRoot, "eval_metadata.json"), `${JSON.stringify({
       eval_id: item.id,
@@ -255,6 +235,9 @@ async function runEval(skillName, item) {
       expectations: item.expectations,
       configuration,
       model: item.model,
+      requested_model: process.env.OMP_EVAL_MODEL || item.model,
+      resolved_model_selector: result.resolvedModel,
+      actual_models: parsed.actual_models,
       baseline_commit: baselineCommit,
       baseline_skill_available: baselineSkillAvailable,
       skill_snapshot: skillSnapshot ? path.resolve(skillSnapshot) : null,
@@ -269,6 +252,11 @@ async function runEval(skillName, item) {
       task_sha256: digest(JSON.stringify(item)),
       runner_sha256: runnerSha256,
       command_args: commandArgs,
+      command_normalization: {
+        control_directory: path.dirname(commandArgs[commandArgs.indexOf("--config") + 1]),
+        fixture_directory: fixtureRoot,
+        audit_report_directory: auditReportDirectory,
+      },
       command_contract_args: commandContractArgs,
       audit_report_directory: auditReportDirectory,
       audit_report_path: auditReportPath,
@@ -312,13 +300,11 @@ async function runEval(skillName, item) {
       exit_status: result.status,
       signal: result.signal,
       terminal_result_received: result.terminalResultReceived,
-      terminated_after_result: result.terminatedAfterResult,
       error: result.error ?? null,
     }, null, 2)}\n`);
 
-    const outcome = result.terminalResultReceived && parsed.is_error !== true && parsed.parse_error !== true && !result.error
-      ? "EXECUTED_UNGRADED"
-      : "ERROR";
+    const outcome = result.status === 0 && result.signal === null && result.terminalResultReceived
+      && parsed.is_error !== true && !result.error ? "EXECUTED_UNGRADED" : "ERROR";
     if (outcome === "ERROR") hadError = true;
     const diagnostic = result.error ? ` error=${result.error}` : "";
     process.stdout.write(`${outcome}: ${skillName} eval-${item.id} ${item.model} ${configuration}${diagnostic}\n`);
@@ -328,126 +314,12 @@ async function runEval(skillName, item) {
   }
 }
 
-function executeClaude(commandArgs, cwd, env, timeoutMs, stdin = null) {
-  return new Promise((resolve) => {
-    const child = spawn(claudeCommand, commandArgs, {
-      cwd,
-      env,
-      stdio: [stdin === null ? "ignore" : "pipe", "pipe", "pipe"],
-      detached: process.platform !== "win32",
-    });
-    let stdout = "";
-    if (stdin !== null) {
-      child.stdin.on("error", () => {});
-      child.stdin.end(stdin);
-    }
-    let stderr = "";
-    let lineBuffer = "";
-    let terminalResultReceived = false;
-    let terminatedAfterResult = false;
-    let timedOut = false;
-    let spawnError = null;
-    let resultTimer = null;
-    let forceTimer = null;
-    let timeoutForceTimer = null;
-    let terminationRequestedAfterResult = false;
-    let settled = false;
-
-    const finish = (status, signal) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeoutTimer);
-      if (resultTimer !== null) clearTimeout(resultTimer);
-      if (forceTimer !== null) clearTimeout(forceTimer);
-      if (timeoutForceTimer !== null) clearTimeout(timeoutForceTimer);
-      const cleanExit = status === 0 && signal === null;
-      const expectedRunnerExit = isExpectedRunnerExit(status, signal, terminationRequestedAfterResult);
-      const unexpectedExit = terminalResultReceived && !cleanExit && !expectedRunnerExit;
-      resolve({
-        stdout,
-        stderr,
-        status,
-        signal,
-        terminalResultReceived,
-        terminatedAfterResult,
-        error: spawnError
-          ?? (timedOut ? "timeout before terminal result" : null)
-          ?? (unexpectedExit ? `unexpected exit after terminal result: status=${status} signal=${signal}` : null),
-      });
-    };
-
-    const timeoutTimer = setTimeout(() => {
-      timedOut = true;
-      terminateProcessGroup(child, "SIGTERM");
-      timeoutForceTimer = setTimeout(() => {
-        terminateProcessGroup(child, "SIGKILL");
-      }, 2000);
-    }, timeoutMs);
-
-    child.on("error", (error) => {
-      spawnError = error.message;
-      finish(null, null);
-    });
-    child.stdout.on("data", (chunk) => {
-      const text = chunk.toString("utf8");
-      stdout += text;
-      lineBuffer += text;
-      while (lineBuffer.includes("\n")) {
-        const newline = lineBuffer.indexOf("\n");
-        const line = lineBuffer.slice(0, newline);
-        lineBuffer = lineBuffer.slice(newline + 1);
-        let event;
-        try { event = JSON.parse(line); } catch { continue; }
-        if (event.type !== "result") continue;
-        terminalResultReceived = true;
-        clearTimeout(timeoutTimer);
-        resultTimer = setTimeout(() => {
-          terminatedAfterResult = true;
-          terminationRequestedAfterResult = terminateProcessGroup(child, "SIGTERM");
-          if (terminationRequestedAfterResult) {
-            forceTimer = setTimeout(() => {
-              terminateProcessGroup(child, "SIGKILL");
-            }, 2000);
-          }
-        }, 250);
-      }
-    });
-    child.stderr.on("data", (chunk) => { stderr += chunk.toString("utf8"); });
-    child.on("close", (status, signal) => finish(status, signal));
-  });
-}
-
-function isExpectedRunnerExit(status, signal, terminationRequested) {
-  if (!terminationRequested) return false;
-  if (new Set(["SIGTERM", "SIGKILL"]).has(signal)) return true;
-  return signal === null && new Set([143, 137]).has(status);
-}
-
-function terminateProcessGroup(child, signal) {
-  if (!child.pid) return false;
-  if (process.platform !== "win32") {
-    try {
-      process.kill(-child.pid, signal);
-      return true;
-    } catch (error) {
-      if (error.code === "ESRCH") return false;
-    }
-  }
-  return child.kill(signal);
-}
 
 function valueAfter(flag) {
   const index = args.indexOf(flag);
   return index >= 0 ? args[index + 1] : undefined;
 }
 
-function budgetFor(model) {
-  return { haiku: "0.75", sonnet: "8.00", opus: "8.00" }[model];
-}
-
-function timeoutFor(model) {
-  return { haiku: 600_000, sonnet: 900_000, opus: 900_000 }[model];
-}
 
 function skillRoot(skillName) {
   return path.join("skills", skillName);
@@ -485,17 +357,26 @@ function removeSkill(fixtureRoot, skillName) {
   rmSync(target, { recursive: true, force: true });
 }
 
-function hideCurrentSkillEvaluationOracles(fixtureRoot, skillName) {
+function hideUnselectedSkillInstructions(fixtureRoot, exposedSkills, instructionDataSkills) {
+  const root = path.join(fixtureRoot, "skills");
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isDirectory() || exposedSkills.includes(entry.name)) continue;
+    const candidate = path.join(root, entry.name);
+    if (!instructionDataSkills.includes(entry.name)) rmSync(path.join(candidate, "SKILL.md"), { force: true });
+    rmSync(path.join(candidate, "references"), { recursive: true, force: true });
+  }
+}
+
+function hideCurrentSkillEvaluationOracles(fixtureRoot) {
   const prefix = path.resolve(fixtureRoot) + path.sep;
   const targets = [
-    path.join(fixtureRoot, skillRoot(skillName), "evals"),
-    path.join(fixtureRoot, "skills", "standard-apply", "evals", "fixtures", "line-store"),
-    path.join(fixtureRoot, "skills", "standard-update", "scripts", "run-task-evals.mjs"),
-    path.join(fixtureRoot, "skills", "standard-update", "scripts", "run-trigger-evals.mjs"),
-    path.join(fixtureRoot, "skills", "standard-update", "scripts", "skill-test.sh"),
+    ...readdirSync(path.join(fixtureRoot, "skills"), { withFileTypes: true })
+      .filter(entry => entry.isDirectory()).map(entry => path.join(fixtureRoot, "skills", entry.name, "evals")),
+    ...["run-task-evals.mjs", "run-trigger-evals.mjs", "omp-eval-adapter.mjs", "omp-eval-policy.mjs",
+      "evaluator-regression.test.mjs", "skill-test.sh"].map(file => path.join(fixtureRoot, "skills", "standard-update", "scripts", file)),
     ...["minutes", "decisions", "reviews", "research"].map(directory => path.join(fixtureRoot, "docs", directory)),
-    path.join(fixtureRoot, ".claude"),
-    path.join(fixtureRoot, ".mcp.json"),
+    ...[".claude", ".omp", ".agents", ".codex", ".opencode", "AGENTS.md", "CLAUDE.md", "GEMINI.md",
+      ".mcp.json", "mcp.json"].map(file => path.join(fixtureRoot, file)),
   ];
   for (const target of targets) {
     if (!path.resolve(target).startsWith(prefix)) throw new Error(`evaluation oracle outside fixture: ${target}`);
@@ -566,7 +447,7 @@ function targetInputFiles(fixtureRoot) {
 
 function validateFixtureSelection(skillName, item) {
   if (!allSkillNames.includes(skillName) || !Number.isInteger(item.id) || item.id < 1
-    || !["haiku", "sonnet", "opus"].includes(item.model) || typeof item.prompt !== "string"
+    || typeof item.model !== "string" || !item.model || /\s/.test(item.model) || typeof item.prompt !== "string"
     || !Array.isArray(item.files) || item.files.some(file => typeof file !== "string"
       || !file || file.includes("\\") || file.includes("\0") || file.startsWith("/")
       || file.split("/").some(part => !part || part === "." || part === ".."))) {
@@ -849,7 +730,6 @@ function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
     prepareSemanticMaintenance(fixtureRoot, evalId);
     return;
   }
-  // fixture-mutation:start
   if (skillName === "standard-audit" && evalId === 4) {
     const principlesReadme = path.join(fixtureRoot, "principles", "README.md");
     replaceKnownStateOnce(principlesReadme, [
@@ -858,9 +738,7 @@ function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
       "要求された範囲は、必要な品質を適切に満たします。",
     );
   }
-  // fixture-mutation:end
 
-  // fixture-mutation:start
   if (skillName === "standard-conformance" && evalId === 2) {
     const baselinePath = path.join(fixtureRoot, "target-project", "docs", "conformance-baseline.json");
     writeFileSync(baselinePath, `${JSON.stringify({
@@ -875,17 +753,13 @@ function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
       ],
     }, null, 2)}\n`);
   }
-  // fixture-mutation:end
 
-  // fixture-mutation:start
   if (skillName === "standard-update" && evalId === 1) {
     const principlesReadme = path.join(fixtureRoot, "principles", "README.md");
     const injectedTypo = ["## 情報の", "概観"].join("");
     replaceKnownStateOnce(principlesReadme, ["## 意図伝達の階層", "## 情報の正本"], injectedTypo);
   }
-  // fixture-mutation:end
 
-  // fixture-mutation:start
   if (skillName === "standard-update" && evalId === 4) {
     const auditSkill = path.join(fixtureRoot, "skills", "standard-audit", "SKILL.md");
     replaceKnownStateOnce(auditSkill, [
@@ -894,9 +768,7 @@ function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
       "- **A 思想の足場**: root `README.md` の目的、領域、標準の単一性、配置規則だけを思想基準とし、各規律の前提と所有者がずれていないか。",
     );
   }
-  // fixture-mutation:end
 
-  // fixture-mutation:start
   if (skillName === "standard-update" && evalId === 5) {
     const transactionConcern = path.join(fixtureRoot, "concerns", "transaction", "invisible-partial-commits.md");
     const legacyExample = `### 例
@@ -932,9 +804,7 @@ transaction { write(a); write(b) }
 \`\`\``;
     replaceKnownStateOnce(transactionConcern, [legacyExample, currentExample], defectiveExample);
   }
-  // fixture-mutation:end
 
-  // fixture-mutation:start
   if (skillName === "standard-update" && evalId === 6) {
     const commentPrinciple = path.join(fixtureRoot, "principles", "comment", "declaration-contracts.md");
     const legacyExample = `### 例
@@ -980,9 +850,7 @@ function isPrime(candidate: number): boolean { /* ... */ }
 \`\`\``;
     replaceKnownStateOnce(commentPrinciple, [legacyExample, currentExample], defectiveExample);
   }
-  // fixture-mutation:end
 
-  // fixture-mutation:start
   if (skillName === "standard-apply" && evalId === 6) {
     const targetRoot = path.join(fixtureRoot, "target-project");
     const decisionRoot = path.join(fixtureRoot, "project-decisions");
@@ -1028,7 +896,6 @@ function isPrime(candidate: number): boolean { /* ... */ }
       "",
     ].join("\n"));
   }
-  // fixture-mutation:end
 
 }
 
@@ -1045,29 +912,6 @@ function replaceKnownStateOnce(filePath, knownStates, replacement) {
   const updated = source.replace(matches[0], replacement);
   if (updated === source) throw new Error(`${filePath}: fixture mutation produced no change`);
   writeFileSync(filePath, updated);
-}
-
-function scrubFixtureMutationSource(fixtureRoot) {
-  const runnerPath = path.join(fixtureRoot, "skills", "standard-update", "scripts", "run-task-evals.mjs");
-  if (!existsSync(runnerPath)) return;
-  const source = readFileSync(runnerPath, "utf8");
-  let sanitized = source.replace(
-    /  \/\/ fixture-mutation:start\n[\s\S]*?  \/\/ fixture-mutation:end\n/g,
-    "  // Fixture mutation is owned by the outer evaluator.\n",
-  );
-  if (sanitized === source && source.includes("fixture-mutation:")) {
-    throw new Error("fixture mutation block not scrubbed");
-  }
-  if (sanitized.includes(["injected", "Typo"].join(""))) {
-    const functionStart = sanitized.indexOf("function prepareFixture(");
-    const mutationStart = sanitized.indexOf('\n  if (skillName === "standard-update" && evalId === 1) {', functionStart);
-    const mutationEnd = sanitized.indexOf("\n  }\n}", mutationStart);
-    if (functionStart < 0 || mutationStart < 0 || mutationEnd < 0) {
-      throw new Error("legacy fixture mutation block not scrubbed");
-    }
-    sanitized = `${sanitized.slice(0, mutationStart)}\n  // Fixture mutation is owned by the outer evaluator.${sanitized.slice(mutationEnd + 4)}`;
-  }
-  writeFileSync(runnerPath, sanitized);
 }
 
 function configureFixtureGit(fixtureRoot) {
@@ -1094,53 +938,6 @@ function initializeFixtureCommit(fixtureRoot) {
   const targets = ["target-project", decisionRoot].filter(directory => existsSync(path.join(fixtureRoot, directory)));
   execFileSync("git", ["add", "--force", "--", ...targets], { cwd: fixtureRoot });
   execFileSync("git", ["commit", "--quiet", "-m", "test: prepare skill evaluation fixture"], { cwd: fixtureRoot });
-}
-
-function parseClaudeResult(stdout) {
-  const events = [];
-  let parseError = false;
-  for (const line of String(stdout ?? "").split("\n")) {
-    if (!line.trim()) continue;
-    try { events.push(JSON.parse(line)); } catch { parseError = true; }
-  }
-  const resultEvent = events.findLast((event) => event.type === "result");
-  return {
-    result: resultEvent?.result ?? "",
-    is_error: resultEvent?.is_error ?? resultEvent === undefined,
-    parse_error: parseError || resultEvent === undefined,
-    model_usage: resultEvent?.modelUsage ?? null,
-    structured_output: resultEvent?.structured_output ?? null,
-    terminal_reason: resultEvent?.terminal_reason ?? null,
-    total_cost_usd: resultEvent?.total_cost_usd ?? null,
-    usage: resultEvent?.usage ?? null,
-    events,
-  };
-}
-
-function collectToolEvidence(events) {
-  const calls = new Map();
-  for (const event of events) {
-    if (event.type === "assistant") {
-      for (const block of event.message?.content ?? []) {
-        if (block.type === "tool_use") calls.set(block.id, {
-          id: block.id,
-          name: block.name,
-          input: block.input,
-          status: "no-result",
-        });
-      }
-    }
-    if (event.type === "user") {
-      for (const block of event.message?.content ?? []) {
-        if (block.type !== "tool_result") continue;
-        const call = calls.get(block.tool_use_id);
-        if (!call) continue;
-        call.status = block.is_error === true ? "error" : "succeeded";
-        call.result = block.content;
-      }
-    }
-  }
-  return [...calls.values()];
 }
 
 function gitOutput(cwd, commandArgs) {
@@ -1412,7 +1209,7 @@ function writeOutcomeEvidence(fixtureRoot, runRoot, initialCommit, item) {
 }
 
 async function gradeEval(skillName, item) {
-  const runRoot = path.join(outputRoot, skillName, `eval-${item.id}-${item.model}`, configuration);
+  const runRoot = path.join(outputRoot, skillName, `eval-${item.id}-${encodeURIComponent(item.model)}`, configuration);
   if (existsSync(path.join(runRoot, "historical-unavailable.json"))) {
     process.stdout.write(`UNAVAILABLE_HISTORICAL_SKILL: ${skillName} eval-${item.id} ${item.model}; no execution to grade\n`);
     return false;
@@ -1450,9 +1247,10 @@ async function gradeEval(skillName, item) {
     "For changed normative behavior, final.md claims alone are insufficient: inspect after-files.json, diff.patch, changed-files.json and tool results.",
     "No-change and restraint require both tracked and ignored status plus unchanged content. Do not assume an unobserved verification passed.",
     "A process or model execution error is not evidence of a successful maintenance outcome. Missing evidence fails the affected expectation.",
-    "For the product-closure expectation, inspect succeeded Bash verification calls and their results; a failed verifier without a later successful run cannot pass.",
+    "For the product-closure expectation, inspect succeeded bash verification calls and their results; a failed verifier without a later successful run cannot pass.",
     "For a conformance audit, audit-reports.json contains the saved external report. Inspect it together with the inventory/check tool results; a report or claimed count alone does not prove completed coverage.",
     "For executable fixtures, project-before.json and project-after.json contain complete source/test/manifest/lock/contract hashes and content. host-after.json is the fixed host oracle and actual verification output, independent of actor-written tests. Any failed, missing, timed-out or locked-file/consumer/boundary verification blocks overall success; never substitute claims or standard-repository verification.",
+    `Return only one JSON object matching this schema, without markdown fences or other text: ${JSON.stringify(schema)}`,
   ].join("\n");
   const provenance = {
     task_prompt: item.prompt,
@@ -1461,42 +1259,36 @@ async function gradeEval(skillName, item) {
     grader_runner_sha256: runnerSha256,
     grader_instructions_sha256: createHash("sha256").update(graderInstructions).digest("hex"),
     schema_sha256: createHash("sha256").update(JSON.stringify(schema)).digest("hex"),
-    requested_model: item.model,
+    requested_model: process.env.OMP_EVAL_MODEL || item.model,
     actual_models: [],
   };
   const prompt = [
-    graderInstructions,
     `Task: ${item.prompt}`,
     `Expectations: ${JSON.stringify(item.expectations)}`,
     `Evidence: ${JSON.stringify(evidence)}`,
   ].join("\n\n");
-  const commandArgs = [
-    "-p", "--output-format", "stream-json", "--verbose", "--no-session-persistence",
-    "--setting-sources", "", "--mcp-config", '{"mcpServers":{}}',
-    "--tools", "", "--disallowedTools", "mcp__*", "--disable-slash-commands", "--model", item.model,
-    "--max-budget-usd", budgetFor(item.model), "--json-schema", JSON.stringify(schema),
-  ];
-  provenance.command_args = commandArgs;
+  const resolvedModel = resolveOmpModel(item.model);
+  provenance.resolved_model_selector = resolvedModel;
   writeFileSync(path.join(runRoot, "grader-prompt.txt"), prompt);
   const graderRoot = mkdtempSync(path.join(tmpdir(), "architecture-standard-grader-"));
-  const env = { ...process.env };
-  delete env.CLAUDECODE;
-  delete env.SKILL_EVAL_ISOLATED_SKILL;
-  delete env.SKILL_EVAL_CONFIGURATION;
   try {
-    const result = await executeClaude(commandArgs, graderRoot, env, timeoutFor(item.model), prompt);
+    const result = await runOmp({ cwd: graderRoot, prompt, model: item.model, resolvedModel,
+      tools: [], skills: {}, timeoutMs: ompTimeout(900_000), systemPrompt: graderInstructions });
+    provenance.command_args = result.commandContractArgs;
     writeFileSync(path.join(runRoot, "grader-events.jsonl"), result.stdout);
     writeFileSync(path.join(runRoot, "grader-stderr.txt"), result.stderr);
-    const parsed = parseClaudeResult(result.stdout);
-    provenance.actual_models = Object.keys(parsed.model_usage ?? {}).sort();
-    let grading = parsed.structured_output;
-    if (!grading && parsed.result) {
-      try { grading = JSON.parse(parsed.result); } catch {}
-    }
-    if (result.error || parsed.is_error || parsed.parse_error || !grading
-      || grading.expectations?.length !== item.expectations.length
-      || grading.expectations.some((entry, index) => entry.text !== item.expectations[index]
-        || typeof entry.passed !== "boolean" || typeof entry.evidence !== "string" || !entry.evidence.trim())) {
+    const parsed = result.parsed;
+    provenance.actual_models = parsed.actual_models;
+    let grading;
+    try { grading = JSON.parse(parsed.result); } catch {}
+    const exactKeys = (value, keys) => value !== null && typeof value === "object" && !Array.isArray(value)
+      && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+    const validGrading = exactKeys(grading, ["expectations", "feedback"]) && typeof grading.feedback === "string"
+      && Array.isArray(grading.expectations) && grading.expectations.length === item.expectations.length
+      && grading.expectations.every((entry, index) => exactKeys(entry, ["text", "passed", "evidence"])
+        && entry.text === item.expectations[index] && typeof entry.passed === "boolean"
+        && typeof entry.evidence === "string" && entry.evidence.trim().length > 0);
+    if (result.error || parsed.is_error || !validGrading) {
       const error = result.error
         ?? (parsed.is_error && parsed.result ? parsed.result : "grader returned an error, missing evidence, or an invalid rubric");
       writeFileSync(path.join(runRoot, "grading.json"), `${JSON.stringify({
@@ -1506,14 +1298,14 @@ async function gradeEval(skillName, item) {
       }, null, 2)}\n`);
       hadError = true;
       process.stdout.write(`GRADING_ERROR: ${skillName} eval-${item.id} ${configuration} ${error}\n`);
-      return;
+      return false;
     }
     const timing = JSON.parse(evidence["timing.json"]);
     const execution = JSON.parse(evidence["result.json"]);
     let graderPassed = 0;
     for (const entry of grading.expectations) if (entry.passed) graderPassed++;
-    const executionValid = timing.terminal_result_received === true && !timing.error
-      && execution.is_error !== true && execution.parse_error !== true
+    const executionValid = timing.terminal_result_received === true && timing.exit_status === 0
+      && timing.signal === null && !timing.error && execution.is_error !== true
       && (!evidence["host-after.json"] || JSON.parse(evidence["host-after.json"]).passed === true);
     const passed = executionValid ? graderPassed : 0;
     grading.summary = {
@@ -1533,8 +1325,34 @@ async function gradeEval(skillName, item) {
   }
 }
 
+function recomputeCommandContract(metadata) {
+  const raw = metadata.command_args;
+  const normalization = metadata.command_normalization;
+  const keys = ["control_directory", "fixture_directory", "audit_report_directory"];
+  if (!Array.isArray(raw) || raw.some(arg => typeof arg !== "string")
+    || !normalization || typeof normalization !== "object" || Array.isArray(normalization)
+    || Object.keys(normalization).length !== keys.length || keys.some(key => !Object.hasOwn(normalization, key))) return null;
+  const { control_directory: control, fixture_directory: fixture, audit_report_directory: report } = normalization;
+  const absoluteDirectory = value => typeof value === "string" && path.isAbsolute(value) && path.resolve(value) === value;
+  if (!absoluteDirectory(control) || !absoluteDirectory(fixture)
+    || !path.basename(control).startsWith("architecture-standard-omp-control-")
+    || !path.basename(fixture).startsWith("architecture-standard-")
+    || (report !== null && !absoluteDirectory(report)) || report !== metadata.audit_report_directory
+    || metadata.audit_report_path !== (report === null ? null : path.join(report, "report.json"))) return null;
+  for (const [flag, file] of [["--config", "config.json"], ["--extension", "policy.mjs"]]) {
+    const index = raw.indexOf(flag);
+    if (index === -1 || index !== raw.lastIndexOf(flag) || raw[index + 1] !== path.join(control, file)) return null;
+  }
+  const contract = raw.map(arg => {
+    let normalized = arg.replaceAll(control, "<omp-control>").replaceAll(fixture, "<fixture>");
+    if (report !== null) normalized = normalized.replaceAll(report, "<audit-report-directory>");
+    return normalized;
+  });
+  return JSON.stringify(contract) === JSON.stringify(metadata.command_contract_args) ? contract : null;
+}
+
 function updateBenchmark(skillName, item) {
-  const evalRoot = path.join(outputRoot, skillName, `eval-${item.id}-${item.model}`);
+  const evalRoot = path.join(outputRoot, skillName, `eval-${item.id}-${encodeURIComponent(item.model)}`);
   const newMetadataFile = path.join(evalRoot, "with-skill", "eval_metadata.json");
   if (!existsSync(newMetadataFile)) {
     rmSync(path.join(evalRoot, "benchmark.json"), { force: true });
@@ -1560,16 +1378,9 @@ function updateBenchmark(skillName, item) {
     const timing = load("timing.json");
     const grading = load("grading.json");
     const tools = load("tool-evidence.json");
-    const commandContractArgs = metadata.audit_report_directory
-      ? metadata.command_args.map(arg => arg.replaceAll(metadata.audit_report_directory, "<audit-report-directory>"))
-      : metadata.command_args;
-    const comparisonArgs = comparisonConfiguration === "without-skill"
-      ? commandContractArgs.map((arg, index) => index === commandContractArgs.indexOf("-p") + 1
-        ? arg.replace(candidate === "without-skill"
-          ? "この評価では project skill を使わずに実行してください。"
-          : `これは発火評価ではありません。最初に Read tool で ${skillRoot(skillName)}/SKILL.md を全文読み、その指示に従ってください。Skill(...) のような呼出し文字列を応答するだけで終えないでください。参照 resource は SKILL.md が必要としたものだけを読んでください。`,
-        "<skill instruction condition>") : arg)
-      : commandContractArgs;
+    const commandContractArgs = recomputeCommandContract(metadata);
+    const comparisonArgs = commandContractArgs === null ? null : comparisonConfiguration === "without-skill"
+      ? commandContractArgs.filter(arg => arg !== "--no-skills") : commandContractArgs;
     runs.push({
       configuration: candidate, metadata, grading: grading.summary, grading_error: grading.error ?? null,
       command_contract_args: commandContractArgs, comparison_args: comparisonArgs,
@@ -1577,13 +1388,14 @@ function updateBenchmark(skillName, item) {
       tokens: result.usage, model_usage: result.model_usage,
       tool_calls: tools.length, tool_errors: tools.filter((tool) => tool.status === "error").length,
       execution_error: timing.error, terminal_result_received: timing.terminal_result_received,
-      model_error: result.is_error, parse_error: result.parse_error,
+      model_error: result.is_error,
       grading_provenance: grading.provenance ?? null,
     });
   }
   const [oldRun, newRun] = runs;
-  const comparable = ["baseline_commit", "context_readme_sha256", "fixture_sha256", "runner_sha256", "model", "prompt",
-    "execution_settings_sha256", "task_sha256", "standard_sha256"]
+  const comparable = oldRun.command_contract_args !== null && newRun.command_contract_args !== null
+    && ["baseline_commit", "context_readme_sha256", "fixture_sha256", "runner_sha256", "model", "prompt",
+      "requested_model", "resolved_model_selector", "execution_settings_sha256", "task_sha256", "standard_sha256"]
     .every((field) => oldRun.metadata[field] === newRun.metadata[field])
     && ["execution_settings_sha256", "task_sha256", "standard_sha256"]
       .every(field => typeof oldRun.metadata[field] === "string" && typeof newRun.metadata[field] === "string")
@@ -1598,12 +1410,12 @@ function updateBenchmark(skillName, item) {
   writeFileSync(path.join(evalRoot, "benchmark.json"), `${JSON.stringify({
     skill_name: skillName, eval_id: item.id, comparison_configuration: comparisonConfiguration, comparable, runs,
     [comparisonConfiguration === "without-skill" ? "delta_with_minus_without" : "delta_with_minus_old"]: comparable && runs.every((run) => !run.grading_error && !run.execution_error
-      && !run.model_error && !run.parse_error && run.terminal_result_received
+      && !run.model_error && run.terminal_result_received
       && run.grading.execution_valid === true) ? {
       passed: newRun.grading.passed - oldRun.grading.passed,
       pass_rate: newRun.grading.pass_rate - oldRun.grading.pass_rate,
       duration_seconds: newRun.duration_seconds - oldRun.duration_seconds,
-      cost_usd: newRun.cost_usd - oldRun.cost_usd,
+      cost_usd: typeof oldRun.cost_usd === "number" && typeof newRun.cost_usd === "number" ? newRun.cost_usd - oldRun.cost_usd : null,
       tool_calls: newRun.tool_calls - oldRun.tool_calls,
       tool_errors: newRun.tool_errors - oldRun.tool_errors,
     } : null,

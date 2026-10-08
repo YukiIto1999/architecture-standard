@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "model": "haiku",
+      "model": "default",
       "prompt": "architecture-standard の principles/README.md に注入された明らかな見出し名のtypoを修正してください。外部技術事実や採用判断は変えません。変更範囲を広げず、必要な検査を実行して結果を報告してください。",
       "expected_output": "機械的保守として外部調査を省き、principles/README.mdの見出しだけを正しい既存語へ戻し、検証ループを実行する。",
       "files": [],
@@ -16,7 +16,7 @@
     },
     {
       "id": 2,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "外部提案として『task graph orchestrator を Nx から Turborepo へ置き換える』という主張を architecture-standard へ取り込めるか裁定してください。既存標準の所有箇所を特定し、一次資料で裏取りして、根拠が足りなければ標準を変更しないでください。",
       "expected_output": "tools/buildを既存の正本として確認し、一次資料と単一標準の条件で採否を裁定し、根拠なしに採用を置換しない。",
       "files": [],
@@ -29,7 +29,7 @@
     },
     {
       "id": 3,
-      "model": "opus",
+      "model": "default",
       "prompt": "retry の backoff に jitter を加えるという技術記事の主張を architecture-standard へ取り込めるか確認してください。記事の要約だけで規則化せず、既存の所有箇所と重複する規律を調べ、現行本文が既に満たすなら編集しないでください。記事本文は与えられていないため、既存規律から導けない追加事実が必要なら未確認事項として残してください。",
       "expected_output": "concerns/resilienceの既存規律がjitterを所有済みか照合し、充足済みなら重複を作らず無変更とする。",
       "files": [],
@@ -44,7 +44,7 @@
     },
     {
       "id": 4,
-      "model": "haiku",
+      "model": "default",
       "prompt": "fixture の unstaged diff は skills/standard-audit/SKILL.md の instruction 本文だけを変更しています。実行も編集もしません。git diff と standard-audit の task eval 定義を読み、この変更を評価する task ID と configuration を最小範囲で決めてください。選ばない task と without-skill、trigger eval を除外する根拠、および全taskの3条件と全trigger queryが必要になる境界も示してください。",
       "expected_output": "実diffと各taskの目的を照合し、root READMEを思想基準にする変更が直接影響するstandard-audit eval-2だけをold-skillとwith-skillで比較し、eval-1/3、without-skill、trigger evalを除外する。",
       "files": [],
@@ -58,7 +58,7 @@
     },
     {
       "id": 5,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "architecture-standard の concerns/transaction/invisible-partial-commits.md にある『部分確定を不可視にする』の例だけを直してください。規律本文と例の処理意味は変えず、例の良否、コード内容の説明、差と帰結を適切な場所へ置いてください。変更範囲を広げず、必要な検査を実行して結果を報告してください。",
       "expected_output": "例の比較と帰結をコードフェンス外の本文へ移し、コード内の説明コメントを除き、二つ目の書き込み失敗を無視して成功を返す悪例と、一つの確定点で失敗を不可視にする良例の意味を保つ。",
       "files": ["concerns/transaction/invisible-partial-commits.md"],
@@ -72,7 +72,7 @@
     },
     {
       "id": 6,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "architecture-standard の principles/comment/declaration-contracts.md にある TypeScript ドキュメントコメントの対比例では、望ましい側の summary が名前の直訳に壊れています。その例だけを直してください。例の焦点は summary ですが、表示する宣言の周辺契約を省略してよいかも現行規律に従って判断し、意図的な悪例以外の違反を残さないでください。必要な検査を実行して結果を報告してください。",
       "expected_output": "変更を対象例に限定し、悪例の名前直訳を比較対象として保ち、望ましい例の summary を用途が分かる目的へ直し、両方の関数宣言へ @param candidate と @returns の契約を記す。",
       "files": ["principles/comment/declaration-contracts.md"],
@@ -86,7 +86,7 @@
     },
     {
       "id": 7,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "『同じ制約を型・静的検査・実行テストで重複して判定せず、最も内側の一手段だけで判定する』という知見を architecture-standard に取り込めるか確認し、必要なら標準を更新してください。同じ趣旨が採用済みに見えても、遵守判定を変える別の読み方、適用範囲、周辺の必須項目、強制力を確認してください。特に二つの判定を同じ性質とみなす条件を標準本文だけから一意に導けるか確認してください。",
       "expected_output": "structure/tests/methods.md の同一性条件と、検証割当や各言語の実現との整合を因果的に照合し、欠落または矛盾があれば正本と影響先を更新する。",
       "files": ["structure/tests/methods.md", "languages/typescript/inspection.md"],
@@ -101,7 +101,7 @@
     },
     {
       "id": 8,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "実行時 flag の更新を型と許容範囲で検証し、不正な更新を拒否して直前の有効値を維持する、という候補を architecture-standard へ取り込めるか確認し、必要なら更新してください。concerns/configuration の起動時設定と runtime flag の既存規律を確認してください。",
       "expected_output": "実行時の更新境界に型と範囲の検証、不正更新の拒否、直前の有効値の維持を要求し、起動失敗時の停止と区別して、正本と検証の対応を更新する。",
       "files": ["concerns/configuration/config-vs-flags.md"],
@@ -115,7 +115,7 @@
     },
     {
       "id": 9,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "『retry は回復の見込みがある一時的な失敗だけを、上限つきの後退する間隔で行い、その間隔に jitter を加える』という候補を architecture-standard に取り込めるか裁定してください。concerns/resilience の既存規律を確認し、現行本文が既に満たすなら編集しないでください。",
       "expected_output": "既存の再試行規律が候補の対象、義務、違反と判定を満たすか確認し、充足済みの場合は無変更とする。",
       "files": [],
@@ -128,7 +128,7 @@
     {
       "id": 10,
       "suite": "semantic-maintenance",
-      "model": "sonnet",
+      "model": "default",
       "prompt": "docs/research/maintenance-input.md に、二つの運用チームが現行の flag 更新規律と改訂提案を比較したレビュー報告があります。concerns/configuration/config-vs-flags.md を起点に現行標準と報告の根拠を照合し、architecture-standard への採否を裁定してください。必要なら本文と影響する配線を更新し、実施した確認と残る不確実性を報告してください。",
       "expected_output": "単独の不正値を拒否して直前値を保つという共通結果では充足を決めず、各値の鮮度と組合せの整合という判断軸の差を裁定し、整合を共有する更新単位の公開条件と検証を同期する。",
       "files": ["concerns/configuration/config-vs-flags.md", "concerns/configuration/README.md", "structure/tests/methods.md"],
@@ -144,7 +144,7 @@
     {
       "id": 11,
       "suite": "semantic-maintenance",
-      "model": "sonnet",
+      "model": "default",
       "prompt": "docs/research/maintenance-input.md の再試行レビューを標準へ取り込めるか裁定してください。concerns/resilience/dependency-call-control.md を起点に、現行規律がレビューで起きた問題を禁止できるか確認し、必要なら更新してください。単に運用で気を付けるという応答ではなく、標準として要求すべき結果と確認手段を報告してください。",
       "expected_output": "推奨に弱められた一箇所での再試行を規範として回復し、同じ呼び出しを複数層が重ねて再試行する実装を不合格にできる状態へ直す。",
       "files": ["concerns/resilience/dependency-call-control.md", "structure/tests/methods.md"],
@@ -160,7 +160,7 @@
     {
       "id": 12,
       "suite": "semantic-maintenance",
-      "model": "sonnet",
+      "model": "default",
       "prompt": "docs/research/maintenance-input.md に届いた『可用性のため、port wrapper の retry が終わっても use-case 側で同じ呼び出しを再試行する』という改訂提案の採否を裁定してください。根拠資料と concerns/resilience/dependency-call-control.md の現行規律を確認し、取り込む場合だけ必要な標準更新を行ってください。提案の主張を既定の決定として扱わないでください。",
       "expected_output": "二つの報告が示す回復事例と負荷増幅を照合し、同じ呼び出しの再試行を複数層へ増やす提案を不採用または一箇所の所有者を維持する限定採用とする。",
       "files": ["concerns/resilience/dependency-call-control.md"],
@@ -175,7 +175,7 @@
     {
       "id": 13,
       "suite": "semantic-maintenance",
-      "model": "sonnet",
+      "model": "default",
       "prompt": "docs/research/maintenance-input.md の flag 更新レビューを標準へ反映できるか裁定し、必要なら更新してください。起点は concerns/configuration/config-vs-flags.md です。この repository には flag 更新の検証割当と TypeScript 実現もあり、レビューでは更新前後の値の観測結果を比較しています。変更理由から影響する範囲を確かめ、整合した標準として閉じてください。",
       "expected_output": "configuration の不正更新拒否と有効値保持を正本にし、古い失敗時処理を持つ methods と TypeScript 実現を同期し、検証の順序と意味の責務を分ける。",
       "files": ["concerns/configuration/config-vs-flags.md", "concerns/configuration/README.md", "structure/tests/methods.md", "process/verification.md", "languages/typescript/coordination.md", "languages/typescript/inspection.md"],
@@ -193,7 +193,7 @@
     {
       "id": 14,
       "suite": "semantic-maintenance",
-      "model": "sonnet",
+      "model": "default",
       "prompt": "docs/research/maintenance-input.md の設定更新レビューを取り込めるか裁定し、必要なら標準を更新してください。起点は concerns/configuration/validate-at-startup.md です。二つのチームが同じ標準を読んで異なる停止判断をしています。参照のつながりも含めて理由を確認し、起動時と稼働中の双方について一意に判断できる状態にしてください。",
       "expected_output": "startup と runtime の失敗時処理を混ぜた所有構造を解消し、runtime の意味を configuration の正本へ戻して、process は順序、methods は検証割当を所有する状態に再配置する。",
       "files": ["concerns/configuration/validate-at-startup.md", "concerns/configuration/config-vs-flags.md", "concerns/configuration/README.md", "concerns/lifecycle/fast-validated-startup.md", "process/verification.md", "structure/tests/methods.md"],
@@ -210,7 +210,7 @@
     {
       "id": 15,
       "suite": "semantic-maintenance",
-      "model": "sonnet",
+      "model": "default",
       "prompt": "docs/research/maintenance-input.md の再試行所有者に関する知見を architecture-standard へ取り込めるか裁定してください。concerns/resilience/dependency-call-control.md が起点です。二つのチームの観測から要求すべき内容と現行標準を照合し、必要な場合だけ更新してください。",
       "expected_output": "単一 retry 所有者と上流の重ねた retry 禁止を現行本文から導けるため、充足済みの根拠を示して無変更にする。",
       "files": ["concerns/resilience/dependency-call-control.md", "structure/tests/methods.md"],
@@ -225,7 +225,7 @@
     {
       "id": 16,
       "suite": "semantic-maintenance",
-      "model": "sonnet",
+      "model": "default",
       "prompt": "docs/research/maintenance-input.md の flag 更新レビューを取り込めるか裁定し、必要なら標準を更新してください。起点は concerns/configuration/config-vs-flags.md です。受付担当の備考も資料末尾に残っていますが、今回の依頼は flag 更新が破った性質を標準へ反映することです。実施した確認と変更理由を報告してください。",
       "expected_output": "runtime flag の欠けた保証と検証への接続を直し、資料で偶然見つかった無関係な見出し問題は変更へ取り込まない。",
       "files": ["concerns/configuration/config-vs-flags.md", "concerns/configuration/README.md", "structure/tests/methods.md", "principles/README.md"],

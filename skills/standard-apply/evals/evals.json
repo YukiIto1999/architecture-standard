@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "model": "haiku",
+      "model": "default",
       "prompt": "対象 project は `target-project/` です。この project を現在の architecture-standard に従って読み取り専用で監査し、違反を重大度つきで報告してください。標準 repo 自体は変更せず、使う標準本文と監査手順を特定してから進めてください。",
       "expected_output": "対象 project と標準自体を区別し、現在の標準本文と process/audit.md を基準にした証跡付き監査手順を示す。",
       "files": [],
@@ -18,7 +18,7 @@
     },
     {
       "id": 2,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "architecture-standard に従って、`target-project/` に durable worker を追加する設計を作ってください。今回は設計だけで、実装はしません。標準が決めていることと project ADR で決めることを分け、参照した規律を file 付きで示してください。",
       "expected_output": "design mode を選び、標準の process/design.md と関連規律を読み、標準の決定と project 固有決定を分離した設計手順を示す。",
       "files": [],
@@ -32,7 +32,7 @@
     },
     {
       "id": 3,
-      "model": "opus",
+      "model": "default",
       "prompt": "`target-project/app/worker.rs` を architecture-standard 準拠の観点でレビューしてください。一般的なコードレビューではなく標準適用として行い、標準のどの規律に照合したか、未確認事項は何かを明記してください。対象 project と標準は変更しません。",
       "expected_output": "review mode を選び、process/review.md と対象規律へ照合し、証跡と未確認事項を分けた読み取り専用レビューを返す。",
       "files": [],
@@ -45,7 +45,7 @@
     },
     {
       "id": 4,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "architecture-standard に従い、`target-project/app/worker.rs` の既存 worker について、同時に実行する job を4件以下に制限する変更を設計してください。受入条件は、同時実行中の job が4件を超えないことと、全 job の完了後に `run` が返ることです。今回は設計だけで、実装はしません。標準が要求する安全と検証は落とさず、依頼と標準の必須条件に結びつかない機能は加えないでください。",
       "expected_output": "design mode を選び、受入条件と標準の必須条件へ各設計要素を結び、既存の Tokio 機構で閉じる最小の設計候補を一つ示す。失敗伝播、取消、persisted authority の必須契約が未確認なら、その段を十分と確定せず最初に成立しうる暫定段として選択を保留する。設定化、retry、監視、汎用 executor、周辺 cleanup は追加しない。",
       "files": [],
@@ -68,7 +68,7 @@
     },
     {
       "id": 5,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "`target-project/` は、仕様と設計を固定せず段階的に生成された既存システムです。architecture-standard を使って、意味・状態・責務・依存を回収し、今後の構造再生に使える診断を読み取り専用で行ってください。まだ修正、目標構造の設計、移行計画の作成はしません。現行実装が意図された仕様だとは仮定せず、判断に必要な根拠がない事項は明示してください。`worker.rs` が worker を担うので `JobStatus` の writer でもあるはず、という私の仮説がありますが、確認済みの仕様ではありません。固定の成果物一覧を埋めるための空の節は作らないでください。",
       "expected_output": "standard-apply の recovery mode を先に選び、対象 project の実際の経路を必要な深さまで読み、判断を左右する主張の根拠と決定状態を分離する。Observed を Intended とせず、必要な view だけを作り、Unknown に依存する修正・設計・移行へ進まない。",
       "files": [],
@@ -91,7 +91,7 @@
     },
     {
       "id": 6,
-      "model": "sonnet",
+      "model": "default",
       "prompt": "`target-project/app/worker.rs` の worker について、同時に実行する job を4件以下に制限し、全 job の完了後に run が返る変更を architecture-standard に従って設計してください。今回は設計だけで、実装や既存資料の変更はしません。既存の公開契約と検証を踏まえ、標準が要求する安全性を落とさず、依頼外の機能は加えないでください。",
       "expected_output": "design mode を選び、実際の caller、宣言の契約、判断の意味、authority、test と直接リンクされた資料を証拠駆動で追跡し、task join と persisted domain completion を区別した最小の設計を示す。source は変更しない。",
       "files": [],
@@ -107,7 +107,7 @@
     },
     {
       "id": 7,
-      "model": "sonnet",
+      "model": "default",
       "suite": "semantic-boundaries",
       "fixture": { "kind": "semantic-boundaries", "reading": "explicit" },
       "prompt": "`target-project/README.md` から対象の事実を読み、A1からA4とB1からB4、およびB4-invalidについて、共有と変更影響の設計判断をarchitecture-standardに照らして示してください。今回は読み取り専用です。関連本文は `principles/separation/split-by-change-reason.md`、`principles/separation/context-relationships.md`、`principles/separation/information-hiding.md`、`principles/modeling/parse-at-boundary.md`、`principles/modeling/logical-physical-separation.md` とその直接参照先です。結論だけでなく、要求・完了条件・禁止事項と対象の事実の対応、不足する条件、判断を変える事実を示してください。六領域の分類名を答える課題ではありません。",
@@ -128,7 +128,7 @@
     },
     {
       "id": 8,
-      "model": "sonnet",
+      "model": "default",
       "suite": "semantic-boundaries",
       "fixture": { "kind": "semantic-boundaries", "reading": "exploration" },
       "prompt": "`target-project/README.md` から対象の事実を読み、A1からA4とB1からB4、およびB4-invalidについて、共有と変更影響の設計判断をarchitecture-standardに従って示してください。今回は読み取り専用です。必要な標準本文を自力で特定し、要求・完了条件・禁止事項と対象の事実の対応、不足する条件、判断を変える事実を示してください。六領域の分類名や一般的なベストプラクティスの一覧を返す課題ではありません。",
@@ -146,7 +146,7 @@
     },
     {
       "id": 9,
-      "model": "sonnet",
+      "model": "default",
       "suite": "line-store",
       "fixture": { "kind": "line-store", "stage": "hide" },
       "prompt": "`target-project/README.md` のAcceptedな公開契約を維持し、architecture-standardに従ってLineStoreの内部配列を利用側から隠す変更を実装してください。格納の所有者は `src/line-store.ts` のexported LineStore classのままとし、公開メソッド名は目的に合う最小の操作として選べます。既存consumerは意味上の操作へ切り替え、旧linesアクセスや配列を公開する別名・getter・互換経路を残さないでください。この段でconsumerが変わることは許可します。renderSelectedの署名とResultの成功・失敗、順序、重複、空状態、整数の負の位置と末尾境界、失敗時の状態不変を保ち、固定test・契約・manifest・lockfile・検証入口は変更しません。初期の格納は配列のままとし、今回依頼していないMap化や機能を加えないでください。対象projectの実検証結果と未確認事項を報告してください。",
@@ -162,7 +162,7 @@
     },
     {
       "id": 10,
-      "model": "sonnet",
+      "model": "default",
       "suite": "line-store",
       "fixture": { "kind": "line-store", "stage": "map" },
       "prompt": "`target-project/README.md` のAcceptedな公開契約を維持し、architecture-standardに従ってLineStoreの内部格納を配列からMapへ変更してください。格納の所有者は `src/line-store.ts` のexported LineStore classのままとし、Mapを公開契約へ漏らさないでください。task1のsource snapshotから始まる条件では、格納境界の外の全production consumerを変更しません。是正前のcanonical sourceから始まる条件では、必要なconsumerのcutoverを許可し、その変更理由と差分を残してください。renderSelectedの署名とResultの成功・失敗、順序、重複、空状態、整数の負の位置と末尾境界、失敗時の状態不変を保ち、固定test・契約・manifest・lockfile・検証入口は変更しません。対象projectの実検証結果とconsumerへの変更影響と未確認事項を報告してください。",

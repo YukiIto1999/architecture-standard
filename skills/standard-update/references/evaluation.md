@@ -3,27 +3,35 @@
 `verify-test.sh` と `skill-package-check.sh` を実行した後、model eval の要否と範囲を決めるときに読む。
 
 `skill-package-check.sh` は実作業へ公開する product 検査であり、frontmatter、対象 Skill の eval 定義、script 構文、conformance CLI の behavior tests を検査する。
-`run-task-evals.mjs` が `SKILL_EVAL_ISOLATED_SKILL` と `SKILL_EVAL_CONFIGURATION` の有効な組を渡した隔離評価だけは、選択中 skill の隠された `evals/` を欠落としない。
-configuration が `without-skill` なら、選択中 skill directory 全体の不存在だけを許可し、directory の一部が残る状態は失敗にする。
-standard-conformance 自身の `without-skill` 隔離で、その package が完全に存在しない場合だけは同梱 behavior tests も実行対象から外す。
-通常構成、他の skill の隔離、package の部分残存では、この例外を使わず、test file の欠落も失敗にする。
-通常実行や片方だけの指定では、skill または eval 一式がなければ失敗する。
+`run-task-evals.mjs` が有効な `SKILL_EVAL_ISOLATED_SKILL` と `SKILL_EVAL_CONFIGURATION` を渡す場合は、全 Skill の採点情報と非候補の instruction が非公開であることを検査する。
+`without-skill` では選択した package 全体が存在しないことを要求し、部分残存を拒否する。
+standard-conformance 自身の `without-skill` で package が存在しない場合だけ、その behavior tests を実行しない。
+通常構成では全 package と eval 定義を要求し、隔離 context の片方だけの指定は拒否する。
 `skill-test.sh` は期待する解答と mutation を検査する外側の evaluator 回帰検査であり、評価対象 agent へ公開せず、実作業の完了条件にも使わない。
 
-同梱の `run-task-evals.mjs` と `run-trigger-evals.mjs` は、Claude Code 専用の任意の consumer である。
-正本は `skills/<id>/` に置く。
-trigger eval は、所有する一時 fixture の `.claude/skills/<id>/SKILL.md` へ evaluator が選択対象とする Skill の本文だけをコピーし、Claude Code に発火先を発見させる。
-reference、script、eval はその投影先へ複製せず、一時 fixture 全体を評価終了時に除去する。
-task eval は `skills/<id>/SKILL.md` を Read tool で明示的に読み、この client adapter を設置しない。
-evaluator は従来どおり `CLAUDE_EVAL_COMMAND` で指定した command、未指定なら `claude` を起動する。
-通常の Skill 利用や Nix による配備は、この evaluator を必要としない。
+同梱の `run-task-evals.mjs` と `run-trigger-evals.mjs` は OMP CLI を使う。
+正本は `skills/<id>/` に置き、通常の配備は dotfiles-wsl が所有する。
+評価 runner は、一時 fixture の `skills/` を OMP の `skills.customDirectories` へ指定する。
+trigger eval は、隔離した候補の name、description、path から発火先を選ばせ、OMP の `read` が対象本文を正常に読み込んだ結果を観測する。
+task eval は `skills/<id>/SKILL.md` を `read` で明示的に読み、方法と task の成果を測る。
+評価専用 extension は、host の常時指示を固定した評価 policy と候補の metadata に置き換え、provider へ渡す tool schema と実行時の tool を許可集合へ限定する。
+file 境界と Bash command は実行前に検査する。
+この隔離評価は、通常の dotfiles-wsl 配備や OMP の自然発火を実測した証拠にはしない。
+
+起動 command は `OMP_EVAL_COMMAND`、model は `OMP_EVAL_MODEL`、時間上限は `OMP_EVAL_TIMEOUT_MS` で指定できる。
+未指定の command は `omp` とし、eval 定義の `model: "default"` は host の `modelRoles.default` で解決する。
+明示した model selector を OMP へ渡し、model fallback と評価中の自動切替を無効にして、実際の provider と model を event から記録する。
+host の認証はそのまま利用し、資格情報を fixture へ複製せず、認証設定も変更しない。
 
 変更の種類に応じて model eval の範囲を決める。
 
 - script の決定的な処理だけを変更し、agent への instruction を変えない場合は、回帰検査を行う。script が生成する prompt を変える場合は instruction の変更として扱う。
 - SKILL.md または reference の instruction を変更した場合は、変更した判断を実際に必要とする task を `old-skill` と `with-skill` の2条件で隔離実行する。変更された file を監査対象に含むだけの task や、同じ skill を使うだけの task は選ばない。expectation、最終応答、tool event、diff、tracked / ignored status、実行 error、時間、token を比較する。新規 skill で旧版がない場合だけ `without-skill` を比較対象にする。
 - `evals/evals.json` だけを変更した場合は、変更した task を `with-skill` で実行する。現行 instruction の不足が失敗として再現した後に instruction を変更し、その段階で `old-skill` と `with-skill` を比較する。
-- description または `evals/trigger-evals.json` を変更した場合は、`scripts/run-trigger-evals.mjs` で `trigger-evals.json` の全 query を実行する。evaluator の選択対象を同時に置いた条件で expected skill または非発火を測り、Skill tool の完全な入力、観測中の実行 error、発火先を記録する。
+- description または `evals/trigger-evals.json` を変更した場合は、`scripts/run-trigger-evals.mjs` で全 query を実行する。
+  evaluator の候補を同時に置き、expected skill または非発火を測り、`read` の完全な入力、本文の読み込み結果、観測中の実行 error、発火先を記録する。
+  一回の runner 起動は各 query を一回ずつ新しい context で実行するため、発火の反復評価では runner を三回起動し、全回の結果を残す。
+  非発火の成功には正常終了と terminal event を必要とし、timeout や選択した本文の読み込み失敗を非発火成功へ置き換えない。
 - release 前、または instruction と description の双方を横断して変更したときは、全 task の3条件比較と full trigger eval の両方を行う。それ以外は変更面ごとの上記範囲に限定する。instruction と `evals/trigger-evals.json` の変更を組み合わせた場合は、影響 task の2条件比較と full trigger eval をそれぞれ行い、全 task や `without-skill` へ広げない。
 
 task eval は本 task の完遂を、trigger eval は発火先だけを測る。起動成功を PASS とせず、別 context の grader が expectation ごとの成否と event または成果物の根拠を `grading.json` に残す。複数条件を比較した場合は、対象 task の集計を `benchmark.json` に残す。隔離 evaluator が実行できなければ model eval 完了とは扱わず、阻害要因を報告する。
@@ -37,16 +45,9 @@ task eval は本 task の完遂を、trigger eval は発火先だけを測る。
 symlinkを含む本文snapshotは受け付けず、`standard-files.json` に実内容とfileごとのSHA-256、`standard_sha256` に全本文のdigestを保存する。
 比較の同一性にはsnapshotの一時pathではなく、この実内容のdigestを使う。
 `--baseline-ref` の commit は、既存の `standard-apply`、`standard-audit`、`standard-conformance`、`standard-feedback`、`standard-update` の `skills/<id>/SKILL.md` を含む client-neutral な配置でなければならない。
-既存 Skill の旧配置の commit を直接指定すると、evaluator は provider の起動前に失敗する。
 `cli-design` と `property-testing` は通常の task と trigger の選択対象に含み、基線に新設 package がなくても `without-skill` と `with-skill` を実行できる。
 基線に選択 Skill がなく、過去の package snapshot も渡されていない `old-skill` は、`UNAVAILABLE_HISTORICAL_SKILL` と `historical-unavailable.json` に不存在を記録し、provider と grader を起動しない。
 不存在を空の旧版や現行本文で代用せず、保存済みの不存在に対する `--grade-only` も採点しない。
-過去の instruction を比較するときは、client-neutral な標準本文の基線を固定し、その配置で使える過去の Skill package を `--skill-snapshot` で別に渡す。
-旧配置の package はそのまま渡さず、本文、reference、product 検査 script の locator と root 解決だけを移行した snapshot を用意し、過去の意味上の instruction を現在版へ置き換えない。
-元の commit または取得先と、元の package、配置移行後の package の hash を実際の資材から記録し、配置の移行と意味の変更を区別する。
-`instruction_sha256` は評価対象へ実際に渡した移行後の資材を指し、元の package の hash の代わりにはしない。
-evaluator は snapshot の `SKILL.md` に残る既知の旧配置 locator を provider 起動前に拒否するが、package 全体の互換性まで保証しない。
-この前提と拒否は新しい task の実行だけに適用し、保存済み成果物の `--grade-only` には適用しない。
 保存した eval 定義を再利用するときは `--skill` と `--eval-file` を指定し、両条件へ同じ file を渡す。
 旧版は変更開始前の Git commit または保存した snapshot から取得し、新版は instruction の変更が揃ってから別 directory へ保存する。
 両条件の実行中に snapshot を変更しない。
@@ -54,30 +55,37 @@ root README 自身を同時に改訂する場合は、両条件へ同じ README 
 ケースごとの期待結果、fixture の欠陥、採点情報は評価対象へ公開する reference に置かず、一時 repository の外側で管理する。
 
 評価対象へ渡す task は `item.prompt` だけを使い、expectation、fixture mutation、grader は渡さない。
-選択中skillの `evals/`、外側のevaluator script、`docs/minutes/`、`docs/decisions/`、`docs/reviews/`、`docs/research/` の履歴材料を、sanitized Gitの初期化前に一時repositoryから除く。
-複製元の `.claude/` と `.mcp.json` も除き、複製元のhookやclient設定を実行条件へ混ぜない。
+Skill の `evals/`、外側の evaluator script、`docs/minutes/`、`docs/decisions/`、`docs/reviews/`、`docs/research/` の履歴材料を、sanitized Git の初期化前に一時 repository から除く。
+standard-update の eval-4 だけは、task の監査対象となる standard-audit の本文と、評価範囲を選ぶための task ID と prompt を入力資料として残す。
+この資料を発火候補へ加えず、expectation と expected output は公開しない。
+複製元の client 設定と `.mcp.json` も除き、複製元の hook や常時指示を実行条件へ混ぜない。
+隔離した actor 用の package 検査は、公開した Skill の本文と frontmatter、非公開 instruction と採点情報の不在、全 package の directory、および conformance 検査の依存を検査する。
+通常 checkout では全 Skill の本文と eval 定義を引き続き検査する。
 実作業のproduct検査と一般のreferenceは残し、taskが必要とする対象projectのAcceptedな契約や決定は隔離後にhostが置く。
-standard-update の product 検査が使う conformance checker とその回帰検査、および package checker の対象である CLI と PBT の package は、全比較条件へ同じ source から配置し、`fixture_sha256` の対象に含める。
-選択した Skill の本文だけを新しくした混在版でも検査の依存が欠けないようにし、検査機構の差を instruction の効果へ混ぜない。
+product 検査を instruction の効果へ混ぜないため、standard-update と standard-conformance の package checker は全比較条件へ同じ source から配置する。
+standard-update の conformance checker と回帰検査、CLI と PBT の package も同様に配置し、これらを `fixture_sha256` の対象に含める。
 CLI と PBT の task は prompt 内の設計入力を使い、既存 Skill 用の worker fixture、標準本文の mutation、標準 repository の検証 command を追加しない。
 共通の本文 snapshot、README、task と model、target 入力は両条件へ同じものを渡す。
 `before-files.json` と `after-files.json` は評価に必要な本文と全変更 file の内容を持ち、`changed-files.json` は tracked、untracked、ignored の変更を列挙する。
-`target-input.json` は従来fixtureも含めて対象の全sourceとtest、およびproject外の決定の記録をhashつきで保存し、`fixture_sha256` と `target_input_sha256` に入力の同一性を反映する。
+`target-input.json` は対象の全 source と test、および project 外の決定の記録を hash つきで保存し、`fixture_sha256` と `target_input_sha256` に入力の同一性を反映する。
 `tool-evidence.json` は tool の完全な入力と結果を保存し、未実施の読取や検証を最終応答の主張だけで補わない。
 
 standard-conformance の task では、host が `node skills/standard-conformance/scripts/check-coverage.mjs inventory` と `check` の prefix だけを Bash の追加許可へ渡す。
-報告は `runRoot/audit-reports/report.json` へ保存し、fixture の Git root 外にあるその専用 directory だけを `--add-dir` と prompt で書込先に指定する。
+報告は `runRoot/audit-reports/report.json` へ保存し、fixture の Git root 外ではその file だけを extension policy と prompt で書込先として許可する。
 評価対象へ採点情報や期待解答を渡さず、保存した報告は外側の `audit-reports.json` として tool 結果とともに grader へ渡す。
-`command_args` は host へ渡した実入力を保持し、比較用の `command_contract_args` は報告専用 directory の割当だけを正規化する。
-比較時は保存済みの正規化値を信用して raw command の差を隠さず、`command_args` から同じ正規化を再計算する。
-これらの argument と artifact の schema 検査は、Claude の実 command policy の適用や model の完遂を証明しない。
+`command_args` は host へ渡した実入力を保持し、`command_contract_args` は一時 control、fixture、報告専用 directory の割当を正規化する。
+その割当を `command_normalization` に保存し、比較時に `command_args` から同じ正規化を再計算する。
+保存済みの正規化値との不一致や割当情報の欠落がある比較からは delta を生成しない。
+argument と artifact の schema 検査だけでは、OMP の実行制限の適用や model の完遂を証明しない。
+extension の制限は OS sandbox ではなく、許可した Bash command は host の権限と環境でコードを実行する。
+fixture 外への副作用は防げないため、信頼できるローカル評価入力にだけ使う。
 
 `--grade` は実行直後に別 context の grader を起動し、`--grade-only` は保存済みの `eval_metadata.json` にある task と expectation で成果物を採点する。
 現在の eval 定義を変えても、過去の成果物へ新しい rubric を適用しない。
 改訂した task、fixture、rubric の測定は、過去の成果物とは別の output root で実行する。
 grader は空の一時 directory で tools と skill を無効化して起動する。
 各 expectation の成否と根拠、実際の task と rubric、grader の runner、instruction、schema、command 設定、指定 model と観測した model を `grading.json` へ残す。
-実際に送った grader prompt は外側の `grader-prompt.txt` へ保存する。
+grader へ実際に送った user prompt は外側の `grader-prompt.txt` へ保存する。
 両条件の採点が揃った時点で `benchmark.json` を生成し、本文、task定義、対象入力、runner、providerと実行設定、command契約、実model、採点provenanceが一致しない比較から品質の改善量を算出しない。
 基線に新設 Skill がなく、明示的な過去の package snapshot による実行もない比較では、`comparison_configuration` を `without-skill` とし、`delta_with_minus_without` に差を残す。
 この比較だけは、raw command を保持したまま、prompt 内の Skill 使用条件の一段落だけを比較用に正規化する。
@@ -213,7 +221,7 @@ SKILL_EVAL_OUTPUT_ROOT="$MAP_AFTER_OUTPUT" \
   --configuration with-skill --skill standard-apply --eval-id 10 \
   --baseline-ref "$BASELINE_COMMIT" --standard-snapshot "$STANDARD_SNAPSHOT" \
   --skill-snapshot "$SKILL_SNAPSHOT" \
-  --project-snapshot "$HIDE_OUTPUT/standard-apply/eval-9-sonnet/with-skill/project-snapshot.json" --grade
+  --project-snapshot "$HIDE_OUTPUT/standard-apply/eval-9-default/with-skill/project-snapshot.json" --grade
 ```
 
 是正前と是正後のMap taskは入力が異なるため、結果とconsumer変更理由を比較する観測であり、同じ入力によるSkill改善量ではない。
@@ -232,6 +240,5 @@ bash skills/standard-update/scripts/skill-test.sh
 bash skills/standard-update/scripts/skill-package-check.sh
 ```
 
-実model smokeは上のeval-7、eval-8とeval-9、eval-10のcommandを本物のClaude Codeで実行し、taskとgraderの両artifactを確認する。
+実 model smoke は上の eval-7、eval-8 と eval-9、eval-10 の command を OMP で実行し、task と grader の両 artifact を確認する。
 model、認証、依存取得、実command policy、時間上限のどれかが成立しなければ、その失敗を残して未実行または不合格とし、回帰検査や説明で成功に置き換えない。
-directoryと履歴の隔離は評価情報の混入を減らすためのものであり、OS全体のfilesystem sandboxを保証するものではない。
