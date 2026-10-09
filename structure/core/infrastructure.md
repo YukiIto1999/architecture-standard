@@ -26,8 +26,8 @@ datastore の採用は [tools/platforms/postgresql](../../tools/platforms/postgr
 application の store port、projection の読み取り port、外部 datastore の adapter は infrastructure に置く。
 store は record 型を定義し、domain と record の写像を持つ。
 store は、型付きの SQL を発行する薄い adapter として書く。
-イベントの追記・projection の更新・outbox への記録を束ねる書き込みパスの境界の所有は、[composition](./composition.md) が持つ。
-派生読みモデルの再構築は、正本のイベントを順に port へ流す application workflow として、読みモデルを所有するコンテキストに置く。
+現在情報の変更、必要な業務イベントの追記、projection の更新、outbox への記録を束ねる書き込みパスの境界の所有は、[composition](./composition.md) が持つ。
+派生読みモデルの再構築は、正本の現在情報または業務イベントを port から読み出す application workflow として、読みモデルを所有するコンテキストに置く。
 起動は workflow を呼べる surface の layout に従う。
 schema migration の実装は infrastructure に置き、適用の順序は [process/migration](../../process/migration.md) が定める。
 個人データを消去する port の実装と管理操作は infrastructure に置き、消去する情報と期限は [concerns/privacy](../../concerns/privacy/README.md) に従う。

@@ -2,7 +2,7 @@
 
 ## 概要
 lifecycle は、プロセスの起動・健全性の宣言・終了を全系で統べる規律である。
-principles の [separation](../../principles/separation/README.md) と [data](../../principles/data/README.md) が定める境界と追記の永続化を、全系のプロセスの寿命の扱いとして具象化する。
+principles の [separation](../../principles/separation/README.md) と [data](../../principles/data/README.md) が定める境界と、確定した状態と業務事実の永続化を、全系のプロセスの寿命の扱いとして具象化する。
 
 ## 規律
 

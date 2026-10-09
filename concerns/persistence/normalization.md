@@ -2,32 +2,48 @@
 
 ### 要求
 関係を正規化し、一つの事実に一つの正本を持たせる。
+業務事実の行は、出来事自身の事実と正本を指す識別子だけを持ち、現在関係や可変属性の値を写して持たない。
+可変属性は、変更、保持、消去の単位が同じものを一つの関係にまとめ、単位が異なるものを別の関係へ分ける。
 独立に問い合わせまたは更新する複数の属性は、意味ごとに別の列へ置く。
 単一の不可分な value または document として同じ lifecycle で一体に検証し、一体に読み書きする値は、JSON の一列に置いてよい。
 他の列や他の表から導出できる値を、別の列として重ねて持たない。
 導出値を独立に保存してよいのは、失っても事実が残る技術的な控えだけである。
+現在関係と可変属性は、捨てると情報を失うので、導出値として扱わない。
 
 ### 根拠
-正規化の理由は [data](../../principles/data/README.md) に従う。
+正規化の理由は [data](../../principles/data/database-integrity.md) に従う。
+可変属性の単位の見分け方は [data](../../principles/data/fact-state-time.md) に従う。
 同じ事実に複数の正本を持たせると、参照する経路によって異なる値を読む危険が生まれる。
+現在情報の値を業務事実の行へ写すと、現在情報を消しても写しが残り、変更すると写しだけが古い値を持つ。
+注文の時点で確定した価格のような値は、出来事自身の事実であり、現在関係の値の写しではない。
+変更、保持、消去の単位が異なる属性を一つの関係に置くと、一方の更新が他方の行を書き換え、片方だけを消すこともできない。
+単位が同じ属性を分けると、同時に作り同時に消すための結合と整合の処理だけが増える。
 独立に問い合わせまたは更新する属性を一つの不透明な列へ押し込むと、属性ごとの型と制約をデータ層で表せない。
 単一の不可分な value または document は、属性を独立に扱わないため、一列に置いても更新単位と lifecycle がずれない。
 導出できる値を独立した列として持たせると、元の値との整合を保つ処理を書き手が担うことになる。
+現在関係と可変属性は、正本として持つ値であり、導出値の控えと違って捨てても取り戻せない。
 
 ### 完了条件
-一つの事実の正本が一箇所だけであることの判定は、[data](../../principles/data/README.md) の完了条件に従う。
+一つの事実の正本が一箇所だけであることの判定は、[data](../../principles/data/database-integrity.md) の完了条件に従う。
+業務事実の行の列が、出来事自身の事実か正本を指す識別子に限られ、現在関係や可変属性の値の写しを含まない。
+可変属性が、変更、保持、消去の単位ごとに関係へ分かれている。
+変更、保持、消去の単位がすべて同じ属性が、別々の関係に分割されていない。
 独立に問い合わせまたは更新する複数の属性が、意味ごとに別の列へ置かれている。
 JSON の一列に置く値が、単一の不可分な value または document として一体に検証され、一体に読み書きされている。
 技術的な控えでない導出値が、独立した列として保存されていない。
 
 ### 禁止事項
 参照先の表が持つ値を、参照元の表へ複製して持つこと。
+現在関係や可変属性の値を写した列を、業務事実の行へ持つこと。
+変更、保持、消去の単位が異なる属性を、一つの関係の列や一つの JSON document に置くこと。
+変更、保持、消去の単位が同じ必須の属性を、関係の数を増やすためだけに別の関係へ分けること。
 独立に問い合わせまたは更新する複数の属性を、不透明な一列へ押し込むこと。
-異なる lifecycle を持つ属性を、一つの JSON document として扱うこと。
 技術的な控えでない導出値を、独立した列として保存すること。
 
 ### 行動
 各事実の正本を特定し、複数の正本があれば一箇所へ統合する。
+業務事実の行の列を洗い出し、現在関係や可変属性の値を写した列があれば、識別子による参照へ置き換えるか削る。
+属性ごとに、変更する契機、保持の期限、消去の契機を書き出し、三つが同じ属性は一つの関係にまとめ、どれかが異なる属性は別の関係へ分ける。
 一つの不透明な列にある属性が、独立に問い合わせまたは更新されるかを確認する。
 独立に扱う属性は意味ごとの列へ分ける。
 一体に検証し一体に読み書きする不可分な value または document は、JSON の一列に保ってよい。
@@ -47,6 +63,33 @@ orders(id, customer_id, customer_name, total_text)
 ```sql
 customers(id, name)
 orders(id, customer_id REFERENCES customers(id), amount, currency)
+```
+
+表示名とふりがなは、同じ画面で同時に作られ、同じ契機で変わり、同時に消えるのに、別の関係へ分けると、結合と整合の処理だけが増える。
+
+```sql
+CREATE TABLE user_display_names (
+  user_id BIGINT PRIMARY KEY REFERENCES active_users (user_id) ON DELETE CASCADE,
+  display_name VARCHAR(100) NOT NULL
+);
+CREATE TABLE user_kana_names (
+  user_id BIGINT PRIMARY KEY REFERENCES active_users (user_id) ON DELETE CASCADE,
+  kana_name VARCHAR(100) NOT NULL
+);
+```
+
+単位が同じ表示名とふりがなは一つの関係にまとめ、パスワードの変更や漏えい時の失効という別の契機で変わる認証情報は、別の関係に分ける。
+
+```sql
+CREATE TABLE user_profiles (
+  user_id BIGINT PRIMARY KEY REFERENCES active_users (user_id) ON DELETE CASCADE,
+  display_name VARCHAR(100) NOT NULL,
+  kana_name VARCHAR(100) NOT NULL
+);
+CREATE TABLE user_credentials (
+  user_id BIGINT PRIMARY KEY REFERENCES active_users (user_id) ON DELETE CASCADE,
+  password_hash VARCHAR(255) NOT NULL
+);
 ```
 
 署名済み文書を常に一体として検証し、読み書きする場合は、不可分な document として一列に置いてよい。

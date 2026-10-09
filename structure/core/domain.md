@@ -42,6 +42,6 @@ domain は、persistence の record、wire 型、DTO、contracts の型を参照
 ## イベント
 
 集約は、履歴として残すべき状態変更を domain イベントとして表す。
-ログではなくイベントで残すかの判断は [principles/data](../../principles/data/append-facts-derive-state.md) の「事実は追記し、現在状態は導出する」に従う。
+ログではなくイベントで残すかの判断は [principles/data](../../principles/data/preserve-facts-and-current-state.md) の「業務事実と現在情報を分けて保持する」に従う。
 integration event への写像は application が担い、配送経路の配線は composition が担う。
 配送の規律は [concerns/messaging](../../concerns/messaging/README.md) に従う。

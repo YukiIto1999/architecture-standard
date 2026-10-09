@@ -50,7 +50,7 @@ concerns は、特定のモジュールや技術に閉じず、システム全�
 | [dependency](./dependency/README.md) | 実行・構成 | 依存の向きと合成 |
 | [types](./types/README.md) | 実行・構成 | 型による不変条件の保護 |
 | [context-propagation](./context-propagation/README.md) | 実行・構成 | 同一実行に随伴する metadata の carrier と伝播 |
-| [persistence](./persistence/README.md) | 状態・連携 | 永続データの設計。分類・追記・版の変換・正規化・制約 |
+| [persistence](./persistence/README.md) | 状態・連携 | 永続データの設計。同一性・現在関係・属性・業務事実・版の変換・正規化・制約 |
 | [caching](./caching/README.md) | 状態・連携 | 正本から再構築できる導出状態の鮮度・無効化・不在 |
 | [migration](./migration/README.md) | 状態・連携 | 稼働中の系の移行。段の分割・同一時点の検証・cutover |
 | [transaction](./transaction/README.md) | 状態・連携 | 書き込みパスの一貫性と確定点 |

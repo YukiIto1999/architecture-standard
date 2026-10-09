@@ -17,7 +17,7 @@ principles は、ソフトウェア設計におけるすべての判断の土台
 |---|---|---|
 | 構成 | [separation](./separation/README.md) | 分割と依存。変更理由での分割、サブドメインと設計投資、コンテキスト間の関係、分類軸と粒度、関心の隠蔽、結合度、依存方向、副作用の隔離、正本の独立 |
 | 構成 | [modeling](./modeling/README.md) | 型と意味。業務意味の型封入、不正状態の排除、論理と物理の分離 |
-| 構成 | [data](./data/README.md) | データと状態。整合性と集約、事実と状態の分類、履歴の保全 |
+| 構成 | [data](./data/README.md) | データと状態。整合性と集約、同一性と現在情報と業務事実の分類、必要な事実の保持と消去 |
 | 構成 | [construction](./construction/README.md) | 実装の構成。不変性、全域関数、判断と集合の構造化、パターンの統一 |
 | 規律 | [requirements](./requirements/README.md) | 要件の確定。目的からの導出、根拠と決定状態、検証可能な定義 |
 | 規律 | [verification](./verification/README.md) | 検証。機械検証と実行可能な仕様、テストの設計と安全網、信頼性の確保 |
