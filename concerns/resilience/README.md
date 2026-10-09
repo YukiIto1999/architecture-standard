@@ -2,7 +2,7 @@
 
 ## 概要
 resilience は、障害への耐性を全系で統べる規律である。
-principles の [data](../../principles/data/README.md) が定める事実の追記と、[separation](../../principles/separation/README.md) が定める副作用の境界隔離を、全系の障害耐性として具象化する。
+principles の [data](../../principles/data/README.md) が定める現在情報と必要な業務事実の保持と、[separation](../../principles/separation/README.md) が定める副作用の境界隔離を、全系の障害耐性として具象化する。
 冪等・再試行・行き止まりの正本は resilience であり、[transaction](../transaction/README.md) は書き込みパスへの適用を、[messaging](../messaging/README.md) はイベント消費への適用を書く。
 
 ## 規律

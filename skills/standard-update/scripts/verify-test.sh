@@ -274,11 +274,11 @@ sed -i 's/| layout・domain・application・infrastructure・composition |/| lay
 expect_pass "台帳と本文ファイルを揃えた追加を受理する" "$fixture"
 
 fixture=$(make_fixture heading-citation-valid)
-printf '\n保存の形は [persistence](../persistence/append-only-facts.md) の「事実を追記する形で残す」に従う。\n' >> "$fixture/concerns/transaction/single-write-path.md"
+printf '\n保存の形は [persistence](../persistence/append-only-facts.md) の「業務事実を保持期間の間は追記で残す」に従う。\n' >> "$fixture/concerns/transaction/single-write-path.md"
 expect_pass "link 先の見出しと一致する鉤括弧引用を受理する" "$fixture"
 
 fixture=$(make_fixture heading-citation-same-file)
-printf '\n同じ file の「事実を追記する形で残す」と [data](../../principles/data/README.md) に従う。\n' >> "$fixture/concerns/persistence/append-only-facts.md"
+printf '\n同じ file の「業務事実を保持期間の間は追記で残す」と [data](../../principles/data/README.md) に従う。\n' >> "$fixture/concerns/persistence/append-only-facts.md"
 expect_pass "同一 file 内の見出し引用を受理する" "$fixture"
 
 fixture=$(make_fixture heading-citation-drift)

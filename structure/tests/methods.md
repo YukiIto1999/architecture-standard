@@ -134,8 +134,13 @@ adapter は、実の依存をコンテナで起動して検証する。
 
 oracle が得にくい対象は、metamorphic な関係で検証する。
 移行と置換は、旧と新の経路の差分で検証する。
-replay は、イベントから projection を再構築して検証する。
-再構築の決定性は、同じイベント列を空の状態へ二度適用して結果が一致することで検証する。二度の一致は決定性の証明ではなく、実行時の入力と外部への効果を早期に見つける検査である。
+replay は、履歴から導出する projection に対して、保存したイベント列から再構築して検証する。
+再構築の決定性は、同じ正本の入力を空の派生読みモデルへ二度適用して結果が一致することで検証する。
+二度の一致は決定性の証明ではなく、実行時の入力と外部への効果を早期に見つける検査である。
+現在情報の保持は replay の対象とせず、[concerns/persistence](../../concerns/persistence/README.md) と [concerns/transaction](../../concerns/transaction/README.md) の不変条件を実 datastore で検証する。
+状態を表す関係をまたぐ排他性は、競合する遷移と属性の作成を全書込経路から並行に実行し、不正な組み合わせが確定しないことで検証する。
+退会や消去では、残すべき同一性と参照の存続、消すべき現在関係と個人情報の不在、必要な業務イベントの確定を別々に観測する。
+現在情報の変更と必要な業務イベントの追加の間に失敗を注入し、双方が確定するか双方が確定しないことを検証する。
 信頼できない入力は、契約を駆動にした fuzz で検証する。
 契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools/build](../../tools/build/README.md) が定める。
 公開 API の契約への適合も、同じ機構で検証する。
@@ -165,7 +170,7 @@ PTY の実測は、その実依存に従って配置し、状態遷移の proper
 | use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、中間状態の面ごとの通過集合、未検出 mutant |
 | canonical と binding | operation・型・error の欠落と余剰、generated drift、全 variant の serialize round-trip、未知項目の受容・捕捉・報告と既知項目の不正の拒否、generated のデータ型と通信の依存単位の分離、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
 | 認証と認可 | 各認証境界の credential 拒否と actor 構築、credential の core 非流入、主体・操作・資源・条件の許可と拒否 |
-| 永続化、transaction、messaging | 実 datastore の制約、version conflict、単一の確定点、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |
+| 永続化、transaction、messaging | 実 datastore の制約、参照先の存続と削除規則、現在関係の排他性と全書込経路の競合制御、version conflict、単一の確定点、現在情報と必要な業務イベントの同時確定、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、派生読みモデルの再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |
 | effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test |
 | structure と dependency | root と単位の列挙、依存方向、公開面、配置、循環、複雑さの閾値と統合・削除での変更前後の比較、禁止 import、サブドメイン分類の記録と構造の対応 |
 | lifecycle と configuration | 不正設定での起動拒否、設定層の競合と未指定の解決、生存と準備、受付停止、期限内 drain、突然死後の回復 |

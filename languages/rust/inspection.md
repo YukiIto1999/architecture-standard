@@ -238,7 +238,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | connection | port を trait で宣言する | 型(trait)+構造検査(依存方向) |
 | connection | 配線を組立点に置き、境界で実行する | 構造検査(composition root 外の具象生成の検出)+レビュー(組立点に置く依存の粒度の判断) |
 | sqlx | 型付き SQL | 型/実行テスト(sqlx の `query!` コンパイル時検証・検証入口の offline 照合) |
-| sqlx | 並行更新の表面 | 実行テスト(結合テストでの競合検出) |
+| sqlx | 並行更新の表面 | 実行テスト(親ロックを使う集約で全経路の直列化と排他後の検証、版で衝突を検出する集約で並行更新の片方だけの確定と古い版の各経路からの拒否、影響行数 0 と名前付き version 制約違反の競合写像、version 以外の制約違反の非写像、必要な業務イベントの追加前後の失敗で現在情報・業務事実・outbox が全て確定するか全て確定しないこと、業務イベント不要な更新の競合制御と追記の不在)+レビュー(集約の不変条件に対する競合制御、必要な業務イベントの欠落と outbox による代用の禁止) |
 | sqlx | 書き込みパス | 構造検査(store が transaction の begin・commit を持たないことの検査) |
 | sqlx | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証済み actor、匿名の安定した opaque scope、logical system actor の分離、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
 | sqlx | durable inbox | 構造検査(scope・event ID の複合一意制約)+実行テスト(payload commit 前後の停止と upstream delivery ack、処理結果・処理済み記録 commit 前後の停止と inbox processing completion、前段の source 再配送、後段の item 再処理、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視出力) |

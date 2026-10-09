@@ -2,14 +2,14 @@
 
 ## 概要
 transaction は、書き込みパスの一貫性と確定点を全系で統べる規律である。
-principles の [data](../../principles/data/README.md) が定める整合性と集約境界、事実の追記と現在状態の導出を、全系の書き込みの扱いとして具象化する。
+principles の [data](../../principles/data/README.md) が定める整合性と集約境界、現在情報の変更と業務事実の追記の同時確定を、全系の書き込みの扱いとして具象化する。
 transaction は書き込みパスの動的な確定を扱い、静止した関係と制約は [persistence](../persistence/README.md) が扱う。
 
 ## 規律
 
-- [整合性を一つの書き込みパスに閉じる](./single-write-path.md) — 機械+レビュー(version conflict検査)
+- [整合性を一つの書き込みパスに閉じる](./single-write-path.md) — 機械+レビュー(version conflict検査+全書き込み経路の並行競合テスト)
 - [一つの確定点を持つ](./single-commit-point.md) — 機械(methods表 単一確定点)
-- [状態とイベントを同一パスで記録する](./state-event-atomicity.md) — 機械(状態とoutbox同時確定)
+- [状態とイベントを同一パスで記録する](./state-event-atomicity.md) — 機械(現在情報と業務事実とoutboxの同時確定+失敗注入)
 - [冪等にして再実行できるようにする](./scoped-idempotency-keys.md) — 機械(冪等要求記録の検査)
 - [部分確定を不可視にする](./invisible-partial-commits.md) — 機械+レビュー(停止再開テスト+調査性)
 - [書き込みパスの所有を組立点に置く](./composition-owned-transactions.md) — 機械(begin/commit構造検査)
