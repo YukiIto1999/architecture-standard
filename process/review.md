@@ -14,7 +14,7 @@
 2. 変更対象がどの境界に属すかを、[structure/skeleton](../structure/skeleton.md) の境界集合で特定する。
 3. 差分だけでなく、対象 repo の現在の内容、生成物、設定、変更されていない consumer を読み、変更の影響範囲を特定する。
 4. その境界の layout と、変更が触れる [principles](../principles/)・[concerns](../concerns/) を読む。
-   source の変更では [principles/legibility](../principles/legibility/README.md)、[principles/naming](../principles/naming/test-names-as-specs.md)、[principles/comment](../principles/comment/README.md) を、テストの変更では [principles/verification](../principles/verification/README.md) と naming の「テスト名は仕様を表す」を、commit の件名では [principles/documentation](../principles/documentation/commit-purpose.md) の「変更の目的を commit log に残す」を含める。
+   source の変更では [principles/legibility](../principles/legibility/README.md)、[principles/naming](../principles/naming/test-names-as-specs.md)、[principles/comment](../principles/comment/README.md) を、テストの変更では [principles/verification](../principles/verification/README.md) と naming の「テスト名は仕様を表す」を、commit の件名では [principles/documentation](../principles/documentation/commit-purpose.md) の「commit の件名に対象と変化を書く」を含める。
 5. 対象言語の該当する実現軸と conventions([languages](../languages/))で、使う機構と全域規律を確かめる。
 6. 変更で使う道具を、[tools](../tools/) と [languages](../languages/) の採用と判断基準に照合する。
 7. 逸脱の決定の記録を、root の [README](../README.md) が要求する採用理由、撤回条件、単一採用、置き換える標準規律のファイル、逸脱の前提となる技術的制約の実証に照合する。

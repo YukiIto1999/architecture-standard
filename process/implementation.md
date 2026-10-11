@@ -8,7 +8,7 @@
 
 ## 順序
 
-1. 一つの目的と取り消し理由を持つ作業単位の名前と範囲を宣言する([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」と [principles/documentation](../principles/documentation/commit-purpose.md) の「変更の目的を commit log に残す」に従う)。
+1. 一つの目的と取り消し理由を持つ作業単位の名前と範囲を宣言する([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」と [principles/documentation](../principles/documentation/commit-purpose.md) の「commit の件名に対象と変化を書く」に従う)。
 2. 変更がどのアクターのどのuse-caseに属するかを答え、答えられなければ [design](./design.md) へ戻る([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
 3. 着手時点で分かっている、検証すべき振る舞いを、テストリストに列挙する。
 4. 初回は、公開 interface を越して確かめられる最小の振る舞いをリストから選ぶ。
@@ -28,7 +28,7 @@
 16. 探索で見つけた欠陥はテストリストへ足してリストが空になるまで 5 から 14 を繰り返し、仕様の漏れは [design](./design.md) へ戻す。
 17. 手順16を終えた時点で、探索の記録を取り除く([structure/tests/methods](../structure/tests/methods.md) に従う)。
 18. 変更が触れた規律の完了条件・禁止事項と、[structure/tests](../structure/tests/layout.md) の機械検証に照合する。
-19. 現在の目的に属する差分だけを選別し、変更の Why を短い件名へ記録して commit する([principles/documentation](../principles/documentation/commit-purpose.md) に従う)。
+19. 現在の作業単位に属する差分だけを選別し、変更の対象と、その対象で何がどう変わったかを短い件名へ記録して commit する([principles/documentation](../principles/documentation/commit-purpose.md) に従う)。
     別の目的の変更と構造改善をまとめてから分割せず、単位ごとの検証と commit を積み上げる。
 
 ## 確認点

@@ -52,16 +52,16 @@
 
 ### 件名の記述ルール
 
-- 目的の記述: 要約に書く内容は、[principles/documentation](./principles/documentation/commit-purpose.md) の「変更の目的を commit log に残す」に従う。
+- 内容の記述: 要約に書く内容は、[principles/documentation](./principles/documentation/commit-purpose.md) の「commit の件名に対象と変化を書く」に従う。
 - 文末と記号: 要約の記述の形は、[principles/documentation](./principles/documentation/sentence-endings.md) の「文末の形を記述の種類で分ける」に従う。
 - 帰属表記の禁止: AI 名義の Co-authored-by や、生成ツール名によるクレジット表記は一切付与しない。
 
 #### 望ましいメッセージ例
 ```text
-feat: build の採用判断の再現性
-fix: verifier の異常終了の見逃し防止
-refactor: skill ごとの変更の独立した取り消し
-docs: Git の誤った履歴操作の防止
+feat: テーブル設計で状態の列を置かず事実の行から導く規律の追加
+fix: verifier の異常終了を失敗に数える判定の追加
+refactor: commit-msg hook の検査の規則ごとの関数への分割
+docs: Git の公開済み履歴を書き換える手順の追記
 ```
 
 ## コミット前の検証

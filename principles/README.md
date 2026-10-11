@@ -39,7 +39,7 @@ principles は、ソフトウェア設計におけるすべての判断の土台
 | 外から観測できる振る舞い | テスト本体とテスト名 | [verification](./verification/README.md)、[naming](./naming/README.md) |
 | 公開宣言の外部契約、非公開宣言の内部契約 | ドキュメントコメント | [comment](./comment/README.md) |
 | 自然に見える実装を採らなかった理由 | 実装コメント | [comment](./comment/README.md) |
-| 変更を行う直接の理由 | 一つの目的と取り消し理由へ絞った commit の件名 | [documentation](./documentation/commit-purpose.md) |
+| 変更を行う直接の理由 | 一つの対象と、そこで成り立つ変化へ絞った commit の件名 | [documentation](./documentation/commit-purpose.md) |
 | 未実装の要件、入力契約、変更先 | 根拠と決定状態を示した要件と契約 | [requirements](./requirements/README.md)、[documentation](./documentation/README.md) |
 
 構造に影響する判断の文脈と帰結は、この分担に沿う正本とその対応から辿ります。
