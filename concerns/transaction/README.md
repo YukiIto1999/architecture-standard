@@ -7,7 +7,7 @@ transaction は書き込みパスの動的な確定を扱い、静止した関�
 
 ## 規律
 
-- [整合性を一つの書き込みパスに閉じる](./single-write-path.md) — 機械+レビュー(version conflict検査+全書き込み経路の並行競合テスト)
+- [整合性を一つの書き込みパスに閉じる](./single-write-path.md) — 機械+レビュー(version conflict検査+全書き込み経路の並行競合テスト+鍵の順序と書き込み権限の検査+期間の所有のレビュー)
 - [一つの確定点を持つ](./single-commit-point.md) — 機械(methods表 単一確定点)
 - [状態とイベントを同一パスで記録する](./state-event-atomicity.md) — 機械(現在情報と業務事実とoutboxの同時確定+失敗注入)
 - [冪等にして再実行できるようにする](./scoped-idempotency-keys.md) — 機械(冪等要求記録の検査)

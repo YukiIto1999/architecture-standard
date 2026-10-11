@@ -8,7 +8,7 @@ integration event は outbox に記録し、配送は別途行う。
 異なる datastore への移行では、現在の正本への write と migration event の outbox への記録を、現在の正本と同じ transaction で確定する。
 
 ### 根拠
-現在情報を変更する経路と業務事実を追記する経路が別々だと、片方だけ成功して食い違い、退会の事実だけが残って現在関係が消えていない、または現在関係だけが消えて退会の事実がない状態になる。
+現在情報を変更する経路と業務事実を追記する経路が別々だと、片方だけ成功して食い違い、退会の事実だけが残って個人情報が消えていない、または個人情報だけが消えて退会の事実がない状態になる。
 業務事実は保持の契約を負う正本の一部であり、outbox は配送のための記録であって、配送済みの印の更新と配送後の削除を伴う。
 一つの行で兼ねると、配送の都合で業務事実が書き換わるか消えるか、業務事実の不変性のために配送の記録が溜まり続ける。
 同一トランザクションで現在情報と outbox に記録すれば、現在情報と公開するイベントは必ず一致する。
@@ -38,26 +38,27 @@ outbox の行を業務事実として保持し、配送済みの印の更新や�
 
 ### 例
 
-現在関係の削除と退会の業務事実の追記を別々に確定すると、二つの間で停止したときに、現在関係が消えたのに退会の事実がなく、再実行でも判定できない。
+個人情報の削除と退会の業務事実の追記を別々に確定すると、二つの間で停止したときに、個人情報が消えたのに退会の事実がなく、退会していない利用者からプロフィールだけが失われる。
 
 ```sql
-DELETE FROM active_users WHERE user_id = :user_id;
+DELETE FROM user_profiles WHERE user_id = :user_id;
+DELETE FROM user_emails WHERE user_id = :user_id;
 COMMIT;
-INSERT INTO user_withdrawals (user_id, withdrawn_at) VALUES (:user_id, CURRENT_TIMESTAMP);
+INSERT INTO user_withdrawals (user_id) VALUES (:user_id);
 COMMIT;
 ```
 
-現在関係の削除、退会の業務事実の追記、公開する integration event の outbox への記録を、同じトランザクションで確定する。
-削除した行が0件なら、確定せずに失敗させる。
+利用者の集約の鍵を排他で取り、退会していないことを確かめてから、個人情報の削除、退会の業務事実の追記、公開する integration event の outbox への記録を、同じトランザクションで確定する。
+退会の時刻は datastore の既定値で付く。
 業務事実は `user_withdrawals` に保持し、outbox の行は配送済みの印を付けた後に消えても業務事実に影響しない。
 
-```sql
-BEGIN;
-  SELECT id FROM users WHERE id = :user_id FOR UPDATE;
-  DELETE FROM active_users WHERE user_id = :user_id;
-  INSERT INTO user_withdrawals (user_id, withdrawn_at) VALUES (:user_id, CURRENT_TIMESTAMP);
-  INSERT INTO outbox (event_type, payload, occurred_at) VALUES ('UserWithdrawn', :payload, CURRENT_TIMESTAMP);
-COMMIT;
+```text
+transaction (read committed):
+  exclusive userAggregate(userId)
+  require no user_withdrawals(userId)
+  delete user_profiles(userId), user_emails(userId), user_credentials(userId)
+  insert user_withdrawals(userId)
+  insert outbox("UserWithdrawn", payload)
 ```
 
 別のプロセスが outbox を読み、配送済みの印を付ける。
