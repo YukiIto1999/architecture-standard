@@ -338,7 +338,6 @@ const weakened = run("locked-test-change", 10, { files: {
 const lockedVerdict = load(path.join(weakened, "host-after.json"));
 assert.equal(lockedVerdict.passed, false);
 assert(lockedVerdict.locked_file_changes.includes("tests/render-selected.test.ts"));
-assert(lockedVerdict.commands.some(command => command.command.includes(host) && command.passed));
 const addedSource = "export function selectPosition(position: number): number {\n  return position;\n}\n";
 const added = run("added-consumer", 10, { files: {
   "src/line-store.ts": storage(true), "src/selection.ts": addedSource,

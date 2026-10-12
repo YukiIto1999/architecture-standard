@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "verify-fast": { "seconds": 10 },
+  "verify": { "seconds": 120 },
+  "verify-push": { "seconds": 900 }
+}

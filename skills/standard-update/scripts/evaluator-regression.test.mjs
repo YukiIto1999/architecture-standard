@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, test } from "node:test";
+import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { parseOmpStream } from "./omp-eval-adapter.mjs";
@@ -772,4 +773,133 @@ test("provider hooks expose only allowed tool schemas and reject forbidden calls
   const malformed = actor.invoke("before_provider_request", { payload: { tools: [{ undocumentedSchema: true }] } });
   assert.deepEqual(malformed.tools, []);
   assert.match(readFileSync(path.join(control, "provider-error.txt"), "utf8"), /unrecognized provider tool/);
+});
+
+test("a live canonical project change after capture cannot alter the verified budget, oracle or identity", async () => {
+  const lineStore = "skills/standard-apply/evals/fixtures/line-store";
+  const source = path.join(root, "frozen-canonical-source");
+  const git = args => {
+    const result = spawnSync("git", ["-C", source, ...args], { encoding: "utf8" });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+  };
+  const cloned = spawnSync("git", ["clone", "--quiet", "--no-hardlinks", repo, source], { encoding: "utf8" });
+  assert.equal(cloned.status, 0, cloned.stdout + cloned.stderr);
+  cpSync(path.join(repo, "skills"), path.join(source, "skills"), { recursive: true, force: true,
+    filter: file => !path.relative(path.join(repo, "skills"), file).split(path.sep).includes("node_modules") });
+  git(["add", "-A", "--", "skills"]);
+  git(["-c", "user.name=Skill Test", "-c", "user.email=skill-test@example.invalid", "-c", "commit.gpgSign=false",
+    "commit", "--quiet", "--allow-empty", "-m", "test: 凍結済み canonical 入力の回帰条件の用意"]);
+  const live = path.join(source, lineStore);
+  const originalPolicy = load(path.join(repo, lineStore, "project/verification-budget.json"));
+  const mutatedPolicy = { version: 1, "verify-fast": { seconds: 1 }, verify: { seconds: 1 }, "verify-push": { seconds: 1 } };
+  assert.notDeepEqual(mutatedPolicy, originalPolicy);
+
+  const frozenProvider = path.join(root, "frozen-canonical-provider.mjs");
+  writeFileSync(frozenProvider, `#!/usr/bin/env node
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+if (process.argv[2] === "config") {
+  console.log(JSON.stringify({ key: "modelRoles", value: { default: "regression/scripted-fixture" },
+    type: "record", description: "" }));
+  process.exit(0);
+}
+const skill = process.env.SKILL_EVAL_ISOLATED_SKILL;
+const skillPath = "skill://" + skill;
+const skillText = fs.readFileSync("skills/" + skill + "/SKILL.md", "utf8");
+console.log(JSON.stringify({ type: "message_end", message: { role: "assistant", provider: "regression",
+  model: "scripted-fixture", timestamp: 1, stopReason: "toolUse", usage: {},
+  content: [{ type: "toolCall", id: "selected-skill", name: "read", arguments: { path: skillPath } }] } }));
+console.log(JSON.stringify({ type: "tool_execution_start", toolCallId: "selected-skill", toolName: "read", args: { path: skillPath } }));
+console.log(JSON.stringify({ type: "tool_execution_end", toolCallId: "selected-skill", toolName: "read",
+  result: { content: [{ type: "text", text: skillText }] }, isError: false }));
+assert(!fs.existsSync("skills/standard-apply/evals"), "actor oracle leak");
+assert(!fs.existsSync("target-project/host"), "actor host oracle leak");
+const gate = process.env.FROZEN_CANONICAL_GATE;
+fs.writeFileSync(path.join(gate, "ready"), "");
+const deadline = Date.now() + 30_000;
+while (!fs.existsSync(path.join(gate, "release"))) {
+  assert(Date.now() < deadline, "the live canonical mutation was never released");
+  await new Promise(resolve => setTimeout(resolve, 20));
+}
+const message = { role: "assistant", content: [{ type: "text", text: "unchanged candidate; scripted, not a model evaluation" }],
+  provider: "regression", model: "scripted-fixture", timestamp: 2, stopReason: "stop",
+  usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, totalTokens: 2,
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
+console.log(JSON.stringify({ type: "message_end", message }));
+console.log(JSON.stringify({ type: "agent_end", messages: [message] }));
+`, { mode: 0o755 });
+
+  const gate = path.join(root, "frozen-canonical-gate");
+  const scratch = path.join(root, "frozen-canonical-tmp");
+  const output = path.join(root, "frozen-canonical-evals");
+  mkdirSync(gate);
+  mkdirSync(scratch);
+  const environment = { ...process.env, OMP_EVAL_COMMAND: frozenProvider, OMP_EVAL_MODEL: "", OMP_EVAL_TIMEOUT_MS: "60000",
+    SKILL_EVAL_OUTPUT_ROOT: output, FROZEN_CANONICAL_GATE: gate, TMPDIR: scratch };
+  delete environment.NODE_TEST_CONTEXT;
+  const child = spawn(process.execPath, [path.join(source, "skills/standard-update/scripts/run-task-evals.mjs"),
+    "--configuration", "with-skill", "--skill", "standard-apply", "--eval-id", "9"], {
+    cwd: source, env: environment, stdio: ["ignore", "pipe", "pipe"], detached: true,
+  });
+  let stdout = "";
+  let stderr = "";
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  child.stdout.on("data", chunk => { stdout += chunk; });
+  child.stderr.on("data", chunk => { stderr += chunk; });
+  let exited = null;
+  const finished = new Promise(resolve => {
+    const settle = result => { exited = result; resolve(result); };
+    child.once("error", error => settle({ status: null, signal: null, error }));
+    child.once("close", (status, signal) => settle({ status, signal, error: undefined }));
+  });
+  const stop = () => {
+    try { process.kill(-child.pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  };
+  const limit = setTimeout(stop, 3_600_000);
+  let result;
+  try {
+    const ready = path.join(gate, "ready");
+    while (!existsSync(ready) && exited === null) await sleep(50);
+    assert(existsSync(ready), "runner ended before the actor started\n" + stdout + stderr);
+    save(path.join(live, "project/verification-budget.json"), mutatedPolicy);
+    writeFileSync(path.join(live, "host/check.mjs"),
+      'process.stdout.write(JSON.stringify({ success: true, oracle: "mutated-live-oracle" }) + "\\n");\n');
+    writeFileSync(path.join(gate, "release"), "");
+    result = await finished;
+  } finally {
+    clearTimeout(limit);
+    if (exited === null) {
+      stop();
+      await finished;
+    }
+  }
+  assert.equal(result.error, undefined, result.error?.message);
+  assert.equal(result.signal, null, stdout + stderr);
+  assert.equal(result.status, 1, stdout + stderr);
+  assert.match(stdout, /^EXECUTED_UNGRADED: standard-apply eval-9 /m);
+  assert.match(stdout, /^HOST_VERIFICATION_FAILED: standard-apply eval-9 with-skill;/m);
+
+  const run = path.join(output, "standard-apply", "eval-9-default", "with-skill");
+  const baseline = load(path.join(run, "host-before.json"));
+  const verdict = load(path.join(run, "host-after.json"));
+  const captured = load(path.join(run, "canonical-project.json"));
+  const snapshot = load(path.join(run, "project-snapshot.json"));
+  const metadata = load(path.join(run, "eval_metadata.json"));
+  const outcomes = verdict.commands.map(({ command, status, signal, error }) => ({ command, status, signal, error }));
+  assert.deepEqual(JSON.parse(captured.files["verification-budget.json"].content), originalPolicy);
+  assert.deepEqual(baseline.commands.map(command => command.passed), [true, true, true]);
+  assert.deepEqual(verdict.commands.map(command => command.passed), [true, true, false], JSON.stringify(outcomes));
+  assert.equal(verdict.passed, false);
+  assert.deepEqual(verdict.locked_file_changes, []);
+  assert.deepEqual(verdict.consumer_changes, []);
+  const rejection = JSON.parse(verdict.commands[2].stdout);
+  assert.equal(rejection.success, false);
+  assert(!JSON.stringify(verdict).includes("mutated-live-oracle"), "the mutated live oracle was executed");
+  const local = JSON.parse(verdict.verification_reports["verification-local.json"].content);
+  assert.equal(local.success, true);
+  assert.equal(local.budget_ms, originalPolicy.verify.seconds * 1000);
+  assert.equal(new Set([baseline, verdict, captured, snapshot, metadata.project_input]
+    .map(evidence => evidence.canonical_sha256)).size, 1, "verification evidence names a different canonical input");
 });

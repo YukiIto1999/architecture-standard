@@ -36,6 +36,11 @@ global installは使用しない。
 | `npm run verify` | T0、固定のSmall test、seedを固定したproperty test、coverage | 2分 |
 | `npm run verify:push -- --base <ref>` | T1、指定したGit基線からの変更と影響範囲のmutation | 15分 |
 
+これらはこのfixtureの入口に設定した上限であり、全projectに適用する標準の値ではない。
+秒数の正本は `verification-budget.json` に置き、projectの入口と評価hostが同じ値を読む。
+各値は1以上の整数とし、Node.jsのtimerで表せる2,147,483秒を超える宣言は実行前に拒否する。
+評価hostは走行開始時に保存した宣言を使い、project側の書き換えで上限を延ばさない。
+
 時間上限を超えた入口は失敗する。
 `verify:push` の基線を省略した場合はHEADとする。
 基線は評価hostが最初のsourceを保存したcommitであり、task中にcommitして比較対象を変えない。

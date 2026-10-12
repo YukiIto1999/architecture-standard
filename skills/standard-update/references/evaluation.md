@@ -180,7 +180,8 @@ npm --prefix "$HOST_PROJECT" run verify:push -- --base "$HOST_BASE"
 
 変更前は最後のmutation検証を実行せず、canonical入力は振る舞いだけを、task1入力はhidden境界も検査する。
 変更後のMap taskではoracleの `--boundary` を `map` にする。
-T0のcheckは10秒、T1のverifyは2分、T2のverify:pushは15分を上限とし、依存導入とevaluatorとgraderの時間はprojectの各段の実測と区別する。
+projectの各段の上限は、固定fixtureの `verification-budget.json` から入口と評価hostが共通で読み、他のprojectへ一律に適用しない。
+依存導入とevaluatorとgraderの時間はprojectの各段の実測と区別する。
 hostでは `verify` がT0も実行するため、同じsourceの `check` を直前に重ねない。
 各commandが失敗したら後続の検証を実行せず、未実施を成功へ数えない。
 変更と影響範囲の選択不能、生成0件、未検出mutant、test未実行、判定未完了、型・静的検査・固定test・独立oracleの失敗は合格にしない。

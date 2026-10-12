@@ -6,7 +6,17 @@ import { run } from "./process.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const [stage, ...extra] = process.argv.slice(2);
-const budgets = { fast: 10_000, local: 120_000, push: 900_000 };
+const policy = JSON.parse(await readFile(join(root, "verification-budget.json"), "utf8"));
+if (policy.version !== 1) throw new Error("Unsupported verification budget version");
+const budgets = Object.fromEntries(Object.entries({
+  fast: "verify-fast", local: "verify", push: "verify-push",
+}).map(([stageName, taskName]) => {
+  const seconds = policy[taskName]?.seconds;
+  if (!Number.isSafeInteger(seconds) || seconds <= 0 || seconds * 1000 > 2_147_483_647) {
+    throw new Error(`Invalid verification budget for ${taskName}`);
+  }
+  return [stageName, seconds * 1000];
+}));
 if (!Object.hasOwn(budgets, stage)) throw new Error(`Unknown verification stage: ${stage}`);
 if (stage !== "push" && extra.length !== 0) throw new Error("Unexpected verification arguments");
 const started = performance.now();
@@ -28,7 +38,7 @@ async function fast() {
   await tool("types", "typescript/bin/tsc", ["--noEmit", "--project", "tsconfig.json"], fastRemaining());
   await tool("lint", "oxlint/bin/oxlint", ["--type-aware", "--deny-warnings", "src", "tests", "vitest.config.ts"], fastRemaining());
   await tool("format", "oxfmt/bin/oxfmt", ["--check", "src", "tests", "vitest.config.ts"], fastRemaining());
-  if (fastRemaining() < 0) throw new Error("T0 exceeded its 10-second budget");
+  if (fastRemaining() < 0) throw new Error(`T0 exceeded its ${budgets.fast} ms budget`);
 }
 
 async function tests() {
@@ -49,7 +59,7 @@ try {
     const localStarted = performance.now();
     await tests();
     const localElapsed = performance.now() - started;
-    if (localElapsed > budgets.local) throw new Error("T1 exceeded its 2-minute budget");
+    if (localElapsed > budgets.local) throw new Error(`T1 exceeded its ${budgets.local} ms budget`);
     steps.push({ name: "test-phase", elapsed_ms: performance.now() - localStarted });
   }
   if (stage === "push") {

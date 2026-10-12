@@ -508,7 +508,7 @@ function lineStoreRoot() {
 function readCanonicalLineStore() {
   const root = lineStoreRoot();
   const files = projectFiles(path.join(root, "project"));
-  for (const file of ["package.json", "package-lock.json", "README.md", ".gitignore", ".oxlintrc.json",
+  for (const file of ["package.json", "package-lock.json", "verification-budget.json", "README.md", ".gitignore", ".oxlintrc.json",
     "tsconfig.json", "vitest.config.ts", "scripts/verify.mjs", "scripts/mutation.mjs", "scripts/mutation-support.mjs", "scripts/process.mjs",
     "src/line-store.ts", "src/render-selected.ts", "tests/render-selected.test.ts", "tests/render-selected.property.test.ts", "tests/expect-results.ts"]) {
     if (!files[file]) throw new Error(`incomplete line-store fixture: ${file}`);
@@ -548,6 +548,14 @@ function readProjectSnapshot(canonical) {
   return snapshot;
 }
 
+function writeProjectFiles(root, files) {
+  for (const [file, entry] of Object.entries(files)) {
+    const destination = path.join(root, file);
+    mkdirSync(path.dirname(destination), { recursive: true });
+    writeFileSync(destination, entry.content);
+  }
+}
+
 function writeProductionSources(root, files) {
   rmSync(path.join(root, "src"), { recursive: true, force: true });
   for (const [file, entry] of Object.entries(files)) {
@@ -563,9 +571,7 @@ function prepareLineStore(fixtureRoot, runRoot) {
   const snapshot = projectSnapshot ? readProjectSnapshot(canonical) : null;
   const targetRoot = path.join(fixtureRoot, "target-project");
   rmSync(targetRoot, { recursive: true, force: true });
-  cpSync(path.join(lineStoreRoot(), "project"), targetRoot, {
-    recursive: true, filter: source => !isProjectGenerated(path.relative(path.join(lineStoreRoot(), "project"), source).split(path.sep).join("/")),
-  });
+  writeProjectFiles(targetRoot, canonical.files);
   if (snapshot) writeProductionSources(targetRoot, snapshot.files);
   saveJson(runRoot, "canonical-project.json", canonical);
   return { canonical_sha256: canonical.canonical_sha256,
@@ -581,20 +587,31 @@ function hostCommand(command, commandArgs, cwd, timeout) {
     error: result.error?.message ?? null, passed: result.status === 0 && !result.error && !result.signal };
 }
 
+function projectBudgetMs(canonical, taskName) {
+  const policy = JSON.parse(canonical.files["verification-budget.json"].content);
+  const seconds = policy[taskName]?.seconds;
+  if (policy.version !== 1 || !Number.isSafeInteger(seconds) || seconds <= 0
+    || seconds * 1000 > 2_147_483_647) {
+    throw new Error(`Invalid verification budget for ${taskName}`);
+  }
+  return seconds * 1000;
+}
+
 function verifyLineStore(fixtureRoot, runRoot, item, before, after) {
   const candidate = projectFiles(path.join(fixtureRoot, "target-project"));
-  const canonical = readCanonicalLineStore();
+  const canonical = JSON.parse(readFileSync(path.join(runRoot, "canonical-project.json"), "utf8"));
   const lockedChanges = [...new Set([...Object.keys(candidate), ...Object.keys(canonical.files)])]
     .filter(file => !isProductionSource(file) && candidate[file]?.sha256 !== canonical.files[file]?.sha256);
   const consumerChanges = [...new Set([...Object.keys(before), ...Object.keys(candidate)])]
     .filter(file => isProductionSource(file) && file !== "src/line-store.ts" && candidate[file]?.sha256 !== before[file]?.sha256);
   const requireConsumerStability = after && item.fixture.stage === "map" && Boolean(projectSnapshot);
-  const verificationRoot = mkdtempSync(path.join(tmpdir(), "architecture-standard-verification-"));
+  const verificationWorkspace = mkdtempSync(path.join(tmpdir(), "architecture-standard-verification-"));
+  const verificationRoot = path.join(verificationWorkspace, "project");
+  const hostRoot = path.join(verificationWorkspace, "host");
   const commands = [];
   try {
-    cpSync(path.join(lineStoreRoot(), "project"), verificationRoot, {
-      recursive: true, filter: source => !isProjectGenerated(path.relative(path.join(lineStoreRoot(), "project"), source).split(path.sep).join("/")),
-    });
+    writeProjectFiles(verificationRoot, canonical.files);
+    writeProjectFiles(hostRoot, canonical.host);
     writeProductionSources(verificationRoot, before);
     execFileSync("git", ["init", "--quiet"], { cwd: verificationRoot });
     configureFixtureGit(verificationRoot);
@@ -604,15 +621,15 @@ function verifyLineStore(fixtureRoot, runRoot, item, before, after) {
     writeProductionSources(verificationRoot, candidate);
     commands.push(hostCommand("npm", ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], verificationRoot, 120_000));
     if (commands.at(-1).passed) {
-      commands.push(hostCommand("npm", ["run", "verify"], verificationRoot, 120_000));
+      commands.push(hostCommand("npm", ["run", "verify"], verificationRoot, projectBudgetMs(canonical, "verify")));
     }
     if (commands.at(-1).passed) {
-      commands.push(hostCommand(process.execPath, [path.join(lineStoreRoot(), "host", "check.mjs"), verificationRoot,
+      commands.push(hostCommand(process.execPath, [path.join(hostRoot, "check.mjs"), verificationRoot,
         ...(after ? ["--boundary", item.fixture.stage === "hide" ? "hidden" : "map"]
           : projectSnapshot ? ["--boundary", "hidden"] : [])], verificationRoot, 120_000));
     }
     if (after && commands.at(-1).passed) {
-      commands.push(hostCommand("npm", ["run", "verify:push", "--", "--base", base], verificationRoot, 900_000));
+      commands.push(hostCommand("npm", ["run", "verify:push", "--", "--base", base], verificationRoot, projectBudgetMs(canonical, "verify-push")));
     }
     const reportsRoot = path.join(verificationRoot, "reports");
     const reports = existsSync(reportsRoot) ? projectFiles(reportsRoot) : {};
@@ -625,8 +642,8 @@ function verifyLineStore(fixtureRoot, runRoot, item, before, after) {
       verification_reports: Object.fromEntries(Object.entries(reports).filter(([file]) =>
         file.startsWith("verification-") || ["mutation/gate.json", "mutation/scope.json", "mutation/failure.json"].includes(file))) };
   } finally {
-    assertOwnedFixture(verificationRoot);
-    rmSync(verificationRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    assertOwnedFixture(verificationWorkspace);
+    rmSync(verificationWorkspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   }
 }
 
