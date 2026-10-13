@@ -12,7 +12,7 @@ principles の [legibility](../../principles/legibility/README.md) が定める�
 
 ## 規律
 
-- [判断の易しさを最適化する](./decision-simplicity.md) — レビュー(判断の単一性の判断)
+- [判断の易しさを最適化する](./decision-simplicity.md) — レビュー(判断の単一性と説明文の要否の判断)
 - [主操作と既定値を先に示し、頻用操作に近道を備える](./primary-action-defaults.md) — レビュー(主操作・既定値の判断)
 - [状態と結果を即時に返す](./immediate-feedback.md) — 機械(表示時間の E2E 計測)
 - [誤りを防ぎ、起きたら回復を助け、取り返せるようにする](./error-prevention-recovery.md) — 機械+レビュー(回復経路test+文言判断)
