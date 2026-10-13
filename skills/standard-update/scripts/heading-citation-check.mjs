@@ -2,11 +2,16 @@
 // 鉤括弧「」で引用された規律名が、同じ行の link 先 file の見出しに逐語一致するかを検査する。
 // 対象は標準本文(principles/concerns/structure/tools/languages/process + root README.md)。
 // fenced code の中は見出しとしても引用としても数えない。
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = resolve(fileURLToPath(new URL("../../../", import.meta.url)));
+const args = process.argv.slice(2);
+if (args.length !== 0 && (args.length !== 2 || args[0] !== "--standard-root" || args[1] === "")) {
+  console.error("usage: heading-citation-check.mjs [--standard-root ROOT]");
+  process.exit(2);
+}
+const ROOT = realpathSync(args.length === 2 ? args[1] : fileURLToPath(new URL("../../../", import.meta.url)));
 const AREAS = ["principles", "concerns", "structure", "tools", "languages", "process"];
 
 function mdFiles(dir) {

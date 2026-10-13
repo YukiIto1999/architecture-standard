@@ -1,7 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-required_commands=(bash dirname fd git node)
+STANDARD_ROOT_ARG=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --standard-root)
+      if [ -n "$STANDARD_ROOT_ARG" ] || [ "$#" -lt 2 ] || [ -z "$2" ]; then
+        printf 'FAIL: --standard-root には空でない path を一度だけ指定すること\nusage: %s [--standard-root ROOT]\n' "${BASH_SOURCE[0]##*/}" >&2
+        exit 2
+      fi
+      STANDARD_ROOT_ARG="$2"
+      shift 2
+      ;;
+    *)
+      printf 'FAIL: 不明な引数: %s\nusage: %s [--standard-root ROOT]\n' "$1" "${BASH_SOURCE[0]##*/}" >&2
+      exit 2
+      ;;
+  esac
+done
+
+required_commands=(bash dirname fd node)
+[ -n "$STANDARD_ROOT_ARG" ] || required_commands+=(git)
 for required_command in "${required_commands[@]}"; do
   if ! command -v "$required_command" >/dev/null 2>&1; then
     printf 'FAIL: missing required command: %s\n' "$required_command" >&2
@@ -10,11 +29,18 @@ for required_command in "${required_commands[@]}"; do
 done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-REPO_ROOT="$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null)" || {
-  printf 'FAIL: git repository で実行すること\n' >&2
-  exit 1
-}
-cd "$REPO_ROOT"
+if [ -n "$STANDARD_ROOT_ARG" ]; then
+  STANDARD_ROOT="$(CDPATH= cd -- "$STANDARD_ROOT_ARG" 2>/dev/null && pwd -P)" || {
+    printf 'FAIL: --standard-root が存在する directory ではない: %s\n' "$STANDARD_ROOT_ARG" >&2
+    exit 2
+  }
+else
+  STANDARD_ROOT="$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null)" || {
+    printf 'FAIL: git repository で実行すること\n' >&2
+    exit 1
+  }
+fi
+cd "$STANDARD_ROOT"
 
 node <<'NODE'
 const fs = require("node:fs");
@@ -182,6 +208,9 @@ for (const skillName of skillNames) {
           if (skillName !== "standard-apply" || (!lineStore && !semantic)) {
             reject(`${skillName}: fixture は明示された安全なkindとstageまたはreadingだけを持つこと`);
           }
+        }
+        if (Object.hasOwn(item, "standard_root") && !["owner-standard", "unspecified"].includes(item.standard_root)) {
+          reject(`${skillName}: standard_root は owner-standard または unspecified であること`);
         }
       }
     }

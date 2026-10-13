@@ -18,6 +18,14 @@ task eval は `skills/<id>/SKILL.md` を `read` で明示的に読み、方法�
 file 境界と Bash command は実行前に検査する。
 この隔離評価は、通常の dotfiles-wsl 配備や OMP の自然発火を実測した証拠にはしない。
 
+評価 runner は、fixture の作業 directory を既定の `<standard-root>`、成功して読んだ `SKILL.md` の directory を `<skill-package-root>` として prompt に明示する。
+この二つは fixture 内の別の directory であり、host の `<standard-root>` や配備環境の Nix source と client の symlink を再現しない。
+task の `standard_root` は、この既定を変える評価専用の指定であり、`owner-standard` と `unspecified` だけを受け付ける。
+`owner-standard` は、作業 directory の `owner-standard/` に本文だけの別 root を置き、runner が task ごとに定めた本文だけの差分を適用して、その root を `<standard-root>` として prompt に示す。
+fixture 直下の本文と `skills/` の package は、配備済みで固定された source の代役として変更しない。
+`unspecified` は、prompt から `<standard-root>` の指定だけを除き、指定がない状態の停止を測る。
+`owner-standard/` は `target-input.json` と `fixture_sha256` に含まれ、本文だけの差分と package の同一性を別々に比較できる。
+
 起動 command は `OMP_EVAL_COMMAND`、model は `OMP_EVAL_MODEL`、時間上限は `OMP_EVAL_TIMEOUT_MS` で指定できる。
 未指定の command は `omp` とし、eval 定義の `model: "default"` は host の `modelRoles.default` で解決する。
 明示した model selector を OMP へ渡し、model fallback と評価中の自動切替を無効にして、実際の provider と model を event から記録する。
@@ -28,13 +36,31 @@ host の認証はそのまま利用し、資格情報を fixture へ複製せず
 - script の決定的な処理だけを変更し、agent への instruction を変えない場合は、回帰検査を行う。script が生成する prompt を変える場合は instruction の変更として扱う。
 - SKILL.md または reference の instruction を変更した場合は、変更した判断を実際に必要とする task を `old-skill` と `with-skill` の2条件で隔離実行する。変更された file を監査対象に含むだけの task や、同じ skill を使うだけの task は選ばない。expectation、最終応答、tool event、diff、tracked / ignored status、実行 error、時間、token を比較する。新規 skill で旧版がない場合だけ `without-skill` を比較対象にする。
 - `evals/evals.json` だけを変更した場合は、変更した task を `with-skill` で実行する。現行 instruction の不足が失敗として再現した後に instruction を変更し、その段階で `old-skill` と `with-skill` を比較する。
-- description または `evals/trigger-evals.json` を変更した場合は、`scripts/run-trigger-evals.mjs` で全 query を実行する。
+- description または `evals/trigger-evals.json` を変更した場合は、`<skill-package-root>/scripts/run-trigger-evals.mjs` を `--standard-root "<standard-root>"` 付きで実行し、全 query を測る。
   evaluator の候補を同時に置き、expected skill または非発火を測り、`read` の完全な入力、本文の読み込み結果、観測中の実行 error、発火先を記録する。
   一回の runner 起動は各 query を一回ずつ新しい context で実行するため、発火の反復評価では runner を三回起動し、全回の結果を残す。
   非発火の成功には正常終了と terminal event を必要とし、timeout や選択した本文の読み込み失敗を非発火成功へ置き換えない。
 - release 前、または instruction と description の双方を横断して変更したときは、全 task の3条件比較と full trigger eval の両方を行う。それ以外は変更面ごとの上記範囲に限定する。instruction と `evals/trigger-evals.json` の変更を組み合わせた場合は、影響 task の2条件比較と full trigger eval をそれぞれ行い、全 task や `without-skill` へ広げない。
 
 task eval は本 task の完遂を、trigger eval は発火先だけを測る。起動成功を PASS とせず、別 context の grader が expectation ごとの成否と event または成果物の根拠を `grading.json` に残す。複数条件を比較した場合は、対象 task の集計を `benchmark.json` に残す。隔離 evaluator が実行できなければ model eval 完了とは扱わず、阻害要因を報告する。
+
+## 明示した標準 root の実行
+
+runner は `<skill-package-root>/scripts/` から実行し、評価する標準 repository を `--standard-root "<standard-root>"` で明示する。
+`<skill-package-root>` が Git の外にある不変 package でも、この明示だけで `<standard-root>` を評価できる。
+`<standard-root>` は物理 path へ解決し、`skills/` を持つ Git repository の root だけを受け付ける。
+`skills/` の package、eval 定義、fixture の入力、`--baseline-ref` の commit は `<standard-root>` から取得する。
+adapter、評価 policy、runner の digest は `<skill-package-root>` の file から取得し、`<standard-root>` に同名の helper があっても使わない。
+runner は `<skill-package-root>` へ書き込まず、task eval の成果物を `SKILL_EVAL_OUTPUT_ROOT` へ保存する。
+省略した場合の保存先は `<standard-root>/docs/reviews/skill-evals/iteration-1` である。
+空の値、重複、値のない option、`--standard-root=<path>` の形、存在しない path、directory でない path、Git の外の directory、repository の下位 directory、`skills/` を持たない repository は、provider と `omp` を起動する前に失敗する。
+この失敗は、作業 directory、固定 Rev、runner の所在の repository へ切り替えない。
+option を省略した場合だけ、runner が属する Git repository を評価する。
+Skill の手順は常にこの option を渡す。
+
+```bash
+node "<skill-package-root>/scripts/run-trigger-evals.mjs" standard-apply 0 --standard-root "<standard-root>"
+```
 
 ## 隔離比較
 
@@ -64,13 +90,21 @@ standard-update の eval-4 だけは、task の監査対象となる standard-au
 実作業のproduct検査と一般のreferenceは残し、taskが必要とする対象projectのAcceptedな契約や決定は隔離後にhostが置く。
 product 検査を instruction の効果へ混ぜないため、standard-update と standard-conformance の package checker は全比較条件へ同じ source から配置する。
 standard-update の conformance checker と回帰検査、CLI と PBT の package も同様に配置し、これらを `fixture_sha256` の対象に含める。
+standard-conformance の比較も、同梱 checker とその回帰検査を全条件へ同じ source から配置し、instruction の差と checker の差を混同しない。
 CLI と PBT の task は prompt 内の設計入力を使い、既存 Skill 用の worker fixture、標準本文の mutation、標準 repository の検証 command を追加しない。
 共通の本文 snapshot、README、task と model、target 入力は両条件へ同じものを渡す。
 `before-files.json` と `after-files.json` は評価に必要な本文と全変更 file の内容を持ち、`changed-files.json` は tracked、untracked、ignored の変更を列挙する。
 `target-input.json` は対象の全 source と test、および project 外の決定の記録を hash つきで保存し、`fixture_sha256` と `target_input_sha256` に入力の同一性を反映する。
 `tool-evidence.json` は tool の完全な入力と結果を保存し、未実施の読取や検証を最終応答の主張だけで補わない。
+actor へ実際に送った prompt は外側の `actor-prompt.txt` に保存し、規範 root と package root の指定も実入力として残す。
 
-standard-conformance の task では、host が `node skills/standard-conformance/scripts/check-coverage.mjs inventory` と `check` の prefix だけを Bash の追加許可へ渡す。
+標準 repository の task では、host が fixture の `skills/standard-update/scripts/` にある `verify.sh`、`verify-test.sh`、`skill-package-check.sh` だけを Bash の追加許可へ渡す。
+引数は省略するか、fixture 内の既存 directory を一つだけ指す `--standard-root` に限る。
+actor へ示す検証 command は `--standard-root <standard-root>` を含み、`<standard-root>` は prompt が示す値である。
+
+standard-conformance の task では、host が fixture の `skills/standard-conformance/scripts/check-coverage.mjs` の `inventory` と `check` だけを Bash の追加許可へ渡す。
+fixture からの相対 path と fixture の絶対 path が同じ file を指す場合は、どちらも同じ command として扱う。
+`--standard-root` の値は prompt が示す `<standard-root>` であり、既定は `.`、`owner-standard` の task では `owner-standard` である。
 報告は `runRoot/audit-reports/report.json` へ保存し、fixture の Git root 外ではその file だけを extension policy と prompt で書込先として許可する。
 評価対象へ採点情報や期待解答を渡さず、保存した報告は外側の `audit-reports.json` として tool 結果とともに grader へ渡す。
 `command_args` は host へ渡した実入力を保持し、`command_contract_args` は一時 control、fixture、報告専用 directory の割当を正規化する。
@@ -86,6 +120,12 @@ fixture 外への副作用は防げないため、信頼できるローカル評
 grader は空の一時 directory で tools と skill を無効化して起動する。
 各 expectation の成否と根拠、実際の task と rubric、grader の runner、instruction、schema、command 設定、指定 model と観測した model を `grading.json` へ残す。
 grader へ実際に送った user prompt は外側の `grader-prompt.txt` へ保存する。
+grader へ渡す source は、変更 file、task が明示した file、`target-project/` の file の本文を保持する。
+task が明示した file は、実行時に `eval_metadata.json` の `files` へ保存し、`--grade-only` もこの保存値を使う。
+`files` を持たない成果物は必要な本文を特定できないため採点せず、task の再実行を求める。
+それ以外の変更のない file は、host が前後の内容の一致を確かめた SHA-256 と byte 数を `unchanged-files.json` へ一度だけ渡し、未読の意味を hash から補わせない。
+元の `before-files.json` と `after-files.json` は全文を保存したままにし、実読取りは tool evidence、採点の実入力は `grader-prompt.txt` から辿れるようにする。
+`execution-package.json` は、actor が使える選択 Skill package の全通常 file について実行前後の SHA-256 を保存し、本文と checker の無変更も source の不変として確かめる。
 両条件の採点が揃った時点で `benchmark.json` を生成し、本文、task定義、対象入力、runner、providerと実行設定、command契約、実model、採点provenanceが一致しない比較から品質の改善量を算出しない。
 基線に新設 Skill がなく、明示的な過去の package snapshot による実行もない比較では、`comparison_configuration` を `without-skill` とし、`delta_with_minus_without` に差を残す。
 この比較だけは、raw command を保持したまま、prompt 内の Skill 使用条件の一段落だけを比較用に正規化する。
@@ -95,19 +135,19 @@ grader へ実際に送った user prompt は外側の `grader-prompt.txt` へ保
 採点 provenance または実際の model の記録がない過去の結果は、比較可能としない。
 時間、費用、token、tool call、tool error は品質と別に記録する。
 
-次の command は、標準の作業 checkout の root から保存済みの二つの skill directory と共通 README を比較する入口である。
+次の command は、保存済みの二つの skill directory と共通 README を比較する入口である。
 `EVAL_SUITE` と `EVAL_IDS` は今回の変更が必要とする集合とケースにし、`EVAL_OUTPUT_ROOT` と snapshot は host が割り当てた一時 directory または依頼で指定された保存先を使う。
 
 ```bash
 SKILL_EVAL_OUTPUT_ROOT="$EVAL_OUTPUT_ROOT" \
-  node skills/standard-update/scripts/run-task-evals.mjs \
+  node "<skill-package-root>/scripts/run-task-evals.mjs" --standard-root "<standard-root>" \
   --configuration old-skill --skill standard-update \
   --suite "$EVAL_SUITE" --eval-id "$EVAL_IDS" \
   --eval-file "$EVAL_FILE" \
   --baseline-ref "$BASELINE_COMMIT" --skill-snapshot "$OLD_SKILL" \
   --context-readme "$CONTEXT_README" --grade
 SKILL_EVAL_OUTPUT_ROOT="$EVAL_OUTPUT_ROOT" \
-  node skills/standard-update/scripts/run-task-evals.mjs \
+  node "<skill-package-root>/scripts/run-task-evals.mjs" --standard-root "<standard-root>" \
   --configuration with-skill --skill standard-update \
   --suite "$EVAL_SUITE" --eval-id "$EVAL_IDS" \
   --eval-file "$EVAL_FILE" \
@@ -131,7 +171,7 @@ mock の harness 回帰検査を model eval の代替や改善の証拠にしな
 
 ```bash
 SKILL_EVAL_OUTPUT_ROOT="$BOUNDARY_OUTPUT" \
-  node skills/standard-update/scripts/run-task-evals.mjs \
+  node "<skill-package-root>/scripts/run-task-evals.mjs" --standard-root "<standard-root>" \
   --configuration with-skill --skill standard-apply \
   --suite semantic-boundaries --eval-id 7,8 \
   --baseline-ref "$BASELINE_COMMIT" --standard-snapshot "$STANDARD_SNAPSHOT" \
@@ -142,6 +182,31 @@ SKILL_EVAL_OUTPUT_ROOT="$BOUNDARY_OUTPUT" \
 Skill効果を比較する場合は本文snapshotと対象入力を固定し、既存の `old-skill` と `with-skill` を使う。
 同じ入力を独立した三回のsessionへ渡す場合は各pairに別output rootを割り当て、旧新版の順序を交互にし、個別の失敗や未完了も残す。
 三回の反復は統計的な保証でも全判断の理解の証明でもない。
+
+## 現行規範 root と package の分離
+
+standard-conformance の eval-5 は、package の checker が読めない形へ `owner-standard/` の対応表だけを進め、CLI の `INVALID` を配送の不足として報告し、fixture 直下の本文へ切り替えないかを測る。
+standard-apply の eval-11 は、`<standard-root>` が示されない状態で、作業 directory や Skill の所在から標準本文を探さず、前提の不足として止まるかを測る。
+どちらも `old-skill` と `with-skill` を比較し、`without-skill` へ広げない。
+旧 instruction は Skill の所在から標準 root を導くため、`old-skill` は fixture 直下の本文を使い続けるかを観測する対象である。
+旧 package は変更前の commit の `skills/<id>/` から取得し、新 package は変更後の working tree の同じ directory を別の directory へ保存して渡す。
+二つの task の本文条件と runner は同じにし、`OLD_PACKAGE` と `NEW_PACKAGE` だけを `--skill-snapshot` で入れ替える。
+
+```bash
+for CASE in "standard-conformance 5" "standard-apply 11"; do
+  set -- $CASE
+  SKILL_EVAL_OUTPUT_ROOT="$AUTHORITY_OUTPUT" \
+    node "<skill-package-root>/scripts/run-task-evals.mjs" --standard-root "<standard-root>" \
+    --configuration old-skill --skill "$1" --eval-id "$2" \
+    --baseline-ref "$BASELINE_COMMIT" --skill-snapshot "$OLD_PACKAGE/$1" --grade
+  SKILL_EVAL_OUTPUT_ROOT="$AUTHORITY_OUTPUT" \
+    node "<skill-package-root>/scripts/run-task-evals.mjs" --standard-root "<standard-root>" \
+    --configuration with-skill --skill "$1" --eval-id "$2" \
+    --baseline-ref "$BASELINE_COMMIT" --skill-snapshot "$NEW_PACKAGE/$1" --grade
+```
+
+この測定は隔離した fixture の指示効果であり、dotfiles-wsl の配備、gate の receipt、generation 切替後の session の経路を実測した証拠にしない。
+その実測は dotfiles-wsl 側の runtime 検査と実 session の観測が行う。
 
 ## 実行可能な格納fixture
 
@@ -208,17 +273,17 @@ snapshotに含まれるtestや設定は復元せず、正本の固定資材を�
 
 ```bash
 SKILL_EVAL_OUTPUT_ROOT="$HIDE_OUTPUT" \
-  node skills/standard-update/scripts/run-task-evals.mjs \
+  node "<skill-package-root>/scripts/run-task-evals.mjs" --standard-root "<standard-root>" \
   --configuration with-skill --skill standard-apply --eval-id 9 \
   --baseline-ref "$BASELINE_COMMIT" --standard-snapshot "$STANDARD_SNAPSHOT" \
   --skill-snapshot "$SKILL_SNAPSHOT" --grade
 SKILL_EVAL_OUTPUT_ROOT="$MAP_BEFORE_OUTPUT" \
-  node skills/standard-update/scripts/run-task-evals.mjs \
+  node "<skill-package-root>/scripts/run-task-evals.mjs" --standard-root "<standard-root>" \
   --configuration with-skill --skill standard-apply --eval-id 10 \
   --baseline-ref "$BASELINE_COMMIT" --standard-snapshot "$STANDARD_SNAPSHOT" \
   --skill-snapshot "$SKILL_SNAPSHOT" --grade
 SKILL_EVAL_OUTPUT_ROOT="$MAP_AFTER_OUTPUT" \
-  node skills/standard-update/scripts/run-task-evals.mjs \
+  node "<skill-package-root>/scripts/run-task-evals.mjs" --standard-root "<standard-root>" \
   --configuration with-skill --skill standard-apply --eval-id 10 \
   --baseline-ref "$BASELINE_COMMIT" --standard-snapshot "$STANDARD_SNAPSHOT" \
   --skill-snapshot "$SKILL_SNAPSHOT" \
@@ -235,11 +300,15 @@ focused harnessは次の入口を使い、順序、重複、範囲、状態不�
 scripted providerは候補sourceを置く回帰用の入力であり、modelの理解や完遂の証拠にはしない。
 
 ```bash
-bash skills/standard-update/scripts/skill-test.sh --line-store-only
-node --test skills/standard-apply/evals/fixtures/line-store/host/mutation-gate.test.mjs
-bash skills/standard-update/scripts/skill-test.sh
-bash skills/standard-update/scripts/skill-package-check.sh
+bash "<skill-package-root>/scripts/skill-test.sh" --standard-root "<standard-root>" --line-store-only
+node --test "<standard-root>/skills/standard-apply/evals/fixtures/line-store/host/mutation-gate.test.mjs"
+bash "<skill-package-root>/scripts/skill-test.sh" --standard-root "<standard-root>"
+bash "<skill-package-root>/scripts/skill-package-check.sh" --standard-root "<standard-root>"
 ```
+
+`evaluator-regression.test.mjs` は `skill-test.sh` が実行する。
+`skill-test.sh` は `--standard-root` の値を環境変数 `EVALUATOR_REGRESSION_STANDARD_ROOT` としてこの検査へ渡し、省略した場合だけ package が属する repository を対象にする。
+不正な `--standard-root` が provider と `omp` を起動しないこと、保存した task の `files` が grade-only の入力でも全文のまま残ることを、実 runner の終了状態と保存した成果物で確かめる。
 
 実 model smoke は上の eval-7、eval-8 と eval-9、eval-10 の command を OMP で実行し、task と grader の両 artifact を確認する。
 model、認証、依存取得、実command policy、時間上限のどれかが成立しなければ、その失敗を残して未実行または不合格とし、回帰検査や説明で成功に置き換えない。

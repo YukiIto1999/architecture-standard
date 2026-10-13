@@ -11,7 +11,13 @@ description: architecture-standard に対する対象プロジェクトの適合
 
 ## 前提
 
-- この Skill の所在（`skills/standard-conformance/SKILL.md`）から二段上の親 directory を `<standard-root>` として固定する。
+- `<standard-root>` は現行規範 root であり、標準を管理する owner が現在の規範として指定した checkout の root である。
+  依頼が明示した値か、host の agent policy が案内する値を使う。
+  gate がある host では `dotfiles-agent-gate standard-root` がこの値を出力する。
+  この Skill の配備先、固定 Rev、remote の HEAD、`pwd`、対象 project 内の複製から導かない。
+  値を得られなければ不足する前提として報告し、配備済み source の標準本文で監査を始めない。
+- `<skill-package-root>` は、成功して読んだこの `SKILL.md` を symlink の実体まで辿った directory である。
+  同梱の `scripts/check-coverage.mjs` はここから実行し、`<standard-root>` の標準本文とは別の root として扱う。
 - 基準は `<standard-root>` の現在の `README.md` と、`principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/` 配下の規範文書とする。
 - 対象 project の directory を `<project-root>` とし、その directory を含む Git repository と Node.js、Git を使える環境で監査する。
 - 基線台帳は対象 project の `docs/conformance-baseline.json` とし、`baseline.file` もこの project 相対 path と完全に一致させる。
@@ -26,7 +32,7 @@ description: architecture-standard に対する対象プロジェクトの適合
 全域監査は、現在の正本と対象 project から期待文書集合と digest を取得して始める。
 
 ```bash
-node "<standard-root>/skills/standard-conformance/scripts/check-coverage.mjs" inventory \
+node "<skill-package-root>/scripts/check-coverage.mjs" inventory \
   --standard-root "<standard-root>" --project-root "<project-root>"
 ```
 
@@ -34,6 +40,10 @@ stdout の `status: INVENTORY` と `standardDigest`、`projectDigest`、`documen
 期待集合は root `README.md` と六領域配下の全 Markdown 文書から自動導出されるため、固定した文書一覧や以前の監査結果で置き換えない。
 `requiredChecks[document]` は、その文書について正本から導いた `[{rule: "file#heading", kinds: ["machine", "review"]}]` の形の検査割当であり、`kinds` は規律ごとの実際の割当に従う。
 割当は principles と concerns の概念 README の規律台帳、および `languages/*/inspection.md` の対応表から取得され、別の registry で管理しない。
+検証欄の「…対象について、」は適用対象の説明として読み、その後の機械検査とレビューの割当を保持する。
+この説明だけで非適用とせず、対象との照合結果を後述の applicability に残す。
+言語の検証対応表について、既知の見出しと3列の対応表、少なくとも一つの検証割当を読めない場合は `INVALID` とする。
+未知の構造を「割当なし」へ置き換えず、前述の機械検査とレビューを欠いた報告で合格させない。
 各領域の欠落や空、正本の読取失敗、Git repository に含まれない対象は開始条件を満たさない。
 CLI を使えない場合は欠けている実行環境や配備物を報告し、監査完了や PASS、WARN としない。
 
@@ -47,14 +57,14 @@ captured digest だけを新しい値へ書き換え、以前の証拠を新し�
 
 ### 照合
 
-1. `<standard-root>/README.md` と [process/audit.md](../../process/audit.md) を読み、現在の判定の枠と監査順序を使う。
+1. `<standard-root>/README.md` と `<standard-root>/process/audit.md` を読み、現在の判定の枠と監査順序を使う。
    対象 project の README、manifest、source、設定、test、決定の記録から、言語、実行経路、境界、依存方向、検証入口を確認する。
 2. 監査順序に沿って、設定 drift、境界、横断規律、原則、言語と道具の規律を照合する。
    `BannedSymbols`、`clippy.toml`、`oxlint`、`biome`、`.editorconfig` 等の設定は、対象が採用している機構について確認する。
 3. 文書ごとに適用条件を source と project の出典で判断し、`checked`、`not-applicable`、`unresolved` のいずれかを記録する。
    すべての言語や道具を一律に適用対象へしない一方、条件付きの文書も期待集合から削除しない。
    未読、未調査、証拠不足は非適用の理由にせず、`unresolved` と不足する根拠を残す。
-4. 適用する規律は [structure/tests/methods.md](../../structure/tests/methods.md) の割当方針と inventory の `requiredChecks` に従い、対象 project の検証入口の実行とレビューで照合する。
+4. 適用する規律は `<standard-root>/structure/tests/methods.md` の割当方針と inventory の `requiredChecks` に従い、対象 project の検証入口の実行とレビューで照合する。
    割当のある文書は、各規律を `checks.rule` で完全に一致する正本の `file#heading` として指し、要求された kind ごとに検査を残す。
    machine と review の両方を要求する規律は、片方だけで完了としない。
    実行結果には command と結果の locator、レビュー結果には対象と判断の locator を残す。
@@ -179,7 +189,7 @@ machine と review の検査は `kind: machine | review`、`status: passed | fai
 旧項目を現在の規範の代わりにしたり、path を読み替えて一致した既存違反にしたりしない。
 報告の `baseline.status` や `newCount: 0` で実ファイルとの比較を代替しない。
 基線台帳がなければ `baseline-not-found` とし、観測した違反をすべて新規として扱う。
-新規違反を追記して基線を肥大化させず、解消後の削除は project 側の変更として [process/audit.md](../../process/audit.md) に従う。
+新規違反を追記して基線を肥大化させず、解消後の削除は project 側の変更として `<standard-root>/process/audit.md` に従う。
 
 ## 完了検査
 
@@ -187,7 +197,7 @@ machine と review の検査は `kind: machine | review`、`status: passed | fai
 直接実行する場合の入口は次の CLI とし、host の監査完了 gate を使う場合は後述の登録 command で同じ checker を実行するため、直接の check を重ねない。
 
 ```bash
-node "<standard-root>/skills/standard-conformance/scripts/check-coverage.mjs" check \
+node "<skill-package-root>/scripts/check-coverage.mjs" check \
   --standard-root "<standard-root>" --project-root "<project-root>" \
   --report "<report-path>"
 ```
@@ -210,6 +220,11 @@ CLI の結果が `INCOMPLETE`、`INVALID`、`FAIL` なら、PASS や WARN とし
 文書の欠落、余分、重複、不足証拠、正本に割り当てられた rule や kind の欠落、`not-run`、`unresolved`、古い digest、新規違反は完了検査を通過しない。
 全文書を `not-applicable` にした場合や、適用判断だけで実照合結果が一件もない場合は、空の監査として未完了とする。
 
+`INVALID` の `diagnostics` が `<standard-root>` の標準本文の読取や構造の検査に由来する場合は、標準本文の欠損か、成功して読んだ Skill package の checker がその本文を扱えない配送の不足である。
+どちらも PASS や WARN にせず、`<standard-root>` の標準本文と checker の package を別々に特定して報告する。
+旧い本文、`<skill-package-root>` の近くにある本文、別の root へ切り替えて合格を作らない。
+checker が扱えない場合は、source の更新と再配備を不足する前提として報告する。
+
 完了検査が確かめるのは、現在の期待集合に対して文書単位の coverage が閉じ、正本から導いた検査割当ごとに実検査または根拠付きの非適用判断が残り、実基線台帳との差分が合格条件を満たすことである。
 割当のない全規範命題を新たに抽出する検査ではなく、引用の意味、適用判断の妥当性、証拠の真偽、文書内の全規範命題への実検査は保証しない。
 project の analyzer や実行テスト、独立レビューの代わりではなく、すべての設計思想を機械検証したことにもならない。
@@ -225,18 +240,19 @@ dotfiles-agent-gate conformance --session "<実 session ID>" \
 ```
 
 session ID は実際の client context または stop が示した command から取得し、推測で作らない。
-この adapter は成功して読んだ canonical Skill と同じ物理的な正本 root の checker を実行し、終了コード0で PASS か WARN の場合だけ receipt を記録する。
-同じ本文を別の root へコピーして、成功読取した正本束との照合を回避しない。
+`--standard-root` には前提の `<standard-root>` を渡し、gate は自身が持つ現行規範 root と一致しない値を受け付けない。
+この adapter は、成功して読んだ Skill package の `scripts/check-coverage.mjs` を、その `<standard-root>` に対して実行し、終了コード0で PASS か WARN の場合だけ receipt を記録する。
+同じ本文を別の場所へコピーした package や、成功して読んでいない package で、読んだ package との照合を回避しない。
 この Skill の canonical 本文を成功して読んだ session は、stop でその receipt を必要とする。
-stop は現在の inventory と、Skill、正本、project source、報告、checker の鮮度を照合し、同じ観測に対する check を重ねて実行しない。
-正本や source が変わった場合は再評価し、Skill の配備内容が変わった場合は canonical 本文を読み直してから、登録 command を実行し直す。
+stop は現在の inventory と、Skill package、`<standard-root>` の正本、project source、報告、checker の鮮度を照合し、同じ観測に対する check を重ねて実行しない。
+正本や source が変わった場合は再評価し、Skill package の配備内容が変わった場合は canonical 本文を読み直してから、登録 command を実行し直す。
 
 checker と規範の正本は architecture-standard が、receipt と stop の強制は dotfiles の runtime が所有する。
 runtime gate がない host では Node CLI を直接実行し、その CLI を CI や検証入口へ接続する責務は対象 project の所有者へ渡す。
 読み取り専用監査で CI 設定を勝手に編集せず、未接続の状態を自動 stop 強制済みとして報告しない。
-gate があっても必要な checker が旧配備にない場合は、source の更新と再配備を不足する前提として報告し、receipt 登録済みとは扱わない。
+gate があっても、成功して読んだ package に必要な checker がない場合や、その checker が現行の標準本文を扱えない場合は、source の更新と再配備を不足する前提として報告し、receipt 登録済みとは扱わない。
 
 ## Non-goals
 
-- 指摘の修正やコードの書き換えは行わず、修正は `standard-apply` と [process/implementation.md](../../process/implementation.md)、[process/refactoring.md](../../process/refactoring.md) へ渡す。
+- 指摘の修正やコードの書き換えは行わず、修正は `standard-apply` と `<standard-root>/process/implementation.md`、`<standard-root>/process/refactoring.md` へ渡す。
 - 標準側の本文や規律を編集せず、標準側の矛盾や不足は `standard-feedback` へ渡す。

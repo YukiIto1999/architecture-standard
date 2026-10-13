@@ -1,21 +1,28 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { loadedSkill, ompTimeout, resolveOmpModel, runOmp } from "./omp-eval-adapter.mjs";
 
-const repoRoot = execFileSync("git", ["-C", fileURLToPath(new URL("../../../", import.meta.url)), "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
-const skillName = process.argv[2];
+const argv = process.argv.slice(2);
+const repoRoot = standardRepositoryRoot(argv);
+const standardRootPosition = argv.indexOf("--standard-root");
+const positional = argv.filter((_, index) => standardRootPosition === -1
+  || (index !== standardRootPosition && index !== standardRootPosition + 1));
+if (positional.length > 2 || positional.some((arg, index) => index > 0 && !/^\d+$/.test(arg))) {
+  throw new Error("usage: run-trigger-evals.mjs SKILL [QUERY_INDEX] [--standard-root ROOT]");
+}
+const skillName = positional[0];
 const allowedSkills = new Set(["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update", "cli-design", "property-testing"]);
 if (!allowedSkills.has(skillName)) throw new Error(`skill must be one of ${[...allowedSkills].join(", ")}`);
 const timeoutMs = ompTimeout(60_000);
 const resolvedModel = resolveOmpModel();
 const sourceRoot = path.join(repoRoot, "skills", skillName);
 const allQueries = JSON.parse(readFileSync(path.join(sourceRoot, "evals", "trigger-evals.json"), "utf8"));
-const selectedQuery = process.argv[3] === undefined ? null : Number(process.argv[3]);
+const selectedQuery = positional[1] === undefined ? null : Number(positional[1]);
 if (selectedQuery !== null && (!Number.isInteger(selectedQuery) || selectedQuery < 0 || selectedQuery >= allQueries.length)) {
   throw new Error(`query index must be an integer from 0 to ${allQueries.length - 1}`);
 }
@@ -75,4 +82,28 @@ async function evaluateQuery(query) {
     actual_models: execution.parsed.actual_models, model_usage: execution.parsed.model_usage,
     usage: execution.parsed.usage, total_cost_usd: execution.parsed.total_cost_usd,
     error, trace, tool_evidence: calls };
+}
+
+function standardRepositoryRoot(args) {
+  const flag = "--standard-root";
+  if (args.some(arg => arg.startsWith(flag) && arg !== flag)) throw new Error(`pass ${flag} ROOT as two arguments`);
+  const positions = args.flatMap((arg, index) => arg === flag ? [index] : []);
+  const gitRoot = directory => realpathSync(execFileSync("git", ["-C", directory, "rev-parse", "--show-toplevel"],
+    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim());
+  if (positions.length === 0) {
+    try { return gitRoot(fileURLToPath(new URL("../../../", import.meta.url))); } catch {
+      throw new Error(`this package is not inside a Git repository; pass ${flag} ROOT`);
+    }
+  }
+  const value = args[positions[0] + 1];
+  if (positions.length !== 1 || !value || value.startsWith("-")) throw new Error(`${flag} requires exactly one directory`);
+  let root;
+  try { root = realpathSync(value); } catch { throw new Error(`${flag} does not exist: ${value}`); }
+  if (!statSync(root).isDirectory()) throw new Error(`${flag} is not a directory: ${root}`);
+  let toplevel = null;
+  try { toplevel = gitRoot(root); } catch {}
+  if (toplevel !== root || !existsSync(path.join(root, "skills"))) {
+    throw new Error(`${flag} must be the root of a Git repository with skills/: ${root}`);
+  }
+  return root;
 }

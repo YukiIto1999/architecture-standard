@@ -1,12 +1,42 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+STANDARD_ROOT_ARG=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --standard-root)
+      if [ -n "$STANDARD_ROOT_ARG" ] || [ "$#" -lt 2 ] || [ -z "$2" ]; then
+        printf 'FAIL: --standard-root には空でない path を一度だけ指定すること\nusage: %s [--standard-root ROOT]\n' "${BASH_SOURCE[0]##*/}" >&2
+        exit 2
+      fi
+      STANDARD_ROOT_ARG="$2"
+      shift 2
+      ;;
+    *)
+      printf 'FAIL: 不明な引数: %s\nusage: %s [--standard-root ROOT]\n' "$1" "${BASH_SOURCE[0]##*/}" >&2
+      exit 2
+      ;;
+  esac
+done
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-REPO_ROOT="$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null)" || {
-  printf 'FAIL: git repository で実行すること\n' >&2
-  exit 1
-}
-VERIFY_REL="skills/standard-update/scripts/verify.sh"
+if [ -n "$STANDARD_ROOT_ARG" ]; then
+  STANDARD_ROOT="$(CDPATH= cd -- "$STANDARD_ROOT_ARG" 2>/dev/null && pwd -P)" || {
+    printf 'FAIL: --standard-root が存在する directory ではない: %s\n' "$STANDARD_ROOT_ARG" >&2
+    exit 2
+  }
+else
+  STANDARD_ROOT="$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null)" || {
+    printf 'FAIL: git repository で実行すること\n' >&2
+    exit 1
+  }
+fi
+for standard_entry in README.md skills principles concerns structure tools languages process; do
+  if [ ! -e "$STANDARD_ROOT/$standard_entry" ]; then
+    printf 'FAIL: 標準 root に %s がない: %s\n' "$standard_entry" "$STANDARD_ROOT" >&2
+    exit 2
+  fi
+done
 TEMP_BASE="${TMPDIR:-/tmp}"
 TEMP_BASE="$(cd "$TEMP_BASE" 2>/dev/null && pwd -P)" || {
   printf 'FAIL: 一時ディレクトリを作成できない\n' >&2
@@ -26,7 +56,10 @@ esac
 cleanup() {
   case "$TEST_ROOT" in
     "$TEMP_BASE"/architecture-standard-verify-test.*)
-      [ ! -e "$TEST_ROOT" ] || rm -rf -- "$TEST_ROOT"
+      if [ -e "$TEST_ROOT" ]; then
+        find "$TEST_ROOT" -type d -exec chmod u+w {} +
+        rm -rf -- "$TEST_ROOT"
+      fi
       ;;
   esac
 }
@@ -44,25 +77,34 @@ make_fixture() {
 
   mkdir -p "$fixture" || return 1
   cp -a \
-    "$REPO_ROOT/README.md" \
-    "$REPO_ROOT/skills" \
-    "$REPO_ROOT/principles" \
-    "$REPO_ROOT/concerns" \
-    "$REPO_ROOT/structure" \
-    "$REPO_ROOT/tools" \
-    "$REPO_ROOT/languages" \
-    "$REPO_ROOT/process" \
+    "$STANDARD_ROOT/README.md" \
+    "$STANDARD_ROOT/skills" \
+    "$STANDARD_ROOT/principles" \
+    "$STANDARD_ROOT/concerns" \
+    "$STANDARD_ROOT/structure" \
+    "$STANDARD_ROOT/tools" \
+    "$STANDARD_ROOT/languages" \
+    "$STANDARD_ROOT/process" \
     "$fixture/" || return 1
-  git -C "$fixture" init --quiet || return 1
   printf '%s\n' "$fixture"
+}
+
+run_driver() {
+  local driver="$1"
+  local cwd="$2"
+
+  shift 2
+  (
+    cd "$cwd" || exit 1
+    GIT_CEILING_DIRECTORIES="$TEST_ROOT" bash "$driver" "$@"
+  ) 2>&1
 }
 
 run_verify() {
   local fixture="$1"
-  (
-    cd "$fixture" || exit 1
-    bash "$VERIFY_REL"
-  ) 2>&1
+  local driver="${2:-$SCRIPT_DIR/verify.sh}"
+
+  run_driver "$driver" "$TEST_ROOT" --standard-root "$fixture"
 }
 
 record_pass() {
@@ -79,9 +121,10 @@ record_fail() {
 expect_pass() {
   local label="$1"
   local fixture="$2"
+  local driver="${3:-$SCRIPT_DIR/verify.sh}"
   local output
 
-  if output=$(run_verify "$fixture"); then
+  if output=$(run_verify "$fixture" "$driver"); then
     record_pass "$label"
   else
     record_fail "$label" "$output"
@@ -91,17 +134,69 @@ expect_pass() {
 expect_fail() {
   local label="$1"
   local fixture="$2"
-  local expected="$3"
   local output
+  local expected
 
+  shift 2
   if output=$(run_verify "$fixture"); then
     record_fail "$label" "verify.sh が PASS した"
-  elif ! printf '%s\n' "$output" | rg -qF "$expected"; then
+    return
+  fi
+  for expected in "$@"; do
+    if ! printf '%s\n' "$output" | rg -qF "$expected"; then
+      record_fail "$label" "期待した診断がない: $expected
+$output"
+      return
+    fi
+  done
+  record_pass "$label"
+}
+
+expect_rejected_before_checks() {
+  local label="$1"
+  local expected_status="$2"
+  local expected="$3"
+  local driver="$4"
+  local cwd="$5"
+  local output
+  local status
+
+  shift 5
+  output=$(run_driver "$driver" "$cwd" "$@") && status=0 || status=$?
+  if [ "$status" != "$expected_status" ]; then
+    record_fail "$label" "終了 status が $expected_status ではない: $status
+$output"
+  elif ! printf '%s\n' "$output" | rg -qF -- "$expected"; then
     record_fail "$label" "期待した診断がない: $expected
+$output"
+  elif printf '%s\n' "$output" | rg -qF '=== 1.'; then
+    record_fail "$label" "拒否前に検査を開始した
 $output"
   else
     record_pass "$label"
   fi
+}
+
+place_package_copy() {
+  local root="$1"
+
+  rm -rf -- "$root/skills/standard-update/scripts"
+  mkdir -p "$root/skills/standard-update"
+  cp -a "$SCRIPT_DIR" "$root/skills/standard-update/scripts"
+}
+
+poison_norm() {
+  local root="$1"
+  local overlap_line='検査用の「これは見出しではない引用でありそのまま重複判定に含まれる」文である。'
+
+  printf '\n%s\n' "$overlap_line" >> "$root/principles/comment/no-code-explanation.md"
+  printf '\n%s\n' "$overlap_line" >> "$root/concerns/privacy/minimize-and-expire.md"
+  sed -i '0,/^### 根拠$/{s//### __SWAP__/}' "$root/concerns/privacy/minimize-and-expire.md"
+  sed -i '0,/^### 完了条件$/{s//### 根拠/}' "$root/concerns/privacy/minimize-and-expire.md"
+  sed -i 's/^### __SWAP__$/### 完了条件/' "$root/concerns/privacy/minimize-and-expire.md"
+  printf '\n文脈の伝播は [observability](../observability/README.md) の「存在しない規律」に従う。\n' >> "$root/concerns/transaction/single-write-path.md"
+  printf '\nZzqxy は、検査用の製品である。\n' >> "$root/concerns/experience/decision-simplicity.md"
+  printf '\n二次の読みモデルを許す。\n' >> "$root/concerns/persistence/normalization.md"
 }
 
 fixture=$(make_fixture baseline)
@@ -315,6 +410,54 @@ expect_fail "検証手段を欠く台帳行を検出する" "$fixture" "概念�
 fixture=$(make_fixture tool-entry-line-missing)
 sed -i '/^撤回条件は、/d' "$fixture/languages/rust/sqlx.md"
 expect_fail "languages のツール file の entry 4行の欠落を検出する" "$fixture" "entry の4行を欠くツール file あり"
+
+fixture=$(make_fixture package-poisoned-norm)
+poison_norm "$fixture"
+place_package_copy "$fixture"
+package_verify="$fixture/skills/standard-update/scripts/verify.sh"
+fixture=$(make_fixture package-clean-target)
+expect_pass ".git のない package が同梱する別の標準本文を読まず対象 root だけを検査する" "$fixture" "$package_verify"
+
+fixture=$(make_fixture target-scripts-not-selected)
+poison_norm "$fixture"
+stub_scripts="$fixture/skills/standard-update/scripts"
+mkdir -p "$stub_scripts"
+printf 'exit 0\n' > "$stub_scripts/verify.sh"
+printf 'console.log("candidates: 0");\n' > "$stub_scripts/verbatim-overlap.mjs"
+printf 'console.log("violations: 0");\n' > "$stub_scripts/naming-registry-check.mjs"
+printf 'console.log("citation violations: 0");\n' > "$stub_scripts/heading-citation-check.mjs"
+printf 'BEGIN { print "violations: 0" }\n' > "$stub_scripts/discipline-sections.awk"
+expect_fail "対象 root が置いた検査 script ではなく選択した package の script を実行する" "$fixture" \
+  "逐語一致の候補あり" "tools に未登録の製品名指しあり" "正本の見出しに無い規律名" "規律単位の必須節が不正"
+
+fixture=$(make_fixture package-without-git)
+place_package_copy "$fixture"
+valid_cwd=$(make_fixture rejected-root-cwd)
+package_verify="$fixture/skills/standard-update/scripts/verify.sh"
+expect_rejected_before_checks "root 省略時は package に Git repository がなければ別の標準を探さず失敗する" 1 "git repository で実行すること" "$package_verify" "$valid_cwd"
+poison_norm "$fixture"
+git -C "$fixture" init --quiet
+if output=$(run_driver "$package_verify" "$valid_cwd"); then
+  record_fail "root 省略時は package を含む repository を検査する" "verify.sh が PASS した"
+elif ! printf '%s\n' "$output" | rg -qF "逐語一致の候補あり"; then
+  record_fail "root 省略時は package を含む repository を検査する" "期待した診断がない: 逐語一致の候補あり
+$output"
+else
+  record_pass "root 省略時は作業 directory ではなく package を含む repository を検査する"
+fi
+
+verify_driver="$SCRIPT_DIR/verify.sh"
+empty_root="$TEST_ROOT/not-a-standard-root"
+mkdir -p "$empty_root"
+printf 'file\n' > "$TEST_ROOT/not-a-directory"
+expect_rejected_before_checks "存在しない --standard-root を作業 directory へ置き換えない" 2 "存在する directory ではない" "$verify_driver" "$valid_cwd" --standard-root "$TEST_ROOT/missing-root"
+expect_rejected_before_checks "file を --standard-root として受理しない" 2 "存在する directory ではない" "$verify_driver" "$valid_cwd" --standard-root "$TEST_ROOT/not-a-directory"
+expect_rejected_before_checks "標準本文を持たない directory を --standard-root として受理しない" 2 "標準 root に README.md がない" "$verify_driver" "$valid_cwd" --standard-root "$empty_root"
+expect_rejected_before_checks "--standard-root の値の欠落を拒否する" 2 "空でない path を一度だけ" "$verify_driver" "$valid_cwd" --standard-root
+expect_rejected_before_checks "--standard-root の空の値を拒否する" 2 "空でない path を一度だけ" "$verify_driver" "$valid_cwd" --standard-root ""
+expect_rejected_before_checks "--standard-root の重複を拒否する" 2 "空でない path を一度だけ" "$verify_driver" "$valid_cwd" --standard-root "$valid_cwd" --standard-root "$valid_cwd"
+expect_rejected_before_checks "未知の引数を拒否する" 2 "不明な引数: --unknown" "$verify_driver" "$valid_cwd" --unknown
+expect_rejected_before_checks "= 形の --standard-root を未知の引数として拒否する" 2 "不明な引数: --standard-root=$valid_cwd" "$verify_driver" "$valid_cwd" "--standard-root=$valid_cwd"
 
 printf '\nテスト: %d passed, %d failed\n' "$passed" "$failed"
 if [ "$failed" -eq 0 ]; then

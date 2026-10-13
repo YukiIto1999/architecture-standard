@@ -19,7 +19,8 @@
         "文書の欠落、unresolved、not-run が残る場合は違反が空でも INCOMPLETE とし、INCOMPLETE、INVALID、FAIL を PASS や WARN に言い換えない",
         "各 violation の rule に標準 file の相対 path と該当見出しを書く",
         "対象 project と標準 repo のどちらも編集せず、修正案の実装へ進まない",
-        "標準本文は <standard-root> の現在の規範文書から読み、過去版や記録済み commit を基準にしない"
+        "標準本文は明示された `<standard-root>` の現在の規範文書から読み、過去版、記録済み commit、Skill の所在を基準にしない",
+        "inventory と check は成功して読んだ Skill package の scripts/check-coverage.mjs から実行し、`--standard-root` に明示された `<standard-root>` を渡して、Skill の所在から標準 root を導かない"
       ]
     },
     {
@@ -72,6 +73,23 @@
         "requiredChecks にある machine を review で代替せず、非適用の applicability evidence も実行検査の成功証拠として扱わない",
         "実際の check CLI が INCOMPLETE、終了コード1になった結果を返し、violations が空や newCount:0 でも PASS や WARN にしない",
         "全文書 not-applicable や applicability だけで実照合0件の空監査へ逃げず、digest の書換えだけで不足証拠を解消しない"
+      ]
+    },
+    {
+      "id": 5,
+      "model": "default",
+      "standard_root": "owner-standard",
+      "prompt": "対象 project は `target-project/` です。現在の architecture-standard に対する適合性を読み取り専用で全域監査し、JSON 監査報告と実際の完了検査の結果を返してください。報告だけを対象 project を含む Git repository の外の一時 file に保存し、対象 project と標準 repo は変更しないでください。",
+      "expected_output": "明示された owner-standard を現行規範 root とし、成功して読んだ package の check-coverage.mjs で inventory を実行する。その本文は package の checker が読めない対応表の形になっており、CLI は INVALID と正本構造の diagnostics を返す。標準本文と checker の package を別々に特定し、配送の不足として source の更新と再配備を不足する前提に報告する。作業 directory の標準本文へ切り替えた inventory や check で PASS、WARN、完了を作らない。",
+      "files": [],
+      "expectations": [
+        "standard-apply や standard-audit ではなく standard-conformance と判定する",
+        "inventory を成功して読んだ Skill package の scripts/check-coverage.mjs から、`--standard-root owner-standard` を渡して実行する",
+        "CLI の INVALID と終了コード2、正本の読取や構造に由来する diagnostics をそのまま報告し、digest、件数、期待文書を創作しない",
+        "標準本文の所在である owner-standard と checker の package を別々に特定し、本文の欠損と決めつけず、checker が扱えない本文の形による配送の不足として source の更新と再配備を不足する前提に挙げる",
+        "作業 directory の標準本文、Skill package の近くの本文、過去版、別 root へ切り替えた inventory や check を実行せず、それらを根拠に PASS、WARN、coverage の完了を主張しない",
+        "INVALID の結果を PASS、WARN、監査完了、receipt 相当の完了へ言い換えず、保存した報告があれば未完了として示す",
+        "対象 project、標準本文、checker、Skill package のいずれも編集しない"
       ]
     }
   ]

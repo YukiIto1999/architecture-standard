@@ -7,7 +7,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(fileURLToPath(new URL("../../../", import.meta.url)));
+const args = process.argv.slice(2);
+if (args.length !== 0 && (args.length !== 2 || args[0] !== "--standard-root" || args[1] === "")) {
+  console.error("usage: verbatim-overlap.mjs [--standard-root ROOT]");
+  process.exit(2);
+}
+const ROOT = fs.realpathSync(args.length === 2 ? args[1] : fileURLToPath(new URL("../../../", import.meta.url)));
 const SEED = 10;
 const THRESHOLD = 18;
 

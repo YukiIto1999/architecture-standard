@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 export default function evaluatorPolicy(pi) {
@@ -153,16 +153,13 @@ function allowedBash(input, policy) {
       && !args.some(arg => /^(--ext-diff|--textconv|--no-index|--output|--exec|--config-env)(=|$)/.test(arg));
   }
   if (cwd !== policy.cwd) return false;
-  if (words[0] === "bash" && policy.bashPolicy.standardVerification === true && words.length === 2) {
-    return ["verify.sh", "verify-test.sh", "skill-package-check.sh"]
-      .some(name => words[1] === `skills/standard-update/scripts/${name}`);
-  }
+  if (words[0] === "bash" && policy.bashPolicy.standardVerification === true) return allowedStandardVerification(words, policy);
   if (policy.bashPolicy.projectVerification === true && words.length === 5 && words[0] === "npm"
     && words[1] === "--prefix" && words[2] === "target-project" && words[3] === "run") {
     return ["check", "verify", "verify:push"].includes(words[4]);
   }
   if (policy.bashPolicy.conformance === true && words[0] === "node"
-    && words[1] === "skills/standard-conformance/scripts/check-coverage.mjs" && ["inventory", "check"].includes(words[2])) {
+    && isFixtureFile(policy, words[1], "skills/standard-conformance/scripts/check-coverage.mjs") && ["inventory", "check"].includes(words[2])) {
     for (let index = 3; index < words.length; index += 2) {
       const flag = words[index];
       const value = words[index + 1];
@@ -174,4 +171,21 @@ function allowedBash(input, policy) {
     return true;
   }
   return false;
+}
+
+function isFixtureFile(policy, word, relativePath) {
+  return typeof word === "string" && path.resolve(policy.cwd, word) === path.join(policy.cwd, ...relativePath.split("/"));
+}
+
+function allowedStandardVerification(words, policy) {
+  if (words.length !== 2 && words.length !== 4) return false;
+  if (!["verify.sh", "verify-test.sh", "skill-package-check.sh"]
+    .some(name => isFixtureFile(policy, words[1], `skills/standard-update/scripts/${name}`))) return false;
+  if (words.length === 2) return true;
+  const [flag, value] = words.slice(2);
+  if (flag !== "--standard-root" || !value || value.startsWith("-")) return false;
+  const directory = path.resolve(policy.cwd, value);
+  if (!inside(policy.cwd, directory) || !existsSync(directory) || !statSync(directory).isDirectory()
+    || !inside(policy.cwd, realpathSync(directory))) return false;
+  return allowedPath(path.relative(policy.cwd, directory) || ".", policy, false);
 }

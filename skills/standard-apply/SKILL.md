@@ -8,6 +8,21 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 標準を project へ適用する入口である。
 手順と判定基準の正本は標準本文に置き、この skill へ転写しない。
 
+## 前提
+
+- 依頼で示された repository を対象 project とする。
+- `<standard-root>` は現行規範 root であり、標準を管理する owner が現在の規範として指定した checkout の root である。
+  依頼が明示した値か、host の agent policy が案内する値を使う。
+  gate がある host では `dotfiles-agent-gate standard-root` がこの値を出力する。
+  この skill の配備先、固定 Rev、remote の HEAD、`pwd`、`git rev-parse`、対象 project 内の複製から再発見しない。
+  値を得られなければ標準適用を開始せず、依頼での指定または agent policy に root の値が必要と返す。
+  読める README や標準の本文があっても規範 root として代用せず、本文の引用、照合、適合や違反の判定を行わない。
+  「仮のレビュー」「fixture 本文との照合」などの留保を付けても、この前提を満たしたことにはしない。
+  対象 project を current directory にした Git 操作や特定マシンのローカル絶対パスと混ぜない。
+- `<skill-package-root>` は、成功して読んだこの `SKILL.md` を symlink の実体まで辿った directory である。`references/` の同梱資材はここから読み、標準本文の file は `<standard-root>` から読む。
+- 標準本文は常に `<standard-root>` にある現在の規範文書（`README.md`、`principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/`）を参照する。標準の過去版を Git 履歴から掘り出して判断基準にせず、対象 project に記録された標準の版も基準にしない。
+- 標準本文は編集しない。標準側の不備は file と該当箇所を報告し、修正は standard-update へ渡す。
+
 ## 対象の入口
 
 対象 project の既知の入口から始める。exact file path があればその file を直接読む。symbol だけが分かる場合は、利用可能な LSP で定義と参照を確認し、使えなければ native search で探す。project root しか分からない場合は README や manifest の宣言を確認し、必要な source と test の範囲を絞る。
@@ -15,13 +30,6 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 既知の path を再発見するための列挙はしない。探索が必要な場合は target root と確認する関係を明示し、ignore 境界を維持する。空の検索結果や初回の候補集合だけで、project 全体に契約、writer、test が存在しないとは判断しない。
 
 設計では、変更契約を固定する前に [target scoping](references/target-scoping.md) を読み、対象の明示契約、入力要件と直接参照された資料を確認する。
-
-## 前提
-
-- この skill がある repository を標準、依頼で示された repository を対象 project とする。
-- この skill の所在（`skills/standard-apply/SKILL.md`）から二段上の親 directory を `<standard-root>` として固定する。`pwd` や `git rev-parse` で standard root を再発見しない。対象 project を current directory にした Git 操作や特定マシンのローカル絶対パスと混ぜない。
-- 標準本文は常に `<standard-root>` にある現在の規範文書（`README.md`、`principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/`）を参照する。標準の過去版を Git 履歴から掘り出して判断基準にせず、対象 project に記録された標準の版も基準にしない。
-- 標準本文は編集しない。標準側の不備は file と該当箇所を報告し、修正は standard-update へ渡す。
 
 ## 参照経路
 
@@ -44,7 +52,7 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 
 ## 手順
 
-1. 標準の `README.md` を読み、依頼をモードへ写像する。新規構築=`process/bootstrap.md`、既存システムの意味回収=`process/recovery.md`、監査=`process/audit.md`、移行=`process/migration.md`、設計=`process/design.md`、実装=`process/implementation.md`、構造改善=`process/refactoring.md`、レビュー=`process/review.md`、release と配備=`process/release.md` である。検証の実行は、どのモードからも `process/verification.md` に従う。構造再生の複合依頼は recovery を読み取り専用で先に完了し、確定した意味だけを後続モードへ渡す。
+1. `<standard-root>/README.md` を読み、依頼をモードへ写像する。新規構築=`process/bootstrap.md`、既存システムの意味回収=`process/recovery.md`、監査=`process/audit.md`、移行=`process/migration.md`、設計=`process/design.md`、実装=`process/implementation.md`、構造改善=`process/refactoring.md`、レビュー=`process/review.md`、release と配備=`process/release.md` である。検証の実行は、どのモードからも `process/verification.md` に従う。構造再生の複合依頼は recovery を読み取り専用で先に完了し、確定した意味だけを後続モードへ渡す。
 2. 選んだ process 本文を読み、参照経路の規則に従って、対象範囲の判定に必要な本文だけを読む。記憶、見出し、一般的なベストプラクティスで補完しない。
    設計では `process/design.md` の順序1から8と確認点を省略しない。番号付き step または確認点が `従う` と定める直接参照は、対象が小さくても読んで照合する。directory 参照はその `README.md` から一つに絞る。
    並行処理を設計する場合は、子処理の失敗伝播と cancellation を、依頼の受入条件に列挙がなくても標準の必須条件として変更契約へ残す。現行契約が不明なら具体的な継続・停止・戻り値を決めず、未確定の必須条件にする。受入条件外の別件として落とさない。
@@ -63,7 +71,7 @@ recovery では、対象 project を読み始める前に [recovery](references/
 
 ## 報告
 
-- 結論を先に置き、実施したモード、対象範囲、根拠にした root `README.md`、選択した process file、参照した規律、実測した検証、未確認事項を示す。
+- 結論を先に置き、実施したモード、対象範囲、使った `<standard-root>`、根拠にした root `README.md`、選択した process file、参照した規律、実測した検証、未確認事項を示す。
 - 監査とレビューの指摘は、severity、対象 file と該当箇所、対応する標準の規律を添える。
 - 監査の severity は `process/audit.md` の対応をそのまま使い、自己判断で引き上げない。
 - 標準本文の引用は判定に必要な短い箇所だけにする。読了の証明として長文を複製しない。

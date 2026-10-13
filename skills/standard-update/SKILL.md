@@ -25,14 +25,20 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 
 ## 参照経路
 
-この Skill の `SKILL.md` を symlink の実体まで辿り、その directory を Skill package root とする。
-`references/` と同梱資材は、この実体からの相対 path で読む。
-標準本文の編集と検証は、依頼された標準の作業 checkout の root で行い、配備済み source や現在の対象 project を編集先にしない。
+`<skill-package-root>` は、成功して読んだこの `SKILL.md` を symlink の実体まで辿った directory である。
+`references/` と同梱資材は、ここからの相対 path で読み、同梱 script はここから実行する。
+`<standard-root>` は、依頼された標準の作業 checkout の root である。
+依頼が明示した値か、host の agent policy が案内する値を使い、この Skill の配備先、固定 Rev、`pwd` から推定しない。
+値を得られなければ不足する前提として返し、編集や検証に着手しない。
+標準本文の編集と検証は `<standard-root>` で行い、配備済み source や現在の対象 project を編集先にしない。
+公開入口の script には、対象の標準 checkout を `--standard-root "<standard-root>"` で明示する。
+実行する script は `<skill-package-root>/scripts/` のものであり、`<standard-root>` や `pwd` にある同名の script へ切り替えない。
+reference が指す標準本文は `<standard-root>` から読み、`<skill-package-root>` の近くにある本文を使わない。
 
 既知の正本 path は直接読み、再発見の検索をしない。
 所有者が不明なら root `README.md` の領域表と台帳から候補を探す。
 外部知見と意味を変える改訂では、直接所有者の発見を探索の終了とせず、手順2の意味的影響範囲を辿る。
-配置、参照方向、標準の改訂と適用の違いは root `README.md` で確認する。
+配置、参照方向、標準の改訂と適用の違いは `<standard-root>/README.md` で確認する。
 
 意味の比較と裁定には [normative quality](references/normative-quality.md) を使う。
 配置または領域書式を決めるときだけ、該当する `references/{principles,concerns,structure,tools,process}.md` を読む。
@@ -161,14 +167,19 @@ tools の区分や採用名を変えた場合は `tools/README.md`、languages �
 削除した正本の参照と旧い判断を残さず、各影響先を変更したか、既存で一致するか、不足証拠があるか明示する。
 
 変更箇所だけを直接検査する linter、test、構造検査があれば focused check として先に実行する。対応する機械検査がなければ、対象 file と直接参照の差分照合を行い、機械検査済みとは扱わない。
-次に、標準の作業 checkout の root から `bash skills/standard-update/scripts/verify.sh` を実行する。
+次に、標準本文の機械検査を実行する。
+
+```bash
+bash "<skill-package-root>/scripts/verify.sh" --standard-root "<standard-root>"
+```
+
 失敗した場合は原因を直し、同じ検査を再実行して PASS になるまで完了としない。
 
 本 skill、`references/*.md`、`scripts/*`、`evals/*.json` を変更した場合は、次も実行する。
 
 ```bash
-bash skills/standard-update/scripts/verify-test.sh
-bash skills/standard-update/scripts/skill-package-check.sh
+bash "<skill-package-root>/scripts/verify-test.sh" --standard-root "<standard-root>"
+bash "<skill-package-root>/scripts/skill-package-check.sh" --standard-root "<standard-root>"
 ```
 
 `skill-package-check.sh` の役割と、変更面ごとの model eval の範囲は [evaluation](references/evaluation.md) に従う。

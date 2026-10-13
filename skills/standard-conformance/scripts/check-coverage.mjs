@@ -49,6 +49,7 @@ function sectionLines(text, heading) {
 }
 
 function mechanismKinds(expression) {
+  expression = expression.replace(/^[^()（）+\n]+対象について、/, "");
   let depth = 0;
   let names = "";
   for (const character of expression) {
@@ -92,14 +93,30 @@ function requiredChecks(texts) {
       }
     }
     if (/^languages\/[^/]+\/inspection\.md$/.test(document)) {
+      let header = false;
+      let separator = false;
+      let rows = 0;
       for (const line of sectionLines(text, "規則と検証機構の対応")) {
         if (!line.startsWith("|")) continue;
         const cells = line.split("|").map((value) => value.trim());
-        if (cells[1] === "ファイル" || /^-+$/.test(cells[1])) continue;
-        requireValue(cells.length === 5 && nonempty(cells[1]) && nonempty(cells[2]) && nonempty(cells[3]), `言語の検証対応表が不正: ${document}: ${line}`);
+        const threeColumns = cells.length === 5 && cells[4] === "";
+        if (cells[1] === "ファイル") {
+          requireValue(threeColumns && cells[2] === "規律" && cells[3] === "検証手段", `言語の検証対応表が不正: ${document}: ${line}`);
+          header = true;
+          separator = false;
+          continue;
+        }
+        if (/^:?-+:?$/.test(cells[1])) {
+          requireValue(header && threeColumns && cells.slice(1, 4).every((cell) => /^:?-+:?$/.test(cell)), `言語の検証対応表が不正: ${document}: ${line}`);
+          separator = true;
+          continue;
+        }
+        requireValue(header && separator && threeColumns && nonempty(cells[1]) && nonempty(cells[2]) && nonempty(cells[3]), `言語の検証対応表が不正: ${document}: ${line}`);
         const target = `${path.posix.dirname(document)}/${cells[1]}.md`;
         assign(target, cells[2], mechanismKinds(cells[3]));
+        rows += 1;
       }
+      requireValue(header && rows > 0, `言語の検証対応表がない: ${document}`);
     }
   }
   for (const document of Object.keys(texts)) {

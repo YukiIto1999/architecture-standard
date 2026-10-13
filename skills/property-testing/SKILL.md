@@ -12,8 +12,9 @@ description: 公開契約の不変条件、境界入力、操作列を生成で�
 
 1. 対象 project、公開入口、変更する保証、検査の作成か読取りか、実行を許可された範囲を固定する。
    architecture-standard の適用入口は `standard-apply` を使い、すでに固定した変更契約と選択済み process を引き継ぐ。
-2. この `SKILL.md` の実体から二段上を標準 root とし、[tests の方法](../../structure/tests/methods.md) と [テストの信頼性を保つ](../../principles/verification/test-reliability.md) を読む。
-   配置と実依存は [tests の構造](../../structure/tests/layout.md)、実行と再利用は [検証の順序](../../process/verification.md) を読む。
+2. `standard-apply` の前提が固定した `<standard-root>` から、`<standard-root>/structure/tests/methods.md` の tests の方法と `<standard-root>/principles/verification/test-reliability.md` のテストの信頼性を保つ規律を読む。
+   この `SKILL.md` の配備先や固定 Rev から標準 root を推定せず、`<standard-root>` が得られなければ不足する前提として返す。
+   配置と実依存は `<standard-root>/structure/tests/layout.md` の tests の構造、実行と再利用は `<standard-root>/process/verification.md` の検証の順序を読む。
 3. 対象の公開契約、入力 channel、producer と consumer、関連 test、依存の manifest と lockfile、検証 task を読む。
    採用済みの生成器と runner の版に対応する API を確認し、名前や option を記憶で書かない。
    新しい test framework を導入せず、対象言語の標準の実現と既存の test 配置へ落とす。

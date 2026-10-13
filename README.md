@@ -91,6 +91,8 @@ CLI の人と script の呼び出しの設計は [cli-design](./skills/cli-desig
 dotfiles-wsl は、固定した Nix source と `skills/plugins/module.nix` の明示的な採用表から、選択済み client へ Skill package を配備します。
 OMP の `.omp/agent/skills/` など client ごとの配備先は投影先であり、正本の所有先ではありません。
 配備済み source は読み取り専用とし、標準の編集と検証には作業 checkout を使います。
+配備した Skill package は、手順と同梱の reference と script を提供する単位であり、現行の標準本文の所在ではありません。
+標準本文を読む root と Skill package を実行する root の分離は、標準リポジトリの参照方法が定めます。
 
 ## 統治の規約
 
@@ -219,8 +221,18 @@ AI エージェントおよび開発者は、すべての作業モードにお�
 
 標準のファイル群は、対象プロジェクトのリポジトリ内へ直接コピーして取り込んではなりません。
 
-AI エージェントには本標準リポジトリのパスを渡し、常に一次資料である本文を直接読ませて適用します。
-プロジェクトは標準の版を固定せず、配備されている現在の標準本文を基準にします。
+AI エージェントには現行規範 root を渡し、常に一次資料である本文を直接読ませて適用します。
+現行規範 root は、標準を管理する owner が現在の規範として指定した checkout の root です。
+依頼が明示した値か、host の agent policy が案内する値を使い、Skill の配備先、固定した Git revision、remote の HEAD、current directory、対象 project 内の複製から推定しません。
+値を得られないときは不足する前提として報告し、配備済みの標準本文へ代替しません。
+プロジェクトは標準の版を固定せず、現行規範 root にある現在の標準本文を基準にします。
+
+運用 Skill は、現行規範 root と Skill package root を別の root として扱います。
+Skill package root は、成功して読んだ `SKILL.md` を symlink の実体まで辿った directory です。
+Skill 同梱の reference と script は Skill package root から解決し、標準本文の link は現行規範 root から解決します。
+配備した package の Git revision、Nix の lock、内容 hash は、実行した package を特定し、取り違えを検出する出典です。
+revision の一致を、現行規範への適合や対象 source の現在の妥当性の根拠にせず、本文、設定、入力の内容で照合します。
+標準本文だけが更新され、配備済みの package がその本文を扱えない場合は、配送の不足として停止し、旧い本文で合格にしません。
 
 設計、実装、レビュー、監査は、いずれも現在の標準本文を基準として照合します。過去の版を基準にすると、すでに改訂された規律への適合を合格と判定し、現行の規律への違反を見落とします。標準の改訂によって既存の実装が違反になった場合は、[process/migration.md](./process/migration.md) に従って現行の標準へ寄せます。
 
@@ -229,7 +241,9 @@ AI エージェントには本標準リポジトリのパスを渡し、常に�
 規範の正本、適用手順、配布設定、対象プロジェクトの検証は、役割を分けて運用します。
 標準本文を agent の常時指示へ複製せず、今回の判断に必要な本文への参照は [standard-apply](./skills/standard-apply/SKILL.md) が案内します。
 配布する Skill の本文と同梱 script は [skills/](./skills/) が所有し、host 側の配布設定は採用する source と更新を管理します。
-配布先を更新するまでは、作業 checkout の変更は稼働中の agent へ届きません。
+配布先を更新するまでは、作業 checkout の Skill 手順と同梱 script の変更は稼働中の agent へ届きません。
+標準本文の変更は、現行規範 root へ取り込んだ時点から agent が直接読むため、配布先の更新を要しません。
+配備の整合を示す検査の成功は、現行の標準本文への適合を示しません。
 
 | 役割 | 所有者と入口 |
 |---|---|
@@ -248,7 +262,7 @@ AI エージェントには本標準リポジトリのパスを渡し、常に�
 `check-coverage.mjs` は、欠けた disposition や検査割当の rule と kind、不足証拠、未実行、古い観測、新規違反を検出して監査の完了判定を閉じます。
 project の analyzer ではなく、引用の意味や適用判断の妥当性、証拠の真偽、全規範命題の実検査も保証しないため、すべての設計思想を機械検証したとは扱いません。
 報告の形式、実基線台帳との照合、対象 project を含む Git repository の外への報告保存、CLI の終了状態の扱いは、standard-conformance の契約に従います。
-対応 host の runtime gate は標準側の checker を実行して receipt を記録し、stop で同じ正本、source、報告、checker の鮮度を照合します。
+対応 host の runtime gate は、成功して読んだ Skill package の checker を現行規範 root に対して実行して receipt を記録し、stop で同じ正本、source、報告、checker の鮮度を照合します。
 checker と規範はこの repository が、receipt と停止時の強制は dotfiles が所有するため、host に gate がない場合は自動 stop 強制済みとは扱いません。
 登録 command と実 session ID の取得、gate がない場合の検証入口への接続は、standard-conformance の完了検査が案内します。
 

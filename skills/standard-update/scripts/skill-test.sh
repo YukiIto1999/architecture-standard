@@ -9,12 +9,48 @@ for required_command in "${required_commands[@]}"; do
   fi
 done
 
+STANDARD_ROOT_ARG=""
+line_store_only=0
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --line-store-only)
+      line_store_only=1
+      shift
+      ;;
+    --standard-root)
+      if [ -n "$STANDARD_ROOT_ARG" ] || [ "$#" -lt 2 ] || [ -z "$2" ]; then
+        printf 'FAIL: --standard-root には空でない path を一度だけ指定すること\nusage: %s [--standard-root ROOT] [--line-store-only]\n' "${BASH_SOURCE[0]##*/}" >&2
+        exit 2
+      fi
+      STANDARD_ROOT_ARG="$2"
+      shift 2
+      ;;
+    *)
+      printf 'FAIL: 不明な引数: %s\nusage: %s [--standard-root ROOT] [--line-store-only]\n' "$1" "${BASH_SOURCE[0]##*/}" >&2
+      exit 2
+      ;;
+  esac
+done
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-REPO_ROOT="$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null)" || {
-  printf 'FAIL: git repository で実行すること\n' >&2
-  exit 1
-}
-cd "$REPO_ROOT" || exit 1
+if [ -n "$STANDARD_ROOT_ARG" ]; then
+  STANDARD_ROOT="$(CDPATH= cd -- "$STANDARD_ROOT_ARG" 2>/dev/null && pwd -P)" || {
+    printf 'FAIL: --standard-root が存在する directory ではない: %s\n' "$STANDARD_ROOT_ARG" >&2
+    exit 2
+  }
+else
+  STANDARD_ROOT="$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null)" || {
+    printf 'FAIL: git repository で実行すること\n' >&2
+    exit 1
+  }
+fi
+for standard_entry in README.md skills principles concerns structure tools languages process; do
+  if [ ! -e "$STANDARD_ROOT/$standard_entry" ]; then
+    printf 'FAIL: 標準 root に %s がない: %s\n' "$standard_entry" "$STANDARD_ROOT" >&2
+    exit 2
+  fi
+done
+cd "$STANDARD_ROOT" || exit 1
 
 FAILED=0
 PASSED=0
@@ -55,7 +91,10 @@ esac
 cleanup() {
   case "$TEST_ROOT" in
     "$TEMP_BASE"/architecture-standard-skill-test.*)
-      [ ! -e "$TEST_ROOT" ] || rm -rf -- "$TEST_ROOT"
+      if [ -e "$TEST_ROOT" ]; then
+        find "$TEST_ROOT" -type d -exec chmod u+w {} +
+        rm -rf -- "$TEST_ROOT"
+      fi
       ;;
   esac
 }
@@ -64,9 +103,9 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-if [ "${1:-}" != --line-store-only ]; then
+if [ "$line_store_only" = 0 ]; then
 printf '\n=== 2. task eval と trigger eval の schema ===\n'
-eval_output=$(bash "$SCRIPT_DIR/skill-package-check.sh" 2>&1)
+eval_output=$(bash "$SCRIPT_DIR/skill-package-check.sh" --standard-root "$STANDARD_ROOT" 2>&1)
 if [ "$?" -eq 0 ]; then
   printf '%s\n' "$eval_output"
   pass "skill の package 構造と eval schema が有効"
@@ -75,28 +114,62 @@ else
 fi
 package_fixture="$TEST_ROOT/package-missing-evals"
 mkdir -p "$package_fixture" || fail "package checker fixture を構築" "mkdir failed"
-cp -a skills "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
-git -C "$package_fixture" init --quiet || fail "package checker fixture を構築" "git init failed"
+cp -a "$STANDARD_ROOT/skills" "$package_fixture/" || fail "package checker fixture を構築" "copy failed"
 rm -rf -- "$package_fixture/skills/standard-apply/evals"
-if package_missing_output=$(cd "$package_fixture" && bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_missing_output=$(bash "$SCRIPT_DIR/skill-package-check.sh" --standard-root "$package_fixture" 2>&1); then
   fail "通常実行ではskillのeval一式欠落を拒否する" "$package_missing_output"
 elif ! printf '%s\n' "$package_missing_output" | rg -qF 'standard-apply: evals directory がない'; then
   fail "eval一式欠落を具体的に診断する" "$package_missing_output"
 else
   pass "通常実行ではskillのeval一式欠落を拒否する"
 fi
-if package_isolated_output=$(cd "$package_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=with-skill bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_isolated_output=$(SKILL_EVAL_ISOLATED_SKILL=standard-apply SKILL_EVAL_CONFIGURATION=with-skill bash "$SCRIPT_DIR/skill-package-check.sh" --standard-root "$package_fixture" 2>&1); then
   fail "選択skillのevalだけを隠した旧隔離構成を拒否する" "$package_isolated_output"
 elif ! printf '%s\n' "$package_isolated_output" | rg -qF '非公開 package の instruction または eval が残っている'; then
   fail "旧隔離構成のinstruction漏出を診断する" "$package_isolated_output"
 else
   pass "選択skillのevalだけを隠した旧隔離構成を拒否する"
 fi
-if package_partial_context=$(cd "$package_fixture" && SKILL_EVAL_ISOLATED_SKILL=standard-apply bash skills/standard-update/scripts/skill-package-check.sh 2>&1); then
+if package_partial_context=$(SKILL_EVAL_ISOLATED_SKILL=standard-apply bash "$SCRIPT_DIR/skill-package-check.sh" --standard-root "$package_fixture" 2>&1); then
   fail "不完全な隔離contextでeval欠落を許可しない" "$package_partial_context"
 else
   pass "不完全な隔離contextでeval欠落を許可しない"
 fi
+detached_package="$TEST_ROOT/detached-package/skills/standard-update"
+mkdir -p "$detached_package" && cp -a "$SCRIPT_DIR" "$detached_package/scripts" || fail "git のない package fixture を構築" "copy failed"
+if detached_output=$(GIT_CEILING_DIRECTORIES="$TEST_ROOT" bash "$detached_package/scripts/skill-package-check.sh" --standard-root "$package_fixture" 2>&1); then
+  fail "git のない package から対象 root の eval 欠落を拒否する" "$detached_output"
+elif ! printf '%s\n' "$detached_output" | rg -qF 'standard-apply: evals directory がない'; then
+  fail "git のない package が package 側ではなく対象 root を検査する" "$detached_output"
+else
+  pass "git のない package から対象 root の eval 欠落を拒否する"
+fi
+expect_root_rejected() {
+  local label="$1"
+  local expected="$2"
+  local script="$3"
+  local output
+  local status=0
+
+  shift 3
+  output=$(bash "$script" "$@" 2>&1) || status=$?
+  if [ "$status" -ne 2 ]; then
+    fail "$label" "終了 status が 2 ではない: $status
+$output"
+  elif ! printf '%s\n' "$output" | rg -qF -- "$expected"; then
+    fail "$label" "期待した診断がない: $expected
+$output"
+  elif printf '%s\n' "$output" | rg -qF -e 'package violations' -e '=== 2.' -e 'PASS:'; then
+    fail "$label" "拒否前に検査を開始した
+$output"
+  else
+    pass "$label"
+  fi
+}
+expect_root_rejected "package checker は存在しない --standard-root を作業 directory へ置き換えず拒否する" '存在する directory ではない' "$SCRIPT_DIR/skill-package-check.sh" --standard-root "$TEST_ROOT/missing-root"
+expect_root_rejected "package checker は未知の引数を拒否する" '不明な引数: --unknown' "$SCRIPT_DIR/skill-package-check.sh" --unknown
+expect_root_rejected "skill-test は存在しない --standard-root を作業 directory へ置き換えず拒否する" '存在する directory ではない' "$SCRIPT_DIR/skill-test.sh" --standard-root "$TEST_ROOT/missing-root"
+expect_root_rejected "skill-test は --standard-root の重複を拒否する" '空でない path を一度だけ' "$SCRIPT_DIR/skill-test.sh" --standard-root "$STANDARD_ROOT" --standard-root "$STANDARD_ROOT"
 
 printf '\n=== 3. verifier は依存不足で fail closed ===\n'
 make_limited_path() {
@@ -122,7 +195,7 @@ for missing_command in node fd; do
     fail "$missing_command 欠落fixtureを構築" "limited PATH setup failed"
     continue
   fi
-  if dependency_output=$(PATH="$limited_path" "$BASH_PATH" "$SCRIPT_DIR/verify.sh" 2>&1); then
+  if dependency_output=$(PATH="$limited_path" "$BASH_PATH" "$SCRIPT_DIR/verify.sh" --standard-root "$STANDARD_ROOT" 2>&1); then
     fail "$missing_command がない場合は verifier が失敗する" "verify.sh がPASSした\n$dependency_output"
   elif ! printf '%s\n' "$dependency_output" | rg -qF "missing required command: $missing_command"; then
     fail "$missing_command 欠落を具体的に診断する" "$dependency_output"
@@ -139,8 +212,8 @@ mktemp_probe=$(timeout 10 "$BASH_PATH" -c '
   sed() { return 93; }
   rm() { return 94; }
   export -f mktemp mkdir cp sed rm
-  bash "$1"
-' probe "$SCRIPT_DIR/verify-test.sh" 2>&1)
+  bash "$1" --standard-root "$2"
+' probe "$SCRIPT_DIR/verify-test.sh" "$STANDARD_ROOT" 2>&1)
 mktemp_status=$?
 if [ "$mktemp_status" -eq 0 ]; then
   fail "mktemp 失敗時は verify-test が失敗する" "$mktemp_probe"
@@ -152,7 +225,7 @@ fi
 
 
 printf '\n=== 5. OMP evaluator の公開契約 ===\n'
-if regression_output=$(node --test "$SCRIPT_DIR/evaluator-regression.test.mjs" 2>&1); then
+if regression_output=$(EVALUATOR_REGRESSION_STANDARD_ROOT="$STANDARD_ROOT" node --test "$SCRIPT_DIR/evaluator-regression.test.mjs" 2>&1); then
   printf '%s\n' "$regression_output"
   pass "OMP event・失敗境界・隔離・採点provenanceを保持する"
 else
@@ -162,14 +235,13 @@ fi
 fi
 
 printf '\n=== 6. LineStore の公開契約と隔離復元 ===\n'
-if node - "$TEST_ROOT" "$SCRIPT_DIR/run-task-evals.mjs" <<'NODE'
+if node - "$TEST_ROOT" "$SCRIPT_DIR/run-task-evals.mjs" "$STANDARD_ROOT" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 const cp = require("node:child_process");
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
-const [root, runner] = process.argv.slice(2);
-const repo = path.resolve(path.dirname(runner), "../../..");
+const [root, runner, repo] = process.argv.slice(2);
 const fixture = path.join(repo, "skills/standard-apply/evals/fixtures/line-store");
 const project = path.join(root, "oracle-project");
 const host = path.join(fixture, "host/check.mjs");
@@ -290,15 +362,24 @@ const run = (name, id, payload, snapshot, expectedStatus = 0, extra = []) => {
   const payloadFile = path.join(root, `${name}-payload.json`);
   save(payloadFile, payload);
   const result = cp.spawnSync(process.execPath, [runner, "--configuration", "with-skill", "--skill", "standard-apply",
-    "--eval-id", String(id), ...(snapshot ? ["--project-snapshot", snapshot] : []), ...extra], {
+    "--eval-id", String(id), "--standard-root", repo, ...(snapshot ? ["--project-snapshot", snapshot] : []), ...extra], {
     encoding: "utf8", timeout: 3_600_000,
     env: { ...process.env, OMP_EVAL_COMMAND: provider, OMP_EVAL_TIMEOUT_MS: "60000", OMP_EVAL_MODEL: "",
       SKILL_EVAL_OUTPUT_ROOT: output,
       LINE_STORE_PAYLOAD_FILE: payloadFile },
   });
-  assert.equal(result.status, expectedStatus, JSON.stringify({ error: result.error?.message,
-    signal: result.signal, stdout: result.stdout, stderr: result.stderr }));
-  return path.join(output, "standard-apply", `eval-${id}-default`, "with-skill");
+  const runRoot = path.join(output, "standard-apply", `eval-${id}-default`, "with-skill");
+  const diagnostics = { error: result.error?.message, signal: result.signal, stdout: result.stdout, stderr: result.stderr };
+  for (const phase of ["before", "after"]) {
+    const verificationFile = path.join(runRoot, `host-${phase}.json`);
+    if (fs.existsSync(verificationFile)) {
+      const { passed, locked_file_changes, consumer_changes, commands } = load(verificationFile);
+      diagnostics[phase] = { passed, locked_file_changes, consumer_changes, commands };
+    }
+  }
+  assert.equal(result.status, expectedStatus, JSON.stringify(diagnostics));
+  if (payload.files) assert(fs.existsSync(path.join(runRoot, "host-after.json")), JSON.stringify(diagnostics));
+  return runRoot;
 };
 const hidden = run("hidden", 9, { files: { "src/line-store.ts": storage(false), "src/render-selected.ts": consumer } });
 assert.equal(load(path.join(hidden, "host-after.json")).passed, true);
@@ -353,7 +434,7 @@ fs.cpSync(mapped, path.join(rejectedEval, "old-skill"), { recursive: true });
 fs.cpSync(weakened, path.join(rejectedEval, "with-skill"), { recursive: true });
 for (const configuration of ["old-skill", "with-skill"]) {
   const graded = cp.spawnSync(process.execPath, [runner, "--configuration", configuration,
-    "--skill", "standard-apply", "--eval-id", "10", "--grade-only"], {
+    "--skill", "standard-apply", "--eval-id", "10", "--standard-root", repo, "--grade-only"], {
     encoding: "utf8", env: { ...process.env, OMP_EVAL_COMMAND: provider,
       OMP_EVAL_TIMEOUT_MS: "60000", OMP_EVAL_MODEL: "",
       SKILL_EVAL_OUTPUT_ROOT: rejectedOutput, LINE_STORE_PAYLOAD: "{}" },

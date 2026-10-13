@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -9,11 +9,12 @@ import { fileURLToPath } from "node:url";
 import { loadedSkill, ompAdapterSha256, ompTimeout, resolveOmpModel, runOmp } from "./omp-eval-adapter.mjs";
 const runnerSha256 = createHash("sha256").update(readFileSync(new URL(import.meta.url))).update(ompAdapterSha256).digest("hex");
 
-const repoRoot = execFileSync("git", ["-C", fileURLToPath(new URL("../../../", import.meta.url)), "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+const args = process.argv.slice(2);
+const repoRoot = standardRepositoryRoot(args);
 const baselineSkillNames = ["standard-apply", "standard-audit", "standard-conformance", "standard-feedback", "standard-update"];
 const methodSkillNames = ["cli-design", "property-testing"];
 const allSkillNames = [...baselineSkillNames, ...methodSkillNames];
-const args = process.argv.slice(2);
+const ownerStandardDirectory = "owner-standard";
 const configuration = valueAfter("--configuration");
 const selectedSkill = valueAfter("--skill");
 const selectedEvalId = valueAfter("--eval-id");
@@ -106,7 +107,10 @@ async function runEval(skillName, item) {
     const sharedVerificationFiles = skillName === "standard-update"
       ? ["skills/standard-conformance/scripts/check-coverage.mjs", "skills/standard-conformance/scripts/check-coverage.test.mjs",
         "skills/standard-update/scripts/skill-package-check.sh", ...methodSkillNames.map(name => skillRoot(name))]
-      : skillName === "standard-conformance" ? ["skills/standard-update/scripts/skill-package-check.sh"] : [];
+      : skillName === "standard-conformance"
+        ? ["skills/standard-update/scripts/skill-package-check.sh",
+          "skills/standard-conformance/scripts/check-coverage.mjs",
+          "skills/standard-conformance/scripts/check-coverage.test.mjs"] : [];
     for (const file of sharedVerificationFiles) {
       mkdirSync(path.dirname(path.join(fixtureRoot, file)), { recursive: true });
       if (statSync(path.join(repoRoot, file)).isDirectory()) {
@@ -141,6 +145,7 @@ async function runEval(skillName, item) {
     } else if (standardFixture) {
       prepareFixture(fixtureRoot);
     }
+    if (item.standard_root === ownerStandardDirectory) prepareOwnerStandard(fixtureRoot, skillName, item.id);
     if (standardFixture) {
       if (!item.fixture && (skillName === "standard-apply" || item.suite === "semantic-maintenance")) {
         prepareEvaluationChange(fixtureRoot, skillName, item.id);
@@ -174,6 +179,16 @@ async function runEval(skillName, item) {
     const skills = Object.fromEntries(exposedSkills.filter(name => existsSync(path.join(fixtureRoot, skillRoot(name), "SKILL.md")))
       .map(name => [name, path.join(fixtureRoot, skillRoot(name), "SKILL.md")]));
 
+    const standardRoot = item.standard_root === ownerStandardDirectory ? ownerStandardDirectory : ".";
+    const standardRootArgument = item.standard_root === "unspecified" ? "<standard-root>" : standardRoot;
+    const standardRootStatements = [
+      ...(item.standard_root === "unspecified" ? [] : [
+        `標準の現行規範 root（<standard-root>）は ${standardRoot === "." ? "この作業directory（`.`）" : `\`${standardRoot}\``} です。`,
+      ]),
+      ...(configuration === "without-skill" ? [] : [
+        "Skill の同梱 reference と script は、成功して読んだ `SKILL.md` の directory（<skill-package-root>）から解決してください。この fixture では読んだ skill ごとに `skills/<skill-name>/` です。",
+      ]),
+    ];
     const prompt = [
       "これは実タスク評価です。確認質問で止まらず、与えられた範囲を最後まで実行してください。",
       auditReportDirectory
@@ -181,10 +196,11 @@ async function runEval(skillName, item) {
         : "作業対象は現在の一時fixtureだけです。元のrepositoryへは書き込まないでください。",
       `task の path は現在の作業directoryからの相対pathです。外部事実の確認が task に必要なら web_search と read(URL) を使えます。bash は許可済みの検証 script と git show/status/diff${auditReportDirectory ? "、下記の conformance CLI の二つの prefix" : ""}${projectFixture ? "、下記の対象projectの固定command" : ""} だけに使えます。`,
       "ls、find、wc、cat、git log、git rev-parse は許可していません。file の読取と探索には read、glob、grep を使えます。どれを使うかは task と、with-skill または old-skill では対象 skill の指示から判断してください。",
+      ...standardRootStatements,
       ...(projectFixture ? [
         "対象projectの依存はhostがnpm ciで導入済みです。repository rootから `npm --prefix target-project run check`、`npm --prefix target-project run verify`、`npm --prefix target-project run verify:push` だけを対象検証に使えます。任意のnpm/Bash command、依存導入、manifestやlockfileや固定testや検証入口の変更は許可しません。標準側verify.shの成功で対象projectの検証を代替しないでください。",
       ] : standardFixture ? [
-        "task が file を変更し、使用する skill が検証を要求する場合は、repository root から `bash skills/standard-update/scripts/verify.sh` の形で実行してください。読み取り専用 task へ検証を強制しないでください。",
+        `task が file を変更し、使用する skill が検証を要求する場合は、repository root から \`bash skills/standard-update/scripts/verify.sh --standard-root ${standardRootArgument}\` の形で実行してください。読み取り専用 task へ検証を強制しないでください。`,
       ] : []),
       ...(projectFixture && item.fixture.stage === "map" ? [
         projectInput.origin === "task1"
@@ -196,11 +212,17 @@ async function runEval(skillName, item) {
         ? "この評価では Skill を使わずに実行してください。"
         : `これは発火評価ではありません。最初に read tool で skill://${skillName} を全文読み、その指示に従ってください。呼出し文字列を応答するだけで終えないでください。参照 resource は SKILL.md が必要としたものだけを読んでください。`,
       ...(auditReportDirectory ? [
-        "conformance CLI は repository root から `node skills/standard-conformance/scripts/check-coverage.mjs inventory` または `node skills/standard-conformance/scripts/check-coverage.mjs check` の prefix で実行できます。`--standard-root . --project-root target-project` を指定し、check では下記の報告pathを `--report` に渡してください。任意の Node command や Bash command は許可しません。",
+        `conformance CLI は repository root から \`node skills/standard-conformance/scripts/check-coverage.mjs inventory\` または \`node skills/standard-conformance/scripts/check-coverage.mjs check\` の prefix で実行できます。${item.standard_root === "unspecified" ? "`--standard-root` に <standard-root>" : `\`--standard-root ${standardRoot}\``} と \`--project-root target-project\` を指定し、check では下記の報告pathを \`--report\` に渡してください。任意の Node command や Bash command は許可しません。`,
         `監査報告pathは ${auditReportPath} です。write tool でこのpathへ JSON 報告を保存してください。このdirectoryは fixture のGit root外にあり、採点情報や期待解答は置かれていません。`,
       ] : []),
       item.prompt,
     ].join("\n\n");
+    writeFileSync(path.join(runRoot, "actor-prompt.txt"), prompt);
+    const executionPackageRoot = path.join(fixtureRoot, skillRoot(skillName));
+    const executionPackageFiles = () => existsSync(executionPackageRoot)
+      ? Object.fromEntries(Object.entries(projectFiles(executionPackageRoot, false))
+        .map(([file, value]) => [file, value.sha256])) : null;
+    const packageBefore = executionPackageFiles();
 
     const result = await runOmp({
       cwd: fixtureRoot, prompt, model: item.model, resolvedModel, timeoutMs, skills,
@@ -213,6 +235,9 @@ async function runEval(skillName, item) {
       systemPrompt: "You are an isolated task evaluator. Execute the user's task, using only the supplied workspace and explicitly loaded Skill instructions. Tool permissions are enforced by the evaluator.",
     });
     const endedAt = new Date();
+    saveJson(runRoot, "execution-package.json", {
+      root: skillRoot(skillName), before: packageBefore, after: executionPackageFiles(),
+    });
     const parsed = result.parsed;
     const toolEvidence = result.toolEvidence;
     if (configuration !== "without-skill" && !toolEvidence.some(call => loadedSkill(call, skills, fixtureRoot) === skillName)) {
@@ -233,6 +258,7 @@ async function runEval(skillName, item) {
       eval_name: `${skillName}-${item.id}-${item.model}`,
       prompt: item.prompt,
       expectations: item.expectations,
+      files: item.files,
       configuration,
       model: item.model,
       requested_model: process.env.OMP_EVAL_MODEL || item.model,
@@ -269,7 +295,7 @@ async function runEval(skillName, item) {
     writeFileSync(path.join(runRoot, "stderr.txt"), result.stderr ?? "");
     writeFileSync(path.join(runRoot, "status.txt"), gitOutput(fixtureRoot, ["status", "--short", "--untracked-files=all"]));
     writeFileSync(path.join(runRoot, "status-ignored.txt"), gitOutput(fixtureRoot, ["status", "--short", "--untracked-files=all", "--ignored=matching"]));
-    writeOutcomeEvidence(fixtureRoot, runRoot, initialCommit, item);
+    writeOutcomeEvidence(fixtureRoot, runRoot, initialCommit, item, targetInput);
     if (projectFixture) {
       const projectAfter = projectFiles(path.join(fixtureRoot, "target-project"));
       saveJson(runRoot, "project-after.json", projectAfter);
@@ -318,6 +344,30 @@ async function runEval(skillName, item) {
 function valueAfter(flag) {
   const index = args.indexOf(flag);
   return index >= 0 ? args[index + 1] : undefined;
+}
+
+function standardRepositoryRoot(argv) {
+  const flag = "--standard-root";
+  if (argv.some(arg => arg.startsWith(flag) && arg !== flag)) throw new Error(`pass ${flag} ROOT as two arguments`);
+  const positions = argv.flatMap((arg, index) => arg === flag ? [index] : []);
+  const gitRoot = directory => realpathSync(execFileSync("git", ["-C", directory, "rev-parse", "--show-toplevel"],
+    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim());
+  if (positions.length === 0) {
+    try { return gitRoot(fileURLToPath(new URL("../../../", import.meta.url))); } catch {
+      throw new Error(`this package is not inside a Git repository; pass ${flag} ROOT`);
+    }
+  }
+  const value = argv[positions[0] + 1];
+  if (positions.length !== 1 || !value || value.startsWith("-")) throw new Error(`${flag} requires exactly one directory`);
+  let root;
+  try { root = realpathSync(value); } catch { throw new Error(`${flag} does not exist: ${value}`); }
+  if (!statSync(root).isDirectory()) throw new Error(`${flag} is not a directory: ${root}`);
+  let toplevel = null;
+  try { toplevel = gitRoot(root); } catch {}
+  if (toplevel !== root || !existsSync(path.join(root, "skills"))) {
+    throw new Error(`${flag} must be the root of a Git repository with skills/: ${root}`);
+  }
+  return root;
 }
 
 
@@ -436,7 +486,7 @@ function consumerDiff(fixtureRoot, initialCommit, before, after) {
 
 function targetInputFiles(fixtureRoot) {
   const files = {};
-  for (const directory of ["target-project", "project-decisions", "architecture-decisions"]) {
+  for (const directory of ["target-project", "project-decisions", "architecture-decisions", ownerStandardDirectory]) {
     if (!existsSync(path.join(fixtureRoot, directory))) continue;
     for (const [file, entry] of Object.entries(projectFiles(path.join(fixtureRoot, directory)))) {
       files[`${directory}/${file}`] = entry;
@@ -445,13 +495,20 @@ function targetInputFiles(fixtureRoot) {
   return files;
 }
 
+function isEvidencePathList(files) {
+  return Array.isArray(files) && files.every(file => typeof file === "string"
+    && file && !file.includes("\\") && !file.includes("\0") && !file.startsWith("/")
+    && !file.split("/").some(part => !part || part === "." || part === ".."));
+}
+
 function validateFixtureSelection(skillName, item) {
   if (!allSkillNames.includes(skillName) || !Number.isInteger(item.id) || item.id < 1
     || typeof item.model !== "string" || !item.model || /\s/.test(item.model) || typeof item.prompt !== "string"
-    || !Array.isArray(item.files) || item.files.some(file => typeof file !== "string"
-      || !file || file.includes("\\") || file.includes("\0") || file.startsWith("/")
-      || file.split("/").some(part => !part || part === "." || part === ".."))) {
+    || !isEvidencePathList(item.files)) {
     throw new Error("unsafe task identity or evidence path");
+  }
+  if (Object.hasOwn(item, "standard_root") && ![ownerStandardDirectory, "unspecified"].includes(item.standard_root)) {
+    throw new Error("unsupported standard_root");
   }
   if (!Object.hasOwn(item, "fixture")) {
     if (projectSnapshot) throw new Error("--project-snapshot is only valid for a line-store map task");
@@ -740,6 +797,29 @@ function prepareFixture(fixtureRoot) {
     "}",
     "",
   ].join("\n"));
+}
+
+function prepareOwnerStandard(fixtureRoot, skillName, evalId) {
+  if (skillName !== "standard-conformance" || evalId !== 5) {
+    throw new Error(`no owner standard change is defined for ${skillName} eval-${evalId}`);
+  }
+  const ownerRoot = path.join(fixtureRoot, ownerStandardDirectory);
+  mkdirSync(ownerRoot);
+  cpSync(path.join(fixtureRoot, "README.md"), path.join(ownerRoot, "README.md"));
+  for (const directory of ["principles", "concerns", "structure", "tools", "languages", "process"]) {
+    cpSync(path.join(fixtureRoot, directory), path.join(ownerRoot, directory), { recursive: true });
+  }
+  const inspection = path.join(ownerRoot, "languages", "rust", "inspection.md");
+  const lines = readFileSync(inspection, "utf8").split("\n");
+  const header = lines.indexOf("| ファイル | 規律 | 検証手段 |");
+  if (header === -1 || !lines[header + 1]?.startsWith("|---")) {
+    throw new Error("rust inspection ledger changed; update the owner standard fixture");
+  }
+  for (let index = header; index < lines.length && lines[index].startsWith("|"); index += 1) {
+    lines[index] = index === header ? `${lines[index]} 検証入口 |`
+      : index === header + 1 ? `${lines[index]}---|` : `${lines[index]} project の検証入口 |`;
+  }
+  writeFileSync(inspection, lines.join("\n"));
 }
 
 function prepareEvaluationChange(fixtureRoot, skillName, evalId) {
@@ -1192,7 +1272,7 @@ function prepareSemanticMaintenance(fixtureRoot, evalId) {
   }
 }
 
-function writeOutcomeEvidence(fixtureRoot, runRoot, initialCommit, item) {
+function writeOutcomeEvidence(fixtureRoot, runRoot, initialCommit, item, capturedInput) {
   const changed = new Set([
     ...gitOutput(fixtureRoot, ["diff", "--name-only", "-z", initialCommit]).split("\0"),
     ...gitOutput(fixtureRoot, ["ls-files", "--others", "--exclude-standard", "-z"]).split("\0"),
@@ -1200,7 +1280,7 @@ function writeOutcomeEvidence(fixtureRoot, runRoot, initialCommit, item) {
   ].filter(relativePath => relativePath && !isProjectGenerated(relativePath.replace(/^target-project\//, ""))));
   const evidencePaths = new Set([
     ...(item.files ?? []), ...changed,
-    ...(!item.fixture ? Object.keys(targetInputFiles(fixtureRoot)) : []),
+    ...(!item.fixture ? [...Object.keys(capturedInput), ...Object.keys(targetInputFiles(fixtureRoot))] : []),
     ...(item.suite === "semantic-maintenance" ? [
       "docs/research/maintenance-input.md",
       "concerns/configuration/validate-at-startup.md",
@@ -1210,10 +1290,14 @@ function writeOutcomeEvidence(fixtureRoot, runRoot, initialCommit, item) {
   const before = {};
   const after = {};
   for (const relativePath of evidencePaths) {
-    try {
-      before[relativePath] = gitOutput(fixtureRoot, ["show", `${initialCommit}:${relativePath}`]);
-    } catch {
-      before[relativePath] = null;
+    if (Object.hasOwn(capturedInput, relativePath)) {
+      before[relativePath] = capturedInput[relativePath].content;
+    } else {
+      try {
+        before[relativePath] = gitOutput(fixtureRoot, ["show", `${initialCommit}:${relativePath}`]);
+      } catch {
+        before[relativePath] = null;
+      }
     }
     const file = path.resolve(fixtureRoot, relativePath);
     if (!file.startsWith(path.resolve(fixtureRoot) + path.sep)) throw new Error(`evidence outside fixture: ${relativePath}`);
@@ -1233,12 +1317,28 @@ async function gradeEval(skillName, item) {
   }
   const savedTask = JSON.parse(readFileSync(path.join(runRoot, "eval_metadata.json"), "utf8"));
   if (savedTask.eval_id !== item.id || savedTask.model !== item.model) throw new Error("saved task identity mismatch");
-  item = { ...savedTask, id: savedTask.eval_id };
-  const evidenceNames = ["final.md", "tool-evidence.json", "diff.patch", "status.txt", "status-ignored.txt", "before-files.json", "after-files.json", "changed-files.json", "result.json", "timing.json"];
+  const requestedFiles = savedRequestedFiles(savedTask);
+  item = { ...savedTask, id: savedTask.eval_id, files: requestedFiles };
+  const evidenceNames = ["final.md", "tool-evidence.json", "diff.patch", "status.txt", "status-ignored.txt", "before-files.json", "after-files.json", "changed-files.json", "execution-package.json", "result.json", "timing.json"];
   if (savedTask.audit_report_directory) evidenceNames.push("audit-reports.json");
   if (savedTask.fixture?.kind === "line-store") evidenceNames.push("canonical-project.json", "project-before.json", "project-after.json",
     "host-install.json", "host-before.json", "host-after.json", "consumer-diff.patch");
   const evidence = Object.fromEntries(evidenceNames.map((name) => [name, readFileSync(path.join(runRoot, name), "utf8")]));
+  const beforeFiles = JSON.parse(evidence["before-files.json"]);
+  const afterFiles = JSON.parse(evidence["after-files.json"]);
+  const requestedFileSet = new Set(item.files);
+  const unchangedFiles = {};
+  for (const [file, content] of Object.entries(beforeFiles)) {
+    if (typeof content !== "string" || content !== afterFiles[file]
+      || requestedFileSet.has(file) || file.startsWith("target-project/")) continue;
+    unchangedFiles[file] = { sha256: digest(content), bytes: Buffer.byteLength(content) };
+    delete beforeFiles[file];
+    delete afterFiles[file];
+  }
+  evidence["before-files.json"] = JSON.stringify(beforeFiles);
+  evidence["after-files.json"] = JSON.stringify(afterFiles);
+  evidence["unchanged-files.json"] = JSON.stringify(unchangedFiles);
+  saveJson(runRoot, "unchanged-files.json", unchangedFiles);
   const schema = {
     type: "object",
     additionalProperties: false,
@@ -1263,6 +1363,7 @@ async function gradeEval(skillName, item) {
     "Accept equivalent wording and justified alternative layouts. Do not grade source text, fixed tool counts, stage names, or local-only discovery.",
     "For changed normative behavior, final.md claims alone are insufficient: inspect after-files.json, diff.patch, changed-files.json and tool results.",
     "No-change and restraint require both tracked and ignored status plus unchanged content. Do not assume an unobserved verification passed.",
+    "Unchanged, unrequested files outside target-project are represented once in unchanged-files.json by their host-verified equal before/after SHA-256 and byte count. The supplied before-files.json and after-files.json retain requested files, target-project files and every changed file. Source read by the actor remains in tool-evidence.json; do not infer unread semantics from a hash.",
     "A process or model execution error is not evidence of a successful maintenance outcome. Missing evidence fails the affected expectation.",
     "For the product-closure expectation, inspect succeeded bash verification calls and their results; a failed verifier without a later successful run cannot pass.",
     "For a conformance audit, audit-reports.json contains the saved external report. Inspect it together with the inventory/check tool results; a report or claimed count alone does not prove completed coverage.",
@@ -1340,6 +1441,12 @@ async function gradeEval(skillName, item) {
     assertOwnedFixture(graderRoot);
     rmSync(graderRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   }
+}
+
+function savedRequestedFiles(saved) {
+  const files = saved.files;
+  if (!isEvidencePathList(files)) throw new Error("saved task has no verifiable requested files; rerun the task");
+  return files;
 }
 
 function recomputeCommandContract(metadata) {

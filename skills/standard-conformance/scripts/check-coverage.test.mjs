@@ -256,6 +256,30 @@ test("言語の対応表から規律ごとの機械と意味レビューを分�
   assert.equal(f.run("check", report).code, 0);
 });
 
+test("適用対象付きの検証欄でも機械とレビューの両方を要求して未知の手段を拒否する", (context) => {
+  const f = fixture(context);
+  const language = path.join(f.standard, "languages", "rust");
+  fs.mkdirSync(language);
+  fs.writeFileSync(path.join(language, "updater.md"), "## 自動更新\n\n### 要求\n配布物の署名を検証する。\n");
+  const inspection = path.join(language, "inspection.md");
+  const table = "# inspection\n\n## 規則と検証機構の対応\n\n| ファイル | 規律 | 検証手段 |\n|---|---|---|\n";
+  fs.writeFileSync(inspection, `${table}| updater | 自動更新 | 自動更新を使う対象について、構造検査(設定)+artifact 検査(署名)+レビュー(運用) |\n`);
+  const report = f.report();
+  const rule = "languages/rust/updater.md#自動更新";
+  const entry = report.coverage.entries.find((value) => value.document === "languages/rust/updater.md");
+  entry.checks = [{ rule, kind: "review", status: "passed", evidence: "fixture-review:signature-policy" }];
+  const omitted = f.run("check", report);
+  assert.equal(omitted.code, 1);
+  assert.ok(omitted.value.diagnostics.some((value) => value.rule === "missing-assigned-check" && value.location === rule));
+  entry.checks.push({ rule, kind: "machine", status: "passed", evidence: "fixture-signature-check:exit0" });
+  assert.equal(f.run("check", report).code, 0);
+  fs.writeFileSync(inspection, `${table}| updater | 自動更新 | 自動更新を使う対象について、未知の検査(設定)+レビュー(運用) |\n`);
+  const unknown = f.run("inventory");
+  assert.equal(unknown.code, 2);
+  assert.equal(unknown.value.status, "INVALID");
+  assert.match(unknown.value.diagnostics[0].actual, /未知の検証手段: 未知の検査/);
+});
+
 test("割当のない文書でも適用判断だけを実照合にできない", (context) => {
   const f = fixture(context);
   const report = f.report();
@@ -315,4 +339,33 @@ test("別文書の規律を現在文書の実照合として数えない", (cont
   const misplaced = f.run("check", report);
   assert.equal(misplaced.code, 2);
   assert.ok(misplaced.value.diagnostics[0].actual.includes("check.rule"));
+});
+
+test("checkerが読めない形へ進んだ正本を旧い解釈で合格にせずINVALIDにする", (context) => {
+  const f = fixture(context);
+  const language = path.join(f.standard, "languages", "typescript");
+  fs.mkdirSync(language);
+  fs.writeFileSync(path.join(language, "formation.md"), "## 状態\n\n### 要求\n状態を型で表す。\n");
+  const inspection = path.join(language, "inspection.md");
+  fs.writeFileSync(inspection, "# inspection\n\n## 規則と検証機構の対応\n\n| ファイル | 規律 | 検証手段 |\n|---|---|---|\n| formation | 状態 | レビュー(型で表した意味) |\n");
+  const report = f.report();
+  const unsupported = [
+    "# inspection\n\n## 規則と検証機構の対応\n\n| ファイル | 規律 | 検証手段 | 検証入口 |\n|---|---|---|---|\n| formation | 状態 | レビュー(型で表した意味) | projectの検証入口 |\n",
+    "# inspection\n\n## 規則と検証機構の対応\n\n| ファイル | 規律 | 検証手段 | 検証入口\n|---|---|---|---|\n| formation | 状態 | レビュー(型で表した意味) | projectの検証入口\n",
+    "# inspection\n\n## 規則と検証機構の対応\n\n| ファイル | 規律 | 検証手段 |\n|---|---|---|\n| formation | 状態 | レビュー(型で表した意味) | projectの検証入口\n",
+    "# inspection\n\n## 規則と検証機構の対応\n\n| ファイル | 規律 | 検証手段 |\n|---|---|---|---|\n| formation | 状態 | レビュー(型で表した意味) |\n",
+    "# inspection\n\n## 規則と検証機構の対応\n\n| ファイル | 規律 | 検証手段 |\n| formation | 状態 | レビュー(型で表した意味) |\n",
+    "# inspection\n\n## 新しい検証割当\n\n| ファイル | 規律 | 検証手段 |\n|---|---|---|\n| formation | 状態 | 型(状態) |\n",
+    "# inspection\n\n## 規則と検証機構の対応\n\n- formation#状態: 型による検査\n",
+    "# inspection\n\n## 規則と検証機構の対応\n\n| ファイル | 規律 | 検証手段 |\n|---|---|---|\n",
+  ];
+  for (const text of unsupported) {
+    fs.writeFileSync(inspection, text);
+    for (const command of ["inventory", "check"]) {
+      const result = f.run(command, report);
+      assert.equal(result.code, 2);
+      assert.equal(result.value.status, "INVALID");
+      assert.match(result.value.diagnostics[0].actual, /言語の検証対応表が(?:不正|ない): languages\/typescript\/inspection\.md/);
+    }
+  }
 });

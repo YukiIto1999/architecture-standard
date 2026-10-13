@@ -10,8 +10,11 @@ description: architecture-standard 自体を読み取り専用で監査し、重
 
 ## 参照経路
 
-この Skill の `SKILL.md` を symlink の実体まで辿り、その directory を Skill package root とする。
-補助 reference の `../standard-update/references/` は、この実体から同じ source にある sibling package へ辿る相対 path とする。
+`<standard-root>` は、監査を依頼された標準 checkout の root である。
+依頼が明示した値か、host の agent policy が案内する現行規範 root を使い、この Skill の配備先、固定 Rev、`pwd` から推定しない。
+値を得られなければ不足する前提として返し、配備済み source の標準本文を監査しない。
+`<skill-package-root>` は、成功して読んだこの `SKILL.md` を symlink の実体まで辿った directory である。
+補助 reference の `<skill-package-root>/../standard-update/references/` と機械検査の `<skill-package-root>/../standard-update/scripts/` は、同じ source にある sibling package へ辿る path である。
 
 ## 監査範囲
 
@@ -29,11 +32,15 @@ description: architecture-standard 自体を読み取り専用で監査し、重
 
 1. root `README.md` が監査対象または判定 context にある場合は領域表と判定の枠を読む。scoped / full を決め、対象と未監査範囲を固定する。読取を許可されていなければ、root の枠を要する判定を未確認にする。
 2. 監査対象と、判定 context にある領域 README を読み、下の10軸から判定を変えうる軸だけを使う。
-   `../standard-update/references/` は必要な観点を得る補助資料に限り、違反を確定する規範の根拠には使わない。
+   補助 reference は必要な観点を得る資料に限り、違反を確定する規範の根拠には使わない。
    closed list では、reference や検査 script が必要か判断するために一覧外を読まず、許可された file だけで判定する。
    判定 context は基準としてだけ使い、その file から別の指摘を作らない。
    `skills/` は標準の6領域ではなく運用入口なので、領域本文の書式を適用せず、skill 自身の役割、実行可能性、発火境界で判定する。
-3. full audit では、監査対象の標準 checkout の root から `bash skills/standard-update/scripts/verify.sh` を機械検査として使う。
+3. full audit では、次の command で標準本文の機械検査を実行する。
+   ```bash
+   bash "<skill-package-root>/../standard-update/scripts/verify.sh" --standard-root "<standard-root>"
+   ```
+   実行する verifier は sibling package のものであり、`<standard-root>` や `pwd` にある同名の script へ切り替えない。
    scoped audit では、指定範囲だけを読む focused check がある場合に限って使い、範囲外の本文まで読む全域 verifier は実行しない。
    機械検査の PASS を意味監査の代用にしない。
    必要な検査を利用できない場合は未実行理由を報告する。

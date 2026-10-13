@@ -1,8 +1,26 @@
 #!/usr/bin/env bash
-# 標準の更新後に走らせる機械検査。repo の root で実行する。読み取り専用。repo 内に一時ファイルを作らない。
 set -uo pipefail
 
-required_commands=(git rg fd awk sed find wc tr head tail sort diff dirname paste basename cut node)
+STANDARD_ROOT_ARG=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --standard-root)
+      if [ -n "$STANDARD_ROOT_ARG" ] || [ "$#" -lt 2 ] || [ -z "$2" ]; then
+        printf 'FAIL: --standard-root には空でない path を一度だけ指定すること\nusage: %s [--standard-root ROOT]\n' "${BASH_SOURCE[0]##*/}" >&2
+        exit 2
+      fi
+      STANDARD_ROOT_ARG="$2"
+      shift 2
+      ;;
+    *)
+      printf 'FAIL: 不明な引数: %s\nusage: %s [--standard-root ROOT]\n' "$1" "${BASH_SOURCE[0]##*/}" >&2
+      exit 2
+      ;;
+  esac
+done
+
+required_commands=(rg fd awk sed find wc tr head tail sort diff dirname paste basename cut node)
+[ -n "$STANDARD_ROOT_ARG" ] || required_commands+=(git)
 for required_command in "${required_commands[@]}"; do
   if ! command -v "$required_command" >/dev/null 2>&1; then
     printf 'FAIL: missing required command: %s\n' "$required_command" >&2
@@ -11,11 +29,24 @@ for required_command in "${required_commands[@]}"; do
 done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-REPO_ROOT=$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null) || {
-  printf 'FAIL: git repository で実行すること\n' >&2
-  exit 1
-}
-cd "$REPO_ROOT" || exit 1
+if [ -n "$STANDARD_ROOT_ARG" ]; then
+  STANDARD_ROOT="$(CDPATH= cd -- "$STANDARD_ROOT_ARG" 2>/dev/null && pwd -P)" || {
+    printf 'FAIL: --standard-root が存在する directory ではない: %s\n' "$STANDARD_ROOT_ARG" >&2
+    exit 2
+  }
+else
+  STANDARD_ROOT=$(git -C "$SCRIPT_DIR/../../.." rev-parse --show-toplevel 2>/dev/null) || {
+    printf 'FAIL: git repository で実行すること\n' >&2
+    exit 1
+  }
+fi
+for standard_entry in README.md principles concerns structure tools languages process; do
+  if [ ! -e "$STANDARD_ROOT/$standard_entry" ]; then
+    printf 'FAIL: 標準 root に %s がない: %s\n' "$standard_entry" "$STANDARD_ROOT" >&2
+    exit 2
+  fi
+done
+cd "$STANDARD_ROOT" || exit 1
 
 FAILED=0
 
@@ -421,7 +452,7 @@ fi
 
 echo
 echo "=== 9. principles と concerns の逐語一致(18文字連続一致・5文節相当の近似。goal-04 再発防止) ==="
-if overlap_out=$(node "$SCRIPT_DIR/verbatim-overlap.mjs" 2>&1); then
+if overlap_out=$(node "$SCRIPT_DIR/verbatim-overlap.mjs" --standard-root "$STANDARD_ROOT" 2>&1); then
   echo "$overlap_out"
   candidates=$(echo "$overlap_out" | rg -oP '(?<=candidates: )\d+' | head -1)
   if [ "${candidates:-}" = "0" ]; then
@@ -436,7 +467,7 @@ fi
 
 echo
 echo "=== 10. concerns・structure・languages の製品名指しが採用エントリに登録済みか(goal-25・goal-26) ==="
-if naming_out=$(node "$SCRIPT_DIR/naming-registry-check.mjs" 2>&1); then
+if naming_out=$(node "$SCRIPT_DIR/naming-registry-check.mjs" --standard-root "$STANDARD_ROOT" 2>&1); then
   echo "$naming_out"
   name_violations=$(echo "$naming_out" | rg -oP '(?<=violations: )\d+' | head -1)
   if [ "${name_violations:-}" = "0" ]; then
@@ -502,7 +533,7 @@ else
 fi
 
 echo "=== 13. 規律名指しの鉤括弧引用が正本の見出しと一致するか ==="
-if citation_out=$(node "$SCRIPT_DIR/heading-citation-check.mjs" 2>&1); then
+if citation_out=$(node "$SCRIPT_DIR/heading-citation-check.mjs" --standard-root "$STANDARD_ROOT" 2>&1); then
   echo "$citation_out"
   pass "link 行の鉤括弧引用が全て link 先の見出しと一致"
 else

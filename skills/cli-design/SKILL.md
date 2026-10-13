@@ -13,9 +13,10 @@ description: CLI の新規設計や公開契約の変更で、人と script の�
 1. 対象 project、依頼が設計だけか実装も含むか、変更する公開契約と変更しない範囲を固定する。
    architecture-standard を適用する対象の入口は `standard-apply` を使い、その変更契約と選択済み process を引き継ぐ。
    同じ作業ですでに読んだ本文と証拠は、現在も同じ内容なら読み直さない。
-2. この `SKILL.md` の実体から二段上を標準 root とし、[console の構造](../../structure/surfaces/console/layout.md) を読む。
-   設定を解決するなら [configuration](../../concerns/configuration/README.md) と、そこが正本とする源、型、起動時検証の本文を読む。
-   対話入力と破壊操作は [experience](../../concerns/experience/README.md) の回復の本文へ進む。
+2. `standard-apply` の前提が固定した `<standard-root>` から、`<standard-root>/structure/surfaces/console/layout.md` の console の構造を読む。
+   この `SKILL.md` の配備先や固定 Rev から標準 root を推定せず、`<standard-root>` が得られなければ不足する前提として返す。
+   設定を解決するなら `<standard-root>/concerns/configuration/README.md` と、そこが正本とする源、型、起動時検証の本文を読む。
+   対話入力と破壊操作は `<standard-root>/concerns/experience/README.md` の回復の本文へ進む。
    terminal を所有する場合だけ、console が指す資源と終了の正本を読む。
 3. project の既存 command、help、利用例、task 定義、consumer script、設定、公開 operation、関連 test を読んで現在の契約を回収する。
    根拠のある既定動作と未確定の選択を分け、既存の公開契約を一般的な慣習だけで上書きしない。
@@ -84,12 +85,12 @@ cell 幅を使う配置と切詰めの実現を既存 ecosystem で確認し、�
 
 契約から必要な呼び出しを選び、argv、stdin、設定、TTY の条件、stdout、stderr、終了 status、前後の業務状態を期待結果に対応させる。
 成功、入力拒否、空結果、出力途中の失敗、競合、非対話の破壊操作、再実行、確定前後の取り消しは、対象に存在する経路を漏らさず含める。
-terminal の取得と復元、一時引き渡し、入力 loop の実結合は [tests の方法](../../structure/tests/methods.md) が定める PTY の検査へ割り当てる。
+terminal の取得と復元、一時引き渡し、入力 loop の実結合は `<standard-root>/structure/tests/methods.md` の tests の方法が定める PTY の検査へ割り当てる。
 例の件数を固定せず、同じ失敗を複数の例で重ねる前に未観測の契約条件を探す。
 
 実装を依頼された場合は、定めた契約の範囲だけを既存の parser と composition に反映し、consumer、help、利用例、test を一緒に更新する。
 parser library の選定や切替は、別途依頼されたか実現不能の根拠がある場合にだけ扱う。
-検証を許可された段階で project の入口を使い、同一の成功結果の再利用と実行範囲は [検証の順序](../../process/verification.md) に従う。
+検証を許可された段階で project の入口を使い、同一の成功結果の再利用と実行範囲は `<standard-root>/process/verification.md` の検証の順序に従う。
 
 成果は、実装できる command の仕様、代表呼び出しと観測する結果、未確定の決定、実装した範囲、実測した検証と未実行の検査を分けて返す。
 設計だけなら検証計画を渡し、設計した結果を動作確認済みとは報告しない。

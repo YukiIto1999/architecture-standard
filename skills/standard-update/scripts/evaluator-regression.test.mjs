@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, test } from "node:test";
@@ -10,7 +10,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { parseOmpStream } from "./omp-eval-adapter.mjs";
 const scripts = path.dirname(fileURLToPath(import.meta.url));
-const repo = path.resolve(scripts, "../../..");
+const explicitStandardRoot = process.env.EVALUATOR_REGRESSION_STANDARD_ROOT;
+const repo = explicitStandardRoot ? realpathSync(explicitStandardRoot) : path.resolve(scripts, "../../..");
+const standardRootArguments = explicitStandardRoot ? ["--standard-root", repo] : [];
 const taskRunner = path.join(scripts, "run-task-evals.mjs");
 const triggerRunner = path.join(scripts, "run-trigger-evals.mjs");
 const root = mkdtempSync(path.join(tmpdir(), "architecture-standard-omp-regression-"));
@@ -29,7 +31,9 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 const args = process.argv.slice(2);
+if (process.env.REGRESSION_PROVIDER_STARTS) fs.appendFileSync(process.env.REGRESSION_PROVIDER_STARTS, JSON.stringify({ args: args.slice(0, 2) }) + "\\n");
 if (args[0] === "config") {
   console.log(JSON.stringify({ key: "modelRoles",
     value: process.env.REGRESSION_CONFIG_ERROR ? {} : { default: "regression/regression-model:medium" },
@@ -265,12 +269,13 @@ else if (mode === "late-read") {
 }
 `, { mode: 0o755 });
 
-function invoke(executable, args, env = {}) {
+function invoke(executable, args, env = {}, cwd = undefined) {
   const environment = { ...process.env, OMP_EVAL_COMMAND: provider, OMP_EVAL_MODEL: "", OMP_EVAL_TIMEOUT_MS: "5000", ...env };
   delete environment.NODE_TEST_CONTEXT;
-  const result = spawnSync(process.execPath, [executable, ...args], {
-    encoding: "utf8", timeout: 30_000,
-    env: environment,
+  const target = executable === taskRunner || executable === triggerRunner ? standardRootArguments : [];
+  const result = spawnSync(process.execPath, [executable, ...args, ...target], {
+    encoding: "utf8", timeout: 2 * Number(environment.OMP_EVAL_TIMEOUT_MS) + 30_000,
+    env: environment, cwd,
   });
   assert.equal(result.error, undefined, result.error?.message);
   assert.equal(result.signal, null, result.stdout + result.stderr);
@@ -405,7 +410,7 @@ test("task and grader isolate ambient skills, history and oracle files", () => {
 test("actual actor fixtures retain valid product checks without exposing hidden instructions or rubrics", () => {
   for (const configuration of ["old-skill", "with-skill"]) {
     const result = runTask("actor-product-check", configuration, {
-      REGRESSION_PRODUCT_CHECK: "1", OMP_EVAL_TIMEOUT_MS: "25000",
+      REGRESSION_PRODUCT_CHECK: "1", OMP_EVAL_TIMEOUT_MS: "60000",
     });
     success(result);
     const check = load(path.join(result.run, "tool-evidence.json")).find(event => event.id === "product-check");
@@ -416,14 +421,14 @@ test("actual actor fixtures retain valid product checks without exposing hidden 
     "--configuration", "without-skill", "--skill", "standard-conformance", "--eval-id", "1",
   ], {
     SKILL_EVAL_OUTPUT_ROOT: path.join(root, "conformance-product-check"),
-    REGRESSION_PRODUCT_ONLY: "1", OMP_EVAL_TIMEOUT_MS: "25000",
+    REGRESSION_PRODUCT_ONLY: "1", OMP_EVAL_TIMEOUT_MS: "60000",
   });
   success(conformanceWithout);
   for (const configuration of ["old-skill", "with-skill"]) {
     const output = path.join(root, "scope-product-check");
     const result = invoke(taskRunner, ["--configuration", configuration, "--skill", "standard-update", "--eval-id", "4"], {
       SKILL_EVAL_OUTPUT_ROOT: output, REGRESSION_CASE: "scope-projection",
-      REGRESSION_PRODUCT_CHECK: "1", OMP_EVAL_TIMEOUT_MS: "25000",
+      REGRESSION_PRODUCT_CHECK: "1", OMP_EVAL_TIMEOUT_MS: "60000",
     });
     success(result);
   }
@@ -643,6 +648,121 @@ test("scope-selection tasks receive public task choices without evaluator rubric
     assert(projection.evals.every(entry => Object.keys(entry).length === 2));
   }
 });
+
+
+function prepareStandardRepository(name) {
+  const source = path.join(root, name);
+  const cloned = spawnSync("git", ["clone", "--quiet", "--no-hardlinks", repo, source], { encoding: "utf8" });
+  assert.equal(cloned.status, 0, cloned.stdout + cloned.stderr);
+  return { path: source };
+}
+
+function installImmutablePackage(name) {
+  const directory = path.join(root, name);
+  mkdirSync(directory);
+  for (const file of ["run-task-evals.mjs", "run-trigger-evals.mjs", "omp-eval-adapter.mjs", "omp-eval-policy.mjs"]) {
+    cpSync(path.join(scripts, file), path.join(directory, file));
+    chmodSync(path.join(directory, file), 0o444);
+  }
+  assert.notEqual(spawnSync("git", ["-C", directory, "rev-parse", "--show-toplevel"], { stdio: "ignore" }).status, 0,
+    "the regression temporary directory must be outside Git");
+  return { task: path.join(directory, "run-task-evals.mjs"), trigger: path.join(directory, "run-trigger-evals.mjs") };
+}
+
+
+test("an invalid or missing target repository stops before any provider or OMP command starts", () => {
+  const standard = prepareStandardRepository("rejected-root-source");
+  const packaged = installImmutablePackage("rejected-root-package");
+  const outsideGit = path.join(root, "rejected-root-outside-git");
+  mkdirSync(path.join(outsideGit, "skills"), { recursive: true });
+  const withoutSkills = path.join(root, "rejected-root-without-skills");
+  mkdirSync(withoutSkills);
+  const initialized = spawnSync("git", ["init", "--quiet", withoutSkills], { encoding: "utf8" });
+  assert.equal(initialized.status, 0, initialized.stdout + initialized.stderr);
+  const regularFile = path.join(root, "rejected-root-file");
+  writeFileSync(regularFile, "not a directory");
+  const starts = path.join(root, "rejected-root-starts.jsonl");
+  const output = path.join(root, "rejected-root-output");
+  const rejected = {
+    "missing value": ["--standard-root"],
+    "option in place of the value": ["--standard-root", "--grade"],
+    "nonexistent directory": ["--standard-root", path.join(root, "rejected-root-missing")],
+    "regular file": ["--standard-root", regularFile],
+    "directory outside Git": ["--standard-root", outsideGit],
+    "subdirectory of the repository": ["--standard-root", path.join(standard.path, "skills")],
+    "repository without skills": ["--standard-root", withoutSkills],
+    "duplicate option": ["--standard-root", standard.path, "--standard-root", standard.path],
+    "joined value": [`--standard-root=${standard.path}`],
+    "omitted option outside Git": [],
+  };
+  const runners = [
+    [packaged.task, ["--configuration", "with-skill", "--skill", "standard-update", "--eval-id", "10"]],
+    [packaged.trigger, ["standard-apply", String(positiveQuery)]],
+  ];
+  for (const [label, option] of Object.entries(rejected)) {
+    for (const [runner, runnerArguments] of runners) {
+      const result = invoke(runner, [...runnerArguments, ...option], {
+        SKILL_EVAL_OUTPUT_ROOT: output, REGRESSION_PROVIDER_STARTS: starts, REGRESSION_KIND: "trigger",
+      }, standard.path);
+      failure(result);
+      assert.match(result.stderr, /standard-root|Git repository/, label);
+      assert(!existsSync(starts), `${label}: OMP started`);
+      assert(!existsSync(output), `${label}: evaluation artifacts were written`);
+    }
+  }
+});
+
+test("grading keeps requested unchanged source in full and saves the request with the run", () => {
+  const definitions = load(path.join(repo, "skills/standard-update/evals/evals.json"));
+  const task = definitions.evals.find(item => item.id === 10);
+  const definitionFile = files => {
+    const file = path.join(root, `requested-files-${digest(JSON.stringify(files)).slice(0, 8)}.json`);
+    save(file, { skill_name: definitions.skill_name, evals: [{ ...task, files }] });
+    return file;
+  };
+  const unrelated = "docs/research/maintenance-input.md";
+  const first = runTask("requested-unchanged", "with-skill", {}, ["--grade"]);
+  success(first);
+  const original = { before: load(path.join(first.run, "before-files.json")), after: load(path.join(first.run, "after-files.json")) };
+  const requestedUnchanged = task.files.filter(file => typeof original.before[file] === "string" && original.before[file] === original.after[file]);
+  assert(requestedUnchanged.length > 0, "the task requests no unchanged source");
+  assert.equal(typeof original.before[unrelated], "string");
+  const projection = () => {
+    const prompt = readFileSync(path.join(first.run, "grader-prompt.txt"), "utf8");
+    const label = "\n\nEvidence: ";
+    const evidence = JSON.parse(prompt.slice(prompt.lastIndexOf(label) + label.length));
+    return Object.fromEntries(["before-files.json", "after-files.json", "unchanged-files.json"]
+      .map(name => [name, JSON.parse(evidence[name])]));
+  };
+  const expectRequestedInFull = () => {
+    const sent = projection();
+    for (const file of requestedUnchanged) {
+      assert.equal(sent["before-files.json"][file], original.before[file], file);
+      assert.equal(sent["after-files.json"][file], original.after[file], file);
+      assert(!Object.hasOwn(sent["unchanged-files.json"], file), file);
+    }
+    assert(!Object.hasOwn(sent["before-files.json"], unrelated));
+    assert.deepEqual(sent["unchanged-files.json"][unrelated],
+      { sha256: digest(original.before[unrelated]), bytes: Buffer.byteLength(original.before[unrelated]) });
+  };
+  expectRequestedInFull();
+  assert.equal(load(path.join(first.run, "before-files.json"))[unrelated], original.before[unrelated],
+    "the saved artifact lost the unrelated unchanged file");
+  const metadataFile = path.join(first.run, "eval_metadata.json");
+  const saved = load(metadataFile);
+
+  const regrade = file => runTask("requested-unchanged", "with-skill", { REGRESSION_GRADE_ONLY: "1" },
+    [...(file === null ? [] : ["--eval-file", file]), "--grade-only"]);
+  success(regrade(definitionFile([])));
+  expectRequestedInFull();
+
+  const { files, ...incomplete } = saved;
+  save(metadataFile, incomplete);
+  const missingRequest = regrade(null);
+  failure(missingRequest);
+  assert.match(missingRequest.stderr, /no verifiable requested files/);
+});
+
 test("unknown event and terminal content cannot pass a negative routing query", () => {
   const message = { role: "assistant", provider: "regression", model: "model",
     stopReason: "stop", content: [{ type: "text", text: "none" }] };
@@ -753,6 +873,47 @@ test("provider hooks expose only allowed tool schemas and reject forbidden calls
   assert.notEqual(taskPolicy.invoke("tool_call", {
     toolName: "bash", input: { command: "git status --short" },
   })?.block, true);
+  const verifier = "skills/standard-update/scripts/verify.sh";
+  mkdirSync(path.join(workspace, "owner-standard"));
+  mkdirSync(path.join(workspace, "evals"));
+  const verification = connect({ ...policy, tools: ["bash"], bashPolicy: { standardVerification: true } });
+  const verify = command => verification.invoke("tool_call", { toolName: "bash", input: { command } });
+  for (const command of [
+    `bash ${verifier}`,
+    `bash ${verifier} --standard-root .`,
+    `bash ${verifier} --standard-root owner-standard`,
+    `bash ${JSON.stringify(path.join(workspace, verifier))} --standard-root ${JSON.stringify(workspace)}`,
+    "bash skills/standard-audit/../standard-update/scripts/verify-test.sh --standard-root .",
+    "bash skills/standard-update/scripts/skill-package-check.sh --standard-root .",
+  ]) assert.notEqual(verify(command)?.block, true, command);
+  for (const command of [
+    `bash ${verifier} --standard-root`,
+    `bash ${verifier} --standard-root ..`,
+    `bash ${verifier} --standard-root ${path.dirname(workspace)}`,
+    `bash ${verifier} --standard-root missing-directory`,
+    `bash ${verifier} --standard-root resource.md`,
+    `bash ${verifier} --standard-root evals`,
+    `bash ${verifier} --standard-root https://example.invalid/`,
+    `bash ${verifier} --standard-root . --standard-root .`,
+    `bash ${verifier} --standard-root=.`,
+    `bash ${verifier} . --standard-root .`,
+    `bash ${verifier} --standard-root . ; touch unauthorized-effect`,
+    "bash skills/standard-update/scripts/run-task-evals.mjs --standard-root .",
+    `bash ${path.join(path.dirname(workspace), verifier)} --standard-root .`,
+  ]) assert.equal(verify(command).block, true, command);
+  const promptRun = runTask("verifier-prompt");
+  success(promptRun);
+  const actorPrompt = readFileSync(path.join(promptRun.run, "actor-prompt.txt"), "utf8");
+  const promptedVerifier = /`(bash skills\/standard-update\/scripts\/verify\.sh --standard-root [^`]+)`/.exec(actorPrompt)?.[1];
+  assert(promptedVerifier, "the actor prompt names no explicit-root verifier command");
+  assert.notEqual(verify(promptedVerifier)?.block, true, promptedVerifier);
+  const checker = "skills/standard-conformance/scripts/check-coverage.mjs";
+  const conformance = connect({ ...policy, tools: ["bash"], bashPolicy: { conformance: true } });
+  const inventory = script => conformance.invoke("tool_call", {
+    toolName: "bash", input: { command: `node ${script} inventory --standard-root . --project-root .` } });
+  assert.notEqual(inventory(checker)?.block, true);
+  assert.notEqual(inventory(path.join(workspace, checker))?.block, true);
+  assert.equal(inventory(path.join(path.dirname(workspace), checker)).block, true);
   const editor = connect({ ...policy, tools: ["edit"] });
   const patch = "*** Begin Patch\n[resource.md#ABCD]\nPUT 1.=1:\n+updated\n*** End Patch\n";
   assert.notEqual(editor.invoke("tool_call", { toolName: "edit", input: { input: patch } })?.block, true);
@@ -903,3 +1064,4 @@ console.log(JSON.stringify({ type: "agent_end", messages: [message] }));
   assert.equal(new Set([baseline, verdict, captured, snapshot, metadata.project_input]
     .map(evidence => evidence.canonical_sha256)).size, 1, "verification evidence names a different canonical input");
 });
+

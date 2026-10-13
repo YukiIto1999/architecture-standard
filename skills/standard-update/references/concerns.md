@@ -2,13 +2,13 @@
 
 concerns は、特定概念で守る言語非依存の性質と保証を所有する。
 principles の判断基準と一般規律を、認可、永続化、並行性などの概念の性質と保証として具象化する。
-配置は [root README](../../../README.md) の配置規則に従い、実装が一つのモジュールでも概念の保証は concerns に置き、具体的な構成と配置は structure に置く。
+配置は `<standard-root>/README.md` の配置規則に従い、実装が一つのモジュールでも概念の保証は concerns に置き、具体的な構成と配置は structure に置く。
 
 ## 既存の24概念
 
 effect・concurrency・dependency・types・context-propagation・persistence・caching・migration・transaction・messaging・workflow・authentication・authorization・privacy・security・secrets・audit-trail・observability・configuration・resilience・performance・lifecycle・experience・accessibility。
 新概念を足す前に、この24に当たる所がないかを必ず確かめる。当たれば足す、当たらなければ抜けなので新設する。
-file を分ける単位の契約は、[concerns/README](../../../concerns/README.md) を正本とする。
+file を分ける単位の契約は、`<standard-root>/concerns/README.md` を正本とする。
 分ける根拠は分類軸で述べ、行数や項目数を根拠にしない。
 
 ## 根拠の高度

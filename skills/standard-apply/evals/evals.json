@@ -9,7 +9,7 @@
       "files": [],
       "expectations": [
         "standard-audit ではなく対象 project への standard-apply と判定する",
-        "現在の標準本文を基準にし、過去版や記録済み commit を基準にしない",
+        "明示された `<standard-root>` の現在の標準本文を基準にし、使った root を報告へ示し、過去版、記録済み commit、Skill の配備先を基準にしない",
         "README.md と process/audit.md を判定根拠として file 名付きで示す",
         "対象 project と標準 repo の双方を変更しない",
         "process/audit.md の severity 対応を自己判断で引き上げない",
@@ -61,7 +61,7 @@
       "根拠に使う標準本文の確認は exact file path だけで行い、directory を網羅探索しない",
         "安全と検証をコード量削減の対象にせず、同時実行上限と全 job 完了を観測する検証を残す",
         "process/design.md が無条件に要求する検証、naming、modeling、separation、境界と、変更が触れる並行処理、Rust 実現だけを読み、他の concerns や言語実現を加えない",
-      "標準本文は手元の <standard-root> から直接読み、current directory 任せの git show、pwd、git rev-parse を使わない",
+      "標準本文は明示された `<standard-root>` から直接読み、current directory 任せの git show、pwd、git rev-parse や Skill の所在からの root 推定を使わない",
       "languages の既存 Tokio 採用を確認する場合も、同じ file の queue engine など無関係な entry を設計範囲へ取り込まない",
         "必須の失敗伝播、取消、persisted authority が Unknown の間は標準が明示する機構を十分な段として選択せず、最初に成立しうる暫定段として確定条件だけを示す。後の候補を比較・設計せず、『後続の段は検討しない』『新しい依存は不要』のような後段の否定にも触れない"
       ]
@@ -174,6 +174,22 @@
         "固定host oracleでrenderSelectedのResultの成功・position-out-of-range、追加順序、重複、空・単一・複数、負・末尾・範囲外、失敗時の状態不変を維持する",
         "task1 snapshot入力では全boundary-external production consumerを入力sourceから一切変更せず、canonical入力では必要なconsumer変更を実差分と理由で示し、二条件を同じ入力の改善量へ混ぜない",
         "固定test・契約・manifest・lockfile・検証入口を弱めず、host側のcheck・verify・verify:pushと未変更consumerを含む変更・影響範囲mutationの実観測を残し、失敗・未検出mutant・対象選択の欠落・判定未完了を成功として代替しない"
+      ]
+    },
+    {
+      "id": 11,
+      "model": "default",
+      "standard_root": "unspecified",
+      "prompt": "`target-project/app/worker.rs` を architecture-standard 準拠の観点でレビューしてください。一般的なコードレビューではなく標準適用として行い、標準のどの規律に照合したか、未確認事項は何かを明記してください。対象 project と標準は変更しません。",
+      "expected_output": "標準本文を読む前に `<standard-root>` が依頼にも host の指示にも示されていないことを前提の不足として報告する。作業 directory、Skill の所在、固定 Rev から標準本文を探して標準適用のレビューへ進まず、標準の規律に照合した判定を出さない。必要な値の入手先を示し、標準へ照合できていない範囲を未確認とする。",
+      "files": [],
+      "expectations": [
+        "standard-apply を最初に読んで標準適用の入口と判定する",
+        "`<standard-root>` が依頼にも host の指示にも示されていないことを不足する前提として明示し、必要な値の入手先として依頼での指定または agent policy を挙げる",
+        "作業 directory の README.md と principles、concerns、structure、tools、languages、process を標準本文として読まず、pwd、git rev-parse、Skill の所在、固定 Rev から標準 root を導かない",
+        "標準本文の引用、規律への適合や違反の判定を出さず、一般的な best practice のコードレビューで標準適用の代わりにしない",
+        "標準へ照合できていない範囲を未確認として示し、未実測の事項を合格として扱わない",
+        "対象 project と標準のどちらも編集しない"
       ]
     }
   ]
