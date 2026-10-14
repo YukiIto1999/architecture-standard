@@ -25,3 +25,13 @@ remote の通信は、ui port を通して行う。
 型は、contracts/generated の型を参照する。
 参照の規律は [layout](./layout.md) と [skeleton](../../skeleton.md) に従う。
 状態管理の機構は [languages](../../../languages/) が定める。
+
+## 区分の表示と選択
+
+業務区分の識別子と表示名を分け、表示名や表示順から送信する区分を復元しない。
+viewer は表示名と表示順を表示へ写す対応を持ち、公開契約が持つ表示名と表示順を別の一覧へ複製しない。
+業務区分の意味と入力の値域は公開契約に従う。
+選択肢は、入力先の operation が公開する選択可能な集合から導き、区分の全一覧や過去の表示対象と同一視しない。
+認可・現在の状態・廃止による選択制限を viewer で独立して定義せず、operation の選択肢を返す ui port を通して受け取る。
+取得した選択肢は「remote の状態」に従って扱う。
+入力補助と契約の検証の区別は [concerns/types](../../../concerns/types/parse-once-at-boundary.md) の「境界で一度だけ parse する」に従う。
