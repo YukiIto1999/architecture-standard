@@ -50,6 +50,8 @@ CancellationToken を省略可能にして渡さない形にせず、時間切�
 境界より内側の非同期 API は、`AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` という非取消の後始末を除き、同じ `Deadline` と CancellationToken を必須の引数として受け取り下流へ渡す。
 非取消の後始末でも元の `Deadline` を保持する。
 `AcquireRelease` の release は同じ `Deadline` を引数で受け、`IAsyncDisposable.DisposeAsync` の呼出側は同じ `Deadline` を後始末の scope に保持するが、どちらにも CancellationToken を渡さない。
+この `Deadline` と CancellationToken は、[context-propagation](../../concerns/context-propagation/unified-request-context.md) の「実行文脈の由来と寿命を保って伝える」に従う実行 metadata を個別の引数へ取り出した値とし、認証主体や業務入力と一つの context の型にまとめない。
+同期の純粋な domain の関数には、`Deadline` と CancellationToken の引数を要求しない。
 各 hop は TimeProvider の現在時刻から `Deadline` までの remaining を計算し、その remaining から局所の CancellationTokenSource を作る。
 局所の token は親の CancellationToken と linked token に合流させ、同じ絶対期限とともに下流へ渡す。
 CancellationTokenSource.Cancel は停止要求であり、子の Task の完了待ちとは別に扱う。
@@ -62,6 +64,8 @@ CancellationToken を境界から末端まで引数で渡せば、取り消し�
 時間切れを linked token に合流させれば、時間切れも取り消しとして同じ経路で伝わる。
 `Deadline` を境界で一度だけ作って値のまま渡せば、hop が増えても時間枠の起点は動かない。
 各 hop が同じ絶対時刻から remaining を計算すれば、通常処理の待機期限を引き直さずに済むが、取消後の drain がその期限内に終わる保証にはならない。
+`Deadline` と CancellationToken を個別の引数で渡せば、.NET の協調取消と remaining の計算をそのまま使いながら、期限の起点と取消の系統を保てる。
+同期の純粋な domain の関数は期限も取消も観測しないので、引数を要求しても使われない値が核へ入るだけである。
 取り消し後の release または `DisposeAsync` へ CancellationToken を渡すと、後始末自体が中断され、資源を漏らす。
 元の `Deadline` を保持すれば期限超過の診断情報を失わず、期限を理由に後始末を取り消さずに済む。
 Cancel から戻ることや IsCancellationRequested が示すのは要求の状態であり、Task の終了やその finally の完了ではない。
@@ -75,12 +79,15 @@ CancellationToken が、省略されずに渡されている。
 非取消の後始末が元の `Deadline` を保持し、release と `DisposeAsync` のどちらにも CancellationToken が渡されていない。
 各 hop の局所 timeout が、TimeProvider の現在時刻から同じ `Deadline` までの remaining から作られている。
 局所 timeout の token と親の CancellationToken が linked token に合流し、下流へ伝播している。
+同期の純粋な domain の関数が `Deadline` と CancellationToken を引数に持たず、`Deadline` と CancellationToken が認証主体や業務入力と同じ context の型にまとめられていない。
 
 ### 禁止事項
 CancellationToken を省略可能にして、渡さずに済ませること。
 hop ごとに相対 timeout を引き直し、新しい時間枠を始めること。
 絶対期限を remaining に置き換え、下流へ相対値だけを渡すこと。
 非取消の後始末でないのに、`Deadline` または CancellationToken を受け取らない非同期 API を境界より内側に作ること。
+同期の純粋な domain の関数へ、`Deadline` または CancellationToken を要求すること。
+`Deadline` と CancellationToken を、認証主体や業務入力を含む一つの context の型へまとめること。
 `AcquireRelease` の release または `IAsyncDisposable.DisposeAsync` へ CancellationToken を足し、取り消し可能にすること。
 
 ### 行動
@@ -88,6 +95,7 @@ CancellationToken を非取消の後始末を除いて末端まで渡し、Throw
 境界で TimeProvider から `Deadline` を一度だけ生成し、全ての内側の非同期 API に同じ値を渡す。
 各 hop で `deadline.Remaining(timeProvider)` を計算し、その値だけを局所の CancellationTokenSource に使う。
 時間切れは linked token で親の token に合流させ、下流へは remaining でなく元の `Deadline` を渡す。
+同期の純粋な domain の関数からは `Deadline` と CancellationToken を除き、効果を実行する非同期 API だけが個別の引数で受ける。
 `AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` は非取消の後始末として実行し、元の `Deadline` を保持したまま CancellationToken を渡さない。
 
 ### 例

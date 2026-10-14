@@ -7,19 +7,24 @@ structure は、ターゲットプロジェクト全体と各部の責務、境�
 
 ## システム構造の全体像
 
-core・surfaces・runtimes は、業務非依存の技術基盤である libs の公開 API を直接利用します。
-libs は core の子ではなく、他の root 境界を参照しません。
-次の図は libs の直接利用と、contracts を使う境界を示します。
+core・contracts・surfaces・runtimes は、業務非依存の技術基盤である libs の公開 API を利用します。
+libs は他の root を参照せず、core は公開契約や配備・検証の実装を参照しません。
+次の図はソース参照の許可方向を示し、点線だけは成果物の利用を表します。
 
-```text
- [ core ] ───────────────► [ libs ] ◄─────────────── [ surfaces ]
-                              ▲
-                              │
-                         [ runtimes ]
-
- [ core/composition ] ──► [ contracts/generated のデータ型 ]
- [ surfaces ] ──────────► [ contracts の許可された層 ]
- [ runtimes ] ──────────► [ contracts の許可された層 ]
+```mermaid
+flowchart TB
+    T["tests"] --> S["surface / runtime"]
+    T --> C["contracts"]
+    T --> K["core"]
+    T --> L["libs"]
+    S --> C
+    S --> K
+    S --> L
+    C --> K
+    C --> L
+    K --> L
+    S -. "成果物を出力" .-> A["配備成果物"]
+    D["deploy"] -. "配備対象として利用" .-> A
 ```
 
 surface と core の接続、runtime がホストする surface と core の埋め込み条件を含む全ての依存許可は、[skeleton](./skeleton.md) が定めます。
@@ -32,7 +37,7 @@ surface と core の接続、runtime がホストする surface と core の埋�
 | [skeleton](./skeleton.md) | skeleton | root の境界・命名・依存方向・workspace |
 | [core](./core/layout.md) | layout・domain・application・infrastructure・composition | 業務の核。コンテキストごとの層と、配線に限定した composition の単位 |
 | [libs](./libs/layout.md) | layout | 業務非依存の技術基盤と、言語・library・framework の不足を補う機構。各消費側が公開 API を直接利用する |
-| [contracts](./contracts/layout.md) | layout・canonical・http・protocol・generated | 契約 |
+| [contracts](./contracts/layout.md) | layout・canonical・http・protocol・generated・adapters | 公開契約と core の公開 application 入口への接続 |
 | [surfaces](./surfaces/) | 一覧の [README](./surfaces/README.md) が定める | 対話様式ごとの入口。server・console・worker・viewer・extension・embedded |
 | [runtimes](./runtimes/) | 一覧の [README](./runtimes/README.md) が定める | 被ホスト surface の具体 host。web・desktop・mobile・ide・browser-extension |
 | [deploy](./deploy/layout.md) | layout | 配備。infrastructure・delivery・provenance・secrets は layout の節である |

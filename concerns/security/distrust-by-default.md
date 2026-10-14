@@ -34,5 +34,5 @@ database.query(request.body.filter)
 境界で入力を検証して型へ変換し、認可を通過した値だけを内側へ渡す。
 
 ```
-const query = parseQuery(request.body); authorize(actor, query); search(query)
+const query = parseQuery(request.body); protectedEntry.enforce(subject, query); search(query)
 ```

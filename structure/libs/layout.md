@@ -8,6 +8,7 @@ libs は [skeleton](../skeleton.md) の依存と命名に従う。
 ## フォルダ構成
 
 libs 直下は、機構ごとのフォルダである。
+各機構は、他の機構や消費側から独立した package として扱う。
 
 ```
 libs/
@@ -74,6 +75,8 @@ infrastructure の処理は、domain と application の公開 API を通して�
 消費側の組立点が package 境界を越えて adapter を構築する場合は、構築に必要な API に限って公開する。
 この構築用 API の許可は、同じ repository 内での利用にも、独立した repository からの配布にも適用する。
 公開面以外は、言語の可視性の機構で閉じる。
+機構間の呼び出しと libs 外からの呼び出しは、どちらもこの公開面を通す。
+組立点も公開された構築用 API だけを使い、非公開の adapter や内部の型へ到達しない。
 機構の内部では、参照は infrastructure から application、application から domain へ向かう。
 
 ## 機構間の依存
@@ -105,10 +108,10 @@ spec.md は arch test が読む製品メタデータであり、実装、振る�
 mechanism: <mechanism>
 ---
 ```
-[skeleton](../skeleton.md) の実行時依存表と build・test-only 依存表が、root またぎ依存の唯一の許可元である。
+[skeleton](../skeleton.md) の production のソース依存表と build・test-only 依存表が、root またぎのソース参照の許可元である。
 [tests/arch](../tests/layout.md) は、ターゲットプロジェクトでは `libs/<mechanism>/spec.md` をリポジトリ相対pathとして列挙する。
 [tests/arch](../tests/layout.md) は、独立した機構リポジトリではルートの `spec.md` をリポジトリ相対pathとして列挙する。
-[tests/arch](../tests/layout.md) は、spec.md の機構名から検査対象を列挙し、skeleton の両依存表から phase ごとに libs を参照してよい境界を導出して、実際の参照と照合する。
+[tests/arch](../tests/layout.md) は、spec.md の機構名から検査対象を列挙し、skeleton のソース依存表から phase ごとに libs を参照してよい境界を導出して、実際の参照と照合する。
 [tests/arch](../tests/layout.md) は、spec.md の機構名から機構間の依存 graph を作り、公開面の違反と循環を検出する。
 
 ## compile 時ツール

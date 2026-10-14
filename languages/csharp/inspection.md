@@ -71,10 +71,12 @@ Roslyn analyzer は、release が同じ Deadline を受けて CancellationToken 
 `IAsyncDisposable.DisposeAsync` の呼出側が、同じ Deadline を後始末の scope に保持することを検査する。
 Deadline の生成が request、message、job の境界に限られることを検査する。
 Roslyn analyzer は、各 hop の CancellationTokenSource が `deadline.Remaining(timeProvider)` から作られ、下流へ remaining でなく同じ Deadline が渡ることを検査する。
+Roslyn analyzer は、同期の純粋な domain の関数が Deadline と CancellationToken を引数に持たないことと、これらを認証主体や業務入力と同じ context の型へまとめないことを検査する。
 
 ### 根拠
 Roslyn semantic model なら、method の accessibility、戻り値、引数、呼出式の symbol を結び付け、公開 host API と Effect 内部の awaitable の役割を区別できる。
 同じ model で Deadline の生成と伝播、remaining の使用先を追えば、hop ごとに新しい相対 timeout を始める経路を拒否できる。
+純粋な domain の関数は期限も取消も観測しないので、引数の有無を型の宣言から検査すれば、核への実行 metadata の侵入を拒否できる。
 release と `DisposeAsync` を CancellationToken の必須規則から明示的に分ければ、通常の非同期 API の伝播漏れと、非取消でなければならない後始末を混同しない。
 
 ### 完了条件
@@ -82,15 +84,18 @@ release と `DisposeAsync` を CancellationToken の必須規則から明示的�
 境界より内側の非同期 API が、release と `DisposeAsync` を除いて Deadline と CancellationToken を必須引数に持ち、Deadline が request、message、job の境界だけで生成されている。
 release が同じ Deadline を受けて CancellationToken を受け取らず、`DisposeAsync` が引数なしで非取消の後始末を完了している。
 各 hop の局所 timeout が `deadline.Remaining(timeProvider)` から作られ、同じ Deadline が下流へ渡されている。
+同期の純粋な domain の関数が Deadline と CancellationToken を引数に持たず、これらが認証主体や業務入力と同じ context の型へまとめられていない。
 
 ### 禁止事項
 公開 host API と Effect 内部の awaitable の役割分担を、レビューだけで検査すること。
 hop ごとに相対 timeout を引き直す経路を、構造検査から外すこと。
 release と `DisposeAsync` へ CancellationToken を要求し、非取消の後始末を通常の非同期 API と同じ規則で検査すること。
+純粋な domain の関数が持つ Deadline と CancellationToken の引数を、検査せずに許すこと。
 
 ### 行動
 Roslyn analyzer で、公開 host API の Task と Effect 内部の ValueTask の戻り値を検査する。
 Roslyn analyzer で、境界より内側の非同期 API の Deadline と CancellationToken、境界だけでの Deadline 生成、remaining からの局所 timeout 生成、同じ Deadline の下流伝播を検査する。
+Roslyn analyzer で、同期の純粋な domain の関数の Deadline と CancellationToken の引数の不在と、認証主体や業務入力を含む context の型への同梱の不在を検査する。
 release と `DisposeAsync` は CancellationToken の必須規則から除き、元の Deadline を保持する非取消の後始末として検査する。
 
 ## 汎用名を自作 analyzer で禁止する
@@ -175,7 +180,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | reqnroll | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(Reqnroll.TUnit を実装と同じ検証入口で実行) |
 | testcontainers | 実依存 | 実行テスト(Testcontainers for .NET の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(TUnit `--list-tests` の tree node ID を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。Reqnroll scenario は同じ TUnit discovery の ID を使う) |
 | mutation-dotnet | 有効性 | mutation(impact planner と検証入口で変更部分と未変更の影響部分の和集合を選ぶ。`--since`・`--changed-lines` と `changed-lines` は変更部分だけに使い、影響部分は採用版で扱える対象指定と report 判定へ別に接続する。被覆テストの選択は生成対象と分け、実行可能な mutant の全検出、生存と未被覆の合計、対象全体の完了を確認する。型として成立しない変異は検出に数えず、runner などの未完了とテスト発見0件は失敗にする) |
-| archunit-net | 構造 | 構造検査(ArchUnitNET が skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
+| archunit-net | 構造 | 構造検査(ArchUnitNET が skeleton の production のソース依存表と build・test-only 依存表から runtime・build・test edge を生成し、成果物の消費表を assembly のソース依存と区別して照合し、production の成果物への build・test edge 混入を失敗にする) |
 | sonaranalyzer-csharp | 予防 | analyzer/lint(SonarAnalyzer.CSharp・BannedApiAnalyzers・Roslyn analyzer の設定と診断、S3776 による関数の複雑さのしきい値、未使用の要素と参照の検出を検証入口でエラー化) |
 | inspection | ドキュメントコメントの検査 | analyzer/lint(CS1591 と Roslyn analyzer)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | formation | 業務の値を型に封じる | 型(record・非公開 constructor・static factory) |
@@ -188,7 +193,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化。公開要素のコメント欠落)+analyzer(Roslyn analyzer。全宣言のコメント存在・param/typeparam/returns/value・先頭行・当該宣言内で機械判定できる欠陥の exception)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET の命名照合) |
 | coverlet-mtp | カバレッジ | 計測(branch を数える設定は `--coverlet` で有効にする coverlet.MTP の cobertura 出力であり、その `branches-covered` と `branches-valid` から project 記録の branch 下限を検証入口で判定) |
-| translation | 境界で一度だけ parse してドメイン型へ移す | 型(生成 DTO・JsonSerializerContext・required・生成 converter・JsonExtensionData)+構造検査(composition の Mapper とコンテキストの検証付き入力構築の配置)+実行テスト(既知項目の不正の拒否、全 variant と入れ子 object の未知キーの位置捕捉とログ到達、捕捉値の domain と応答への非流入) |
+| translation | 境界で一度だけ parse してドメイン型へ移す | 型(生成 DTO・JsonSerializerContext・required・生成 converter・JsonExtensionData)+構造検査(contracts/adapters の Mapper とコンテキストの検証付き入力構築の配置)+実行テスト(既知項目の不正の拒否、全 variant と入れ子 object の未知キーの位置捕捉とログ到達、捕捉値の domain と応答への非流入) |
 | aspnet-core | 公開するエラーを境界で problem+json へ写す | 実行テスト(ProblemDetails の単体テスト) |
 | nswag | 生成した契約を使い、drift を検査の gate にする | 構造検査(データ型の assembly の runtime 依存 closure の通信 client と実行機構からの分離)+実行テスト(drift 検査・conformance と生成 serializer の能力の検証入口の判定) |
 | connection | 効果を Effect 型で組む | 型(readonly struct、Deadline と CancellationToken を受けて ValueTask を返す delegate の内包)+analyzer(Roslyn analyzer。明示的 `default(Effect<...>)`、Effect への `default` literal の代入、型解決で Effect と判定できる `default(T)` の検出)+実行テスト(配列、field、未解決の generic 由来の default を EffectRuntime.Run で実行すると Defected の `UninitializedEffectException` になること) |
@@ -200,24 +205,24 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | connection | 配線を composition root に限る | 構造検査(IServiceProvider の直接解決の検出)+レビュー(組立点に置く依存の粒度の判断) |
 | dapper | 型付き SQL | analyzer(DapperAOT の DAP214・DAP236)+実行テスト(型・nullable の照合テスト) |
 | npgsql | 並行更新の表面 | 構造検査(集約の鍵の導出が一か所に定義され、`pg_advisory_xact_lock` 系の呼び出しがその導出を通ること)+実行テスト(集約の鍵を排他で取る集約で全経路の直列化と READ COMMITTED での鍵の後の検証、書き込み経路の role が事実の行へ `UPDATE` も `DELETE` もできないこと、複数の鍵を bigint の値の昇順の一つの順序で取ること、種類の違う集約の鍵が衝突せず範囲外の識別子から鍵を作らないこと、鍵を待った書き込みの業務事実の時刻が待つ間に確定した業務事実の時刻以後であること、版で衝突を検出する集約で並行更新の片方だけの確定と古い版の各経路からの拒否、共有の鍵か鍵なしで更新する可変属性の行への同じ行の同時の更新で片方だけが確定し他方が競合の Result になること、影響行数 0 と名前付き version 制約違反の競合写像、一回だけ起きる業務事実の二度目の追記で名前付き主キーの違反だけが競合に写ること、version と名前付き主キー以外の制約違反の非写像、必要な業務事実の追記前後の失敗で現在情報の更新・業務事実の追記・outbox の記録が全て確定するか全て確定しないこと、業務事実不要な更新の競合制御と追記の不在)+レビュー(集約の不変条件に対する競合制御、必要な業務事実の欠落と outbox による代用の禁止) |
-| npgsql | 書き込みパス | 構造検査(store が transaction の begin・commit を持たないことの検査) |
-| npgsql | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証済み actor、匿名の安定した opaque scope、logical system actor の分離、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
+| npgsql | 書き込みパス | 構造検査(store・composition・domain の begin・commit・rollback の不在、application の scope port と AcquireRelease による制御と driver 型の非流入、use-case 全体を包む外側の controller の不在)+実行テスト(release 失敗時の元の終わりの保持、確定応答喪失時の CommitOutcomeUnknown、エラーの種類だけによる NotCommitted 判定の拒否、確定後の DisposeAsync 失敗時の確定結果の保持、取消後の transaction と advisory lock の非残存) |
+| npgsql | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証主体、匿名の安定した opaque scope、logical system actor の分離、業務当事者への写像後も要求者 scope が変わらないこと、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
 | npgsql | durable inbox | 構造検査(scope・event ID の複合一意制約)+実行テスト(payload commit 前後の停止と upstream delivery ack、処理結果・処理済み記録 commit 前後の停止と inbox processing completion、前段の source 再配送、後段の item 再処理、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視出力) |
 | stackexchange-redis | 一時データ | 構造検査(DB と Valkey の project 分離)+レビュー(一時データとして扱える範囲の判断) |
 | coordination | 非同期 | analyzer/lint(SonarAnalyzer.CSharp の async void 検出規則)+analyzer(Roslyn analyzer。surface と host の公開非同期 API は Task または Task<T>、Effect 内部の Run、Try body、AcquireRelease release は ValueTask または ValueTask<T> に限定)+レビュー(domain の純粋性の判断) |
-| coordination | 取り消し | analyzer(Roslyn analyzer。request、message、job の境界より内側の非同期 API が、非取消の後始末である AcquireRelease release と IAsyncDisposable.DisposeAsync を除いて Deadline と CancellationToken を必須引数に持ち、Deadline の生成を境界へ限定し、各 hop の局所 timeout が `deadline.Remaining(timeProvider)` から作られ、下流へ remaining でなく同じ Deadline が渡ることを検査。release は同じ Deadline を受けて CancellationToken を受け取らず、DisposeAsync は引数を持たないことを検査)+実行テスト(複数 hop で時間枠が引き直されず、局所 timeout が linked token で下流へ伝播すること、取消後も release と DisposeAsync が非取消で完了すること) |
+| coordination | 取り消し | analyzer(Roslyn analyzer。request、message、job の境界より内側の非同期 API が、非取消の後始末である AcquireRelease release と IAsyncDisposable.DisposeAsync を除いて Deadline と CancellationToken を必須引数に持ち、Deadline の生成を境界へ限定し、各 hop の局所 timeout が `deadline.Remaining(timeProvider)` から作られ、下流へ remaining でなく同じ Deadline が渡ることを検査。release は同じ Deadline を受けて CancellationToken を受け取らず、DisposeAsync は引数を持たないことを検査。同期の純粋な domain の関数が Deadline と CancellationToken を引数に持たないことと、Deadline と CancellationToken を認証主体や業務入力と同じ context の型へまとめないことを検査)+実行テスト(複数 hop で時間枠が引き直されず、局所 timeout が linked token で下流へ伝播すること、取消後も release と DisposeAsync が非取消で完了すること) |
 | coordination | 並行の組 | 構造検査(Roslyn analyzer。個別 job の RunAsync 呼出しを SemaphoreSlim の permit 保持区間へ限定)+実行テスト(最大同時実行数、子の例外と業務結果の失敗の各経路で兄弟取消と全 Task の drain、開始途中の同期例外または列挙失敗でも開始済みの子の回収、Cancel callback の例外と兄弟の追加失敗の回収、実行中の外部取消 callback の完了より前に CTS を解放しないこと、取消要求後も子が未完了の間は所有者が終了しないこと)+レビュー(全 Task の所有者と長寿命の処理の停止経路、開始と停止の競合、Task.Exception と外部取消の回収) |
 | coordination | blocking 禁止 | analyzer/lint(Microsoft.CodeAnalysis.BannedApiAnalyzers)+実行テスト(開始済みの Task.Run の同期処理が取消要求だけでは終了せず、所有者が完了まで保持すること)+レビュー(同期処理の協調停止点または process 分離) |
 | coordination | 共有状態 | 構造検査(Roslyn analyzer。可変な静的状態と共有 instance の検出)+レビュー(共有が必要な範囲の判断) |
 | coordination | ライブラリの作法 | analyzer/lint(SonarAnalyzer.CSharp の ConfigureAwait 関連規則) |
 | coordination | 資源解放 | 型(using/await using、IDisposable、引数なしの IAsyncDisposable.DisposeAsync)+analyzer(Roslyn analyzer。AcquireRelease release と DisposeAsync を CancellationToken の必須規則から除外し、元の Deadline を保持する非取消の後始末として識別)+実行テスト(取消後も DisposeAsync が一度完了すること、子の後始末と全 Task の drain より後に所有者の資源が閉じること、処理と解放がともに失敗しても元の終了理由と解放の失敗が観測され他の必要な解放が試みられること) |
-| aspnet-core | server | 構造検査(middleware の順序と core 公開 API への ClaimsPrincipal・token・claim 型の流入禁止)+実行テスト(検証済み ClaimsPrincipal から actor への写像、同じ actor に写像した限定資格情報の scope 外操作・対象の拒否、actor の業務認可の維持と独立した session 経路による迂回の確認、actor と検証済み入力による core 公開 API 呼出、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー(認証方式ごとの principal の妥当性の判断) |
-| aspnet-core | BFF | 構造検査(request-scoped ActorRequestContext から Actor を DI すること、ActorMapper 呼出を認証 middleware に限定すること、route の ClaimsPrincipal 参照と actor 再構築を拒否すること、route の業務呼出を埋め込んだ core の公開 API に限定し、技術的な処理では libs の公開 API の直接利用を許すこと)+実行テスト(cookie 属性、認証 middleware が ActorRequestContext へ格納した actor と route に注入された Actor の一致、actor と検証済み入力による core 公開 API 呼出) |
+| aspnet-core | server | 構造検査(middleware の順序、core 公開 API への ClaimsPrincipal・token・claim・認証主体の型の流入禁止、全 endpoint が `RequireAuthorization()` か `AllowAnonymous` の宣言を持つこと、endpoint が呼ぶ業務の入口を adapter の宣言された保護を適用する入口に限ること、handler が認可の呼出と許可結果の引数を持たないこと)+実行テスト(検証済み ClaimsPrincipal から認証主体への確定、同じ認証主体に確定した限定資格情報の scope 外操作・対象の拒否、認証主体に対する認可の維持と独立した session 経路による迂回の確認、`AuthorizationOptions.FallbackPolicy` による宣言のない endpoint の拒否と匿名公開の明示、adapter の入口が適用する操作と対象の policy が endpoint の認証の要求だけでは満たされないこと、主体を必要とする operation だけが認証主体から対応づけた業務入力を受けること、要求側が指定した主体の拒否、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー(認証方式ごとの principal の妥当性の判断) |
+| aspnet-core | BFF | 構造検査(request-scoped SubjectAccessor から AuthenticatedSubject を DI すること、SubjectMapper 呼出を認証 middleware に限定すること、route の ClaimsPrincipal 参照と認証主体の再構築を拒否すること、route の業務呼出を adapter の宣言された保護を適用する入口に限定し、技術的な処理では libs の公開 API の直接利用を許すこと)+実行テスト(cookie 属性、認証 middleware が SubjectAccessor へ格納した認証主体と route に注入された AuthenticatedSubject の一致、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core 公開 API 呼出) |
 | wolverine | worker | 構造検査(Wolverine の永続化設定・IMessageBus の constructor injection の検出)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(CancellationToken の伝播) |
 | inspection | 型消去の cast allowlist | analyzer(Roslyn analyzer。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
-| photinox | desktop の host | 構造検査(bridge の引数に actor と資格情報の型が現れないこと、core の公開 API 呼出が認証境界の構築した actor を受けること)+実行テスト(認証 adapter の資格情報から actor への写像、actor と検証済み入力による core 公開 API の呼出、viewer 由来の actor と資格情報の拒否)+レビュー(native の widget を別に作っていないことの判断) |
+| photinox | desktop の host | 構造検査(bridge の引数に認証主体と資格情報の型が現れないこと、core の公開 API 呼出が adapter の宣言された保護を適用する入口に限られ、認証主体と資格情報を受けず必要な業務入力だけを受けること)+実行テスト(認証 adapter の資格情報から認証主体への確定、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core 公開 API の呼出、viewer 由来の認証主体と資格情報の拒否)+レビュー(native の widget を別に作っていないことの判断) |
 | netsparkle-updater | desktop の自動更新 | 自動更新を使う対象について、構造検査(production の配線が `Ed25519Checker(SecurityMode.Strict, ...)` と固定した検証公開鍵を使い、`SecurityMode.Unsafe` と署名検証を迂回する `IAppCastHandler` がなく、feed・package の配布設定が HTTPS であることを照合)+artifact 検査(実配布 app cast の署名ファイルと package の `sparkle:signature` が固定した検証公開鍵で検証でき、Cosign の release 成果物の署名と provenance が検証でき、配布成果物に更新署名の秘密鍵がないことを照合)+実行テスト(正しい app cast・package 署名を受理し、署名欠落・不正署名を拒否する)+レビュー(Cosign は release 成果物の署名と provenance だけを扱い、更新署名と混同しないことの判断) |
-| maui-hybridwebview | mobile の host | 構造検査(bridge の引数に actor と資格情報の型が現れないこと、core の公開 API 呼出が認証境界の構築した actor を受けること)+実行テスト(認証 adapter の資格情報から actor への写像、actor と検証済み入力による core 公開 API の呼出、viewer 由来の actor と資格情報の拒否)+レビュー(native の widget を別に作っていないことの判断) |
+| maui-hybridwebview | mobile の host | 構造検査(bridge の引数に認証主体と資格情報の型が現れないこと、core の公開 API 呼出が adapter の宣言された保護を適用する入口に限られ、認証主体と資格情報を受けず必要な業務入力だけを受けること)+実行テスト(認証 adapter の資格情報から認証主体への確定、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core 公開 API の呼出、viewer 由来の認証主体と資格情報の拒否)+レビュー(native の widget を別に作っていないことの判断) |
 | streamjsonrpc | extension の接続 | 型(StreamJsonRpc の型付き proxy)+レビュー(custom method が公開面を広げていないことの判断) |
 | consoleappframework | console | 型(ConsoleAppFramework の constructor injection) |
 | publication | 可視性 | 型(internal・file 修飾子)+構造検査(`InternalsVisibleTo` の宛先が同じコンテキストの tests の assembly に限られることの照合) |

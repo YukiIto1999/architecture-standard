@@ -34,8 +34,8 @@ drift があるときは、ビルドを失敗させる。
 ## 利用
 
 公開契約を code で扱う提供側と利用側は、その契約から生成したデータ型を使う。
-core の composition、core を埋め込む server・console・worker・埋め込み surface と host は、公開契約を持つ core の operation の入出力に generated のデータ型を使う。
+core を埋め込む提供側と host は、公開契約の入出力に generated のデータ型を使い、[adapters](./adapters.md) で core の application 型へ写像する。
 HTTP または protocol の提供側に、利用側の通信 client を要求しない。
 通信する利用側は、その通信を所有する adapter に generated の client または stub を置き、接続設定と transport の instance を引数で与え、generated 内に固定しない。
 viewer と extension はデータ型の import にとどめ、通信の実装は host から port として受け取る。
-root をまたぐ依存の許可は [skeleton](../skeleton.md) に従い、core のコンテキストと shared は generated の型にも client・stub にも依存しない。
+root をまたぐ依存の許可は [skeleton](../skeleton.md) に従い、core は composition を含め generated の型にも client・stub にも依存しない。

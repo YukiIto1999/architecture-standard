@@ -16,7 +16,7 @@ surface の枠組みが要求する応答 status、header、終了の値と trai
 境界表現の型は生成 DTO を保持または参照し、同じ意味の field や variant を手書きで再定義しない。
 surface の枠組みが要求する trait は、その crate で定義した境界表現の型へ実装する。
 このローカル型への写しは、同じ crate に置く `From` の実装で書き、`Into` と `TryInto` は実装しない。
-生成 DTO とコンテキストの application 入出力の写像は core の composition が所有し、両型が foreign なときは mapper 関数で書く。
+生成 DTO とコンテキストの application 入出力の写像は [structure/contracts/adapters](../../structure/contracts/adapters.md) が所有し、両型が foreign なときは mapper 関数で書く。
 `From` の本体で失敗を写す場合は、公開された失敗の enum を match で網羅し、variant ごとに status や終了の値を決める。
 境界表現の値に、エラーの `Display` の文字列、`source()` がたどる連鎖、`{:?}` の出力を入れない。
 console の entry point は、その crate で定義した境界表現の型を返し、その型へ `Termination` を実装する。
@@ -36,7 +36,7 @@ entry point の戻り値を自前の型にすれば、終了の値の決定が�
 ### 完了条件
 公開契約の body とエラーが生成 DTO を使い、surface 固有の status、header、終了の値を表す型だけが surface の crate にある。
 枠組みの trait の実装が、その crate で定義した型に対して書かれている。
-surface のローカル型への写しが同じ crate の `From` にあり、生成 DTO と application 入出力の写像が composition にある。
+surface のローカル型への写しが同じ crate の `From` にあり、生成 DTO と application 入出力の写像が contracts/adapters にある。
 `Into` と `TryInto` の実装が、無い。
 失敗を写す `From` の本体が、公開された失敗の enum の全ての variant を match で網羅している。
 境界表現の値に、`Display` の文字列、`source()` の連鎖、`{:?}` の出力が入っていない。
@@ -51,7 +51,7 @@ console の entry point から `Result` を返し、終了の値の決定を `Te
 
 ### 行動
 生成 DTO を保持または参照する surface 固有の境界表現の型を定義し、枠組みの trait をその型へ実装する。
-同じ crate に、core の公開 operation が返す生成されたエラーや公開 outcome からの `From` を置く。
+同じ crate に、契約 adapter の公開入口が返す生成されたエラーや outcome からの `From` を置く。
 match の各腕で、binding に従う status、header、終了の値を決め、契約のデータを再定義しない。
 console は entry point の戻り値を自前の型にし、その型の `report` で `ExitCode` を返す。
 エラーの文字列化は報告の経路に限り、境界表現の組み立てには使わない。

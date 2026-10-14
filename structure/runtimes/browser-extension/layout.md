@@ -33,7 +33,7 @@ context の種類、entry の形式、host への登録の機構は [languages](
 | adapters | extension の host port・viewer の ui port・host の API・contracts/generated のデータ型と通信 client |
 
 adapters は composition を参照せず、surface の内部へ踏み込まない。
-host の外との依存は [skeleton](../../skeleton.md) の実行時依存表に従う。
+host の外とのソース依存と成果物の消費は [skeleton](../../skeleton.md) の対応する表に従う。
 技術基盤は、adapters と composition が [libs](../../libs/layout.md) の公開 API を直接利用する。
 他の runtime の adapter や組立点を import せず、それぞれが同じ surface に依存する。
 

@@ -51,6 +51,9 @@ hardware、機の利用者、接続経路、共有する listener、機の鍵、
 
 deploy は、surface と runtime が作る成果物を配備対象として受け取る。
 他の領域は、deploy を参照しない。
+deploy は core の業務型や operation を参照せず、成果物とその起動・設定の公開契約を配備の入力として使う。
+プログラムの起動、動作に必要な初期化、接続と終了は、surface と runtime および [concerns/lifecycle](../../concerns/lifecycle/README.md) が定める。
+配備の処理を、プログラムや test の起動部品として共用しない。
 deploy は、特定の配備先に縛られない。
 配備先ごとの違いは、infrastructure と delivery の定義に閉じ込める。
 具体の platform と tool は標準に固定せず、project が単一の採用を決定の記録に明記する。

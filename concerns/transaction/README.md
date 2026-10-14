@@ -12,9 +12,9 @@ transaction は書き込みパスの動的な確定を扱い、静止した関�
 - [状態とイベントを同一パスで記録する](./state-event-atomicity.md) — 機械(現在情報と業務事実とoutboxの同時確定+失敗注入)
 - [冪等にして再実行できるようにする](./scoped-idempotency-keys.md) — 機械(冪等要求記録の検査)
 - [部分確定を不可視にする](./invisible-partial-commits.md) — 機械+レビュー(停止再開テスト+調査性)
-- [書き込みパスの所有を組立点に置く](./composition-owned-transactions.md) — 機械(begin/commit構造検査)
+- [トランザクションの制御を application に置く](./application-owned-transactions.md) — 機械+レビュー(begin/commit/abort構造検査+結果不明の失敗注入+制御所有のレビュー)
 
 ## 参照
 整合性と集約は [data](../../principles/data/README.md)、効果とエラーは [effect](../effect/README.md) に従う。
 配送は [messaging](../messaging/README.md)、冪等と再試行は [resilience](../resilience/README.md) に従う。
-書き込みパスの所有を実現する構造は [structure/core/composition](../../structure/core/composition.md)、言語別の実現は [languages](../../languages/) が定める。
+transaction の制御を実現する構造は [structure/core/application](../../structure/core/application.md)、言語別の実現は [languages](../../languages/) が定める。

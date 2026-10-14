@@ -23,11 +23,13 @@ core から外部システムへの呼び出しの制限に使うカウンタは
 
 datastore の採用は [tools/platforms/postgresql](../../tools/platforms/postgresql.md) が定める。
 事実、状態、projection、派生読みモデルの性質は [concerns/persistence](../../concerns/persistence/README.md) に従い、確定点と outbox の性質は [concerns/transaction](../../concerns/transaction/README.md) に従う。
-application の store port、projection の読み取り port、外部 datastore の adapter は infrastructure に置く。
+store と projection の読み取り port は application が宣言し、その実装と外部 datastore の adapter を infrastructure に置く。
 store は record 型を定義し、domain と record の写像を持つ。
 業務の区分と定義の識別子の写像は store が持ち、定義の行との対応の保証は [concerns/persistence](../../concerns/persistence/fact-state-time-relations.md) の「事実・状態・時間を別の関係に落とす」に従う。
 store は、型付きの SQL を発行する薄い adapter として書く。
-現在情報の変更、必要な業務イベントの追記、projection の更新、outbox への記録を束ねる書き込みパスの境界の所有は、[composition](./composition.md) が持つ。
+現在情報の変更、必要な業務イベント、projection、outbox を束ねる書き込みパスの制御は [application](./application.md) が所有する。
+infrastructure は、application が要求する具体的な接続、取得、保存、確定と中止の操作を実装し、driver の型と資源を内部に閉じる。
+個々の store が独立して確定したり、use-case 全体を受け取って transaction で包んだりしない。
 派生読みモデルの再構築は、正本の現在情報または業務イベントを port から読み出す application workflow として、読みモデルを所有するコンテキストに置く。
 起動は workflow を呼べる surface の layout に従う。
 schema migration の実装は infrastructure に置き、適用の順序は [process/migration](../../process/migration.md) が定める。

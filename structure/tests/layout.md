@@ -55,6 +55,8 @@ Small runner は、同一 process 内の hermetic な実行に必要な資源だ
 Medium runner は、local host に閉じた資源だけを提供する。
 Large runner は、local host の資源と、対象として明示した外部資源を提供する。
 資源の用意と接続許可は、同じ size の runner 設定に一度だけ置き、test ごとの台帳へ重複させない。
+検証対象のプロセスは、その成果物の公開入口と設定で起動し、配備 script を起動部品として使わない。
+ローカルの datastore などを使うことと、deploy のコードや資材へ依存することを区別する。
 size 別 runner の対象は、各言語の test runner が discovery で返す native test ID の集合で定義する。
 同じ native test ID を複数の size へ含めない。
 parameterized case、doctest、生成した executable spec は、runner が個別に返す ID をそのまま用いる。
@@ -87,6 +89,6 @@ conformance と e2e も、実依存に対応する段で実行する。
 
 ## 依存方向
 
-tests の実行時依存は [skeleton](../skeleton.md) の実行時依存表に従う。
+tests のソース依存と成果物の消費は [skeleton](../skeleton.md) の build・test-only 依存表と成果物の消費表に従う。
 libs の Testing package への依存は、skeleton の build・test-only 依存表に従う。
-production の code は、tests を参照しない。
+他の root の code は、tests を参照しない。

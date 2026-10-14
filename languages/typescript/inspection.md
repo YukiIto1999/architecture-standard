@@ -10,8 +10,8 @@ principles の [verification](../../principles/verification/README.md) が定め
 依存方向と境界の禁止は TypeScript compiler API による AST 構造検査で検証し、規則は層の参照禁止と exports の外への到達の禁止を持つ。
 構造検査は、import 宣言と export 宣言の module specifier を採用している TypeScript の解決規則で file へ解決し、解決した組を依存 edge として規則に当てる。
 構造検査は、依存 edge を型だけの import と実行時の import に区別する。
-root の構造検査は、skeleton の実行時表と build・test-only 表から runtime・build・test phase の許可 edge を生成する。
-root の構造検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
+root の構造検査は、skeleton の production のソース依存表から runtime の許可 edge を、build・test-only 依存表から build・test phase の許可 edge を生成し、成果物の消費表は import の依存 edge と区別して照合する。
+root の構造検査は、build または test のソース依存が production の成果物へ混入した場合に失敗する。
 外部 I/O、待機、下流 Effect の非同期呼出は、TypeScript compiler API による AST 構造検査で検査する。
 外部 I/O と待機の symbol は、構造検査の設定に列挙する。
 Promise を返す前に同期で throw し得る境界 API の symbol と、throw し得る同期 DOM API と postMessage の symbol は、構造検査の設定で別の集合に列挙する。
@@ -49,8 +49,8 @@ TypeScript compiler API は parameter の initializer と destructuring の bind
 依存方向と境界の禁止が、TypeScript compiler API による AST 構造検査で検証されている。
 依存 edge が、解決した file の組として得られ、型だけの import と実行時の import に区別されている。
 規則が、層の参照禁止と exports の外への到達の禁止を持っている。
-root の構造検査が、skeleton の両表から phase ごとの許可 edge を生成している。
-build または test の edge が runtime の成果物へ混入した場合に、構造検査が失敗している。
+root の構造検査が、skeleton の production のソース依存表と build・test-only 依存表から phase ごとの許可 edge を生成し、成果物の消費表を別の照合対象にしている。
+build または test のソース依存が production の成果物へ混入した場合に、構造検査が失敗している。
 外部 I/O、待機、下流 Effect が、`withDeadlineEffect` の operation からだけ呼ばれている。
 Promise を返す前に同期で throw し得る境界 API が、`Result.wrapAsync` に渡す関数リテラルの内側からだけ呼ばれている。
 throw し得る同期 DOM API と postMessage が、`Result.wrap` に渡す関数リテラルの内側からだけ呼ばれている。
@@ -77,8 +77,8 @@ throw し得る同期 DOM API または postMessage を、`Result.wrap` の関�
 
 ### 行動
 TypeScript compiler API で解決した依存 edge に層の参照禁止と exports の外への到達の禁止を規則として当て、検証入口で回す。
-skeleton の両表を TypeScript compiler API で読み、runtime・build・test phase の許可 edge を生成して、同じ構造検査が列挙した依存 graph と照合する。
-runtime の成果物を構成する依存 closure に build または test の edge があれば失敗させる。
+skeleton の production のソース依存表と build・test-only 依存表を TypeScript compiler API で読み、runtime・build・test phase の許可 edge を生成して、同じ構造検査が列挙した依存 graph と照合する。成果物の消費表は import の依存 edge と別に照合する。
+production の成果物を構成する依存 closure に build または test のソース依存があれば失敗させる。
 TypeScript compiler API で外部 I/O、待機、下流 Effect の call expression を列挙し、`withDeadlineEffect` の operation 内にあることを検証入口で検査する。
 Promise を返す前に同期で throw し得る境界 API と、throw し得る同期 DOM API と postMessage の symbol を別々に設定へ列挙する。
 前者が `Result.wrapAsync` に渡す関数リテラルの内側に、後者が `Result.wrap` に渡す関数リテラルの内側にあることを検証入口で検査する。
@@ -186,7 +186,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`vitest list --json` と Playwright `--list` が返す project・file・suite・test の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。cucumber-js scenario は URI・line・name の組を同じ集合へ加える) |
 | knip | 未使用 | analyzer/lint(knip で未使用のファイル・export・依存を検出し検証入口で失敗) |
 | stryker-js | 有効性 | mutation(diff から作る変更部分と別に導く未変更の影響部分の和集合を `mutate` へ渡し、生成対象と被覆テストの選択を分ける。実行可能な mutant の全検出と対象全体の完了を確認し、totalUndetected または Survived+NoCoverage を数える。型として成立しない変異は検出に数えず、非空の選択集合を runner が実行しないなどの未完了は失敗にする。既知の欠陥を仕込んだ確認で検出の成立を確認する) |
-| inspection | 構造 | 構造検査(TypeScript compiler API が解決した依存 edge と skeleton の両表から runtime・build・test edge を生成し、runtime 成果物への build・test edge 混入を失敗にする) |
+| inspection | 構造 | 構造検査(TypeScript compiler API が解決した依存 edge と skeleton の production のソース依存表・build・test-only 依存表から runtime・build・test edge を生成し、成果物の消費表を import の依存 edge と区別して照合し、production の成果物への build・test のソース依存の混入を失敗にする) |
 | typescript-compiler-api | 構造検査 | 構造検査(@typescript/typescript6 の compiler API による call expression の symbol・callee expression の型・parameter の initializer・destructuring の binding element・module specifier の解決先 file と型だけの import かどうかの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(tsc・oxlint・`oxlint --type-aware`・`oxlint-tsgolint` の設定と診断を検証入口でエラー化) |
 | eslint-plugin-sonarjs | 関数の複雑さを lint で止める | analyzer/lint(oxlint の JS plugin として読み込んだ sonarjs/cognitive-complexity の error 化と、reportUnusedDisableDirectives による残った抑止の error 化) |

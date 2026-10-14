@@ -16,7 +16,8 @@ surfaces は、対話様式というアクターの軸で束ねており、技�
 │  ├─ canonical/
 │  ├─ http/
 │  ├─ protocol/
-│  └─ generated/
+│  ├─ generated/
+│  └─ adapters/
 ├─ surfaces/
 │  ├─ server/
 │  ├─ console/
@@ -31,7 +32,7 @@ surfaces は、対話様式というアクターの軸で束ねており、技�
 
 上は、実行時とビルドのコード境界の最大構成である。
 core・contracts・tests は、常に置く。
-contracts は canonical を常に持ち、http・protocol は通信の関心があるときに、generated は canonical の契約を code から使うときに置く。
+contracts は canonical を常に持ち、http・protocol は通信の関心があるときに、generated は canonical の契約を code から使うときに、adapters は契約を core の公開 application 入口へ接続するときに置く。
 server・console・worker・viewer・extension の surface は、surfaces の直下に、対応する関心があるときに置く。
 runtimes・deploy は、対応する関心があるときに置く。
 libs は、対応する機構があるときに置く。
@@ -40,7 +41,7 @@ libs は、対応する機構があるときに置く。
 |---|---|
 | core | 業務と外部依存の adapter を内包する。媒体を知らない。 |
 | libs | 業務非依存の技術基盤と、言語・library・framework の不足を補う機構を収める。core の子ではなく、各消費側が公開 API を直接使う。 |
-| contracts | 公開契約を canonical・http・protocol・generated に分ける。意味と binding からデータ型と通信実装を生成する。 |
+| contracts | 公開契約を canonical・http・protocol・generated に分け、adapters で core の公開 application 入口へ接続する。 |
 | surfaces | 対話様式ごとの入口を束ねる。直下に server・console・worker・viewer・extension・埋め込み surface を置く。 |
 | server | API の surface。core を埋め込み、http を公開する。Web BFF を提供する場合は、token を仲介する。 |
 | console | CLI の surface。core を埋め込む。 |
@@ -83,35 +84,44 @@ surfaces に surface として置き、protocol の対話様式を表す名で�
 
 依存方向の規律は [concerns/dependency](../concerns/dependency/README.md) に従う。
 
-実行時の root またぎ依存は、次の表に従う。
+production のソースコードが持つ root またぎ依存は、次の表に従う。
+参照先の公開面だけを使い、同じ repository 内でも package の内部へ到達しない。
 
 | 境界 | 依存してよい先 |
 |---|---|
 | core | libs |
-| core/composition | contracts/generated のデータ型 |
-| libs | なし |
-| server | core・libs・contracts/generated のデータ型 |
-| console・worker | core・libs・contracts/generated のデータ型 |
-| 埋め込み surface | core・libs・contracts/generated のデータ型と protocol の提供側 stub |
+| libs | 他の libs の機構の公開 domain・application |
+| contracts/adapters | core の公開 API・libs・contracts/generated のデータ型 |
+| contracts/generated | libs |
+| server | core・libs・contracts/adapters の公開 API・contracts/generated のデータ型 |
+| console・worker | core・libs・contracts/adapters の公開 API・contracts/generated のデータ型 |
+| 埋め込み surface | core・libs・contracts/adapters の公開 API・contracts/generated のデータ型と protocol の提供側 stub |
 | viewer | libs・contracts/generated の型 |
 | extension の remote | libs・contracts/generated の型 |
 | extension の local | libs・contracts/generated のデータ型 |
 | extension(UI を持つ場合) | viewer の公開 API |
-| runtimes/\<host\> | libs・対応する surface・その host の API・port の実装に用いる contracts/generated のデータ型と通信 client・stub・同梱起動する埋め込み surface の成果物・core を埋め込む場合は core・その host が HTTP surface を自己ホストする場合は同じ core を埋め込む自己ホスト surface の routes |
-| deploy | 配備の対象となる成果物 |
-| tests | 検証のために全ての境界 |
+| runtimes/\<host\> | libs・対応する surface・その host の API・port の実装に用いる contracts/generated のデータ型と通信 client・stub・core を埋め込む場合は core と contracts/adapters の公開 API・その host が HTTP surface を自己ホストする場合は同じ core を埋め込む自己ホスト surface の routes |
+| deploy | 配備の機構に用いる libs の公開 API |
 
+core は composition を含め、contracts・surface・runtime・deploy・tests を参照しない。
+libs は libs 以外の root を参照せず、機構間の公開面と循環の禁止は [libs](./libs/layout.md) に従う。
+deploy と tests は、他の root のソースコードの依存先にしない。
 contracts/canonical・http・protocol は、生成と契約検査の入力であり、実行時に import するコードの依存先ではない。
 データ型と通信 client・stub の依存単位の分離は [contracts/generated](./contracts/generated.md) に従う。
-core/composition が参照できるのはデータ型だけであり、core のコンテキストと shared に契約生成物や transport の依存を流さない。
+公開契約と core の application 入出力の写像は [contracts/adapters](./contracts/adapters.md) が所有する。
 
 build と test にだけ存在してよい root またぎ依存は、次の表に従う。
 
 | 参照元 | 依存してよい先 |
 |---|---|
 | 全ての境界の build | libs の compile-time tool package |
+| root tests | core・libs・contracts・surfaces・runtimes の公開面 |
 | root tests・各境界内の test package | libs の mechanism testing package |
 | 契約を検査する test package | contracts/canonical・http・protocol |
+
+test の依存を production の依存表へ混ぜない。
+test は deploy の script・設定・secret を実行部品として import、組み込み、呼び出しで再利用しない。
+配備定義や依存の構造を検査対象として読むことは、実行部品としての依存と区別する。
 
 core・surface・runtime は、必要な libs の公開 API を直接 import し、依存を自分の package で宣言する。
 libs の利用は core の埋め込みを条件にせず、core や別の surface を経由した再公開を要求しない。
@@ -119,24 +129,30 @@ core と surface の公開 API が運ぶ libs の型(Result・Effect)を使う�
 libs の公開面と adapter 構築用 API の利用範囲は [libs](./libs/layout.md) に従う。
 canonical operation を HTTP へ束ねる写像の正本は contracts の http であり、自己ホスト surface の routes はその写像を実装する。
 runtime がその HTTP surface を自己ホストする場合は routes を参照し、同じ写像を二重に作らない。
-HTTP を持たず core の公開 operation を port へ直接渡す構成には、routes を要求しない。
-同梱起動は、起動する成果物への依存として実行時依存表で扱い、設定の path だけで表さない。
-実行時依存表と build・test-only 依存表が、root またぎ依存の機械検証の唯一の駆動元である。
-両表に無い参照元から参照先への root またぎ依存は、すべて禁止とする。
-root の arch test は、runtime・build・test の phase ごとに依存 edge を区別する。
-root の arch test は、両表から phase ごとの許可 edge を生成する。
-phase ごとの edge を検査する言語別の実現は、各言語の inspection が定める。
-各言語の検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
+HTTP を持たず core を埋め込む構成には、routes を要求せず、公開契約を持つ port は contracts/adapters を通して接続する。
+
+| 成果物の消費元 | 消費してよい成果物 |
+|---|---|
+| deploy | 配備対象の surface・runtime の成果物 |
+| 埋め込み surface を同梱する runtime | 対応する埋め込み surface の成果物 |
+| root tests | 検証対象の成果物 |
+
+成果物の消費はソースコードへの import と区別し、配備や同梱起動の入力として明示する。
+localhost の service、filesystem、container への接続もソース依存と区別し、test の実行資源は [tests/layout](./tests/layout.md) に従う。
+production のソース依存表、build・test-only 依存表、成果物の消費表が、root またぎ依存の機械検証の駆動元である。
+表に無い参照元から参照先への root またぎ依存は、禁止とする。
+root の arch test は、ソース参照の runtime・build・test の phase と、成果物の消費を区別して検査する。
+各表から種類と phase ごとの許可 edge を生成し、言語別の検査は [languages](../languages/) の inspection が定める。
+build または test のソース依存が production の成果物へ混入した場合は、失敗する。
 
 contracts 内部の層間の依存は [contracts](./contracts/layout.md) に従う。
 contracts/generated の生成と利用は [contracts/generated](./contracts/generated.md) に従う。
 host は、surface の port を、generated の通信 client・stub または core の埋め込みで実装する。
-core を埋め込む host は core と generated のデータ型に依存し、port の入出力を core の公開 operation へ写像する。
+core を埋め込む host は core を組み立て、contracts/adapters を通して port の入出力を公開 application 入口へ接続する。
 extension は、core を直接埋め込まない。
 extension の local の関心は、core を埋め込んだ別プロセスへ、言語非依存の protocol で接続する。
 そのプロセスは、対応する runtime が同梱して起動する。
 extension が UI を持つ場合は viewer を再利用し、対応する host が viewer もホストして ui port を注入する。
-contracts への依存を core で持てるのは composition だけであり、各コンテキストと shared は表の core 行に従う。
 自己ホスト surface が持つ一時 store の置き場は、各 surface の layout が定める。
 
 ## workspace
@@ -147,7 +163,7 @@ package の境界は、依存方向の規律で守る。
 build は、言語ごとの package を横断する task graph を orchestrator で実行する。
 orchestrator は task graph の順序、affected の選択、cache だけを担い、package の依存境界を強制しない。
 orchestrator の採用と選定の判断基準は、[tools/build/nx](../tools/build/nx.md) が定める。
-package の依存境界は、依存方向の両表を入力にした言語別の root arch test で強制する。
+package の依存境界は、依存方向の各表を入力にした言語別の root arch test で強制する。
 
 ## 加算
 

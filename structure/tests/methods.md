@@ -177,15 +177,17 @@ PTY の実測は、その実依存に従って配置し、状態遷移の proper
 規範が要求する適用対象・入力集合が一致しない、一方が適用不能になる、または一方だけが不合格となる対象・入力を作れる場合は、別の性質として両方を残す。反例をまだ見つけていないことだけを、同じ性質の根拠にしない。実装の欠陥または更新漏れだけで生じる不一致は、別の性質の根拠にしない。
 同じ性質を複数の道具で重複して判定せず、最も内側で確定できる型、静的検査、実行テスト、計測の順に一つの判定を選ぶ。
 
+transaction の検証は、application が開始から確定または中止までを制御すること、確定前の各終わりでの中止、確定結果不明の保持、確定後の後始末の失敗で確定済みの結果が失われないことを含める。
+
 | 対象 | 必須の検証 |
 |---|---|
 | ドメイン型・操作・不変条件と状態遷移 | 型による入力・操作・構築の拒否、constructor の拒否、値の計算と比較、区分判断と分類条件、集合の結果と集合としての拒否、状態遷移の property、網羅する outcome |
 | use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、中間状態の面ごとの通過集合、未検出 mutant |
 | canonical と binding | operation・型・error の欠落と余剰、公開区分と業務区分の意味の対応、generated drift、全 variant の serialize round-trip、未知項目の受容・捕捉・報告と既知項目の不正の拒否、generated のデータ型と通信の依存単位の分離、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
-| 認証と認可 | 各認証境界の credential 拒否と actor 構築、credential の core 非流入、主体・操作・資源・条件の許可と拒否 |
+| 認証と認可 | 各認証境界の credential 拒否と認証主体の確定、認証に関する値の core 非流入、必要な業務主体との対応や代理・委任の検証、主体・操作・資源・条件の許可と拒否、宣言のない入口と保護の迂回の拒否、匿名公開の宣言、対象依存の認可と確定時の状態の整合 |
 | 永続化、transaction、messaging | 実 datastore の制約、業務区分と定義の識別子の対応、廃止した定義の参照と新規選択の分離、外部キーの循環の不在、参照先の存続と削除規則、期間の判定、事実の行の更新と削除の拒否、消せる行のビューの外の削除の拒否、業務事実の時刻の列への書き込み権限と利用者定義の手続きの不在、期間の重なりと件数の不変条件の全書込経路の競合制御、version conflict、単一の確定点、現在情報と必要な業務事実の同時確定、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、派生読みモデルの再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |
 | effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test |
-| structure と dependency | root と単位の列挙、依存方向、公開面、配置、循環、複雑さの閾値と統合・削除での変更前後の比較、禁止 import、サブドメイン分類の記録と構造の対応 |
+| structure と dependency | root と単位の列挙、ソース参照の phase と成果物の消費の区別、依存方向、libs の package 内外の公開面、配置、循環、複雑さの閾値と統合・削除での変更前後の比較、禁止 import、deploy と tests への流入依存の不在、tests の配備 script 非利用、サブドメイン分類の記録と構造の対応 |
 | lifecycle と configuration | 不正設定での起動拒否、設定層の競合と未指定の解決、生存と準備、受付停止、期限内 drain、突然死後の回復 |
 | security と privacy | default deny と最小権限、信頼境界ごとの abuse case、標準暗号の設定、secret と個人情報の非流出、保持期限後の消去、供給物と依存の検査 |
 | experience | 利用者面の受入による状態遷移と正確な業務結果、区分の識別と表示の対応、表示対象と選択可能な集合の区別、拒否と回復、表示までの時間 |
@@ -193,7 +195,7 @@ PTY の実測は、その実依存に従って配置し、状態遷移の proper
 | console の呼び出しと terminal | stdout・stderr・終了 status と状態変化、TTY と非 TTY、非対話での入力不足、破壊操作の確認、再実行、確定前後の取り消し、terminal の復元と一時引き渡し、cell 幅と resize、入力 loop が処理中も操作を受けること |
 | performance | 固定した workload と環境での SLO 計測、変更前後の比較、計測結果を伴う退行判定 |
 
-canonical operation から core API、surface の binding、公開 interface の scenario までを一つの対応として列挙する。
+canonical operation から契約 adapter、core の公開 application API、surface の binding、公開 interface の scenario までを一つの対応として列挙する。
 欠落した operation、実体のない mapping、canonical にない余分な入口、scenario が一つもない公開 operation は失敗する。
 ある規範を型、静的検査、実行テスト、計測のいずれでも判定できない場合だけ人手レビューへ割り当て、判定理由と見る箇所を明記する。
 
@@ -248,7 +250,7 @@ structure、tools、languages の各規律は、検証手段を名指しで持�
 変更ごとの mutation は、push する範囲の diff と「変更と影響範囲」から、変更した production の箇所と影響する production の箇所の和集合を生成対象にする。
 diff の取得に失敗した実行は、変更した箇所が無い実行と区別できないため、不合格とする。
 diff による変更行の選択は生成対象の変更部分だけを扱い、未変更の影響部分を選ぶ処理とその判定を検証入口へ別に組み込む。
-全量の mutation は、層やコンテキストを丸ごと対象から外さず、業務 domain と純粋ロジック全体を composition の写像を含めて対象に含める。
+全量の mutation は、層やコンテキストを丸ごと対象から外さず、業務 domain と純粋ロジック全体を contracts/adapters の写像を含めて対象に含める。
 全量の mutation で変異の生成が 0 件の実行は、対象の指定が外れているため、不合格とする。
 変更ごとの検査も全量の検査も、許可した除外を除く生成対象の実行可能な mutant がすべて検出され、生成、実行と判定が完了していることを合格条件にする。
 未検出 mutant が一件でもある実行と、対象の生成、実行または判定が未完了の実行は、不合格とする。

@@ -26,8 +26,7 @@ core/
 ├─ shared/
 │  └─ <shared-kernel>
 └─ composition/
-   ├─ build_core
-   └─ operations/<operation>
+   └─ build_core
 ```
 
 境界付けられたコンテキストが一つだけの project では、`<context>/` を置かず domain・application・infrastructure を core 直下に畳む。
@@ -65,7 +64,7 @@ core 直下の単位の役割を示す。
 |---|---|
 | `<context>/` | 境界付けられたコンテキストを境界ごとに置く。コンテキストは互いに参照しない |
 | `shared/` | 複数のコンテキストが共有する値・エラーの型を置く |
-| `composition/` | コンテキストと adapter を配線し、生成した公開契約の DTO とコンテキストの入出力を写像して外部への入口を公開する |
+| `composition/` | コンテキストと adapter の公開された構築用 API を使い、core の公開 application 入口を配線する |
 
 同じコンテキストの複数の use-case にまたがる流れは、そのコンテキストの application workflow が担う。
 コンテキストをまたぐ状態変更は、integration event で非同期に連携する。
@@ -93,8 +92,8 @@ core 直下の単位の役割を示す。
 外部へ公開する event は、application が integration event へ写像し、公開 outcome に含める。
 shared の公開面は shared-kernel である。
 infrastructure は公開面に含まれない。
-ただし composition は、配線のためにコンテキストの adapter の constructor を参照できる。
-これが infrastructure を単位の外から参照する唯一の経路である。
+composition が配線で使う adapter の constructor は、構築用の公開面として明示する。
+組立点も公開された構築用 API だけを使い、非公開の adapter や内部の型へ到達しない。
 公開面の要素だけを公開し、公開面の外にある要素は、言語の可視性の機構で閉じる。
 全要素を一律に公開する構成や、公開面を定めず内側へ直接到達できる構成は認めない。
 コンテキストの内部では、参照は infrastructure から application、application から domain へ向かう。
@@ -106,8 +105,8 @@ infrastructure は公開面に含まれない。
 canonical は contracts の正本スキーマであり、契約の定義と層は [contracts](../contracts/layout.md) で規定する。
 wire の binding と生成物も contracts が所有し、canonical と binding は生成器の入力であって core の業務モデルではない。
 core と contracts のあいだで許す参照は [skeleton](../skeleton.md) に従う。
-core の内部では composition だけが generated のデータ型を使い、公開契約の DTO とコンテキストの application 入出力の写像を [composition](./composition.md) に置く。
-コンテキスト固有の command、result、検証済みの domain 型はそのコンテキストに置き、外部契約全体をコンテキストや shared へ import しない。
+core は composition を含め、公開契約の生成 DTO、binding、通信実装を参照しない。
+コンテキスト固有の command、result、検証済みの domain 型はそのコンテキストが所有し、公開契約との写像は [contracts/adapters](../contracts/adapters.md) が担う。
 
 ## 1 ファイル 1 概念
 
@@ -120,6 +119,6 @@ shared-kernel も、値・エラーが二つ以上になれば、同じ規則で
 
 ## 外部公開
 
-core が外部へ公開するのは composition の `build_core` のみである。
-`build_core` は組み立て済みの API を返し、起動は行わない。
+core の構築入口は composition の `build_core` だけである。
+`build_core` は組み立て済みの API を返し、公開 application 入口、公開入力構築、result と outcome の Interface を利用側へ渡す。
 プロセスの起動は、core を埋め込む surface または host が担う。

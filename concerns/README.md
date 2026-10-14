@@ -56,7 +56,7 @@ concerns は、特定のモジュールや技術に閉じず、システム全�
 | [transaction](./transaction/README.md) | 状態・連携 | 書き込みパスの一貫性と確定点 |
 | [messaging](./messaging/README.md) | 状態・連携 | event の契約と配送・消費 |
 | [workflow](./workflow/README.md) | 状態・連携 | 複数の確定点にまたがる業務目的の順序・分岐・再開・補償 |
-| [authentication](./authentication/README.md) | 信頼・情報保護 | 資格情報の検証と actor の構築 |
+| [authentication](./authentication/README.md) | 信頼・情報保護 | 資格情報の検証と認証主体の確定 |
 | [authorization](./authorization/README.md) | 信頼・情報保護 | アクセス制御の流れ |
 | [privacy](./privacy/README.md) | 信頼・情報保護 | 個人情報の最小化と期限の消去 |
 | [security](./security/README.md) | 信頼・情報保護 | 安全の姿勢 |

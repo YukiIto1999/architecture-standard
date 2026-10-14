@@ -9,10 +9,10 @@
 
 ### 要求
 公開契約の入力は、[structure/contracts/generated](../../structure/contracts/generated.md) が定める生成 DTO と生成した `Deserialize` の処理で受ける。
-deserialize は契約の形式と制約を検証し、生成 DTO からコンテキストの application 入力への写像は [structure/core/composition](../../structure/core/composition.md) に置く。
+deserialize は契約の形式と制約を検証し、生成 DTO からコンテキストの application 入力への写像は [structure/contracts/adapters](../../structure/contracts/adapters.md) に置く。
 コンテキストの application は、自らの入力構築を検証付きの domain の constructor へ通し、検証を通った業務型だけを処理へ渡し、内側で同じ性質を再検証しない。
 `TryFrom` は実装先の crate が対象の型を所有し、依存方向も守れる変換に使う。
-生成 DTO とコンテキストの型がともに別 crate の型である場合は、composition に `Result` を返す mapper 関数を置き、foreign な型同士の `TryFrom` を surface に実装しない。
+生成 DTO とコンテキストの型がともに別 crate の型である場合は、contracts/adapters に `Result` を返す mapper 関数を置き、foreign な型同士の `TryFrom` を surface に実装しない。
 未知のフィールドは弾かず、生成した deserialize の処理で object の位置とキーを捕捉し、境界でログに出す。
 捕捉は全 variant と入れ子の object に及ぼし、未知のキーを既知の field や判別子として扱わず、必須項目、値の制約、variant の対応の検証を維持する。
 ドメイン型には直列化の derive を直接付けず、外部表現の命名や形式は生成 DTO と binding 側に置く。
@@ -24,12 +24,12 @@ deserialize は契約の形式と制約を検証し、生成 DTO からコンテ
 未知のフィールドを弾く既定は、送り手と受け手の版が配備で一時的に重なる瞬間の後方互換を壊すので、寛容な読み手にする。
 検知した未知のフィールドをログに出せば残存が可視化され、恒常的に未知が流れ続ける状態は [evolution](../../principles/evolution/README.md) が定める収縮が終わっていない欠陥として扱える。
 ドメイン型に直列化を付けると、外部表現の都合がドメインの形を縛る。
-両方が foreign な型への `TryFrom` を境界に強制せず、依存が許される composition の mapper を使えば、domain を公開したりコンテキストへ外部契約を import したりせずに検証を一点に保てる。
+両方が foreign な型への `TryFrom` を境界に強制せず、core の外側にある contracts/adapters の mapper を使えば、domain を公開したり core へ外部契約を import したりせずに検証を一点に保てる。
 未知フィールドの捕捉を `flatten` を付けられる形に限定せず、契約から生成する deserialize の処理へ持たせれば、判別付き直和にも同じ受容と検知の保証を適用できる。
 
 ### 完了条件
 公開契約の入力が、具体的な field と variant を持つ生成 DTO で受けられている。
-生成 DTO から application 入力への mapper が composition にあり、コンテキストの入力構築が検証付きの domain の constructor を通る。
+生成 DTO から application 入力への mapper が contracts/adapters にあり、コンテキストの入力構築が検証付きの domain の constructor を通る。
 変換の impl が crate の型所有と依存方向に従い、両型が foreign な場合は mapper 関数になっている。
 未知のフィールドが全 variant と入れ子の object で拒否されず、位置とキーが捕捉されてログに出ている。
 未知フィールドを受け入れても、必須項目、値の制約、判別子と variant の対応の不正が拒否される。
@@ -49,7 +49,7 @@ canonical と binding から、具体的な DTO と、既知の項目を検証�
 判別付き直和は schema の判別子で variant を選び、その variant の既知キーに照らして未知キーを捕捉する。
 生成経路が捕捉を実現できなければ、生成器の設定や schema 駆動の出力処理を直し、手書き DTO や unknown-field policy の抑止で回避しない。
 境界は捕捉した位置とキーを警告として記録し、値そのものや未知の資格情報をログに載せない。
-composition の mapper は、生成 DTO の field をコンテキストの application 入力構築へ渡し、ドメイン型を直接参照しない。
+contracts/adapters の mapper は、生成 DTO の field を core が公開する application 入力構築へ渡し、ドメイン型を直接参照しない。
 出力は application の公開 result・outcome から生成 DTO への mapper で写し、生成 DTO の `Serialize` で直列化する。
 
 ### 例
@@ -60,7 +60,7 @@ composition の mapper は、生成 DTO の field をコンテキストの appli
 pub struct Email { address: String }
 ```
 
-生成 DTO と application の型が別 crate にある場合は、composition の関数で写像する。
+生成 DTO と application の型が別 crate にある場合は、contracts/adapters の関数で写像する。
 以下の `generated::CreateUserCommand` は生成物であり、`users::CreateUserCommand::try_new` はコンテキストの公開 application 入力構築で、内部の業務型の検証を所有する。
 deserialize と未知キーの検知は mapper より上流の生成 decoder で行い、この関数は同じ検証を繰り返さない。
 

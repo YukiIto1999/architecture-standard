@@ -10,7 +10,7 @@
 ### 要求
 contracts/generated の C# の client と型は NSwag で生成し、利用を client・型と drift・conformance の検査に限る。
 server の stub 生成に使わず、server の実装は Minimal API を保つ。
-データ型と serializer の処理は、HTTP client を持つ client とは別の assembly に出力し、server と core の composition はデータ型の assembly だけを使う。
+データ型と serializer の処理は HTTP client を持つ client とは別の assembly に出力し、server と contracts/adapters はデータ型の assembly だけを使い、core は生成物を参照しない。
 不変な入出力、必須項目と値の制約の検証、全 variant と入れ子の object の未知キー捕捉を生成器の設定と template に含め、同じ入力から再生成できる状態にする。
 
 ### 根拠
@@ -21,7 +21,7 @@ server の stub を生成すると、生成の都合が server の構造を縛�
 ### 完了条件
 client と型が、NSwag で生成されている。
 NSwag の利用が、生成と検査に限られ、server の stub 生成に使われていない。
-提供側と core の composition が生成 DTO を使い、データ型の assembly の依存 closure に通信 client とその実行機構が入っていない。
+提供側と contracts/adapters が生成 DTO を使い、core に生成物への依存がなく、データ型の assembly の依存 closure に通信 client とその実行機構が入っていない。
 生成 DTO の serializer が [translation](./translation.md) の契約の検証と未知項目の捕捉を満たしている。
 
 ### 禁止事項

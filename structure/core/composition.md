@@ -1,14 +1,14 @@
 # composition 単位
 
-composition 単位は、独立したコンテキストを組み立て、外部への入口を公開する。
-配線、生成した公開契約の DTO とコンテキストの入出力の写像、トランザクション境界の適用を担う。
+composition 単位は、独立したコンテキストと外部依存の adapter を配線し、core の公開 API を構築する。
+公開契約の写像、業務判断、トランザクションの制御は持たない。
 composition は [layout](./layout.md) の単位と依存に従う。
 
 ## build_core
 
 build_core は、core の組立点である。
 build_core は、コンテキストと shared を配線し、組み立て済みの API を返す。
-build_core は、core の唯一の外部入口である。
+build_core は、core の唯一の構築入口である。
 build_core は起動しない。
 build_core は module factory であり、プロセス全体の composition root ではない。
 起動側が解釈済みの型付き設定と生成済みの外部依存を受け取り、設定源を読み込まない。
@@ -23,44 +23,30 @@ composition は、port に adapter を結びつける。
 application が公開した integration event を libs の配送 port へ渡す経路を、composition が配線する。
 整合の即時性を要さない派生読みモデルへは、outbox を経て非同期で駆動する。
 integration event の消費は、composition が受信側コンテキストの公開 application 入口へ配線する。
-integration event から受信側の入力への翻訳は、受信側を配線する composition が下流の側の翻訳として所有し、上流の event 型を受信側の domain へ持ち込まない。
+公開 event から受信側の入力への翻訳は [contracts/adapters](../contracts/adapters.md) が所有し、composition は翻訳済みの受信入口を配線する。
 コンテキスト間の関係と翻訳の所有の記録は [principles/separation](../../principles/separation/README.md) に従う。
 composition は、業務判断を持たない。
-composition が行うのは、配線と境界の写像である。
+composition が行うのは、公開された構築用 API を使った配線である。
 依存注入の規律は [concerns/dependency](../../concerns/dependency/README.md) に従う。
 
-## operations
+## 公開 API
 
-operations は、core が外へ公開する operation ごとに置く。
-contract で公開する operation は canonical operation と一対一に対応する。
-operations は、外部の operation を、一つのコンテキストの公開 application 入口へ写像する。
-公開 application 入口は use-case または workflow である。
-operations は、use-case の順序、結果による分岐、補償、コンテキストをまたぐ同期呼び出しを持たない。
-派生読みモデルへの問い合わせは、読みモデルを所有するコンテキストの application に置く。
-公開契約の DTO とコンテキストの application 入出力との写像は、composition のみが持つ。
-公開契約を持つ operation は generated のデータ型を受け、コンテキストの公開 command へ写し、公開 result・outcome を generated の結果型とエラー型へ戻す。
-公開契約の形式と制約は generated の decoder または契約から導く境界の変換器で検証し、コンテキスト固有の不変条件は application の入力構築から domain の検証付き constructor へ通す。
-区分の写像は、公開する選択肢とコンテキストの型が取りうる場合の対応を持つ。
-名前の一致で対応を推測せず、公開しない場合と、複数の内側の場合を一つの公開区分へ写す場合も、その対応に含める。
-同じ性質を内側で再検証せず、業務型の構築と検証はコンテキストが所有する一点に保つ。
-ドメイン型や constructor をこの写像のためにコンテキストの外へ公開しない。
-generated の型がその境界で必要な責務と保証を満たすなら、その型を再利用し、層を通ることだけを理由に同義の中間 DTO を作らない。
-公開契約と利用側の型の区別は [contracts/layout](../contracts/layout.md) の「利用側の型との区別」に従う。
-canonical の意味と binding からコードの型を生成し、canonical のスキーマを実行時の型として import しない。
+組み立て済みの API は、各コンテキストの公開 application 入口と、その入力構築、result と outcome の Interface を公開する。
+use-case の順序、結果による分岐、再開、補償は、コンテキストの application workflow が持つ。
+派生読みモデルへの問い合わせも、読みモデルを所有するコンテキストの application に置く。
+composition は、コンテキストが公開した入力構築をそのまま利用できるように配線し、業務型の constructor を外へ公開しない。
+外部の canonical operation と core API の接続、生成 DTO との写像は [contracts/adapters](../contracts/adapters.md) が所有する。
+core は、公開契約の schema、生成 DTO、通信 client と stub を参照しない。
 イベントの公開と配送は [application](./application.md) と [concerns/messaging](../../concerns/messaging/README.md) に従う。
 
-## トランザクションと冪等性
+## トランザクションの能力の配線
 
-composition は、UnitOfWork を所有する。
-UnitOfWork が包む書き込みパスの内容は [concerns/transaction](../../concerns/transaction/README.md) に従う。
-use-case は、UnitOfWork のハンドルを受け取らない。
-composition の実行ラッパーは、use-case ごとに宣言された原子性を適用する。
-composition は、各 use-case の実行ラッパーを組み立て、その呼び出し口を operation と workflow へ渡す。
-workflow 全体を一つの UnitOfWork で包まない。
-composition は、request context または generated の公開契約 DTO から冪等キーを取り出し、公開 application 入口の入力へ写像する。
-実行ラッパーは、状態変更と公開 outcome に含まれる integration event の outbox 記録を同じ UnitOfWork で確定する。
-workflow から呼ぶ実行ラッパーは、workflow と step の識別子を受け取り、その組の一意性、状態変更、outbox 記録、step の完了記録を同じ UnitOfWork で確定する。
-composition は、outbox への記録経路と、確定済み outbox を読む配送経路を別々に配線する。
+トランザクションの制御は [concerns/transaction](../../concerns/transaction/application-owned-transactions.md) の「トランザクションの制御を application に置く」に従う。
+composition は、application が必要とする確定の能力と、同じ書き込み範囲で使う store、outbox、冪等性の能力を配線する。
+開始、読む順序、書く順序、確定、中止を決める処理や、use-case 全体を包む実行ラッパーを置かない。
+具体的な DB driver の transaction 型を application の Interface へ渡さない。
+outbox への記録経路と、確定済み outbox を読む配送経路を別々に配線する。
+状態、業務事実、outbox、workflow の step と冪等性の必要な同時確定は、application が制御する書き込みパスへ閉じる。
 冪等性の規律は [concerns/resilience](../../concerns/resilience/README.md) に従う。
 
 ## 観測
@@ -69,9 +55,11 @@ observability の仕込みは、composition と infrastructure の境界の殻�
 domain と application は、その機構を直接使わず、事実を event で表す。
 観測の規律は [concerns/observability](../../concerns/observability/README.md) に従う。
 
-## actor
+## 業務入力と実行文脈
 
-composition は、surface の認証境界が構築した actor だけを受け取る。
-composition と core の公開 API は、principal、token、claim を受け取らない。
-actor は、use-case または workflow へ引数として渡す。
-actor の認可規律は [concerns/authorization](../../concerns/authorization/README.md) に従う。
+core の公開 API は、コンテキストが意味と保証を所有する業務入力を受け取る。
+principal、token、claim、認証方式の型を受け取らず、全ての use-case に共通の actor を要求しない。
+当事者が業務事実や遷移条件に必要な操作だけ、そのコンテキストの業務主体を入力に含める。
+公開入口と対象取得の保護の適用点は、application が公開する実行契約に従って配線する。
+認証認可の宣言の接続は [contracts/adapters](../contracts/adapters.md) が所有する。
+実行の期限、取消、相関の文脈は [concerns/context-propagation](../../concerns/context-propagation/README.md) に従い、業務入力やドメイン型へ混ぜない。

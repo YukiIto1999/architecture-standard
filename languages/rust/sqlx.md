@@ -58,45 +58,209 @@ let profile = sqlx::query_as!(
 ## 書き込みパス
 
 ### 要求
-composition が所有する UnitOfWork は sqlx の Transaction で実装し、store は受け取った Transaction の中で書く。
+transaction の制御の所有は、[transaction](../../concerns/transaction/application-owned-transactions.md) の「トランザクションの制御を application に置く」に従う。
+application が宣言した scope の port を、infrastructure が sqlx の Transaction を内側に持つ型で実装し、use-case が begin、読み、書き込み、commit、abort をその port を通して制御する。
+sqlx の Transaction と `sqlx::Error` は、application・domain・composition の型とシグネチャに現さず、scope の実装の内側に閉じる。
+scope の操作の失敗は、use-case が分岐に使う分類の閉じた型で表し、`sqlx::Error` の値と文字列を載せない。
+sqlx の生の診断情報は、infrastructure が [observability](../../concerns/observability/README.md) の境界の殻で扱う。
+store は、scope が持つ Transaction の中で書き、begin・commit・rollback を呼ばない。
+scope の `commit` と `abort` は `self` を消費し、確定または中止の後に scope を使えない形にする。
+`Connection::transaction` のような closure を受ける API へ use-case の本体を渡し、外側に begin と commit を持たせない。
+commit は、`Ok` を返したときだけ確定とする。
+commit の失敗は、実装が確定していないと確認できる場合だけ `NotCommitted` に、確認できない場合は `OutcomeUnknown` に写す。
+`sqlx::Error::Database` であることだけでは、確定していないと判断しない。
+開始済みの commit は、drop で中断せず完了まで await する。
+use-case は、commit を始める前に終わるとき、`abort` を await して scope を中止し、元の終わりと `abort` の失敗を別々に返す。
+欠陥と取り消しで scope が drop されたときの rollback は sqlx が行うが、その完了は await できないので、協調取消では use-case が `abort` を [tokio-util](./tokio-util.md) の「取り消し」が定める取り消されない後始末として await して完了させる。
 
 ### 根拠
-store が Transaction を握ると、業務判断と確定の制御が混ざり、複数の store をまたぐ一つの確定ができない。
-composition が Transaction を所有し store が借りた Transaction の中で書けば、確定点が一つに定まる。
+store が Transaction を握ると、use-case の書き込みが複数の確定点に割れ、複数の store をまたぐ一つの確定ができない。
+begin から commit または abort までを use-case が書けば、読み、domain の判断、書き込み、確定か中止かの順が use-case で読め、domain は Transaction を知らない純粋な関数のまま保てる。
+Transaction を scope の実装の内側に閉じれば、application と domain が sqlx の型に依存しない。
+`sqlx::Error` を業務の失敗へ文字列化すると、分類に必要な型情報が失われ、接続情報などの機微な値が漏れる恐れがある。
+`commit` と `rollback` は `self` を消費するので、確定または中止の後の scope の再利用が型検査で止まり、commit が `Ok` を返した後に scope を使う後始末が残らない。
+closure を受ける API に use-case の本体を渡すと、外側の呼び出しが全体を包み、読み、判断、書き込み、確定の順と確定しない終わり方が use-case から見えなくなる。
+commit も rollback もされずに drop された Transaction は、sqlx が rollback する。
+drop は非同期の rollback の完了を待てないので、取り消された後に rollback を済ませる経路では、`abort` を await する。
+開始済みの commit を drop すると、確定したかが分からない状態を自ら作る。
+commit の `Ok` の応答は確定を示すが、失敗の `sqlx::Error` の種類だけでは確定していないとは限らない。
+確定していないと確認できない失敗を未確定へ写せば、確定済みの書き込みを書かれていないものとして扱う恐れがある。
+成功にも未確定にも取り消しにも写さなければ、再実行か調査で判定できる。
+`abort` の失敗で元の終わりを上書きすると、拒否や競合の理由が呼び出し側から消える。
 一つの確定点に集めれば、現在情報の書き込み、必要な業務イベントの追記、公開する integration event の outbox 記録を、同一のパスで確定できる。
 
 ### 完了条件
-UnitOfWork が、composition の所有する sqlx の Transaction で実装されている。
-store が、受け取った Transaction の中で書いている。
+scope の port が application に宣言され、sqlx の Transaction と `sqlx::Error` が infrastructure の scope の実装の内側にだけある。
+use-case が、scope の port を通して begin、読み、domain の判断、書き込み、commit または abort を制御している。
+domain・application・composition の型とシグネチャに、sqlx の型が現れていない。
+scope の操作の失敗が、分類の閉じた型で返り、`sqlx::Error` の値と文字列を含んでいない。
+store が、begin・commit・rollback を呼んでいない。
+`Connection::transaction` のような closure に use-case の本体を渡す controller が、どの層にもない。
 確定点が、一つである。
+commit を始める前に終わる拒否、競合、失敗、欠陥、取り消しで、現在情報の更新も業務事実の追記も outbox の記録も確定していない。
+`abort` に失敗を注入すると、元の終わりが保たれ、`abort` の失敗が別に返されている。
+commit が `Ok` を返したときだけ確定として返り、未確定を確認できない失敗が `OutcomeUnknown` になっている。
+commit の応答を受け取る前に接続を切る失敗注入で、`OutcomeUnknown` が成功にも `NotCommitted` にも取り消しにも写されていないことが、結合テストで確認されている。
+commit が `Ok` を返した後に使う scope の後始末がなく、確定済みの結果が型で保たれている。
+取り消された use-case が、開いた Transaction も `pg_advisory_xact_lock` の鍵も残していないことが、結合テストで確認されている。
 
 ### 禁止事項
-store が、Transaction の begin・commit を所有すること。
+store が、Transaction の begin・commit・rollback を呼ぶこと。
+domain と application が、sqlx の Transaction と `sqlx::Error` を受け取ること、または名指しすること。
+composition が、Transaction を begin または commit すること。
+closure を受ける API で use-case の本体を包み、外側に begin と commit を持たせること。
+`sqlx::Error` の値や文字列を、業務の失敗に載せること。
+`sqlx::Error::Database` であることだけを根拠に、commit の失敗を確定していないと判断すること。
+commit の応答を受け取れない失敗を、成功、`NotCommitted`、取り消しのいずれかに写すこと。
+開始済みの commit を、drop で中断すること。
+`abort` の失敗で、元の終わりを上書きすること。
 
 ### 行動
-composition で Transaction を begin し、store に渡して書かせ、composition で commit する。
+use-case ごとに、必要な操作と commit と abort を持つ scope の port と、scope を begin する port を application に宣言する。
+scope の操作の失敗は、use-case が分岐に使う分類の enum にし、commit の失敗と abort の失敗は別の型にする。
+use-case で、scope を begin し、読み、domain の同期の関数へ値を渡し、判断の結果を書いて commit する。
+commit を始める前に終わるときは、`abort` を await して、元の終わりと `abort` の失敗を一緒に返す。
+infrastructure で、scope の port を Transaction を持つ型で実装し、store の関数へ scope の Transaction を渡す。
+`commit` は `Ok` だけを確定とし、失敗は未確定を確認できる根拠があるときだけ `NotCommitted`、それ以外は `OutcomeUnknown` へ写す。
+composition で、scope の port に実装を結び、Transaction を扱わない。
+取り消しを受けたら新しい書き込みを始めず、`abort` を取り消されない後始末として await して完了させる。
+`abort` の失敗、commit の応答を受け取る前の接続の切断、取り消し直後の Transaction と鍵の残存を、結合テストで確認する。
 
 ### 例
-組立点が transaction を所有し、現在情報の書き込みと、公開する integration event の outbox 記録を同じ書き込みパスで確定する。store は受け取った transaction の中でだけ書く。
+use-case の外側が begin と commit を持ち、sqlx の Transaction を store へ渡すと、読み、判断、書き込みの順と確定の制御が use-case から外れ、Transaction の型が application へ流れる。
 
 ```rust
 let mut transaction = pool.begin().await?;
 order_store.insert(&mut transaction, &order).await?;
 outbox.add(&mut transaction, OrderPlaced::from(&order)).await?;
 transaction.commit().await?;
+```
 
-impl OrderStore {
-    async fn insert(&self, transaction: &mut Transaction<'_, Postgres>, order: &Order) -> Result<()> {
-        sqlx::query!(/* ... */).execute(&mut **transaction).await?; Ok(())
+次の断片は context の application と infrastructure の内側の実装であり、可視性の宣言を省く。
+`Customer`・`Order`・scope の port はドメイン型を扱うので、context の外へ公開しない。
+公開入口は command を受けて公開の outcome を返し、ドメイン型を返さない。
+
+domain の判断は、Transaction も scope も受け取らない同期の関数である。
+
+```rust
+struct Customer {
+    id: CustomerId,
+    active: bool,
+}
+
+struct Order {
+    customer_id: CustomerId,
+}
+
+enum PlaceRejected {
+    CustomerInactive,
+}
+
+impl Order {
+    fn place(customer: &Customer) -> Result<Order, PlaceRejected> {
+        if customer.active {
+            Ok(Order { customer_id: customer.id })
+        } else {
+            Err(PlaceRejected::CustomerInactive)
+        }
     }
 }
 ```
+
+application は scope の port と use-case を持つ。
+scope の操作の失敗、commit の失敗、abort の失敗を別の型で表し、use-case の終わりは元の失敗と `abort` の失敗を別の field に持つ。
+commit を始める前に終わる経路は、すべて `abort` を await して返る。
+
+```rust
+enum ScopeFailure {
+    NotFound,
+    Unavailable,
+}
+
+enum CommitFailure {
+    NotCommitted,
+    OutcomeUnknown,
+}
+
+struct AbortFailure;
+
+trait PlaceOrderScopes {
+    type Scope: PlaceOrderScope;
+    async fn begin(&self) -> Result<Self::Scope, ScopeFailure>;
+}
+
+trait PlaceOrderScope {
+    async fn find_customer(&mut self, id: CustomerId) -> Result<Customer, ScopeFailure>;
+    async fn insert_order(&mut self, order: &Order) -> Result<(), ScopeFailure>;
+    async fn commit(self) -> Result<(), CommitFailure>;
+    async fn abort(self) -> Result<(), AbortFailure>;
+}
+
+enum PlaceOrderFailure {
+    Rejected(PlaceRejected),
+    Scope(ScopeFailure),
+    Commit(CommitFailure),
+}
+
+struct PlaceOrderEnd {
+    failure: PlaceOrderFailure,
+    abort_failure: Option<AbortFailure>,
+}
+
+struct PlacedOrder {
+    customer_id: CustomerId,
+}
+
+async fn place_order<S: PlaceOrderScopes>(
+    scopes: &S,
+    command: PlaceOrderCommand,
+) -> Result<PlacedOrder, PlaceOrderEnd> {
+    let mut scope = scopes.begin().await.map_err(|failure| PlaceOrderEnd {
+        failure: PlaceOrderFailure::Scope(failure),
+        abort_failure: None,
+    })?;
+    let customer = match scope.find_customer(command.customer_id).await {
+        Ok(customer) => customer,
+        Err(failure) => return Err(abort(scope, PlaceOrderFailure::Scope(failure)).await),
+    };
+    let order = match Order::place(&customer) {
+        Ok(order) => order,
+        Err(rejected) => return Err(abort(scope, PlaceOrderFailure::Rejected(rejected)).await),
+    };
+    if let Err(failure) = scope.insert_order(&order).await {
+        return Err(abort(scope, PlaceOrderFailure::Scope(failure)).await);
+    }
+    match scope.commit().await {
+        Ok(()) => Ok(PlacedOrder { customer_id: order.customer_id }),
+        Err(failure) => Err(PlaceOrderEnd {
+            failure: PlaceOrderFailure::Commit(failure),
+            abort_failure: None,
+        }),
+    }
+}
+
+async fn abort<S: PlaceOrderScope>(scope: S, failure: PlaceOrderFailure) -> PlaceOrderEnd {
+    PlaceOrderEnd {
+        failure,
+        abort_failure: scope.abort().await.err(),
+    }
+}
+```
+
+
+infrastructure はこの port を、sqlx の Transaction を内側に持つ scope と、その transaction を借りて読み書きする store で実装する。
+driver のエラーは port の失敗へ分類し、commit で未確定を確認できない失敗は `OutcomeUnknown` へ写す。
+
+この断片は取り消しと期限の引数と欠陥の経路を含まない。
+それらの扱いは [tokio-util](./tokio-util.md) の「取り消し」に従い、この断片で取り消しと欠陥の後始末を確かめたとは扱わない。
+同じ確定に含める outbox と冪等の記録は、scope の操作として足し、commit の前に同じ Transaction へ書く。
 
 ## 冪等な要求の記録
 
 ### 要求
 冪等な要求は、operation、actor scope、tenant、key を全て NOT NULL の列として持ち、その複合一意制約で競合を検出する。
-認証済み要求は検証済み actor ID、匿名要求は session または client ごとの安定した opaque scope、system 要求は logical actor ごとの ID を actor scope に使う。
+認証済み要求は認証主体の ID、匿名要求は session または client ごとの安定した opaque scope、system 要求は logical actor ごとの ID を actor scope に使う。
+actor scope は要求者の種別を分ける技術的な namespace であり、業務の当事者の識別子で置き換えない。
 multi-tenant operation の認証済み要求は、認証境界で検証した tenant claim または membership、もしくは authorization で許可した tenant 選択から構築した `TenantId` を tenant scope に使う。
 multi-tenant operation の匿名要求は、検証済みの host または route と、session または client の tenant context から構築した `TenantId` を tenant scope に使う。
 multi-tenant operation の system 要求は、logical actor に設定した `TenantId` を tenant scope に使う。
@@ -108,13 +272,13 @@ request fingerprint と初回 response は、冪等 key と業務の書き込み
 
 ### 根拠
 [transaction](../../concerns/transaction/README.md) が定める複合 scope と同じ確定点を PostgreSQL の制約と sqlx の Transaction に写せば、同時要求の競合と部分確定を DB で止められる。
-actor scope を検索条件へ含めれば、別の主体へ保存済み response を返さない。
-actor の種別ごとに [transaction](../../concerns/transaction/README.md) の scope を写せば、匿名や system を汎用 sentinel へ潰さない。
+actor scope を検索条件へ含めれば、別の要求者へ保存済み response を返さない。
+要求者の種別ごとに [transaction](../../concerns/transaction/README.md) の scope を写せば、匿名や system を汎用 sentinel へ潰さない。
 tenant の出所を認証、認可、host、route、logical actor の検証済み context に限れば、要求者が指定した未検証 tenant へ scope を切り替えられない。
 
 ### 完了条件
 operation、actor scope、tenant、key の全列が NOT NULL で、複合一意制約を持っている。
-認証済み actor、匿名の安定した opaque scope、logical system actor が actor の種別に応じて記録されている。
+認証主体の ID、匿名の安定した opaque scope、logical system actor の ID が、要求者の種別に応じて記録されている。
 multi-tenant operation に、認証済み tenant、匿名の検証済み host または route と session/client tenant context、logical system actor の設定済み tenant が `TenantId` として記録されている。
 single-tenant operation に、正準な single-tenant sentinel が記録されている。
 tenant の概念を持たない operation に、正準な no-tenant sentinel が記録されている。
@@ -127,7 +291,8 @@ request fingerprint、初回 response、業務の書き込みが、同じ sqlx �
 冪等 key の競合を、sqlx の事前 SELECT だけで判定すること。
 request fingerprint または初回 response を、業務の書き込みと別に commit すること。
 actor scope を照合せずに、保存済み response を返すこと。
-匿名または system の異なる主体を、汎用の actor sentinel へまとめること。
+匿名または system の異なる要求者を、汎用の actor sentinel へまとめること。
+actor scope を、業務の当事者の識別子へ置き換えること。
 未検証の tenant claim、host、route、session、client 入力から `TenantId` を構築すること。
 multi-tenant operation に single-tenant sentinel または no-tenant sentinel を使うこと。
 single-tenant operation に `TenantId` または no-tenant sentinel を使うこと。
@@ -137,13 +302,13 @@ tenant の概念を持たない operation に `TenantId` または single-tenant
 
 ### 行動
 `applied_requests` に複合一意制約を置き、sqlx の同じ Transaction で業務の書き込み、fingerprint、response を保存する。
-認証済み actor ID、匿名の安定した opaque scope、logical system actor ID を種別ごとに記録する。
+認証主体の ID、匿名の安定した opaque scope、logical system actor の ID を種別ごとに記録する。
 multi-tenant operation の認証済み要求は検証済み tenant claim、membership、または authorization 済み選択から `TenantId` を構築する。
 multi-tenant operation の匿名要求は検証済み host または route と session/client tenant context から、system 要求は logical actor の設定から `TenantId` を構築する。
 single-tenant operation に正準な single-tenant sentinel を使う。
 tenant の概念を持たない operation に正準な no-tenant sentinel を使う。
 安定した匿名 scope がなければ、server 発行の全体で一意な key と proof を発行し、proof を応答取得時に検証する。
-同じ scope と key を並行に送る競合テストと、全 actor/tenant 種別の scope 分離、未検証 tenant の拒否、multi-tenant の `TenantId`、single-tenant sentinel、no-tenant sentinel の相互混同拒否、proof のない別 client からの response 取得拒否を確かめる漏洩テストを実行する。
+同じ scope と key を並行に送る競合テストと、全要求者種別と tenant 種別の scope 分離、未検証 tenant の拒否、multi-tenant の `TenantId`、single-tenant sentinel、no-tenant sentinel の相互混同拒否、proof のない別 client からの response 取得拒否を確かめる漏洩テストを実行する。
 
 ## durable inbox
 
@@ -183,7 +348,7 @@ payload commit と処理結果 commit の各直前・直後の停止、および
 
 ### 要求
 同じ集約への同時の更新は [transaction](../../concerns/transaction/single-write-path.md) の「整合性を一つの書き込みパスに閉じる」に従って制御し、版で衝突を検出する集約、共有の鍵か鍵なしで更新する可変属性の行、一回だけ起きる業務事実を追記する集約では競合の Result に写す。
-集約の鍵は、composition が所有する sqlx の Transaction の中で、検証より前に、排他なら `pg_advisory_xact_lock(bigint)`、共有なら `pg_advisory_xact_lock_shared(bigint)` で取る。
+集約の鍵は、scope の sqlx の Transaction の中で、検証より前に、排他なら `pg_advisory_xact_lock(bigint)`、共有なら `pg_advisory_xact_lock_shared(bigint)` で取る。
 集約の鍵の bigint は、集約の種類と集約の識別子から、種類の違う集約の鍵が衝突しないように一意に導き、その導出をコードの一か所に定義する。
 一つの書き込みが複数の鍵を取る場合は、全ての書き込み経路で bigint の値の昇順に取る。
 多数の鍵は、昇順に並べた bigint の配列を `unnest` で展開する一つの `SELECT` で取り、その文の中で並べ替えない。
@@ -199,7 +364,7 @@ datastore が付ける活動の時刻から規則で決まる業務事実の値(
 版で競合を検出する集約へ書く全ての書き込み経路は、正本に応じた同じ検出を通す。
 必要な業務事実は、現在情報の書き込みと同じ sqlx の Transaction で追記する。
 業務事実を必要としない現在情報の更新は、集約に定めた競合制御を通し、業務事実を追記せず `UPDATE` で書いてよい。
-競合または失敗のとき、composition は Transaction を commit せず、現在情報の更新、業務事実の追記、outbox の記録のどれも残さない。
+競合または失敗のとき、use-case は commit せず scope を abort し、現在情報の更新、業務事実の追記、outbox の記録のどれも残さない。
 公開する integration event は、業務事実の追記と別に、現在情報の書き込みと同じ Transaction で outbox へ記録する。
 
 ### 根拠
@@ -213,7 +378,7 @@ sqlx の `DatabaseError::constraint()` は、PostgreSQL の driver が違反し�
 どちらで検出するかは正本が何かで決まるので、書き込みごとに選ばない。
 `pg_advisory_xact_lock(bigint)` と `pg_advisory_xact_lock_shared(bigint)` は、表の行でなく bigint の値に鍵を掛けるので、書き込み経路が更新してはならない事実の行への更新権限なしに集約の鍵を取れる。
 `SELECT ... FOR UPDATE` などの行ロック句は対象の行への `UPDATE` 権限を要するので、事実の行に使うと、鍵のために書き込み経路へ事実の行の更新権限を与えることになる。
-`pg_advisory_xact_lock` 系の鍵は Transaction の終了で自動的に解放されるので、composition の commit または破棄が解放点になり、store は解放を持たない。
+`pg_advisory_xact_lock` 系の鍵は Transaction の終了で自動的に解放されるので、scope の commit または abort(drop による rollback を含む)が解放点になり、store は解放を持たない。
 READ COMMITTED は文ごとに直前の確定を読むので、鍵を待った後の検証の文は、先に鍵を持っていた書き込みの確定を読める。
 REPEATABLE READ 以上は最初の文の snapshot を使い続けるので、鍵を待つ間に確定した書き込みを検証で読めない。
 鍵を bigint の値の昇順に取れば、鍵どうしの待ちが循環せず、デッドロックが起きない。
@@ -244,7 +409,7 @@ domain event と integration event の区別は [messaging](../../concerns/messa
 一回だけ起きる業務事実の二度目の追記が、名前を付けた主キーの違反として検出され、競合の Result で返されている。
 version の制約と一回だけであることを守る主キー以外の制約違反が、競合の Result に写されていない。
 版で衝突を検出する集約と、共有の鍵か鍵なしで更新する可変属性の行の全ての書き込み経路で、古い version を期待した更新が競合になり、現在情報が変わっていない。
-集約の鍵を取る全ての書き込みが、composition が所有する sqlx の Transaction の中で、検証より前に、排他は `pg_advisory_xact_lock(bigint)`、共有は `pg_advisory_xact_lock_shared(bigint)` で鍵を取っている。
+集約の鍵を取る全ての書き込みが、scope の sqlx の Transaction の中で、use-case が検証より前に呼ぶ操作により、排他は `pg_advisory_xact_lock(bigint)`、共有は `pg_advisory_xact_lock_shared(bigint)` で鍵を取っている。
 複数の鍵を取る書き込みが、全ての書き込み経路で bigint の値の昇順に鍵を取っている。
 集約の鍵の bigint が、集約の種類と識別子から一意に導かれ、種類の違う集約の鍵が衝突せず、識別子が下位の bit の範囲に収まらないとき導出が鍵を作らず、導出がコードの一か所にだけ定義されている。
 鍵を取った後の検証が READ COMMITTED で行われ、鍵を待つ間に確定した書き込みを読んでいる。
@@ -277,7 +442,7 @@ datastore が付ける業務事実の時刻の列の既定値に、`CURRENT_TIME
 
 ### 行動
 上位の書き込みパスに従って集約の競合制御を確認し、版で衝突を検出する集約と、共有の鍵か鍵なしで更新する可変属性の行に、正本に応じた version の比較を実装する。
-集約の鍵を取る書き込みは、composition が所有する sqlx の Transaction の中で、検証より前に、排他なら `sqlx::query!("SELECT pg_advisory_xact_lock($1)", aggregate_key)`、共有なら `sqlx::query!("SELECT pg_advisory_xact_lock_shared($1)", aggregate_key)` を `execute` で実行する。
+集約の鍵を取る書き込みは、use-case が検証より前に scope の鍵の操作を呼び、その実装が scope の sqlx の Transaction の中で、排他なら `sqlx::query!("SELECT pg_advisory_xact_lock($1)", aggregate_key)`、共有なら `sqlx::query!("SELECT pg_advisory_xact_lock_shared($1)", aggregate_key)` を `execute` で実行する。
 複数の鍵を取る書き込みは、bigint の値の昇順に並べてから取る。
 集約の鍵の bigint は、固定の上位の bit に種類を、範囲を限った下位の bit に識別子を置いて導き、その導出を一つの関数に定義して全ての書き込み経路から呼ぶ。
 集約の鍵で競合制御する集約では、鍵を取った後に、READ COMMITTED の文で今の状態を検証してから書く。
@@ -287,14 +452,15 @@ datastore が付ける業務事実の時刻の列の既定値に、`CURRENT_TIME
 一回だけ起きる業務事実の関係は、対象のキーを主キーにして主キーに名前を付け、`sqlx::Error::Database` の `is_unique_violation()` が真で `constraint()` がその名前と一致するときだけ `WriteError::Conflict` に写し、他の制約違反は `WriteError::Database` で返す。
 datastore が付ける業務事実の時刻の列は `DEFAULT clock_timestamp()` で定義し、鍵を待った書き込みの時刻が待つ間に確定した業務事実の時刻以後になることを結合テストで確認する。
 更新ごとに必要な業務事実を確かめ、必要なら同じ Transaction の中で業務事実の関係へ INSERT する。
-競合または失敗では、composition が Transaction を commit せず破棄する。
+競合または失敗では、use-case が commit せず scope を abort する。
 版で衝突を検出する集約では、同じ version の並行更新、古い version の各経路からの更新、version 以外の一意制約違反を結合テストで再現する。
 集約の鍵を排他で取る集約では、全経路での直列化と鍵の後の検証、書き込み経路の role が事実の行へ `UPDATE` も `DELETE` もできないこと、複数の鍵を一つの順序で取ること、種類の違う集約の鍵が衝突しないこと、一回だけ起きる業務事実の二度目の追記で名前付きの主キーの違反だけが競合に写ることを結合テストで確認し、排他の鍵の下で更新する判定の対象の行への version の追加は要求しない。
 共有の鍵か鍵なしで更新する可変属性の行では、同じ行への同時の更新を結合テストで再現し、片方だけが確定して他方が競合になることを確認する。
 現在情報の更新と業務事実の追記の間の失敗は、どちらの集約でも再現する。
 
 ### 例
-競合と失敗は、閉じた型付きの失敗で表す。
+競合と失敗は、infrastructure の store が返す閉じた型付きの失敗で表す。
+scope の実装は、`WriteError::Conflict` を use-case が分岐に使う scope の失敗の分類へ競合として写し、`sqlx::Error` を application へ出さない。
 
 ```rust
 #[derive(thiserror::Error, Debug)]
@@ -338,7 +504,7 @@ Ok(())
 取消は注文を参照する一回だけ起きる業務事実であり、注文の集約の他の書き込みと直列に確定させるので、注文の集約の鍵を `pg_advisory_xact_lock` で排他に取ってから追記する。
 `occurred_at` は `DEFAULT clock_timestamp()` の列の既定値で付き、書き込み経路は渡さない。
 二度目の取消は名前を付けた主キー `order_cancellations_pkey` の違反になり、違反した制約の名前が一致するときだけ競合へ写す。
-競合の Err を受けた composition は commit せず Transaction を破棄するので、取消は残らず、鍵も Transaction の終了で解放される。
+競合の Err を受けた use-case は commit せず scope を abort するので、取消は残らず、鍵も Transaction の終了で解放される。
 
 ```rust
 const ORDER_CANCELLATION_CONSTRAINT: &str = "order_cancellations_pkey";

@@ -12,5 +12,5 @@ secret の値と lifecycle の正本は secrets であり、設定由来の参�
 ## 参照
 設定の構造と読み込みの規律は [configuration](../configuration/README.md) に従う。
 暗号の姿勢は [security](../security/README.md) に従う。
-資格情報から actor への変換は [authentication](../authentication/README.md)、操作と対象への許可の評価は [authorization](../authorization/README.md) に従う。
+資格情報からの認証主体の確定は [authentication](../authentication/README.md)、操作と対象への許可の評価は [authorization](../authorization/README.md) に従う。
 配備における secret の置き場は [structure/deploy](../../structure/deploy/) が定める。

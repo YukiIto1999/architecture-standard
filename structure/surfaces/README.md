@@ -21,12 +21,12 @@ surface は、対話様式ごとの入口である。
 組立点は単一である。
 server・console・worker・extension・embedded では composition が、viewer では app が組立点を担う。
 app は、viewer における composition root の別名である。
-入口は、業務判断を持たず、入力を build_core が返す core API、remote API、または protocol の operation へ写像する。
-core を埋め込む surface は、[concerns/authentication](../../concerns/authentication/README.md) に従って認証境界で資格情報を検証し、actor を構築する。
-core の公開 API へは actor と検証済み入力だけを渡し、資格情報と認証方式の型を渡さない。
+入口は業務判断を持たず、埋め込んだ core への入力は contracts/adapters の保護された公開入口へ、remote の入力は公開 API または protocol の operation へ渡す。
+core を埋め込む surface は、[concerns/authentication](../../concerns/authentication/README.md) に従って認証境界で資格情報を検証し、認証主体を確定する。
+認証主体と資格情報の許可範囲は認証と認可の内側に保持し、core の公開 API へは検証済み入力と必要な操作の業務主体だけを渡す。
 自己ホストの surface は、core を埋め込み、自身でプロセスを起動する。
 埋め込みの surface は、core を埋め込み protocol を公開し、host が同梱して起動する。
 被ホストの surface は、host に求める能力を port として定義し、host が実装を注入する。
-被ホストの surface は、actor と資格情報を構築せず、server、埋め込み surface、または host の認証境界へ委ねる。
+被ホストの surface は認証主体と資格情報を構築せず、server、埋め込み surface、または host の認証境界へ委ねる。
 被ホストの viewer は複数の host から共有され、extension が UI を持つ場合は ide が viewer も併せてホストする。
 surface の中に、host の分岐を置かない。

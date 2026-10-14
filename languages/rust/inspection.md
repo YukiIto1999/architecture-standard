@@ -13,10 +13,10 @@ phase ごとの実際の edge は、`cargo metadata` の `dep_kinds` と参照�
 normal・dev・build は Cargo の参照の種類であり、そのまま runtime・test・build の成果物 phase と同一視しない。
 normal の参照先が proc-macro crate で、macro の展開だけに使われる場合は compile-time の build edge に分類する。
 通常の library の normal edge は runtime、dev edge は test、build edge は build に分類し、proc-macro の実行時混入を許す例外を作らない。
-root の構造検査は、skeleton の実行時表と build・test-only 表から runtime・build・test phase の許可 edge を生成する。
-root の構造検査は、build または test の edge が runtime の成果物へ混入した場合に失敗する。
+root の構造検査は、skeleton の production のソース依存表から runtime の許可 edge を、build・test-only 依存表から build・test phase の許可 edge を生成し、成果物の消費表は crate のソース依存と区別して照合する。
+root の構造検査は、build または test のソース依存が production の成果物へ混入した場合に失敗する。
 generated のデータ型と通信 client・stub を別 crate として照合し、データ型の runtime 依存 closure に通信 client、HTTP client、通信 runtime が入った場合は失敗する。
-生成 DTO とコンテキストの application 入出力の mapper の配置と signature を検査し、composition 以外から外部契約の型がコンテキストや shared へ流入する構成を拒否する。
+公開契約の DTO と application 入出力の mapper の配置が contracts/adapters であることと、core の crate に生成 DTO・binding・通信 SDK の型が流入しないことを検査する。
 
 ### 根拠
 依存方向を crate の依存グラフにすれば、下位が上位を参照できず、向きがビルドで強制される。
@@ -26,10 +26,10 @@ import の走査は型を介さない静的な呼び出しを見ないので、�
 ### 完了条件
 依存方向が、crate 依存で強制されている。
 crate 依存に乗らない規則が、import を走査する構造検査で検証されている。
-root の構造検査が、skeleton の両表から phase ごとの許可 edge を生成している。
-build または test の edge が runtime の成果物へ混入した場合に、構造検査が失敗している。
-generated のデータ型の crate に通信の依存がなく、core の composition と提供側がその crate の型を使っている。
-公開契約の DTO と application 入出力の mapper が composition にあり、ドメイン型がそのために公開されていない。
+root の構造検査が、skeleton の production のソース依存表と build・test-only 依存表から phase ごとの許可 edge を生成し、成果物の消費表を別の照合対象にしている。
+build または test のソース依存が production の成果物へ混入した場合に、構造検査が失敗している。
+generated のデータ型の crate に通信の依存がなく、contracts/adapters と提供側がその crate の型を使い、core の crate がその crate を参照していない。
+公開契約の DTO と application 入出力の mapper が contracts/adapters にあり、ドメイン型がそのために公開されていない。
 
 ### 禁止事項
 構造の規則を、コメントや約束だけで守らせること。
@@ -37,11 +37,12 @@ generated のデータ型の crate に通信の依存がなく、core の compos
 ### 行動
 skeleton の境界を workspace の crate で分け、依存方向を Cargo の依存で強制する。
 残りの規則を root の tests/ の構造検査で確かめる。
-skeleton の両表から許可 edge を生成し、`dep_kinds` と参照先 target の kind・crate type で phase を分類した実際の crate 依存と照合する。
-runtime edge を辿った成果物の依存 closure に build または test 専用の成果物が混入した場合は失敗させる。
+skeleton の production のソース依存表と build・test-only 依存表から許可 edge を生成し、`dep_kinds` と参照先 target の kind・crate type で phase を分類した実際の crate 依存と照合する。
+runtime edge を辿った production の成果物の依存 closure に build または test 専用の成果物が混入した場合は失敗させる。
+成果物の消費表は、deploy・同梱する runtime・root tests が消費する成果物の入力として crate 依存と別に照合し、test から deploy の script・設定・secret を実行部品として参照する構成を拒否する。
 compile-time に使う proc-macro とその host 依存を runtime の成果物に数えない。
 generated のデータ型と通信 client・stub の crate を区別し、型の crate の runtime 依存 closure と各利用側の import を照合する。
-mapper の配置、コンテキストの公開 application 入力構築の呼び出し、domain の非公開性を構造検査で確かめる。
+contracts/adapters の mapper の配置、core の公開 application 入力構築の呼び出し、domain の非公開性、core の crate に生成 DTO・binding・通信 SDK の型が現れないことを構造検査で確かめる。
 
 ## 予防
 
@@ -215,7 +216,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | cucumber | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber を実装と同じ検証入口で実行) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`cargo nextest list --message-format json` の binary と test name の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。doctest と cucumber scenario は各実行入口の native ID を同じ集合へ加える) |
 | cargo-mutants | 有効性 | mutation(変更部分は保存した diff を渡した `--in-diff`、未変更の影響部分は採用版で扱える別の対象指定で選び、和集合を検査する。生成対象と被覆テストの選択を分け、終了コードと report で実行可能な mutant の全検出、未検出、対象全体の完了を判定する。型として成立しない変異は検出に数えず、runner などの未完了は失敗にする。有効な baseline の成功証跡と実行テスト件数を確認する) |
-| inspection | 構造 | 構造検査(root tests が skeleton の両表から runtime・build・test edge を生成し、`cargo metadata` の `dep_kinds` と参照先 target の kind・crate type から分類した edge と照合し、runtime 成果物への build・test edge 混入を失敗にする。generated のデータ型の runtime 依存 closure の通信分離、composition の mapper 配置と domain 非公開性も照合する) |
+| inspection | 構造 | 構造検査(root tests が skeleton の production のソース依存表と build・test-only 依存表から runtime・build・test edge を生成し、成果物の消費表を crate のソース依存と区別して照合し、`cargo metadata` の `dep_kinds` と参照先 target の kind・crate type から分類した edge と照合し、production の成果物への build・test edge 混入を失敗にする。generated のデータ型の runtime 依存 closure の通信分離、contracts/adapters の mapper 配置、core の crate の生成 DTO 不在、domain 非公開性も照合する) |
 | syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(rustc・clippy の設定と診断、cognitive_complexity による関数の複雑さのしきい値、未使用の要素と crate 依存の検出を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
 | inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
@@ -228,7 +229,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、引数・型引数・戻り値の記述、伝播する欠陥、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(命名照合) |
 | cargo-llvm-cov | カバレッジ | 計測(stable toolchain の `cargo llvm-cov nextest` が region と line を数え、`--fail-under-regions` と `--fail-under-lines` を与えた終了値で project 記録の下限を検証入口で判定し、`--json` の出力を記録に残す) |
-| serde | 境界で一度だけ parse してドメイン型へ移す | 型(生成 DTO・Result を返す composition の mapper・コンテキストの検証付き入力構築)+構造検査(crate の型所有と変換の配置)+実行テスト(既知項目の不正の拒否、全 variant と入れ子 object の未知キーの位置捕捉とログ到達、捕捉値の domain と応答への非流入) |
+| serde | 境界で一度だけ parse してドメイン型へ移す | 型(生成 DTO・Result を返す contracts/adapters の mapper・コンテキストの検証付き入力構築)+構造検査(crate の型所有と変換の配置)+実行テスト(既知項目の不正の拒否、全 variant と入れ子 object の未知キーの位置捕捉とログ到達、捕捉値の domain と応答への非流入) |
 | translation | 境界表現の型を surface の crate に置き、From で写す | 構造検査(syn。生成 DTO を保持または参照する surface 固有の型への枠組みの trait 実装、`Into` と `TryInto` の不在、失敗を写す `From` の enum 網羅)+実行テスト(variant ごとの status と終了の値、生成 DTO の body の保持) |
 | progenitor | 生成した契約を使い、drift を検査の gate にする | 構造検査(データ型の crate と reqwest を使う client の crate の依存分離)+実行テスト(drift 検査・conformance の検証入口の判定) |
 | typify | 契約から decode と未知項目の捕捉を生成する | 実行テスト(全 variant と入れ子・配列内 object の未知キー受容と位置捕捉、必須項目欠落・制約違反・判別子と payload の不一致の拒否、捕捉値の非流入、再生成の一致) |
@@ -239,23 +240,23 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | connection | 配線を組立点に置き、境界で実行する | 構造検査(composition root 外の具象生成の検出)+レビュー(組立点に置く依存の粒度の判断) |
 | sqlx | 型付き SQL | 型/実行テスト(sqlx の `query!` コンパイル時検証・検証入口の offline 照合) |
 | sqlx | 並行更新の表面 | 構造検査(集約の鍵の導出が一か所に定義され、`pg_advisory_xact_lock` 系の呼び出しがその導出を通ること)+実行テスト(集約の鍵を排他で取る集約で全経路の直列化と READ COMMITTED での鍵の後の検証、書き込み経路の role が事実の行へ `UPDATE` も `DELETE` もできないこと、複数の鍵を bigint の値の昇順の一つの順序で取ること、種類の違う集約の鍵が衝突せず範囲外の識別子から鍵を作らないこと、鍵を待った書き込みの業務事実の時刻が待つ間に確定した業務事実の時刻以後であること、版で衝突を検出する集約で並行更新の片方だけの確定と古い版の各経路からの拒否、共有の鍵か鍵なしで更新する可変属性の行への同じ行の同時の更新で片方だけが確定し他方が競合の Result になること、影響行数 0 と名前付き version 制約違反の競合写像、一回だけ起きる業務事実の二度目の追記で名前付き主キーの違反だけが競合に写ること、version と名前付き主キー以外の制約違反の非写像、必要な業務事実の追記前後の失敗で現在情報の更新・業務事実の追記・outbox の記録が全て確定するか全て確定しないこと、業務事実不要な更新の競合制御と追記の不在)+レビュー(集約の不変条件に対する競合制御、必要な業務事実の欠落と outbox による代用の禁止) |
-| sqlx | 書き込みパス | 構造検査(store が transaction の begin・commit を持たないことの検査) |
-| sqlx | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証済み actor、匿名の安定した opaque scope、logical system actor の分離、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
+| sqlx | 書き込みパス | 構造検査(store・composition・domain の begin・commit・rollback の不在、application の scope port による制御と driver 型の非流入、use-case 全体を包む外側の controller の不在、scope の commit・abort が self を消費すること)+実行テスト(abort 失敗時の元の終わりの保持、確定応答喪失時の OutcomeUnknown、エラーの種類だけによる NotCommitted 判定の拒否、取消後の Transaction と advisory lock の非残存) |
+| sqlx | 冪等な要求の記録 | 構造検査(operation・actor scope・tenant・key の NOT NULL と複合一意制約)+実行テスト(認証主体、匿名の安定した opaque scope、logical system actor の分離、業務当事者への写像後も要求者 scope が変わらないこと、multi-tenant の検証済み TenantId、single-tenant sentinel、no-tenant sentinel、三表現の相互混同と未検証 tenant の拒否、scope のない匿名要求の server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否、同じ scope/key の並行競合、異なる fingerprint の conflict、業務結果・fingerprint・response の同時 rollback) |
 | sqlx | durable inbox | 構造検査(scope・event ID の複合一意制約)+実行テスト(payload commit 前後の停止と upstream delivery ack、処理結果・処理済み記録 commit 前後の停止と inbox processing completion、前段の source 再配送、後段の item 再処理、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視出力) |
 | redis | 一時データ | 構造検査(DB と Valkey のクレート分離)+レビュー(一時データとして扱える範囲の判断) |
 | tokio | runtime | 構造検査(Cargo 依存の単一 runtime 検査) |
 | tokio | 構造化並行 | 構造検査(Semaphore の permit 必須を並行 job task に限定し、単一の共有状態の owner task を対象外にすること)+実行テスト(並行上限、permit 待ち中の取消、業務の Err と JoinError の各経路で token による兄弟取消と join_next が None になるまでの全結果回収、兄弟の追加失敗と panic の観測、固定数の分岐の失敗時取消と join! による全完了待ち、長寿命の task の host 停止時の合流)+レビュー(全 task の寿命の所有者、開始と停止の競合、所有者の Future を drop または abort しない終了経路、abort 対象の drop による取消の安全性) |
-| tokio-util | 取り消し | 構造検査(request、message、job の境界より内側の async API が非取消の後始末を除いて同じ Deadline と CancellationToken を受け取り、Deadline の生成を境界へ限定し、各 hop の局所 timeout が `deadline.remaining(clock.now())` から作られ、下流へ元の Deadline が渡ることを検査)+実行テスト(時間枠の維持、局所 timeout の子 token への伝播と同じ pin 済み Future の drain、cancelled 完了後も子が未完了なら所有者は終了しないこと、非同期の後始末の完了と失敗の観測、permit 待ち中の親取消では permit を取得しないこと)+レビュー(非取消の後始末の識別、select! の drop による取消の安全性と完了まで保持する Future の区別) |
+| tokio-util | 取り消し | 構造検査(request、message、job の境界より内側の async API が非取消の後始末を除いて同じ Deadline と CancellationToken を受け取り、Deadline の生成を境界へ限定し、各 hop の局所 timeout が `deadline.remaining(clock.now())` から作られ、下流へ元の Deadline が渡ることを検査し、同期の純粋な domain の関数が Deadline と CancellationToken を引数に持たないことと、Deadline と CancellationToken を認証主体や業務入力と同じ context の型へまとめないことを検査)+実行テスト(時間枠の維持、局所 timeout の子 token への伝播と同じ pin 済み Future の drain、cancelled 完了後も子が未完了なら所有者は終了しないこと、非同期の後始末の完了と失敗の観測、permit 待ち中の親取消では permit を取得しないこと)+レビュー(非取消の後始末の識別、select! の drop による取消の安全性と完了まで保持する Future の区別) |
 | tokio | ブロッキング | analyzer/lint(clippy::disallowed_methods で wrapper 外の直接呼び出しを拒否)+構造検査(共通 wrapper と permit 待ちの取消優先、permit 取得後の取消再確認)+実行テスト(並行上限、permit 待ちと取得直後の取消、開始済みの spawn_blocking は abort 後も実行を続け JoinHandle の await で回収されること、共有資源はその終了より後に閉じること)+計測(最大実行時間)+レビュー(wrapper の Future を drop しない所有者の停止経路、process 分離と chunk の停止点) |
 | tokio | 共有状態 | 構造検査(bounded mpsc と単一所有 task)+レビュー(更新経路の単一性) |
 | coordination | 資源の解放 | 型(Drop)+実行テスト(子の同期 destructor の完了を join で観測してから所有者の資源が drop されること、非同期の後始末が取消後も完了まで await されること、子の panic 後も存続する所有者が非同期の後始末を実行すること、処理と後始末の両方の失敗が観測されること)+レビュー(Drop の同期解放と明示的な非同期終了処理の分離、強制終了時の回復契約) |
-| axum | server | 構造検査(認証 layer の位置と core 公開 API への principal・token・claim 型の流入禁止)+実行テスト(検証済み principal から actor への写像、同じ actor に写像した限定資格情報の scope 外操作・対象の拒否、actor の業務認可の維持と独立した session 経路による迂回の確認、actor と検証済み入力による core 公開 API 呼出、IntoResponse と CatchPanicLayer の応答、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー(認証方式ごとの principal の妥当性の判断) |
-| tower-sessions | BFF | 型(openidconnect の client・actor・埋め込んだ core の公開 API)+構造検査(actor の構築を共通の認証 middleware に限定し callback と route の別構築を拒否すること、route の業務呼出を core の公開 API に限定し、技術的な処理では libs の公開 API の直接利用を許すこと)+実行テスト(`__Host-`、Secure、HttpOnly、SameSite、Path、Domain 未設定の統合テスト、認証 middleware が構築した actor の route への引き渡し、token の交換と更新、issuer と sid/subject による session 失効、token ID の replay 拒否、replay 記録と失効の原子的な確定) |
+| axum | server | 構造検査(認証 layer の位置、core 公開 API への principal・token・claim・認証主体の型の流入禁止、handler が呼ぶ業務の入口を adapter の宣言された保護を適用する入口に限ること、全 route が宣言された入口の呼出か匿名公開の宣言と一対一で対応すること)+実行テスト(検証済み principal から認証主体への確定、同じ認証主体に確定した限定資格情報の scope 外操作・対象の拒否、認証主体に対する認可の維持と独立した session 経路による迂回の確認、宣言のない入口と保護入口を通らない別経路の拒否と匿名公開の明示、主体を必要とする operation だけが認証主体から対応づけた業務入力を受けること、要求側が指定した主体の拒否、IntoResponse と CatchPanicLayer の応答、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー(認証方式ごとの principal の妥当性の判断) |
+| tower-sessions | BFF | 型(openidconnect の client・認証主体・adapter の宣言された保護を適用する入口)+構造検査(認証主体の確定を共通の認証 middleware に限定し callback と route の別確定を拒否すること、route の業務呼出を adapter の入口に限定し、技術的な処理では libs の公開 API の直接利用を許すこと)+実行テスト(`__Host-`、Secure、HttpOnly、SameSite、Path、Domain 未設定の統合テスト、認証 middleware が確定した認証主体の route から adapter の入口への引き渡しと、adapter が対応づけた業務入力による core 公開 API 呼出、token の交換と更新、issuer と sid/subject による session 失効、token ID の replay 拒否、replay 記録と失効の原子的な確定) |
 | jsonwebtoken | logout token の検証 | 実行テスト(jwks_uri の JWKS から構築した鍵での署名検証、未知の kid での JWKS 再取得と拒否、許可外 algorithm の拒否、alg が none の token の拒否、`typ` が `logout+jwt` でない token の拒否、issuer・audience・期限の判定、iat・jti・events の欠落の拒否、nonce を持つ token の拒否、sid と sub のいずれも無い token の拒否、理解できない claim の無視) |
 | clap | console | 型(clap の derive) |
 | apalis | worker | 構造検査(Cargo 依存の queue backend の単一性検査)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(Data extractor による依存注入の判断) |
 | inspection | 型消去の cast allowlist | 構造検査(syn。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
-| tauri | desktop と mobile の host | 構造検査(Cargo 依存の単一 webview runtime crate、IPC の command の引数に actor と資格情報の型が現れないこと)+実行テスト(認証 adapter の資格情報から actor への写像、actor と検証済み入力による core 公開 API の呼出、frontend 由来の actor と資格情報の拒否)+レビュー(業務の secret と判断が frontend に出ていないことの判断) |
+| tauri | desktop と mobile の host | 構造検査(Cargo 依存の単一 webview runtime crate、IPC の command の引数に認証主体と資格情報の型が現れないこと、core の公開 API 呼出が adapter の宣言された保護を適用する入口に限られること)+実行テスト(認証 adapter の資格情報から認証主体への確定、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core 公開 API の呼出、frontend 由来の認証主体と資格情報の拒否)+レビュー(業務の secret と判断が frontend に出ていないことの判断) |
 | tauri | desktop の自動更新 | 自動更新を使う対象について、構造検査(updater 設定の公開鍵・`bundle.createUpdaterArtifacts`・TLS endpoint・非 HTTPS 設定なしの照合)+artifact 検査(updater bundle と signature の存在と配布を照合し、設定した公開鍵で signature が bundle を検証できることを確認)+実行テスト(設定した公開鍵を与えた updater が、正しい signature の bundle を受理し、signature の欠落と改竄した bundle を拒否すること)+レビュー(Cosign は release 成果物の署名と provenance だけを扱い、updater signature と混同しないことの判断) |
 | tower-lsp-server | extension の接続 | 型(tower-lsp-server の LanguageServer 実装と custom method)+レビュー(custom method が公開面を広げていないことの判断) |
 | publication | 可視性 | 型(pub(crate))+構造検査(skeleton 境界の crate 依存) |
