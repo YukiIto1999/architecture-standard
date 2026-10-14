@@ -30,6 +30,7 @@ fixture 直下の本文と `skills/` の package は、配備済みで固定さ�
 未指定の command は `omp` とし、eval 定義の `model: "default"` は host の `modelRoles.default` で解決する。
 明示した model selector を OMP へ渡し、model fallback と評価中の自動切替を無効にして、実際の provider と model を event から記録する。
 host の認証はそのまま利用し、資格情報を fixture へ複製せず、認証設定も変更しない。
+評価用の一時 directory は、取得後の初期化が失敗した場合も終了処理で削除する。
 
 変更の種類に応じて model eval の範囲を決める。
 

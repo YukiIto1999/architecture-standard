@@ -26,6 +26,37 @@ const negativeQuery = triggers.findIndex(item => !item.should_trigger && !Object
 
 after(() => rmSync(root, { recursive: true, force: true }));
 
+test("adapter setup failure releases its acquired control directory", () => {
+  const setupRoot = mkdtempSync(path.join(root, "adapter-setup-"));
+  const adapter = pathToFileURL(path.join(scripts, "omp-eval-adapter.mjs")).href;
+  const execution = spawnSync(process.execPath, ["--input-type=module", "--eval", `
+    import { readdirSync } from "node:fs";
+    import { runOmp } from ${JSON.stringify(adapter)};
+    const failure = await runOmp({
+      cwd: process.argv[1],
+      prompt: "",
+      resolvedModel: "regression/regression-model:medium",
+      timeoutMs: 1000,
+      systemPrompt: ""
+    }).then(
+      () => null,
+      error => ({ code: error.code })
+    );
+    process.stdout.write(JSON.stringify({
+      failure,
+      remainingControlRoots: readdirSync(process.env.TMPDIR)
+    }));
+  `, path.join(setupRoot, "missing-working-directory")], {
+    encoding: "utf8",
+    timeout: 5000,
+    env: { ...process.env, TMPDIR: setupRoot }
+  });
+  assert.equal(execution.status, 0, execution.stderr);
+  const observed = JSON.parse(execution.stdout);
+  assert.deepEqual(observed.failure, { code: "ENOENT" });
+  assert.deepEqual(observed.remainingControlRoots, []);
+});
+
 writeFileSync(provider, `#!/usr/bin/env node
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";

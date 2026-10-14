@@ -32,57 +32,57 @@ export function ompTimeout(defaultMs) {
 export async function runOmp({ cwd, prompt, model = "default", resolvedModel = resolveOmpModel(model),
   tools = [], skills = {}, bashPolicy = {}, reportPath = null, readableFiles = [], timeoutMs, systemPrompt, environment = {} }) {
   const controlRoot = mkdtempSync(path.join(tmpdir(), "architecture-standard-omp-control-"));
-  const configFile = path.join(controlRoot, "config.json");
-  const policyFile = path.join(controlRoot, "policy.json");
-  const extensionFile = path.join(controlRoot, "policy.mjs");
-  const config = {
-    autoResume: false, advisor: { enabled: false }, prewalk: { enabled: false },
-    contextPromotion: { enabled: false },
-    retry: { modelFallback: false, usageAwareFallback: false, fallbackChains: {} },
-    providers: { anthropic: { serverSideFallback: false }, "openai-codex": { codeMode: "off" } },
-    memory: { backend: "off" }, memories: { enabled: false },
-    hindsight: { mentalModelsEnabled: false, mentalModelAutoSeed: false },
-    magicKeywords: { enabled: false },
-    skills: {
-      enabled: Object.keys(skills).length > 0, enableSkillCommands: false,
-      enableCodexUser: false, enableClaudeUser: false, enableClaudeProject: false,
-      enablePiUser: false, enablePiProject: false, enableAgentsUser: false, enableAgentsProject: false,
-      customDirectories: [...new Set(Object.values(skills).map(file => path.dirname(path.dirname(file))))],
-      ignoredSkills: [], includeSkills: Object.keys(skills),
-    },
-    skillful: true,
-    commands: { enableClaudeUser: false, enableClaudeProject: false, enableOpencodeUser: false, enableOpencodeProject: false },
-    tools: {
-      xdev: false, approvalMode: "yolo", approval: Object.fromEntries(tools.map(name => [name, "allow"])),
-      speculativeExecution: { enabled: false }, outputMaxColumns: 0,
-    },
-    bash: { allowCompoundCommands: false, autoBackground: { enabled: false }, direnv: "off", patterns: [] },
-    read: { defaultLimit: 100_000, summarize: { prose: false } },
-    mcp: { enableProjectConfig: false, notifications: false },
-    plan: { defaultOnStartup: false }, archive: { enabled: false }, dev: { autoqa: false },
-  };
-  const policy = { cwd: realpathSync(cwd), tools, skills, bashPolicy, reportPath, readableFiles, systemPrompt };
-  writeFileSync(configFile, JSON.stringify(config));
-  writeFileSync(policyFile, JSON.stringify(policy));
-  writeFileSync(extensionFile, readFileSync(new URL("./omp-eval-policy.mjs", import.meta.url)));
-  const commandArgs = ["-p", "--mode", "json", "--no-session", "--no-rules", "--no-extensions",
-    "--no-lsp", "--no-title", "--no-prewalk", "--no-pty", "--config", configFile,
-    "--system-prompt", systemPrompt, "--tools", tools.join(","), "--model", resolvedModel,
-    "--extension", extensionFile];
-  if (Object.keys(skills).length === 0) commandArgs.push("--no-skills");
-  const normalize = value => typeof value === "string"
-    ? value.replaceAll(controlRoot, "<omp-control>").replaceAll(cwd, "<fixture>")
-      .replaceAll(reportPath ? path.dirname(reportPath) : "\u0000", "<audit-report-directory>")
-    : value;
-  const commandContractArgs = commandArgs.map(normalize);
-  const settingsContract = JSON.parse(JSON.stringify({ config, policy, resolved_model_selector: resolvedModel })
-    .replaceAll(controlRoot, "<omp-control>").replaceAll(cwd, "<fixture>")
-    .replaceAll(reportPath ? path.dirname(reportPath) : "\u0000", "<audit-report-directory>"));
-  const env = { ...process.env };
-  delete env.SKILL_EVAL_ISOLATED_SKILL;
-  delete env.SKILL_EVAL_CONFIGURATION;
-  Object.assign(env, environment);
   try {
+    const configFile = path.join(controlRoot, "config.json");
+    const policyFile = path.join(controlRoot, "policy.json");
+    const extensionFile = path.join(controlRoot, "policy.mjs");
+    const config = {
+      autoResume: false, advisor: { enabled: false }, prewalk: { enabled: false },
+      contextPromotion: { enabled: false },
+      retry: { modelFallback: false, usageAwareFallback: false, fallbackChains: {} },
+      providers: { anthropic: { serverSideFallback: false }, "openai-codex": { codeMode: "off" } },
+      memory: { backend: "off" }, memories: { enabled: false },
+      hindsight: { mentalModelsEnabled: false, mentalModelAutoSeed: false },
+      magicKeywords: { enabled: false },
+      skills: {
+        enabled: Object.keys(skills).length > 0, enableSkillCommands: false,
+        enableCodexUser: false, enableClaudeUser: false, enableClaudeProject: false,
+        enablePiUser: false, enablePiProject: false, enableAgentsUser: false, enableAgentsProject: false,
+        customDirectories: [...new Set(Object.values(skills).map(file => path.dirname(path.dirname(file))))],
+        ignoredSkills: [], includeSkills: Object.keys(skills),
+      },
+      skillful: true,
+      commands: { enableClaudeUser: false, enableClaudeProject: false, enableOpencodeUser: false, enableOpencodeProject: false },
+      tools: {
+        xdev: false, approvalMode: "yolo", approval: Object.fromEntries(tools.map(name => [name, "allow"])),
+        speculativeExecution: { enabled: false }, outputMaxColumns: 0,
+      },
+      bash: { allowCompoundCommands: false, autoBackground: { enabled: false }, direnv: "off", patterns: [] },
+      read: { defaultLimit: 100_000, summarize: { prose: false } },
+      mcp: { enableProjectConfig: false, notifications: false },
+      plan: { defaultOnStartup: false }, archive: { enabled: false }, dev: { autoqa: false },
+    };
+    const policy = { cwd: realpathSync(cwd), tools, skills, bashPolicy, reportPath, readableFiles, systemPrompt };
+    writeFileSync(configFile, JSON.stringify(config));
+    writeFileSync(policyFile, JSON.stringify(policy));
+    writeFileSync(extensionFile, readFileSync(new URL("./omp-eval-policy.mjs", import.meta.url)));
+    const commandArgs = ["-p", "--mode", "json", "--no-session", "--no-rules", "--no-extensions",
+      "--no-lsp", "--no-title", "--no-prewalk", "--no-pty", "--config", configFile,
+      "--system-prompt", systemPrompt, "--tools", tools.join(","), "--model", resolvedModel,
+      "--extension", extensionFile];
+    if (Object.keys(skills).length === 0) commandArgs.push("--no-skills");
+    const normalize = value => typeof value === "string"
+      ? value.replaceAll(controlRoot, "<omp-control>").replaceAll(cwd, "<fixture>")
+        .replaceAll(reportPath ? path.dirname(reportPath) : "\u0000", "<audit-report-directory>")
+      : value;
+    const commandContractArgs = commandArgs.map(normalize);
+    const settingsContract = JSON.parse(JSON.stringify({ config, policy, resolved_model_selector: resolvedModel })
+      .replaceAll(controlRoot, "<omp-control>").replaceAll(cwd, "<fixture>")
+      .replaceAll(reportPath ? path.dirname(reportPath) : "\u0000", "<audit-report-directory>"));
+    const env = { ...process.env };
+    delete env.SKILL_EVAL_ISOLATED_SKILL;
+    delete env.SKILL_EVAL_CONFIGURATION;
+    Object.assign(env, environment);
     const execution = await executeOmp(process.env.OMP_EVAL_COMMAND || "omp", commandArgs, cwd, env, prompt, timeoutMs);
     const providerError = path.join(controlRoot, "provider-error.txt");
     if (existsSync(providerError)) execution.error ??= readFileSync(providerError, "utf8");
