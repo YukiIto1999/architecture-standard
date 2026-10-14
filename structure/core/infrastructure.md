@@ -40,10 +40,6 @@ schema migration の実装は infrastructure に置き、適用の順序は [pro
 
 外部システムへの接続は、client と adapter を持つ。
 外部システムの wire 型と、domain との写像は、外部システムのファイル内に置く。
-認可の判定の adapter は、認可の engine を呼ぶ。
-認可の engine の採用は [tools/platforms/openfga](../../tools/platforms/openfga.md) が定める。
-判定の cache と engine の datastore の採用は [tools/platforms](../../tools/platforms/README.md) が定める。
-認可のモデルと判定の規律は [concerns/authorization](../../concerns/authorization/README.md) に従う。
 
 ## 論理と物理の分離
 
