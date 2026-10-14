@@ -25,6 +25,7 @@ datastore の採用は [tools/platforms/postgresql](../../tools/platforms/postgr
 事実、状態、projection、派生読みモデルの性質は [concerns/persistence](../../concerns/persistence/README.md) に従い、確定点と outbox の性質は [concerns/transaction](../../concerns/transaction/README.md) に従う。
 application の store port、projection の読み取り port、外部 datastore の adapter は infrastructure に置く。
 store は record 型を定義し、domain と record の写像を持つ。
+業務の区分と定義の識別子の写像は store が持ち、定義の行との対応の保証は [concerns/persistence](../../concerns/persistence/fact-state-time-relations.md) の「事実・状態・時間を別の関係に落とす」に従う。
 store は、型付きの SQL を発行する薄い adapter として書く。
 現在情報の変更、必要な業務イベントの追記、projection の更新、outbox への記録を束ねる書き込みパスの境界の所有は、[composition](./composition.md) が持つ。
 派生読みモデルの再構築は、正本の現在情報または業務イベントを port から読み出す application workflow として、読みモデルを所有するコンテキストに置く。

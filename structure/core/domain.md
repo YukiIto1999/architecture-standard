@@ -1,7 +1,7 @@
 # domain 層
 
-domain 層は業務判断の純粋な核である。
-集約とその不変条件を表し、値・イベント・エラーを置く。
+domain 層は、ドメイン型とその操作を置く純粋な核である。
+集約とその不変条件を表し、値・区分・集合・状態・イベント・エラーを置く。
 domain は [layout](./layout.md) の単位と依存に従う。
 
 ## 集約
@@ -32,9 +32,9 @@ domain は、加えてログ、外部 SDK、非同期実行も参照しない。
 
 ## ドメイン型と語彙
 
-業務上の意味をもつ値は、値オブジェクトで表し、domain に置く。
-どの値を値オブジェクトで表すかは [principles/modeling](../../principles/modeling/README.md) に従う。
-裸の string、number、boolean を業務上の意味に用いない。
+値の計算と比較、区分に基づく判断、集合の業務操作を持つ型と関数は domain に置き、application はその操作を呼ぶ。
+値の意味と操作は [modeling](../../principles/modeling/meaning-in-types.md) の「業務の意味を型に封じる」に従う。
+区分と判断は [construction](../../principles/construction/decisions-as-types.md) の「業務判断を型と多態で構造化する」に、集合と操作は [construction](../../principles/construction/named-collection-operations.md) の「集合処理を名前のある操作で表す」に従う。
 domain が用いてよいのは、ドメイン型と shared である。
 domain は、persistence の record、wire 型、DTO、contracts の型を参照しない。
 許可される依存は [layout](./layout.md) の依存方向に、型の設計は [concerns/types](../../concerns/types/README.md) に、命名は [principles/naming](../../principles/naming/README.md) に従う。

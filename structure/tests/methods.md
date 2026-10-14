@@ -47,6 +47,16 @@ use-case は、port を fake に置き換えて検証する。
 symbolic と concolic の実行を、標準の検証に組み込まない。
 これらは、対象を限れば成果が出る一方で、全面へ広げると実行の費用と結果の読み替えが検証入口に見合わないためである。
 
+## ドメイン型と操作
+
+値の計算と比較は [principles/modeling](../../principles/modeling/meaning-in-types.md) の「業務の意味を型に封じる」に、区分に基づく判断は [principles/construction](../../principles/construction/decisions-as-types.md) の「業務判断を型と多態で構造化する」に、集合の業務操作は [named-collection-operations](../../principles/construction/named-collection-operations.md) の「集合処理を名前のある操作で表す」に照合する。
+入力の取り違え、許されない操作、不正な状態の構築を型で拒める場合は、その拒否を型検査へ割り当てる。
+型の操作が返す計算・比較・判断・集計の結果は、業務の契約から導く独立した期待値で検証し、型が付くことだけで意味の正しさを保証したとみなさない。
+集合は、各要素が妥当でも集合として不正になる入力を、集合の構築と操作の拒否へ割り当てる。
+区分の処理網羅は型検査へ割り当て、業務分類の妥当性は、分類対象と分類条件から定めた入力と独立した期待値で検証する。
+排他的な分類では、対象がちょうど一つの場合に属することを確かめ、宣言した区分値の列挙だけで分類条件の重なりと欠落を検証したとみなさない。
+業務区分と公開区分・保存値の対応は、境界の変換結果を契約の意味へ照合し、生成物の drift と往復の成功だけで対応の意味まで検証したとみなさない。
+
 ## 性質と入力領域
 
 性質ごとに、入力領域、適用条件、観測結果、失敗条件を定める。
@@ -169,16 +179,16 @@ PTY の実測は、その実依存に従って配置し、状態遷移の proper
 
 | 対象 | 必須の検証 |
 |---|---|
-| domain の不変条件と状態遷移 | constructor の拒否、状態遷移の property、網羅する outcome |
+| ドメイン型・操作・不変条件と状態遷移 | 型による入力・操作・構築の拒否、constructor の拒否、値の計算と比較、区分判断と分類条件、集合の結果と集合としての拒否、状態遷移の property、網羅する outcome |
 | use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、中間状態の面ごとの通過集合、未検出 mutant |
-| canonical と binding | operation・型・error の欠落と余剰、generated drift、全 variant の serialize round-trip、未知項目の受容・捕捉・報告と既知項目の不正の拒否、generated のデータ型と通信の依存単位の分離、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
+| canonical と binding | operation・型・error の欠落と余剰、公開区分と業務区分の意味の対応、generated drift、全 variant の serialize round-trip、未知項目の受容・捕捉・報告と既知項目の不正の拒否、generated のデータ型と通信の依存単位の分離、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
 | 認証と認可 | 各認証境界の credential 拒否と actor 構築、credential の core 非流入、主体・操作・資源・条件の許可と拒否 |
-| 永続化、transaction、messaging | 実 datastore の制約、外部キーの循環の不在、参照先の存続と削除規則、期間の判定、事実の行の更新と削除の拒否、消せる行のビューの外の削除の拒否、業務事実の時刻の列への書き込み権限と利用者定義の手続きの不在、期間の重なりと件数の不変条件の全書込経路の競合制御、version conflict、単一の確定点、現在情報と必要な業務事実の同時確定、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、派生読みモデルの再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |
+| 永続化、transaction、messaging | 実 datastore の制約、業務区分と定義の識別子の対応、廃止した定義の参照と新規選択の分離、外部キーの循環の不在、参照先の存続と削除規則、期間の判定、事実の行の更新と削除の拒否、消せる行のビューの外の削除の拒否、業務事実の時刻の列への書き込み権限と利用者定義の手続きの不在、期間の重なりと件数の不変条件の全書込経路の競合制御、version conflict、単一の確定点、現在情報と必要な業務事実の同時確定、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、派生読みモデルの再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |
 | effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test |
 | structure と dependency | root と単位の列挙、依存方向、公開面、配置、循環、複雑さの閾値と統合・削除での変更前後の比較、禁止 import、サブドメイン分類の記録と構造の対応 |
 | lifecycle と configuration | 不正設定での起動拒否、設定層の競合と未指定の解決、生存と準備、受付停止、期限内 drain、突然死後の回復 |
 | security と privacy | default deny と最小権限、信頼境界ごとの abuse case、標準暗号の設定、secret と個人情報の非流出、保持期限後の消去、供給物と依存の検査 |
-| experience | 利用者面の受入による状態遷移と正確な業務結果、拒否と回復、表示までの時間 |
+| experience | 利用者面の受入による状態遷移と正確な業務結果、区分の識別と表示の対応、表示対象と選択可能な集合の区別、拒否と回復、表示までの時間 |
 | accessibility | keyboard 操作、focus、名前と役割、contrast、入力機構と知覚の差を越えた到達性 |
 | console の呼び出しと terminal | stdout・stderr・終了 status と状態変化、TTY と非 TTY、非対話での入力不足、破壊操作の確認、再実行、確定前後の取り消し、terminal の復元と一時引き渡し、cell 幅と resize、入力 loop が処理中も操作を受けること |
 | performance | 固定した workload と環境での SLO 計測、変更前後の比較、計測結果を伴う退行判定 |
