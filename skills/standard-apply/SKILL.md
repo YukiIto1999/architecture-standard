@@ -19,30 +19,51 @@ description: architecture-standard 以外の標準には使わず、「別 repos
   読める README や標準の本文があっても規範 root として代用せず、本文の引用、照合、適合や違反の判定を行わない。
   「仮のレビュー」「手元の写しとの照合」などの留保を付けても、この前提を満たしたことにはしない。
   対象 project を current directory にした Git 操作や特定マシンのローカル絶対パスと混ぜない。
-- `<skill-package-root>` は、成功して読んだこの `SKILL.md` を symlink の実体まで辿った directory である。`references/` の同梱資材はここから読み、標準本文の file は `<standard-root>` から読む。
-- 標準本文は常に `<standard-root>` にある現在の規範文書（`README.md`、`principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/`）を参照する。標準の過去版を Git 履歴から掘り出して判断基準にせず、対象 project に記録された標準の版も基準にしない。
-- 標準本文は編集しない。標準側の不備は file と該当箇所を報告し、修正は standard-update へ渡す。
+- `<skill-package-root>` は、成功して読んだこの `SKILL.md` を symlink の実体まで辿った directory である。
+  `references/` の同梱資材はここから読み、標準本文の file は `<standard-root>` から読む。
+- 標準本文は常に `<standard-root>` にある現在の規範文書（`README.md`、`principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/`）を参照する。
+  標準の過去版を Git 履歴から掘り出して判断基準にせず、対象 project に記録された標準の版も基準にしない。
+- 標準本文は編集しない。
+  標準側の不備は file と該当箇所を報告し、修正は standard-update へ渡す。
 
 ## 対象の入口
 
-対象 project の既知の入口から始める。exact file path があればその file を直接読む。symbol だけが分かる場合は、利用可能な LSP で定義と参照を確認し、使えなければ native search で探す。project root しか分からない場合は README や manifest の宣言を確認し、必要な source と test の範囲を絞る。
+対象 project の既知の入口から始める。
+exact file path があればその file を直接読む。
+symbol だけが分かる場合は、利用可能な LSP で定義と参照を確認し、使えなければ native search で探す。
+project root しか分からない場合は README や manifest の宣言を確認し、必要な source と test の範囲を絞る。
 
-既知の path を再発見するための列挙はしない。探索が必要な場合は target root と確認する関係を明示し、ignore 境界を維持する。空の検索結果や初回の候補集合だけで、project 全体に契約、writer、test が存在しないとは判断しない。
+既知の path を再発見するための列挙はしない。
+探索が必要な場合は target root と確認する関係を明示し、ignore 境界を維持する。
+空の検索結果や初回の候補集合だけで、project 全体に契約、writer、test が存在しないとは判断しない。
 
 設計では、変更契約を固定する前に [target scoping](references/target-scoping.md) を読み、対象の明示契約、入力要件と直接参照された資料を確認する。
 
 ## 参照経路
 
-`<standard-root>/README.md` と選んだ process を読み、今回の判断に必要な規律へ進む。対象 project の調査と標準本文の照合は、互いに必要な根拠を確認しながら進める。
+`<standard-root>/README.md` と選んだ process を読み、今回の判断に必要な規律へ進む。
+対象 project の調査と標準本文の照合は、互いに必要な根拠を確認しながら進める。
 
-- 標準本文を追加で読む前に、その file が答える判断または照合項目を定める。答えが得られた参照経路はそこで止め、使わない規律を先回りして読まない。
-- process が無条件に `従う` と定める link は必須条件として読む。`変更が触れる`、`採用する` などの条件付き link は、今回の対象が条件を満たす場合だけ読む。directory link はその README を入口にする。
-- concern から別 concern の link へ無条件に再帰しない。queue、過負荷、retry、deadline、lifecycle など、その規律の対象が変更契約に含まれるかで判断する。process の全 step を消し込むことと、条件付き link を全て読むことを混同しない。
-- 依頼または process が全域照合を要求する場合は、その要求を探索範囲の根拠にする。局所変更の参照節約を、全域監査や対象 project の調査不足へ転用しない。
+- 標準本文を追加で読む前に、その file が答える判断または照合項目を定める。
+  答えが得られた参照経路はそこで止め、使わない規律を先回りして読まない。
+- process が無条件に `従う` と定める link は必須条件として読む。
+  `変更が触れる`、`採用する` などの条件付き link は、今回の対象が条件を満たす場合だけ読む。
+  directory link はその README を入口にする。
+- concern から別 concern の link へ無条件に再帰しない。
+  queue、過負荷、retry、deadline、lifecycle など、その規律の対象が変更契約に含まれるかで判断する。
+  process の全 step を消し込むことと、条件付き link を全て読むことを混同しない。
+- 依頼または process が全域照合を要求する場合は、その要求を探索範囲の根拠にする。
+  局所変更の参照節約を、全域監査や対象 project の調査不足へ転用しない。
 
-対象 project は README、manifest、直接の参照先を手掛かりに、caller、consumer、state authority、writer、effect、test と、判断に関係する要件、宣言の契約、変更理由、Why not を一段ずつ追う。所在が未特定なら、観測した別名、公開 route、返却値、型などから必要な範囲だけ再探索する。決定の意味の所在は現在の `principles/documentation/decision-records.md` と `principles/README.md` の情報の正本に照合し、README が外部 ADR の置き場を宣言していないことだけで契約の authority を Unknown にしない。直接参照された外部資料があれば対応する読取手段で追い、読めない資料の内容と現在のコードから観測できる事実を分ける。
+対象 project は README、manifest、直接の参照先を手掛かりに、caller、consumer、state authority、writer、effect、test と、判断に関係する要件、宣言の契約、変更理由、Why not を一段ずつ追う。
+所在が未特定なら、観測した別名、公開 route、返却値、型などから必要な範囲だけ再探索する。
+決定の意味の所在は現在の `principles/documentation/decision-records.md` と `principles/README.md` の情報の正本に照合し、README が外部 ADR の置き場を宣言していないことだけで契約の authority を Unknown にしない。
+直接参照された外部資料があれば対応する読取手段で追い、読めない資料の内容と現在のコードから観測できる事実を分ける。
 
-探索の完了は tool の綴り、検索回数、決め打ちの directory 名では判定しない。判断を左右する主張ごとに根拠と確認範囲が示せたら止める。追加の探索で解消できる不足は追い、利用可能な資料では確定できない契約だけを Unknown として残す。未確認の関係を推測で埋めない。
+探索の完了は tool の綴り、検索回数、決め打ちの directory 名では判定しない。
+判断を左右する主張ごとに根拠と確認範囲が示せたら止める。
+追加の探索で解消できる不足は追い、利用可能な資料では確定できない契約だけを Unknown として残す。
+未確認の関係を推測で埋めない。
 
 ## 作業境界
 
@@ -52,14 +73,30 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 
 ## 手順
 
-1. `<standard-root>/README.md` を読み、依頼をモードへ写像する。新規構築=`process/bootstrap.md`、既存システムの意味回収=`process/recovery.md`、監査=`process/audit.md`、移行=`process/migration.md`、設計=`process/design.md`、実装=`process/implementation.md`、構造改善=`process/refactoring.md`、レビュー=`process/review.md`、release と配備=`process/release.md` である。検証の実行は、どのモードからも `process/verification.md` に従う。構造再生の複合依頼は recovery を読み取り専用で先に完了し、確定した意味だけを後続モードへ渡す。
-2. 選んだ process 本文を読み、参照経路の規則に従って、対象範囲の判定に必要な本文だけを読む。記憶、見出し、一般的なベストプラクティスで補完しない。
-   設計では `process/design.md` の順序1から8と確認点を省略しない。番号付き step または確認点が `従う` と定める直接参照は、対象が小さくても読んで照合する。directory 参照はその `README.md` から一つに絞る。
-   並行処理を設計する場合は、子処理の失敗伝播と cancellation を、依頼の受入条件に列挙がなくても標準の必須条件として変更契約へ残す。現行契約が不明なら具体的な継続・停止・戻り値を決めず、未確定の必須条件にする。受入条件外の別件として落とさない。
-3. process の順序と確認点を内部チェックリストとして管理し、変更契約を固定する。応答へ全文を転写せず、依頼に関係する進捗、見送り、未確認事項だけを報告する。
-4. 標準が決めている事項と project 固有の決定を分け、root README の標準の単一性が要求する情報を、`principles/documentation/decision-records.md` に従って残す。未実装の要件と入力契約は、現在の実装の観測と区別する。設計だけの依頼では、その判断を応答で示し、記録 file の作成や実装へ広げない。
-5. 変更契約が許可する作業と focused check を実行する。読み取り専用の監査やレビューでは、報告を応答で返し、依頼されていない報告 file を作らない。判定や変更ごとに、根拠とした標準の file と該当規律を記録する。標準内の矛盾は root README の裁定規則に従い、黙って読み替えない。
-6. 実装または構造改善では、完了前に変更の経緯を持たない独立した reviewer context で照合する。subagent が利用できなければ新しい独立 session を使う。どちらも利用できない場合は自己照合を行うが、独立レビュー済みとは主張せず、その制約を報告する。
+1. `<standard-root>/README.md` を読み、依頼をモードへ写像する。
+   新規構築=`process/bootstrap.md`、既存システムの意味回収=`process/recovery.md`、監査=`process/audit.md`、移行=`process/migration.md`、設計=`process/design.md`、実装=`process/implementation.md`、構造改善=`process/refactoring.md`、レビュー=`process/review.md`、release と配備=`process/release.md` である。
+   検証の実行は、どのモードからも `process/verification.md` に従う。
+   構造再生の複合依頼は recovery を読み取り専用で先に完了し、確定した意味だけを後続モードへ渡す。
+2. 選んだ process 本文を読み、参照経路の規則に従って、対象範囲の判定に必要な本文だけを読む。
+   記憶、見出し、一般的なベストプラクティスで補完しない。
+   設計では `process/design.md` の順序1から8と確認点を省略しない。
+   番号付き step または確認点が `従う` と定める直接参照は、対象が小さくても読んで照合する。
+   directory 参照はその `README.md` から一つに絞る。
+   並行処理を設計する場合は、子処理の失敗伝播と cancellation を、依頼の受入条件に列挙がなくても標準の必須条件として変更契約へ残す。
+   現行契約が不明なら具体的な継続・停止・戻り値を決めず、未確定の必須条件にする。
+   受入条件外の別件として落とさない。
+3. process の順序と確認点を内部チェックリストとして管理し、変更契約を固定する。
+   応答へ全文を転写せず、依頼に関係する進捗、見送り、未確認事項だけを報告する。
+4. 標準が決めている事項と project 固有の決定を分け、root README の標準の単一性が要求する情報を、`principles/documentation/decision-records.md` に従って残す。
+   未実装の要件と入力契約は、現在の実装の観測と区別する。
+   設計だけの依頼では、その判断を応答で示し、記録 file の作成や実装へ広げない。
+5. 変更契約が許可する作業と focused check を実行する。
+   読み取り専用の監査やレビューでは、報告を応答で返し、依頼されていない報告 file を作らない。
+   判定や変更ごとに、根拠とした標準の file と該当規律を記録する。
+   標準内の矛盾は root README の裁定規則に従い、黙って読み替えない。
+6. 実装または構造改善では、完了前に変更の経緯を持たない独立した reviewer context で照合する。
+   subagent が利用できなければ新しい独立 session を使う。
+   どちらも利用できない場合は自己照合を行うが、独立レビュー済みとは主張せず、その制約を報告する。
 
 ### 意味回収
 
