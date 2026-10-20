@@ -7,9 +7,12 @@ structure は、ターゲットプロジェクト全体と各部の責務、境�
 ## 依存表の正本
 
 skeleton の依存方向表が、root をまたぐ依存の唯一の駆動元である。
-root は core・libs・contracts・surfaces・runtimes・deploy・tests の固定7境界である。core・contracts・tests は常に置き、libs は対応する機構があるときに置く。decisions と pipeline は、root の境界に無い。
+root は core・libs・contracts・surfaces・runtimes・deploy・tests の固定7境界である。
+core・contracts・tests は常に置き、libs は対応する機構があるときに置く。
+decisions と pipeline は、root の境界に無い。
 surfaces は対話様式というアクターの軸で server・console・worker・viewer・extension・embedded の6 surface を直下に束ね、gui・hosts のような技術カテゴリの箱を作らない。
-各部の layout は、この表が許す依存だけを内部の依存方向表として具体化する。skeleton の表と矛盾する依存を書かない。
+各部の layout は、この表が許す依存だけを内部の依存方向表として具体化する。
+skeleton の表と矛盾する依存を書かない。
 
 ## 根拠の高度
 
@@ -31,7 +34,8 @@ layout の固有規律は、principles/concerns/languages の必須5節(要求�
 - concerns が所有する概念の性質と保証(認証認可・永続化・型・observability など)を、structure の側で再定義していないか(再定義していれば正本への参照に戻す)。
 - principles の判断基準と一般規律を、structure の側で再導出していないか。
 - 市場から選ばず一意に定まる規格・プロトコル名を除き、採用(製品名・機構の選定)を structure に書いていないかを確認し、言語横断の採用は tools、言語 ecosystem 固有の採用は languages への参照に戻す。
-- surfaces の直下に、技術カテゴリの箱(gui・hosts 等)を作っていないか。対話様式のアクターで境界を引いているか。
+- surfaces の直下に、技術カテゴリの箱(gui・hosts 等)を作っていないか。
+  対話様式のアクターで境界を引いているか。
 - root をまたぐ具体的な許可依存を skeleton、概念の一般的な性質と保証を concerns が所有しているか(複数の部に効くことだけを理由に構成の正本を concerns へ移さない)。
 - 検証技法と規範から検証への割当の正本を、構成以外の判断だからという理由で `structure/tests/methods.md` から除いていないか。
 - 新しい面・host・部を足すとき、skeleton の固定7境界・surfaces の6 surface という既存の型に当たらないかを先に確かめたか。
