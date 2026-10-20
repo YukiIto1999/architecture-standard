@@ -23,7 +23,7 @@ domain event と integration event の区別は [messaging](../messaging/domain-
 異なる datastore への migration event が、現在の正本への write と同じ transaction で outbox に記録されている。
 
 ### 禁止事項
-現在情報と業務事実を別々の確定点で確定する禁止は、[data](../../principles/data/preserve-facts-and-current-state.md) の禁止事項に従う。
+書き込みパスにおいて、状態の更新と業務事実の記録を別々のトランザクションに割ること。
 状態の変更と outbox への記録を、別々の書き込みパスへ分けること。
 outbox の記録を経ずに、イベントを配送すること。
 outbox の行を業務事実として保持し、配送済みの印の更新や配送後の削除で業務事実の保持を左右すること。
