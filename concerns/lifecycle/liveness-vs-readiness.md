@@ -53,7 +53,9 @@ process 内の受付 gate だけで依存必須の request を拒否し、instan
 GET /healthz -> check(self) && check(database) && check(cache)
 ```
 
-依存先が必要な operation と不要な operation を別の配送先へ分ける。routing は `POST /orders` を `status-destination` の instance へ配送しない。配送先を分離できない場合は、`database.ok` が false なら process 全体を unready にする。
+依存先が必要な operation と不要な operation を別の配送先へ分ける。
+routing は `POST /orders` を `status-destination` の instance へ配送しない。
+配送先を分離できない場合は、`database.ok` が false なら process 全体を unready にする。
 
 ```
 GET /livez  -> check(self)

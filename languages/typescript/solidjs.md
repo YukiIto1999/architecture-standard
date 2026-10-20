@@ -86,7 +86,8 @@ remote は async computation の createMemo と Loading、URL は router、横�
 派生は createMemo で表し、書込可能な派生は関数形式の createSignal で表す。
 
 ### 例
-一時の状態は createSignal の範囲に閉じ、server が権威を持つ remote は async computation の createMemo と Loading で扱う。派生値は createMemo で元の値から導く。
+一時の状態は createSignal の範囲に閉じ、server が権威を持つ remote は async computation の createMemo と Loading で扱う。
+派生値は createMemo で元の値から導く。
 
 ```typescript
 const [count, setCount] = createSignal(0);
@@ -129,7 +130,8 @@ const user = createMemo(() => loadUser(userId()));
 createEffect(() => setAppState("user", user()));
 ```
 
-remote の client-side の読み口を async computation の createMemo に限り、初回の未準備状態を Loading で表示する。再計算には refresh を使う。
+remote の client-side の読み口を async computation の createMemo に限り、初回の未準備状態を Loading で表示する。
+再計算には refresh を使う。
 
 ```tsx
 const user = createMemo(() => loadUser(userId()));

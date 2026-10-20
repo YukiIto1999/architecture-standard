@@ -43,7 +43,8 @@ DB の列がそのままドメインに現れると、業務の意味と格納�
 class Order { id: string; created_at: string; status_code: number }
 ```
 
-論理側の `Order` は業務の意味と不変条件だけを持ち、物理側の `OrderRow` がテーブルとカラムに対応する。物理側から論理側に依存し、境界で読み書きの両方向へ変換するため、`Order` は `OrderRow` を知らない。
+論理側の `Order` は業務の意味と不変条件だけを持ち、物理側の `OrderRow` がテーブルとカラムに対応する。
+物理側から論理側に依存し、境界で読み書きの両方向へ変換するため、`Order` は `OrderRow` を知らない。
 
 ```ts
 class Order {

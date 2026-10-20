@@ -17,7 +17,8 @@
 ## extension の接続
 
 ### 要求
-extension が接続する core のプロセスは、外へ出すのを小さい契約だけにして公開する。これを tower-lsp-server の custom method による JSON-RPC で満たし、直列化は serde を使う。
+extension が接続する core のプロセスは、外へ出すのを小さい契約だけにして公開する。
+これを tower-lsp-server の custom method による JSON-RPC で満たし、直列化は serde を使う。
 標準の言語機能は、tower-lsp-server の LanguageServer で LSP として公開する。
 LSP の framing と protocol を再実装しない。
 

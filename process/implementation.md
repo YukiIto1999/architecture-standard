@@ -39,7 +39,8 @@
 最初の型検査の赤が、既存の implementation か caller と新しい型との不整合から生じていることを確かめる。
 新型を利用側へ接続しても対象の不整合が起きない場合は、振る舞いのテストを最初の赤にしたことを確かめる。
 初回の振る舞いのテストが、公開 interface を越す最小のuse-caseを検証していることを確かめる。
-想定内の失敗を、成功の値の側の閉じた型へ入れていないかを確かめる([concerns/effect](../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に照合する)。失敗の型が空のまま全ての計算が成功しうる形になっていれば、赤の立て方が誤っている。
+想定内の失敗を、成功の値の側の閉じた型へ入れていないかを確かめる([concerns/effect](../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に照合する)。
+失敗の型が空のまま全ての計算が成功しうる形になっていれば、赤の立て方が誤っている。
 作業中に気づいた振る舞いは、その場で実装せず、テストリストへ足す。
 テスト名とテスト本体が、内部実装でなく、検証対象、条件、外から観測できる期待結果を表すことを確かめる([principles/naming](../principles/naming/README.md) と [principles/verification](../principles/verification/README.md) に照合する)。
 アクターとuse-caseへの帰属は、テストを書く段で確かめ、refactor の段へ先送りしない([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に照合する)。

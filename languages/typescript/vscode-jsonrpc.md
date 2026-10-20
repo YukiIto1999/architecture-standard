@@ -8,7 +8,8 @@
 ## core への接続
 
 ### 要求
-extension が接続する core のプロセスへは、外へ出すのを小さい契約だけにして接続する。これを vscode-jsonrpc で満たす。
+extension が接続する core のプロセスへは、外へ出すのを小さい契約だけにして接続する。
+これを vscode-jsonrpc で満たす。
 
 ### 根拠
 メソッドを型で宣言し protocol をライブラリに委ねれば、外へ出すのは小さい契約だけになり、framing を手書きしない。

@@ -65,7 +65,9 @@ payload commit、外部効果成功、処理済み記録 commit の各直前と�
 容量を予約できない場合は nack または再試行可能な失敗を返し、inbox の使用量、上限、backlog、nack を観測する。
 
 ### 例
-永続化は PostgreSQL に閉じ、`IMessageBus` を含む依存は constructor で受ける。token を受けない API の直前で取り消しを確認する。inbox は payload の durable commit、delivery ack、外部効果、処理済み記録、完了の順に進める。
+永続化は PostgreSQL に閉じ、`IMessageBus` を含む依存は constructor で受ける。
+token を受けない API の直前で取り消しを確認する。
+inbox は payload の durable commit、delivery ack、外部効果、処理済み記録、完了の順に進める。
 
 ```csharp
 builder.UseWolverine(options => options.PersistMessagesWithPostgresql(connectionString));

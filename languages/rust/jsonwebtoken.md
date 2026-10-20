@@ -2,7 +2,8 @@
 
 用途は、OIDC の back-channel logout token を検証する JWT の検証機構である。
 採用は、Rust は jsonwebtoken であり、暗号の provider は `aws_lc_rs` の feature とする。
-判断基準は、JWKS の鍵から検証鍵を構築し、許可する署名 algorithm を集合で限定して JWS の署名を検証し、issuer・audience・期限と必須 claim の存在を判定できることである。採用済みの OIDC client が公開 API に持たない logout token の検証を、これで満たせることを含む。
+判断基準は、JWKS の鍵から検証鍵を構築し、許可する署名 algorithm を集合で限定して JWS の署名を検証し、issuer・audience・期限と必須 claim の存在を判定できることである。
+採用済みの OIDC client が公開 API に持たない logout token の検証を、これで満たせることを含む。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止、JWKS からの検証鍵の構築の廃止、署名 algorithm の限定の廃止、採用済みの OIDC client が logout token の検証を公開 API で提供することを再評価のトリガーとする。
 
 ## logout token の検証

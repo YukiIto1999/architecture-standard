@@ -6,8 +6,10 @@
 
 ## 順序
 
-1. 現行の意味、state の authority、実行経路が確立していなければ [recovery](./recovery.md) を実行し、目標の形が確立していなければ [design](./design.md) を実行する。その後、現行と目標の差分を出す(標準との差分は [audit](./audit.md) の順序で出す)。
-2. 既存の違反を一度に解消できない場合は、[audit](./audit.md) が定める基線台帳へ全件記録し、各行に所有者・解消条件・検出する root check を割り当てる。新しい違反は基線台帳に加えない。
+1. 現行の意味、state の authority、実行経路が確立していなければ [recovery](./recovery.md) を実行し、目標の形が確立していなければ [design](./design.md) を実行する。
+   その後、現行と目標の差分を出す(標準との差分は [audit](./audit.md) の順序で出す)。
+2. 既存の違反を一度に解消できない場合は、[audit](./audit.md) が定める基線台帳へ全件記録し、各行に所有者・解消条件・検出する root check を割り当てる。
+   新しい違反は基線台帳に加えない。
 3. 変える前に安全網を張る([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」に従い、回帰テスト・本番の観測・新旧の整合検査を備える)。
 4. 変更を小さく可逆な段に分け、各段に達成条件・撤退条件・不可逆点を定める([principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」に従う)。
 5. 新旧が同じ datastore にある場合は、[concerns/transaction](../concerns/transaction/single-commit-point.md) の「一つの確定点を持つ」と、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」を適用する。

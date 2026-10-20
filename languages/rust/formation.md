@@ -60,7 +60,8 @@ enum は取りうる状態を型で枚挙し、データ付きバリアントは
 網羅の match は、バリアントの取りこぼしをコンパイルエラーにする。
 bool の組み合わせや番兵値は、ありえない組を表現できてしまう。
 Option は不在を型で表し、値の有無の取り違えを型検査で防ぐ。
-crate の外の列挙は契約の進化に備えて開き、下流は寛容な読み手として既定分岐を持つ。内部の閉じた直和には付けない。
+crate の外の列挙は契約の進化に備えて開き、下流は寛容な読み手として既定分岐を持つ。
+内部の閉じた直和には付けない。
 
 ### 完了条件
 場合分けが、enum で表されている。
@@ -198,7 +199,8 @@ fn is_marathon(distance: &Miles) -> bool { distance.0 >= 26.2 }
 compile 時のツールが実行時の層に属さず出荷物にも含まれない理由は [structure/libs/layout](../../structure/libs/layout.md) に従う。
 Rust の proc-macro crate type は、Rust Reference が「手続き的 macro だけを export しなければならない」と定める crate type で、通常の公開 API を同じ crate から export できない。
 crate を分ければ、macro の定義と、それを使う core の実行時コードが、依存の向きでも成果物でも混ざらない。
-Rust は enum の網羅の match と Option・Result を言語機構として持つので、他言語に要る網羅検査の補いは要らない。proc-macro が要るのは、定型実装の生成や、言語機構だけでは表せない規律の compile 時検査に限る。
+Rust は enum の網羅の match と Option・Result を言語機構として持つので、他言語に要る網羅検査の補いは要らない。
+proc-macro が要るのは、定型実装の生成や、言語機構だけでは表せない規律の compile 時検査に限る。
 
 ### 完了条件
 derive macro・属性 macro が、libs の機構として core と別の proc-macro crate にある。

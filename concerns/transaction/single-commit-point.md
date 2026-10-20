@@ -27,7 +27,8 @@
 send(mail); transaction.commit()
 ```
 
-外部効果は確定後に起こす。メールの配送要求を状態と同じトランザクションで outbox へ記録し、確定後に配送する。
+外部効果は確定後に起こす。
+メールの配送要求を状態と同じトランザクションで outbox へ記録し、確定後に配送する。
 
 ```
 transaction { record(order); outbox.add(MailRequested) }

@@ -8,7 +8,8 @@
 
 1. 対象の意味、外から見た契約、重要な state の authority と invariant が確立していなければ、修正せずに [recovery](./recovery.md) へ戻る。
 2. 対象の規模を、安全を確かめるのに要る検証の水準で見積もる([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」に従う)。
-3. 振る舞いの安全網を確かめ、足りない範囲は現在の振る舞いを観測して固定するテストで埋める([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」に従う)。固定した挙動を `Intended` とみなさない。
+3. 振る舞いの安全網を確かめ、足りない範囲は現在の振る舞いを観測して固定するテストで埋める([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」に従う)。
+   固定した挙動を `Intended` とみなさない。
 4. 一つの use case・pipeline・state transition のように意味が閉じた単位へ変更を分け、境界を跨ぐ変更は境界ごとにチェックポイントを置く([principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」に従う)。
 5. 目的が混在した要素は、目的ごとに分けてから、同じ知識を表す部分だけを抽出する([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
 6. 制御の混乱した箇所は、入出力の契約だけを固定し、内部を書き直す([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」に従う)。
@@ -23,7 +24,8 @@
 安全網に頼る前に、テストを意図的に壊して赤になることを確かめる([principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」に照合する)。
 この確認は、[principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」が要求する検証対象の保証の違反と判定結果に照合し、runner だけの赤と区別して、条件が同じ既存の mutation の証跡を再利用する。
 新しい場合の追加が既存の分岐本体の修正を要したなら、[principles/construction](../principles/construction/decisions-as-types.md) の「業務判断を型と多態で構造化する」に照合する。
-想定内の失敗が型に出ていれば、失敗の追加は全ての呼び出し側を型検査が指すので、拡張の圧は臭いの知覚でなくコンパイラが運ぶ([concerns/effect](../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に照合する)。圧が来ないなら、失敗が型から漏れているか、呼び出し側が取りこぼしを黙らせる腕を持っている。
+想定内の失敗が型に出ていれば、失敗の追加は全ての呼び出し側を型検査が指すので、拡張の圧は臭いの知覚でなくコンパイラが運ぶ([concerns/effect](../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に照合する)。
+圧が来ないなら、失敗が型から漏れているか、呼び出し側が取りこぼしを黙らせる腕を持っている。
 結合の診断は、[principles/separation](../principles/separation/coupling-by-distance.md) の「結合を距離に見合う強さにする」に従う。
 変更した範囲を、[principles/legibility](../principles/legibility/code-as-documentation.md) の「コードを第一級の文書として明瞭に書く」の完了条件と禁止事項に照合する。
 コメントを、[principles/comment](../principles/comment/README.md) の各規律の完了条件と禁止事項に照合する。

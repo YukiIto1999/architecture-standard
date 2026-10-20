@@ -91,7 +91,8 @@
 transaction { order.place(); inventory.reserve(); }
 ```
 
-一つの集約だけを変更し、`OrderPlaced` を outbox へ記録する。在庫は別集約のトランザクションでイベントを受け、結果整合的に引き当てる。
+一つの集約だけを変更し、`OrderPlaced` を outbox へ記録する。
+在庫は別集約のトランザクションでイベントを受け、結果整合的に引き当てる。
 
 ```
 transaction { order.place() }

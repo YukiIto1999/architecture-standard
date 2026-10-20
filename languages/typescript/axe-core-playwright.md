@@ -9,7 +9,8 @@
 ## accessibility
 
 ### 要求
-自動判定できる accessibility の違反は、E2E で機械検査する。これを @axe-core/playwright で満たす。
+自動判定できる accessibility の違反は、E2E で機械検査する。
+これを @axe-core/playwright で満たす。
 キーボードの到達性は、Playwright の操作と focus の assertion で E2E シナリオとして確かめる。
 pointer target は、Playwright で表示後の bounding box を CSS px で測定し、Success Criterion 2.5.8 の例外記録と照合する。
 text と non-text の contrast は、Playwright で表示結果の style、font face、user agent の font metadata、font metrics、隣接色を取得し、Success Criterion 1.4.3 と1.4.11の閾値と例外記録に照合する。

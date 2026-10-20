@@ -48,7 +48,8 @@
 媒体ごとの表現が必要なら、変換する境界を一つに定め、その対応をテストする。
 
 ### 例
-同じ概念を `Info` と `Data` で分けても意味の違いがない。`User` を共通の語にし、返すものを `Profile` と `ActivityLog` で区別する。
+同じ概念を `Info` と `Data` で分けても意味の違いがない。
+`User` を共通の語にし、返すものを `Profile` と `ActivityLog` で区別する。
 
 ```ts
 getUserInfo();

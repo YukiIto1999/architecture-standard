@@ -3,7 +3,8 @@
 用途は、テストが実行していない箇所を見つけるカバレッジ計測である。
 採用は、Rust は cargo-llvm-cov である。
 判断基準は、採用済みのテスト実行系と統合して、stable toolchain で region と line を数える機械可読な coverage report を出力し、記録した下限を自身の終了値で判定できることである。
-撤回条件は、判断基準を満たさなくなることであり、保守の停止、stable toolchain で region を数える設定、report 形式、test runner との統合方法の変化を再評価のトリガーとする。branch が stable toolchain で数えられるようになることと、match の腕・or-pattern・`?`・`.await`・macro 展開の分岐を branch が数えるようになることも、再評価のトリガーとする。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止、stable toolchain で region を数える設定、report 形式、test runner との統合方法の変化を再評価のトリガーとする。
+branch が stable toolchain で数えられるようになることと、match の腕・or-pattern・`?`・`.await`・macro 展開の分岐を branch が数えるようになることも、再評価のトリガーとする。
 
 ## カバレッジ
 

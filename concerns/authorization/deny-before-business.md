@@ -39,7 +39,8 @@
 if (!found) return "そのIDの注文は存在しません"; return error(stackTrace)
 ```
 
-クライアントには汎用の応答を返し、詳細はログへ記録する。機微な文脈では未検出と未許可を区別しない。
+クライアントには汎用の応答を返し、詳細はログへ記録する。
+機微な文脈では未検出と未許可を区別しない。
 
 ```
 log({ denied: true, subjectId, target, reason }); return forbidden()

@@ -55,7 +55,8 @@ snapshot event を監査または集計する場合にも、同じ版と保持�
 
 ### 例
 
-privacy が定める保存期限を過ぎた event は破棄する。現在より古い version であることだけを理由には破棄しない。
+privacy が定める保存期限を過ぎた event は破棄する。
+現在より古い version であることだけを理由には破棄しない。
 
 ```
 onAccumulatedFact(event) {

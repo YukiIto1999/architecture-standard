@@ -87,7 +87,8 @@ scope を持たない匿名の要求の保存応答は、発行時の proof を�
 
 ### 例
 
-`scope` に使う列はすべて `NOT NULL` とする。同じ fingerprint なら初回の応答を返し、異なる fingerprint なら conflict を返す。
+`scope` に使う列はすべて `NOT NULL` とする。
+同じ fingerprint なら初回の応答を返し、異なる fingerprint なら conflict を返す。
 
 ```sql
 applied_requests(operation NOT NULL, actor_scope NOT NULL,
@@ -109,7 +110,8 @@ rejectUnverifiedTenant()
 rejectTenantScopeConfusion(multiTenant.tenantId, singleTenant.tenantId, tenantless.tenantId)
 ```
 
-安定した匿名 scope がなければ、server が発行した key と proof を使う。保存済みの応答は、proof を検証した要求者にだけ返す。
+安定した匿名 scope がなければ、server が発行した key と proof を使う。
+保存済みの応答は、proof を検証した要求者にだけ返す。
 
 ```
 { key, responseProof } = issueGloballyUniqueIdempotencyKey()

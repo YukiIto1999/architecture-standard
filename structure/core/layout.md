@@ -44,7 +44,9 @@ core/
 `<context>/` は、境界付けられたコンテキストが複数あるときにのみ置く。
 `shared/` は、複数のコンテキストが値を共有するときにのみ置く。
 `<context>/` の直下に置ける層は domain・application・infrastructure の3層であり、必要な層のみを置く。
-generic と分類したコンテキストには、業務の不変条件を持つ集約を置かない。集約を持たなければ domain 層も置かない。分類は [principles/separation](../../principles/separation/README.md) に従う。
+generic と分類したコンテキストには、業務の不変条件を持つ集約を置かない。
+集約を持たなければ domain 層も置かない。
+分類は [principles/separation](../../principles/separation/README.md) に従う。
 `<common-value>` は、一つのコンテキスト内で複数の集約が共有する値である。
 集約が一つだけのコンテキストでは、common-value を置かず集約のファイル内に畳む。
 値が一つのときは `<common-value>` を直に置き、二つ以上で `values/` に集める。

@@ -33,4 +33,5 @@ port は技術から独立した目的で設計し、技術別のアダプタを
 interface NotificationPort { notify(to: Recipient, message: Message): Result<Sent, NotifyError> }
 ```
 
-利用側で実装ごとに分岐すると抽象が破綻する。`if (provider === "vendorA")` のような分岐は置かない。
+利用側で実装ごとに分岐すると抽象が破綻する。
+`if (provider === "vendorA")` のような分岐は置かない。

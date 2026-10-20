@@ -54,7 +54,8 @@ type Connection =
   | { state: "disconnected"; whenDisconnected: Date };
 ```
 
-「連絡先は email か住所のいずれかを持つ」規則は、両方を任意にせず、取りうる場合を列挙する。どちらも無い状態は型として作れない。
+「連絡先は email か住所のいずれかを持つ」規則は、両方を任意にせず、取りうる場合を列挙する。
+どちらも無い状態は型として作れない。
 
 ```ts
 type ContactInfo =

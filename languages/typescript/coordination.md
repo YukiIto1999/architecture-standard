@@ -10,7 +10,8 @@ principles の [separation](../../principles/separation/README.md) が定める�
 ## 非同期
 
 ### 要求
-非同期は、コールバックの入れ子より追いやすい逐次の形で書く。これを async/await で満たす。
+非同期は、コールバックの入れ子より追いやすい逐次の形で書く。
+これを async/await で満たす。
 
 ### 根拠
 async/await は非同期の流れを逐次の形で書け、コールバックの入れ子や Promise の連鎖より追いやすい。
@@ -153,7 +154,8 @@ const effect = loadUser(userId);
 const directResult = await effect(env, parentSignal, deadlineAt);
 ```
 
-共通 wrapper は `ResumeSource` を受け、期限超過と取り消しの理由を判定する。解決済みの `Err` と独立した defect は期限 error で上書きしない。
+共通 wrapper は `ResumeSource` を受け、期限超過と取り消しの理由を判定する。
+解決済みの `Err` と独立した defect は期限 error で上書きしない。
 
 ```typescript
 class DeadlineExceeded extends Error {
@@ -278,7 +280,8 @@ function withDeadlineEffect<Env, E, A>(
 }
 ```
 
-browser、extension、IDE、DOM を持たない host は、それぞれの再開通知を capability へ写す。wrapper 自体は DOM を参照せず、capability と絶対期限を使う。
+browser、extension、IDE、DOM を持たない host は、それぞれの再開通知を capability へ写す。
+wrapper 自体は DOM を参照せず、capability と絶対期限を使う。
 
 ```typescript
 const browserResumeSource = resumeSourceFromBrowserEvents(window, document);
@@ -510,7 +513,8 @@ extension は購読と資源を Disposable にし、host の購読管理へ登�
 
 ### 例
 
-viewer は反応の範囲が終わるときに `onCleanup` から購読を解除する。extension は購読を `Disposable` として host の購読管理へ登録し、終了時に一括して解放する。
+viewer は反応の範囲が終わるときに `onCleanup` から購読を解除する。
+extension は購読を `Disposable` として host の購読管理へ登録し、終了時に一括して解放する。
 
 ```typescript
 const unsubscribe = source.subscribe(handler);

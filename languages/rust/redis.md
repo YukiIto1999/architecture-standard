@@ -2,7 +2,8 @@
 
 用途は、Valkey へ接続する非同期 client である。
 採用は、Rust は redis である。
-判断基準は、Valkey に接続して tokio の非同期処理から共有でき、切断後に再接続し、session・cache・一時データの読み書きを一つの client interface に集約できることである。tower-sessions の SessionStore を redis で実装できることを含む。
+判断基準は、Valkey に接続して tokio の非同期処理から共有でき、切断後に再接続し、session・cache・一時データの読み書きを一つの client interface に集約できることである。
+tower-sessions の SessionStore を redis で実装できることを含む。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止、Valkey 対応の終了、非同期 ConnectionManager の再接続機構の変更を再評価のトリガーとする。
 
 ## 一時データ

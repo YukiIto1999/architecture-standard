@@ -2,7 +2,8 @@
 
 用途は、依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である。
 採用は、TypeScript の構造検査に @typescript/typescript6 の compiler API を使う。
-判断基準は、層の参照禁止・公開面・副作用の参照禁止を規則として書け、違反をリポジトリの検証入口で止められることである。compiler API が call expression の symbol、callee expression の型、parameter の initializer、destructuring の binding element を取得でき、module specifier を採用している TypeScript の解決規則で file へ解決できることを含む。
+判断基準は、層の参照禁止・公開面・副作用の参照禁止を規則として書け、違反をリポジトリの検証入口で止められることである。
+compiler API が call expression の symbol、callee expression の型、parameter の initializer、destructuring の binding element を取得でき、module specifier を採用している TypeScript の解決規則で file へ解決できることを含む。
 撤回条件は、判断基準を満たさなくなることであり、@typescript/typescript6 の保守停止と、TypeScript 本体が安定 API を再び同梱したことを再評価のトリガーとする。
 
 ## 構造検査

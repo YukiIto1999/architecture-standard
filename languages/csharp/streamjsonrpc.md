@@ -8,7 +8,8 @@
 ## extension の接続
 
 ### 要求
-extension が接続する core のプロセスは、外へ出すのを小さい契約だけにして公開する。これを StreamJsonRpc で満たす。
+extension が接続する core のプロセスは、外へ出すのを小さい契約だけにして公開する。
+これを StreamJsonRpc で満たす。
 LSP の framing と protocol を再実装しない。
 
 ### 根拠
@@ -27,7 +28,8 @@ JSON-RPC や LSP の framing・protocol を、再実装すること。
 core を StreamJsonRpc で公開し、target を attach して `JsonRpc.Attach<T>` の型付き proxy で呼ぶ。
 
 ### 例
-target を attach し、型付き proxy で呼び出す。framing は StreamJsonRpc へ委譲する。
+target を attach し、型付き proxy で呼び出す。
+framing は StreamJsonRpc へ委譲する。
 
 ```csharp
 public interface IExtensionServer { Task<int> AddAsync(int a, int b); }

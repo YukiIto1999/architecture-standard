@@ -9,7 +9,8 @@
 
 ### 要求
 linter は SonarAnalyzer.CSharp を使い、その警告を検証入口でエラーとして扱う。
-規則の重大度は .editorconfig を正本とし、SonarAnalyzer の規則のしきい値 parameter だけを SonarLint.xml に置く。同じ関心を両方のファイルへ書かない。
+規則の重大度は .editorconfig を正本とし、SonarAnalyzer の規則のしきい値 parameter だけを SonarLint.xml に置く。
+同じ関心を両方のファイルへ書かない。
 ファイル・関数の大きさとネストの深さのしきい値は SonarAnalyzer.CSharp の S104(ファイル)・S138(関数)・S134(ネスト)の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 集合の添字による裸ループは、S3267 で検出し、LINQ の名前のある操作へ直す。
 未使用の要素と未使用の参照は、コンパイラと analyzer の到達可能性の診断を検証入口でエラーとして扱い検出する。

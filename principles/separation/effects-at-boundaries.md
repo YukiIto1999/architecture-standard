@@ -36,7 +36,8 @@ function expireIfStale(token: Token): void {
 }
 ```
 
-時刻を殻側で取得し、値で受け取る純粋な核に判断を分ければ、核は判断結果だけを返す。殻はその結果に応じて書き込む。
+時刻を殻側で取得し、値で受け取る純粋な核に判断を分ければ、核は判断結果だけを返す。
+殻はその結果に応じて書き込む。
 
 ```ts
 function decideExpiry(token: Token, now: Instant): "expire" | "keep" {

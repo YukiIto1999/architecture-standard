@@ -47,7 +47,8 @@
 class Order { id: OrderId; lines: OrderLine[]; customer: Customer }
 ```
 
-他の集約は識別子で参照し、顧客の変更は `Customer` 集約の別トランザクションで行う。連携が必要ならイベントを使う。
+他の集約は識別子で参照し、顧客の変更は `Customer` 集約の別トランザクションで行う。
+連携が必要ならイベントを使う。
 
 ```ts
 class Order { id: OrderId; customerId: CustomerId; lines: NonEmpty<OrderLine> }

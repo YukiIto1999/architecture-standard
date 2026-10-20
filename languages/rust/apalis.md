@@ -59,7 +59,9 @@ payload commit、外部効果成功、処理済み記録 commit の各直前と�
 容量を予約できない場合は nack または再試行可能な失敗を返し、inbox の使用量、上限、backlog、nack を観測する。
 
 ### 例
-queue は PostgreSQL backend に閉じる。`PostgresStorage::push` は可変参照を要求するため、storage を可変束縛にする。worker の起動は `WorkerBuilder` と apalis の `Monitor` で組むが、版によって変わる具体の呼び出し形はここでは固定しない。
+queue は PostgreSQL backend に閉じる。
+`PostgresStorage::push` は可変参照を要求するため、storage を可変束縛にする。
+worker の起動は `WorkerBuilder` と apalis の `Monitor` で組むが、版によって変わる具体の呼び出し形はここでは固定しない。
 
 ```rust
 let mut storage = PostgresStorage::new(&pool);

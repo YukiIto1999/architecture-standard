@@ -5,7 +5,8 @@
 用途は、BFF が保持する token の交換と更新を担う機構である。
 採用は、Rust は tower-sessions のサーバー側セッション、redis の Valkey client と openidconnect のトークンエンドポイントクライアントである。
 トークンエンドポイントクライアントの分担は [openidconnect](./openidconnect.md) が受け持つ。
-判断基準は、token set と expiry を server 側に保持し、期限前の更新で得た token set を同じ session へ置き換えられることである。公開された session store の実装に依存せず、redis を使う SessionStore を bff の session の adapter として実装できることを含む。
+判断基準は、token set と expiry を server 側に保持し、期限前の更新で得た token set を同じ session へ置き換えられることである。
+公開された session store の実装に依存せず、redis を使う SessionStore を bff の session の adapter として実装できることを含む。
 撤回条件は、判断基準を満たさなくなることであり、公開版の組合せ、ライセンス、リリースポリシー、session と token endpoint の互換性の変化を再評価のトリガーとする。
 
 ## BFF の session 管理

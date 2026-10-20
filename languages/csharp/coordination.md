@@ -105,7 +105,8 @@ CancellationToken を非取消の後始末を除いて末端まで渡し、Throw
 public async Task Process(Order order) { await _client.SendAsync(order); }
 ```
 
-絶対期限は host の request 境界で一度だけ生成する。非取消の後始末を除き、下流の非同期 API は同じ期限と token を受け取る。
+絶対期限は host の request 境界で一度だけ生成する。
+非取消の後始末を除き、下流の非同期 API は同じ期限と token を受け取る。
 
 ```csharp
 public readonly record struct Deadline(DateTimeOffset At)
@@ -306,7 +307,9 @@ var subscription = source.Subscribe(handler);
 DoWork(); subscription.Dispose();
 ```
 
-同期資源は `using`、非同期資源は `await using` の scope で解放する。`IObservable.Subscribe` が返すのは `IDisposable` なので `await using` は使えない。非同期の後始末は取得時の期限を保持し、token を受けずに完了まで待つ。
+同期資源は `using`、非同期資源は `await using` の scope で解放する。
+`IObservable.Subscribe` が返すのは `IDisposable` なので `await using` は使えない。
+非同期の後始末は取得時の期限を保持し、token を受けずに完了まで待つ。
 
 ```csharp
 using var subscription = source.Subscribe(handler);

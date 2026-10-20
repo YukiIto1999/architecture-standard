@@ -29,7 +29,8 @@ import・参照・型共有の向きを確認し、内向きでない依存を�
 PricingPolicy ── import ──> PostgresClient
 ```
 
-抽象は内側が所有し、外側が実装する。中心は抽象だけを参照する。
+抽象は内側が所有し、外側が実装する。
+中心は抽象だけを参照する。
 
 ```
 PricingPolicy ── uses ──> RateRepository

@@ -210,7 +210,8 @@ port を trait で宣言し、差し替えは `Arc<dyn>`、単一の実装は ge
 struct OrderService { repository: PostgresOrderRepository }
 ```
 
-port の trait だけに依存させる。単一実装は generics で渡し、実行時に差し替える非同期 port は `async-trait` と `Arc<dyn>` で渡す。
+port の trait だけに依存させる。
+単一実装は generics で渡し、実行時に差し替える非同期 port は `async-trait` と `Arc<dyn>` で渡す。
 
 ```rust
 #[async_trait]
