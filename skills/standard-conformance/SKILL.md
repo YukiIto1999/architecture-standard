@@ -6,6 +6,7 @@ description: architecture-standard に対する対象プロジェクトの適合
 # standard-conformance
 
 対象プロジェクトが `architecture-standard` に適合しているかを読み取り専用で監査する Skill である。
+適用する規律を一つずつ、対象 project の実際の source、設定、実行結果と照合し、違反、非適用、未確認を分けて報告する。
 コードや基線台帳は編集せず、監査結果と基線台帳との差分を報告する。
 違反が見つからないことと、全域の調査が完了したことを分ける。
 
@@ -16,44 +17,29 @@ description: architecture-standard に対する対象プロジェクトの適合
   gate がある host では `dotfiles-agent-gate standard-root` がこの値を出力する。
   この Skill の配備先、固定 Rev、remote の HEAD、`pwd`、対象 project 内の複製から導かない。
   値を得られなければ不足する前提として報告し、配備済み source の標準本文で監査を始めない。
-- `<skill-package-root>` は、成功して読んだこの `SKILL.md` を symlink の実体まで辿った directory である。
-  同梱の `scripts/check-coverage.mjs` はここから実行し、`<standard-root>` の標準本文とは別の root として扱う。
 - 基準は `<standard-root>` の現在の `README.md` と、`principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/` 配下の規範文書とする。
-- 対象 project の directory を `<project-root>` とし、その directory を含む Git repository と Node.js、Git を使える環境で監査する。
+  領域の欠落や空、本文の読取失敗は不足する前提として報告する。
+  旧い本文、この Skill の配備先の近くにある本文、別の root へ切り替えて監査を続けない。
+- 対象 project の directory を `<project-root>` とする。
 - 基線台帳は対象 project の `docs/conformance-baseline.json` とし、`baseline.file` もこの project 相対 path と完全に一致させる。
-- JSON 報告の `<report-path>` は対象 project を含む Git repository の外に置く。
-  報告を書いて source の fingerprint を変えないためであり、基線台帳は project 内に保持して fingerprint に含める。
+- JSON 報告は応答で返す。file として保存する場合の `<report-path>` は、対象 project を含む Git repository の外に置く。
   この外部報告以外は、標準と対象 project のどちらも編集しない。
 
 ## 監査手順
 
-### inventory
+### 規律の列挙
 
-全域監査は、現在の正本と対象 project から期待文書集合と digest を取得して始める。
-
-```bash
-node "<skill-package-root>/scripts/check-coverage.mjs" inventory \
-  --standard-root "<standard-root>" --project-root "<project-root>"
-```
-
-stdout の `status: INVENTORY` と `standardDigest`、`projectDigest`、`documents`、`requiredChecks` を保持し、`documents` にある全相対 path の disposition を報告へ残す。
-期待集合は root `README.md` と六領域配下の全 Markdown 文書から自動導出されるため、固定した文書一覧や以前の監査結果で置き換えない。
-`requiredChecks[document]` は、その文書について正本から導いた `[{rule: "file#heading", kinds: ["machine", "review"]}]` の形の検査割当であり、`kinds` は規律ごとの実際の割当に従う。
-割当は principles と concerns の概念 README の規律台帳、および `languages/*/inspection.md` の対応表から取得され、別の registry で管理しない。
-検証欄の「…対象について、」は適用対象の説明として読み、その後の機械検査とレビューの割当を保持する。
-この説明だけで非適用とせず、対象との照合結果を後述の applicability に残す。
-言語の検証対応表について、既知の見出しと3列の対応表、少なくとも一つの検証割当を読めない場合は `INVALID` とする。
-未知の構造を「割当なし」へ置き換えず、前述の機械検査とレビューを欠いた報告で合格させない。
-各領域の欠落や空、正本の読取失敗、Git repository に含まれない対象は開始条件を満たさない。
-CLI を使えない場合は欠けている実行環境や配備物を報告し、監査完了や PASS、WARN としない。
-
-`standardDigest` は現在の期待文書の path と内容に基づく。
-`projectDigest` は、対象 project を含む Git repository 全体の tracked file と ignore されていない untracked file の path と内容、Git root からの project 相対 path、当該 project の基線台帳の有無と内容に基づく。
-基線台帳は Gitignore の対象でも fingerprint に含め、同じ checkout 内の別 project へ報告を使い回さない。
-project が Git root の配下なら、project 外の関連設定も含めて checkout の鮮度を確かめる。
-digest は今回の観測の鮮度を確かめる値であり、標準の過去版への固定ではない。
-観測後に正本や対象 source、基線台帳が変わったら、inventory を取り直して変更の影響を再評価する。
-captured digest だけを新しい値へ書き換え、以前の証拠を新しい評価として扱わない。
+全域監査は、現在の標準から照合する規律を取得して始める。
+`<standard-root>/README.md` の領域表と六領域の README を読み、六領域配下の全 Markdown 文書を列挙する。
+principles と concerns は概念 README の規律台帳、languages は `languages/*/inspection.md` の対応表から、規律を `<標準ファイルの相対パス>#<見出し>` の単位で取得する。
+台帳のない領域は、文書が定める構成、依存方向、採用 entry、順序と確認点を単位にする。
+固定した文書一覧や以前の監査結果で置き換えず、全文書を少なくとも一つの項目で扱う。
+台帳の検証欄が割り当てる機械検査とレビューは、規律ごとの照合手段として保持する。
+検証欄の「…対象について、」は適用対象の説明として読み、後続の割当を保持する。
+この説明だけで非適用とせず、対象との照合結果を残す。
+言語の対応表を、既知の見出しと3列の表、少なくとも一つの検証割当として読めない場合は、その言語の規律を未確認にする。
+未知の構造を「割当なし」へ読み替えて合格させない。
+監査の途中で正本、対象 source、基線台帳が変わったら、影響する規律を読み直し、以前の観測を新しい評価として扱わない。
 
 ### 照合
 
@@ -61,28 +47,26 @@ captured digest だけを新しい値へ書き換え、以前の証拠を新し�
    対象 project の README、manifest、source、設定、test、決定の記録から、言語、実行経路、境界、依存方向、検証入口を確認する。
 2. 監査順序に沿って、設定 drift、境界、横断規律、原則、言語と道具の規律を照合する。
    `BannedSymbols`、`clippy.toml`、`oxlint`、`biome`、`.editorconfig` 等の設定は、対象が採用している機構について確認する。
-3. 文書ごとに適用条件を source と project の出典で判断し、`checked`、`not-applicable`、`unresolved` のいずれかを記録する。
-   すべての言語や道具を一律に適用対象へしない一方、条件付きの文書も期待集合から削除しない。
+3. 規律ごとに適用条件を標準本文と project の出典で判断し、`checked`、`not-applicable`、`unresolved` のいずれかを記録する。
+   すべての言語や道具を一律に適用対象にしない一方、条件付きの規律や文書を列挙から外さない。
+   非適用には、適用条件を定める本文と、対象が条件を満たさない観測を対応付けた理由を残す。
    未読、未調査、証拠不足は非適用の理由にせず、`unresolved` と不足する根拠を残す。
-4. 適用する規律は `<standard-root>/structure/tests/methods.md` の割当方針と inventory の `requiredChecks` に従い、対象 project の検証入口の実行とレビューで照合する。
-   割当のある文書は、各規律を `checks.rule` で完全に一致する正本の `file#heading` として指し、要求された kind ごとに検査を残す。
-   machine と review の両方を要求する規律は、片方だけで完了としない。
+4. 適用する規律は `<standard-root>/structure/tests/methods.md` の割当方針と台帳の検証欄に従い、対象 project の検証入口の実行とレビューで照合する。
+   機械検査とレビューの両方が割り当てられた規律は、片方だけで完了としない。
    実行結果には command と結果の locator、レビュー結果には対象と判断の locator を残す。
    独立レビューと報告する場合は、独立した context の実際の記録を示す。
-   正本や source を読んだ記録は `entries[].evidence` に残し、それだけで実行や独立レビューを済ませた `checks` にしない。
-   意味を伴う判断は root README の適用判断に従い、既存の `reason`、`evidence`、review の locator の参照先へ、規律の条件と対象の事実から結論を導いた根拠を残す。
+   標準本文や source を読んだ記録は `evidence` に残し、それだけで実行や独立レビューを済ませた `checks` にしない。
+   意味を伴う判断は root README の適用判断に従い、規律の条件と対象の事実から結論を導いた根拠を、`reason`、`evidence`、review の locator の参照先へ残す。
    見出しの名指しや形式検査の成功だけで適合とせず、読取、適用判断、実検証を区別する。
-   文書の一部の規律だけが条件を満たさない場合は、その rule の適用判断を `kind: applicability`、`status: not-applicable` として理由と source、project の出典とともに残す。
-   適用判断は実行検査の成功ではなく、同じ rule の machine や review と併記しない。
 5. 違反を root README と process/audit の引用規則に従って記録し、project の実基線台帳と照合する。
-   実行できなかった検査は `not-run`、判断できなかった文書は `unresolved` のまま残す。
-6. JSON 報告を `<report-path>` に保存し、末尾の完了検査を実際に実行する。
+   実行できなかった検査は `not-run`、判断できなかった規律は `unresolved` のまま残す。
+6. JSON 報告を作り、末尾の完了の判定を実際に確かめる。
 
 ## 出力仕様
 
-監査報告は `violations`、`baseline`、`coverage` を持つ JSON とする。
-次は形式の例であり、digest、path、出典、検査結果は実際の観測値に置き換える。
-`coverage.entries` は例の文書だけで終えず、inventory の全期待文書について一件ずつ記録する。
+監査報告は `violations`、`baseline`、`inspection` を持つ JSON とする。
+次は形式の例であり、path、出典、検査結果は実際の観測値に置き換える。
+`inspection.entries` は例の規律だけで終えず、列挙した全規律について一件ずつ記録する。
 
 ```json
 {
@@ -102,12 +86,10 @@ captured digest だけを新しい値へ書き換え、以前の証拠を新し�
     "baselineCount": 0,
     "resolvedCount": 0
   },
-  "coverage": {
-    "standardDigest": "<inventory の standardDigest>",
-    "projectDigest": "<inventory の projectDigest>",
+  "inspection": {
     "entries": [
       {
-        "document": "<違反の rule が指す標準ファイルの相対パス>",
+        "rule": "<標準ファイルの相対パス>#<該当見出し>",
         "disposition": "checked",
         "evidence": [
           "<source: 標準本文の path と見出し>",
@@ -115,28 +97,19 @@ captured digest だけを新しい値へ書き換え、以前の証拠を新し�
         ],
         "checks": [
           {
-            "rule": "<標準ファイルの相対パス>#<該当見出し>",
             "kind": "machine",
             "status": "failed",
             "evidence": "<tool: 実行 command と失敗結果の locator>"
           },
           {
-            "rule": "<標準ファイルの相対パス>#<該当見出し>",
             "kind": "review",
             "status": "passed",
             "evidence": "<tool: レビュー記録の locator>"
-          },
-          {
-            "rule": "<同じ文書内の条件付き規律の相対パス>#<該当見出し>",
-            "kind": "applicability",
-            "status": "not-applicable",
-            "reason": "<この規律の適用条件を対象が満たさない理由>",
-            "evidence": "<source と project: 適用条件と対象の観測を辿れる locator>"
           }
         ]
       },
       {
-        "document": "<非適用と判断した標準ファイルの相対パス>",
+        "rule": "<非適用と判断した規律の相対パス>#<該当見出し>",
         "disposition": "not-applicable",
         "evidence": [
           "<source: 適用条件を定める標準本文>",
@@ -145,7 +118,7 @@ captured digest だけを新しい値へ書き換え、以前の証拠を新し�
         "reason": "<適用条件と対象の観測を対応付けた非適用理由>"
       },
       {
-        "document": "<判断が未確定の標準ファイルの相対パス>",
+        "rule": "<判断が未確定の規律の相対パス>#<該当見出し>",
         "disposition": "unresolved",
         "evidence": [
           "<project: 調査済み範囲または不足を観測した記録>"
@@ -157,25 +130,17 @@ captured digest だけを新しい値へ書き換え、以前の証拠を新し�
 }
 ```
 
+`rule` は規律の `<標準ファイルの相対パス>#<該当見出し>` とし、見出し単位の規律を持たない文書は相対パスだけを指す。
 `evidence` は source、project、tool の出典を辿れる非空の locator とし、`entries[].evidence` は空でない配列にする。
-`checked` は空でない `checks` に加え、割当の有無にかかわらず、machine または review の `passed` か `failed` という実照合結果を少なくとも一件必要とする。
-machine と review の検査は `kind: machine | review`、`status: passed | failed | not-run`、非空の `evidence` を持つ。
-`checks.rule` を記録する場合は、同じ `document` の規律を指す。
-検査割当がある文書は、`requiredChecks[document]` の各 rule を `checks.rule` で完全に一致させ、要求されたすべての kind について検査結果を残す。
-一件の `review/passed` を、その文書に割り当てられた machine や他の規律の検査の代わりにしない。
-文書内の条件付き規律を非適用にする場合は、その rule に `kind: applicability`、`status: not-applicable`、非空の `reason`、source と project の根拠を辿れる `evidence` を残す。
-同じ rule の非適用と machine または review の結果の併記は、割当表に現れない rule も含めて矛盾として拒否される。
-適用判断だけでは `checked` としない。
-割当の全規律が非適用だけなら、文書の disposition を根拠付きの `not-applicable` にする。
-割当表のない文書も、非空の machine または review の実照合結果と証拠を必要とする。
-`failed` は、`checks.rule` があればその規律と完全に一致する `violations[].rule` を伴い、なければ文書全体の失敗としてその `document` を指す違反を伴う。
+`checked` は、割り当てられた検査の種類ごとに、`checks` へ `passed` か `failed` の実照合結果を少なくとも一件残す。
+割当のない規律も、machine または review の実照合結果を少なくとも一件必要とする。
+`checks` の各項目は `kind: machine | review`、`status: passed | failed | not-run`、非空の `evidence` を持つ。
+一件の `review/passed` を、同じ規律に割り当てられた machine や他の規律の検査の代わりにしない。
+`failed` の検査は、同じ `rule` を指す `violations[].rule` を伴う。
 同じ文書に別の既存違反があっても、失敗した規律の違反報告の代わりにしない。
-必要な kind の欠落や `not-run` は未完了とする。
-`not-applicable` と `unresolved` は根拠となる `evidence` と非空の `reason` を持ち、`unresolved` は未完了とする。
-違反なしの `violations: []` でも、文書の欠落、未確定、未実行があれば監査完了にはならない。
-
-`baseline.status` は `matched`、`new-violations-found`、`baseline-not-found` のいずれかを参考値として残す。
-報告内の `newCount`、`baselineCount`、`resolvedCount` は自己申告であり、CLI の合否根拠にはしない。
+`not-run` の検査が一つでもある規律は `unresolved` とし、実行できた検査の結果は `checks` に残す。
+`not-applicable` と `unresolved` は根拠となる `evidence` と非空の `reason` を持つ。
+適用判断だけで `checked` にしない。
 
 ## 基線台帳
 
@@ -183,74 +148,46 @@ machine と review の検査は `kind: machine | review`、`status: passed | fai
 台帳の path を別の空ファイルへ切り替えて、既存違反との比較を回避しない。
 内容は `{ "violations": [...] }` とし、各違反は報告と同じ `rule`、`file`、`line`、`evidence`、`mechanizable` の五つの field を持つ。
 既存違反と認めるのは、実基線台帳の項目と五つすべてが一致した違反だけである。
-過去の基線項目は五つの field の形式を検証するが、現在の期待文書集合にその規律の文書が残っていることは要求しない。
-削除や移動された規律の旧項目も比較元とし、現在の報告に一致しない項目を `resolvedCount` に含める。
-一方、現在の報告の違反は現在の期待文書を指す必要があり、未知の正本文書を指す違反は拒否される。
-旧項目を現在の規範の代わりにしたり、path を読み替えて一致した既存違反にしたりしない。
+実基線台帳を読み、報告の違反と台帳の項目を五つの field で比較して件数を数える。
+
+- `newCount` は、台帳に一致しない報告の違反の数である。
+- `baselineCount` は、台帳の項目と一致した報告の違反の数である。
+- `resolvedCount` は、現在の報告に一致しない台帳の項目の数である。
+
+`baseline.status` は、台帳があり新規違反がなければ `matched`、新規違反があれば `new-violations-found`、台帳がなければ `baseline-not-found` とする。
+削除や移動された規律の旧項目も比較元とし、現在の報告に一致しない項目は `resolvedCount` に含める。
+現在の報告の違反は現在の標準本文の規律を指し、旧項目を現在の規範の代わりにしたり、path を読み替えて一致した既存違反にしたりしない。
 報告の `baseline.status` や `newCount: 0` で実ファイルとの比較を代替しない。
 基線台帳がなければ `baseline-not-found` とし、観測した違反をすべて新規として扱う。
 新規違反を追記して基線を肥大化させず、解消後の削除は project 側の変更として `<standard-root>/process/audit.md` に従う。
 
-## 完了検査
+## 完了の判定
 
-報告を保存した後、以下の実行経路で canonical check を実際に行い、stdout の JSON と終了コードを報告する。
-直接実行する場合の入口は次の CLI とし、host の監査完了 gate を使う場合は後述の登録 command で同じ checker を実行するため、直接の check を重ねない。
+報告を返す前に、次を実際に確かめる。
 
-```bash
-node "<skill-package-root>/scripts/check-coverage.mjs" check \
-  --standard-root "<standard-root>" --project-root "<project-root>" \
-  --report "<report-path>"
-```
+- 列挙した全文書と全規律に `inspection.entries` の項目がある。
+- `checked` の各項目が、割り当てられた検査の種類ごとに実照合の結果と `evidence` を持つ。
+- `not-applicable` と `unresolved` の各項目が、`evidence` と非空の `reason` を持つ。
+- `failed` の検査ごとに、同じ `rule` を指す `violations[]` の項目がある。
+- `baseline` の件数が、実基線台帳との比較から数えた値である。
+- 報告が JSON として読める。
 
-報告を評価できた stdout は `status`、`coverageComplete`、`expectedDocuments`、`standardDigest`、`projectDigest`、`newCount`、`baselineCount`、`resolvedCount`、`baselineFound`、`diagnostics` を持つ。
-読取や形式の不正で評価できない `INVALID` では、`status` と `diagnostics` を報告し、算出できなかった件数をゼロとみなさない。
-件数は実基線台帳から再計算され、台帳がない場合は `baselineFound: false` として比較元を空集合にする。
-未完了と新規違反が併存すれば `INCOMPLETE` を優先し、`diagnostics` には両方を残す。
+結論は、観測した事実だけで次のいずれかに分ける。
 
-| status | 意味 | 終了コード |
-|---|---|---|
-| `PASS` | 文書単位の coverage が完了し、観測した違反がない | 0 |
-| `WARN` | 文書単位の coverage が完了し、実基線台帳と一致した既存違反だけがある | 0 |
-| `FAIL` | 文書単位の coverage は完了しているが、新規違反がある | 1 |
-| `INCOMPLETE` | 文書の disposition、証拠、検査結果が完了条件を満たさないか、digest が古い | 1 |
-| `INVALID` | 報告が不正、または正本、project、報告、基線台帳を読めない | 2 |
+| 結論 | 条件 |
+|---|---|
+| 未完了 | 規律の列挙を終えていない、適用判断だけで実照合が一件もない、または `unresolved` か `not-run` が残る |
+| 新規違反あり | 全規律の照合を終え、基線台帳に一致しない違反がある |
+| 既存違反のみ | 全規律の照合を終え、違反がすべて実基線台帳と一致する |
+| 違反なし | 全規律の照合を終え、違反がない |
 
-CLI の結果が `INCOMPLETE`、`INVALID`、`FAIL` なら、PASS や WARN として報告しない。
-未実行の CLI を通過したものと扱わない。
-文書の欠落、余分、重複、不足証拠、正本に割り当てられた rule や kind の欠落、`not-run`、`unresolved`、古い digest、新規違反は完了検査を通過しない。
-全文書を `not-applicable` にした場合や、適用判断だけで実照合結果が一件もない場合は、空の監査として未完了とする。
+未完了は他の結論より優先し、観測した新規違反と既存違反は別に報告する。
+未完了の報告は、未確認の規律と不足する根拠を示し、全域の適合も未確認の規律の適合も主張しない。
+実行しなかった検査、読めなかった資料、利用できなかった検証入口は、通過したものとして扱わない。
 
-`INVALID` の `diagnostics` が `<standard-root>` の標準本文の読取や構造の検査に由来する場合は、標準本文の欠損か、成功して読んだ Skill package の checker がその本文を扱えない配送の不足である。
-どちらも PASS や WARN にせず、`<standard-root>` の標準本文と checker の package を別々に特定して報告する。
-旧い本文、`<skill-package-root>` の近くにある本文、別の root へ切り替えて合格を作らない。
-checker が扱えない場合は、source の更新と再配備を不足する前提として報告する。
-
-完了検査が確かめるのは、現在の期待集合に対して文書単位の coverage が閉じ、正本から導いた検査割当ごとに実検査または根拠付きの非適用判断が残り、実基線台帳との差分が合格条件を満たすことである。
-割当のない全規範命題を新たに抽出する検査ではなく、引用の意味、適用判断の妥当性、証拠の真偽、文書内の全規範命題への実検査は保証しない。
+この監査が示すのは、確認した規律ごとの観測と判断である。
+引用の意味、適用判断の妥当性、証拠の真偽、列挙に現れない規範命題への実検査は保証しない。
 project の analyzer や実行テスト、独立レビューの代わりではなく、すべての設計思想を機械検証したことにもならない。
-
-### host の監査完了 gate
-
-dotfiles の runtime gate が session を管理する host では、直接の Node check の代わりに次の command を実行する。
-
-```bash
-dotfiles-agent-gate conformance --session "<実 session ID>" \
-  --repo "<project-root>" --standard-root "<standard-root>" \
-  --report "<report-path>"
-```
-
-session ID は実際の client context または stop が示した command から取得し、推測で作らない。
-`--standard-root` には前提の `<standard-root>` を渡し、gate は自身が持つ現行規範 root と一致しない値を受け付けない。
-この adapter は、成功して読んだ Skill package の `scripts/check-coverage.mjs` を、その `<standard-root>` に対して実行し、終了コード0で PASS か WARN の場合だけ receipt を記録する。
-同じ本文を別の場所へコピーした package や、成功して読んでいない package で、読んだ package との照合を回避しない。
-この Skill の canonical 本文を成功して読んだ session は、stop でその receipt を必要とする。
-stop は現在の inventory と、Skill package、`<standard-root>` の正本、project source、報告、checker の鮮度を照合し、同じ観測に対する check を重ねて実行しない。
-正本や source が変わった場合は再評価し、Skill package の配備内容が変わった場合は canonical 本文を読み直してから、登録 command を実行し直す。
-
-checker と規範の正本は architecture-standard が、receipt と stop の強制は dotfiles の runtime が所有する。
-runtime gate がない host では Node CLI を直接実行し、その CLI を CI や検証入口へ接続する責務は対象 project の所有者へ渡す。
-読み取り専用監査で CI 設定を勝手に編集せず、未接続の状態を自動 stop 強制済みとして報告しない。
-gate があっても、成功して読んだ package に必要な checker がない場合や、その checker が現行の標準本文を扱えない場合は、source の更新と再配備を不足する前提として報告し、receipt 登録済みとは扱わない。
 
 ## Non-goals
 

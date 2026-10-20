@@ -68,20 +68,17 @@ docs: Git の公開済み履歴を書き換える手順の追記
 
 コミットを作成する前に、staged な差分が一つの目的に閉じていること、および自動検査を通過することを確認します。
 
-以下の command は、標準の作業 checkout の root から実行します。
+検証入口は root の `package.json` の `verify` です。
+標準本文の形式検査、検査器の回帰検査、Skill の frontmatter と script 構文の検査を順に実行します。
+実行には Node.js、Bash、Git、fd、ripgrep と、各 script が確認する基本 command が必要です。
+以下の command は、`dotfiles-agent-verify` を供給する dotfiles-wsl の Agent 環境で実行します。
 
 ```bash
-# 1. 差分の確認
-git status --short
-git diff --staged --check
-git diff --staged --stat
-git diff --staged
-
-# 2. 自動検査の実行
-bash skills/standard-update/scripts/verify.sh
+dotfiles-agent-verify -- npm run verify
 ```
 
-skill を変更した場合は、回帰検査、評価、scoped audit を含む追加手順も省略してはなりません。検査が一度でも失敗した状態、あるいは未検証の項目がある状態でのコミットは厳禁です。
+Skill を変更した場合は、[standard-update](./skills/standard-update/SKILL.md) が定める package 検査と scoped audit も行います。
+検査が失敗した状態や、今回の変更に必要な確認を終えていない状態では commit しません。
 
 ## 履歴の整理とプッシュ
 

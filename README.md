@@ -76,7 +76,7 @@ process は順序と確認点だけを所有し、性質の規範を再定義し
 ### コードレビューや品質監査を実施する場合
 1. [process/review.md](./process/review.md) または [process/audit.md](./process/audit.md) を開きます。
 2. 後述の判定の枠および適用の4則に基づき、客観的な証跡と本文引用をもって判定します。
-3. 適合性を JSON で報告する全域監査は、[standard-conformance](./skills/standard-conformance/SKILL.md) の inventory、照合、完了検査を使います。
+3. 適合性を JSON で報告する全域監査は、[standard-conformance](./skills/standard-conformance/SKILL.md) に従い、規律ごとの適用判断と実物に対する照合結果を残します。
 
 ### 既存システムの移行や構造改善を行う場合
 1. [process/recovery.md](./process/recovery.md) で既存の意味を回収し、[process/migration.md](./process/migration.md) で段階的移行の順序を設計します。
@@ -270,19 +270,15 @@ revision の一致を、現行規範への適合や対象 source の現在の妥
 | 規範から検査への割当 | [structure/tests/methods.md](./structure/tests/methods.md)、[principles](./principles/) と [concerns](./concerns/) の概念 README の規律台帳、言語別 inspection の対応表である [Rust](./languages/rust/inspection.md)、[C#](./languages/csharp/inspection.md)、[TypeScript](./languages/typescript/inspection.md) |
 | 検査の実行と合否 | [process/verification.md](./process/verification.md) と対象 project の検証入口 |
 | 監査の順序 | [process/audit.md](./process/audit.md) |
-| JSON 監査報告と完了境界 | [standard-conformance](./skills/standard-conformance/SKILL.md) と [check-coverage.mjs](./skills/standard-conformance/scripts/check-coverage.mjs) の `inventory`、`check` |
-| session の監査完了強制 | 対応 host の dotfiles runtime が持つ `dotfiles-agent-gate conformance` と stop receipt |
+| 適合性監査と根拠付き報告 | [standard-conformance](./skills/standard-conformance/SKILL.md) |
 | 標準側の不備の還流 | [standard-feedback](./skills/standard-feedback/SKILL.md) |
 
-全域の適合性監査では、現行正本と対象 source の inventory から文書集合と検査割当を導き、文書ごとの適用判断と規律ごとの検査証拠を報告へ残します。
+全域の適合性監査では、現行正本と対象 source から適用する規律と検査割当を確認し、規律ごとの適用判断と検査証拠を報告へ残します。
 正本に割り当てられた machine と review はそれぞれ必要とし、読取や一件のレビューで他の検査を代替しません。
 条件付き規律の適用判断は、実行検査や独立レビューの証拠とは別に扱います。
-`check-coverage.mjs` は、欠けた disposition や検査割当の rule と kind、不足証拠、未実行、古い観測、新規違反を検出して監査の完了判定を閉じます。
-project の analyzer ではなく、引用の意味や適用判断の妥当性、証拠の真偽、全規範命題の実検査も保証しないため、すべての設計思想を機械検証したとは扱いません。
-報告の形式、実基線台帳との照合、対象 project を含む Git repository の外への報告保存、CLI の終了状態の扱いは、standard-conformance の契約に従います。
-対応 host の runtime gate は、成功して読んだ Skill package の checker を現行規範 root に対して実行して receipt を記録し、stop で同じ正本、source、報告、checker の鮮度を照合します。
-checker と規範はこの repository が、receipt と停止時の強制は dotfiles が所有するため、host に gate がない場合は自動 stop 強制済みとは扱いません。
-登録 command と実 session ID の取得、gate がない場合の検証入口への接続は、standard-conformance の完了検査が案内します。
+報告の形式、実基線台帳との照合、対象 project を含む Git repository の外への報告保存は、standard-conformance の契約に従います。
+記録の網羅だけを実装の適合とせず、各規律に割り当てた実行検査とレビューの実証跡から判定します。
+未確認の適用条件や未実行の検査を合格へ置き換えません。
 
 ### プロジェクト側の記載形式
 

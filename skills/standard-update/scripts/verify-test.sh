@@ -459,6 +459,67 @@ expect_rejected_before_checks "--standard-root の重複を拒否する" 2 "空�
 expect_rejected_before_checks "未知の引数を拒否する" 2 "不明な引数: --unknown" "$verify_driver" "$valid_cwd" --unknown
 expect_rejected_before_checks "= 形の --standard-root を未知の引数として拒否する" 2 "不明な引数: --standard-root=$valid_cwd" "$verify_driver" "$valid_cwd" "--standard-root=$valid_cwd"
 
+package_driver="$SCRIPT_DIR/skill-package-check.sh"
+expect_rejected_before_checks "package checker は存在しない root を別の root へ置き換えない" 2 "$TEST_ROOT/missing-root" "$package_driver" "$valid_cwd" --standard-root "$TEST_ROOT/missing-root"
+expect_rejected_before_checks "package checker は未知の引数を拒否する" 2 "--unknown" "$package_driver" "$valid_cwd" --unknown
+expect_rejected_before_checks "verify-test は存在しない root を別の root へ置き換えない" 2 "$TEST_ROOT/missing-root" "$SCRIPT_DIR/verify-test.sh" "$valid_cwd" --standard-root "$TEST_ROOT/missing-root"
+expect_rejected_before_checks "verify-test は root の重複を拒否する" 2 "--standard-root" "$SCRIPT_DIR/verify-test.sh" "$valid_cwd" --standard-root "$valid_cwd" --standard-root "$valid_cwd"
+
+detached_scripts="$TEST_ROOT/detached-package/scripts"
+mkdir -p "$detached_scripts"
+cp -a "$SCRIPT_DIR/." "$detached_scripts/"
+expect_pass "Git のない package から指定した標準 root の Skill を検査できる" "$valid_cwd" "$detached_scripts/skill-package-check.sh"
+fixture=$(make_fixture package-missing-skill)
+rm -- "$fixture/skills/standard-apply/SKILL.md"
+if output=$(run_driver "$detached_scripts/skill-package-check.sh" "$valid_cwd" --standard-root "$fixture"); then
+  record_fail "指定した標準 root の Skill 欠落を検出する" "$output"
+elif ! printf '%s\n' "$output" | rg -qF 'standard-apply'; then
+  record_fail "欠落した Skill を特定する" "$output"
+else
+  record_pass "指定した標準 root の Skill 欠落を検出する"
+fi
+fixture=$(make_fixture package-wrong-name)
+sed -i 's/^name: standard-apply$/name: wrong-name/' "$fixture/skills/standard-apply/SKILL.md"
+if output=$(run_driver "$package_driver" "$valid_cwd" --standard-root "$fixture"); then
+  record_fail "frontmatter の name と Skill 名の不一致を拒否する" "$output"
+else
+  record_pass "frontmatter の name と Skill 名の不一致を拒否する"
+fi
+
+BASH_PATH=$(command -v bash)
+for missing_command in node fd; do
+  limited_path="$TEST_ROOT/path-without-$missing_command"
+  mkdir -p "$limited_path"
+  for command_name in bash git rg fd awk sed find wc tr head tail sort diff dirname paste basename cut node; do
+    [ "$command_name" = "$missing_command" ] && continue
+    ln -s "$(command -v "$command_name")" "$limited_path/$command_name"
+  done
+  status=0
+  output=$(PATH="$limited_path" "$BASH_PATH" "$SCRIPT_DIR/verify.sh" --standard-root "$valid_cwd" 2>&1) || status=$?
+  if [ "$status" -eq 1 ] && printf '%s\n' "$output" | rg -qF "$missing_command"; then
+    record_pass "$missing_command 欠落で verifier が fail closed となる"
+  else
+    record_fail "$missing_command 欠落で verifier が fail closed となる" "status=$status
+$output"
+  fi
+done
+
+mktemp_status=0
+output=$(MKTEMP_FAILURE_PROBE="$TEST_ROOT/mktemp-followup" timeout 10 "$BASH_PATH" -c '
+  mktemp() { return 1; }
+  mkdir() { printf "mkdir\n" >> "$MKTEMP_FAILURE_PROBE"; return 91; }
+  cp() { printf "cp\n" >> "$MKTEMP_FAILURE_PROBE"; return 92; }
+  rm() { printf "rm\n" >> "$MKTEMP_FAILURE_PROBE"; return 94; }
+  export -f mktemp mkdir cp rm
+  bash "$1" --standard-root "$2"
+' probe "$SCRIPT_DIR/verify-test.sh" "$valid_cwd" 2>&1) || mktemp_status=$?
+if [ "$mktemp_status" -eq 1 ] && [ ! -e "$TEST_ROOT/mktemp-followup" ]; then
+  record_pass "mktemp 失敗時に作成・コピー・削除を行わず終了する"
+else
+  record_fail "mktemp 失敗時に作成・コピー・削除を行わず終了する" "status=$mktemp_status
+$output"
+fi
+
 printf '\nテスト: %d passed, %d failed\n' "$passed" "$failed"
 if [ "$failed" -eq 0 ]; then
   exit 0

@@ -13,7 +13,6 @@ Skill 本文と標準本文は独自に記述し、外部 package の本文、re
 CLI 固有の規範は `structure/surfaces/console/layout.md`、設定解決は `concerns/configuration/single-config-source.md`、検査への割当は `structure/tests/methods.md` に置いた。
 複数源の解決を一つの設定源の契約に集め、環境変数と secret の既存の禁止を維持した。
 Skill はそれらを project の呼び出しへ落とす手順だけを所有する。
-代表的な task と発火境界の入力を同梱したが、baseline、forward eval、ablation は未実行であり、改善量は未測定である。
 
 ## Legal notices
 

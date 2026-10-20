@@ -17,7 +17,6 @@ Skill 本文と標準本文は独自に記述し、外部 package の本文、re
 
 往復する二つの変換が同じずれを持つ場合、定数 0 でも成り立つ比例関係、後続の clear が途中の欠落を消す操作列、全入力を棄却する生成器は、方法の限界を分ける論理的な反例である。
 これらは repository の製品欠陥や framework benchmark の報告ではない。
-同梱した task と発火境界の入力は未実行であり、baseline、forward eval、ablation の改善量は未測定である。
 
 ## Legal notices
 

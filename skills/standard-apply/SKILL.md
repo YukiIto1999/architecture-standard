@@ -17,7 +17,7 @@ description: architecture-standard 以外の標準には使わず、「別 repos
   この skill の配備先、固定 Rev、remote の HEAD、`pwd`、`git rev-parse`、対象 project 内の複製から再発見しない。
   値を得られなければ標準適用を開始せず、依頼での指定または agent policy に root の値が必要と返す。
   読める README や標準の本文があっても規範 root として代用せず、本文の引用、照合、適合や違反の判定を行わない。
-  「仮のレビュー」「fixture 本文との照合」などの留保を付けても、この前提を満たしたことにはしない。
+  「仮のレビュー」「手元の写しとの照合」などの留保を付けても、この前提を満たしたことにはしない。
   対象 project を current directory にした Git 操作や特定マシンのローカル絶対パスと混ぜない。
 - `<skill-package-root>` は、成功して読んだこの `SKILL.md` を symlink の実体まで辿った directory である。`references/` の同梱資材はここから読み、標準本文の file は `<standard-root>` から読む。
 - 標準本文は常に `<standard-root>` にある現在の規範文書（`README.md`、`principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/`）を参照する。標準の過去版を Git 履歴から掘り出して判断基準にせず、対象 project に記録された標準の版も基準にしない。

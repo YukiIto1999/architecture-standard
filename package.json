@@ -1,0 +1,11 @@
+{
+  "name": "architecture-standard",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "verify": "bash skills/standard-update/scripts/verify.sh --standard-root . && bash skills/standard-update/scripts/verify-test.sh --standard-root . && bash skills/standard-update/scripts/skill-package-check.sh --standard-root ."
+  }
+}

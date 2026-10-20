@@ -117,7 +117,7 @@ typo、リンク、書式、正本と参照の同期だけを直し、外部事�
 編集前に、主張と既存本文の差、原因、採用モデル、影響先、変更する所有者と参照、検証、範囲外を変更契約として記録する。
 影響追跡で新しい欠陥が立証されたら、因果関係を示して契約を更新する。
 意味を変えた場合は、対象、義務、違反、判定手段の差を残し、後から文章修正へ読み替えない。
-新しい reference は反復する詳細な判断、新しい script は決定的な不変条件、新しい eval は未観測の失敗境界を所有する場合だけ作る。
+新しい reference は反復する詳細な判断、新しい script は決定的な不変条件を所有する場合だけ作る。
 
 ### 5. 領域の書式で書く
 
@@ -175,14 +175,12 @@ bash "<skill-package-root>/scripts/verify.sh" --standard-root "<standard-root>"
 
 失敗した場合は原因を直し、同じ検査を再実行して PASS になるまで完了としない。
 
-本 skill、`references/*.md`、`scripts/*`、`evals/*.json` を変更した場合は、次も実行する。
+本 skill、`references/*.md`、`scripts/*` を変更した場合は、次も実行する。
 
 ```bash
 bash "<skill-package-root>/scripts/verify-test.sh" --standard-root "<standard-root>"
 bash "<skill-package-root>/scripts/skill-package-check.sh" --standard-root "<standard-root>"
 ```
-
-`skill-package-check.sh` の役割と、変更面ごとの model eval の範囲は [evaluation](references/evaluation.md) に従う。
 
 最後に変更 file を standard-audit の scoped audit で照合する。
 subagent が利用できれば変更の経緯を持たない reviewer に依頼し、利用できなければ独立 session、どちらも利用できなければ自己監査へ代替する。代替時は独立監査済みと主張しない。
@@ -192,8 +190,6 @@ subagent が利用できれば変更の経緯を持たない reviewer に依頼�
 
 検証 script は Bash、Git、ripgrep (`rg`)、fd、awk、sed、find、coreutils、Node.js を必要とする。
 不足時は検査を skip せず失敗する。
-同梱の model evaluator は OMP CLI を使い、認証と既定 model は host の OMP runtime から受け取る。
-Skill の通常利用と検証 script は、評価 runner の一時設定や配備先に依存しない。
 
 ## 不変条件
 
@@ -209,12 +205,8 @@ Skill の通常利用と検証 script は、評価 runner の一時設定や配�
 - `references/{principles,concerns,structure,tools,process}.md` — 領域固有の配置、根拠、書式、MECE 点検。`tools.md` は tools と languages の両方を所有する。
 - `references/normative-quality.md` — 意味の関係、表現の反証、モデル選択、無変更の裁定。
 - `references/verification-duplication.md` — 検証手段の重複排除に固有の反例と下位割当の点検。
-- `references/evaluation.md` — product 検査の役割と model eval の範囲。
 - `scripts/verify.sh` — 標準本文の機械検査。
 - `scripts/verify-test.sh` — verifier の回帰検査。
-- `scripts/skill-package-check.sh` — 実作業用の frontmatter、7 Skill の eval schema、script 構文の検査。
-- `scripts/skill-test.sh` — 評価対象へ公開しない、期待解答と mutation を含む evaluator 回帰検査。
-- `scripts/run-task-evals.mjs` / `scripts/run-trigger-evals.mjs` — OMP の隔離評価入口。
+- `scripts/skill-package-check.sh` — 実作業用の frontmatter と script 構文の検査。
 - `scripts/discipline-sections.awk` / `scripts/naming-registry-check.mjs` / `scripts/verbatim-overlap.mjs` / `scripts/heading-citation-check.mjs` — verifier が呼び出す内部実装。個別の公開入口にはしない。
-- `evals/evals.json` / `evals/trigger-evals.json` — task 品質と発火境界の評価集合。
 - `standard-audit` — 標準自体の読み取り専用監査。
