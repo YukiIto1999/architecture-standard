@@ -2,27 +2,33 @@
 
 用途は、SQL を型で扱いながら書く永続化アクセス層である。
 採用は、Rust は sqlx である。
-判断基準は、SQL を隠さず、事実の形がそのまま型に写ることである。フル ORM は SQL を不透明にしたり、変更追跡で確定の時点を暗黙にしたりするため採らない。
+判断基準は、SQL を隠さず、事実の形がそのまま型に写ることである。
+フル ORM は SQL を不透明にしたり、変更追跡で確定の時点を暗黙にしたりするため採らない。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## 型付き SQL
 
 ### 要求
 永続化は sqlx で書き、`query!`・`query_as!` のコンパイル時検証を使う。
-sqlx の `offline` feature を有効化し、リポジトリの検証入口は offline の検証データで検証する。
+sqlx の `macros` feature を有効化し、`cargo sqlx prepare` が生成する `.sqlx` を追跡する。
+通常のコンパイルでは DB 接続先を設定せず、追跡した `.sqlx` の検証データを使う。
+現在の schema との同期は、対象の DB を使う `cargo sqlx prepare --check` をリポジトリの検証入口で実行して確かめる。
 `sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化し、migration table 名と migration hash の無視文字は既定から変更しない。
 
 ### 根拠
-sqlx はコンパイル時に開発の DB へ接続し、SQL を DB 自身に検証させる。
+`cargo sqlx prepare` では、対象の DB に SQL を検証させた結果を `.sqlx` へ保存できる。
 SQL を隠す抽象を入れないので、事実の形がそのまま型に写る。
-sqlx の `offline` feature を有効化して offline の検証データをリポジトリの検証入口で照合すれば、スキーマと SQL のずれがビルドで止まる。
+`macros` feature と追跡した `.sqlx` を使えば、通常のコンパイルを DB へ接続せずに行える。
+保存済みの検証データだけでは現在の schema との同期を保証しないため、`cargo sqlx prepare --check` で照合する。
 sqlx-cli の `sqlx migrate add` は既定で forward-only の migration ファイルを生成し、`sqlx migrate run` が適用済みの履歴を DB 側で追跡する。
 `sqlx.toml` の migration table 名と migration hash の無視文字を既定から変えなければ、sqlx と sqlx-cli の設定差で検証対象と適用履歴がずれない。
 forward-only の規律そのものは [structure/core/infrastructure](../../structure/core/infrastructure.md) に従う。
 
 ### 完了条件
 永続化が sqlx で書かれ、`query!`・`query_as!` のコンパイル時検証が効いている。
-sqlx の `offline` feature が有効で、リポジトリの検証入口が offline の検証データで検証している。
+`macros` feature が有効で、生成した `.sqlx` が追跡されている。
+通常のコンパイルが DB 接続先を持たず、`.sqlx` の検証データで検証されている。
+`cargo sqlx prepare --check` が、検証データと現在の query と schema の同期を確かめている。
 `sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature が有効で、migration table 名と migration hash の無視文字が既定から変更されていない。
 フル ORM を使っていない。
 schema の変更が、sqlx-cli の `sqlx migrate` で forward-only の migration として適用されている。
@@ -32,7 +38,9 @@ schema の変更が、sqlx-cli の `sqlx migrate` で forward-only の migration
 SQL の値を、文字列の連結で組み立てること。
 
 ### 行動
-SQL を `query!`・`query_as!` で書き、sqlx の `offline` feature を有効化して、`cargo sqlx prepare` の検証データをリポジトリの検証入口で照合する。
+SQL を `query!`・`query_as!` で書き、`macros` feature を有効化する。
+対象の DB に接続した `cargo sqlx prepare` で `.sqlx` を生成し、追跡する。
+通常のコンパイルでは DB 接続先を設定せず、検証入口で `cargo sqlx prepare --check` も実行して現在の schema との同期を確かめる。
 `sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化し、migration table 名と migration hash の無視文字を既定から変更しない。
 schema の変更は `sqlx migrate add` で migration ファイルを作り、`sqlx migrate run` で適用する。
 

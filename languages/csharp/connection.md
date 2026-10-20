@@ -43,7 +43,8 @@ Run の未初期化 guard を外し、null delegate の呼出しを通常の Nul
 Effect の内部の Run から、Task または Task<T> を返すこと。
 
 ### 行動
-副作用を伴う計算を Effect で返し、Map と Bind で合成する。query 式を使う場合は Select と SelectMany を実装する。
+副作用を伴う計算を Effect で返し、Map と Bind で合成する。
+query 式を使う場合は Select と SelectMany を実装する。
 delegate を外へ見せず、構築は文脈の値の生成関数に限る。
 明示的な `default(Effect<...>)`、Effect への `default` literal の代入、型解決で Effect と判定できる `default(T)` を、Roslyn analyzer で検出する。
 Run の先頭で `_run` の null を検出し、`UninitializedEffectException` を送出する。
@@ -141,7 +142,9 @@ combinator の内側で Deadline を生成し、相対 timeout を引き直す�
 全ての combinator で、Run が受けた Deadline を値のまま下流の Effect と release へ渡す。
 
 ### 例
-文脈は一度だけ名指しする。`Success` と `Try` の値型は引数から推論させ、`Fail` と `Defect` の値型は明示する。release は元の絶対期限を保持した非取消の後始末であり、終了状態にかかわらず一度実行する。
+文脈は一度だけ名指しする。
+`Success` と `Try` の値型は引数から推論させ、`Fail` と `Defect` の値型は明示する。
+release は元の絶対期限を保持した非取消の後始末であり、終了状態にかかわらず一度実行する。
 
 ```csharp
 public readonly struct EffectContext<TRequirements, TFailure>
@@ -241,7 +244,7 @@ TFailure を sealed record の階層にすると、網羅の switch で扱える
 配列要素、field、未解決の generic から来る default まで analyzer で完全には検出できない。
 tag 0 を有効な二状態から外し全ての観測で guard すれば、静的検査を抜けた default を成功や失敗として処理せず欠陥として閉じられる。
 外部依存の失敗は adapter で回復できる失敗と欠陥に分け、回復できる失敗を Failed に、欠陥を Defected にする。
-EffectExit の基底も非 sealed な abstract record で、外部 assembly からの派生を型だけでは防げない限界と、その手当ては [formation](./formation.md) の「継承を判別共用体に限る」に従う。
+EffectExit の基底も非 sealed な abstract record で、外部 assembly からの派生を型だけでは防げない限界と、その手当ては [formation](./formation.md) の「不正な状態を構築できなくする」に従う。
 
 ### 完了条件
 Effect の終了が、Succeeded・Failed・Defected・Canceled に分かれている。
@@ -276,7 +279,9 @@ try { return Result.Success<Order, OrderError>(Place(cart)); }
 catch (Exception exception) { return Result.Failure<Order, OrderError>(OrderError.From(exception)); }
 ```
 
-型解決できる `default` は Roslyn analyzer で止める。静的検査を抜ける値は、すべての観測操作で未初期化を欠陥として閉じる。内部 tag は0を未初期化、1を成功、2を失敗とし、`IsFailure` や値の取得なども `EnsureInitialized` を最初に呼ぶ。
+型解決できる `default` は Roslyn analyzer で止める。
+静的検査を抜ける値は、すべての観測操作で未初期化を欠陥として閉じる。
+内部 tag は0を未初期化、1を成功、2を失敗とし、`IsFailure` や値の取得なども `EnsureInitialized` を最初に呼ぶ。
 
 ```csharp
 Result<Order, OrderError> explicitDefault = default;
@@ -347,7 +352,9 @@ Effect が要求する依存が、能力の interface の generic constraints �
 本番とテストで requirements の実装を差し替える。
 
 ### 例
-計算が要求する能力だけを `where` に出す。composition root はその能力を実装した requirements を組み立て、runtime へ渡す。テストは同じ能力を固定時刻やインメモリ実装で満たす。
+計算が要求する能力だけを `where` に出す。
+composition root はその能力を実装した requirements を組み立て、runtime へ渡す。
+テストは同じ能力を固定時刻やインメモリ実装で満たす。
 
 ```csharp
 public interface IEffectRequirements { }
@@ -412,7 +419,9 @@ EffectRuntime.Run を internal の ValueTask 経路にし、境界で一度だ�
 source generator に R の合成を、analyzer に Bind 連鎖の検査・原始効果の閉じ込め・`NoRequirements` への迂回の検出を実装する。
 
 ### 例
-依存を保持する runtime が効果を解釈し、例外を `Canceled` または `Defected` へ写す。実行は境界に限る。analyzer が追えない経路から生じた `default` は、専用の defect になることを実行テストで確かめる。
+依存を保持する runtime が効果を解釈し、例外を `Canceled` または `Defected` へ写す。
+実行は境界に限る。
+analyzer が追えない経路から生じた `default` は、専用の defect になることを実行テストで確かめる。
 
 ```csharp
 internal sealed class EffectRuntime<TRequirements>(TRequirements requirements)
@@ -506,25 +515,35 @@ public sealed class SmtpNotifier(ISmtpClient client) : INotifier;
 
 ### 要求
 adapter の登録と requirements の組み立ては composition root に限り、`Program.cs` で行う。
-実行時に `IServiceProvider` から依存を引く service locator を使わない。
+middleware、endpoint、adapter、業務処理の本体で、`IServiceProvider` や `HttpContext.RequestServices` から依存を引く service locator を使わない。
+`IServiceProvider` を受け取るアプリケーションの処理は、`Program.cs` の DI 登録 factory に限り、その本体は宣言済みの依存の配線だけを行う。
+登録 factory は service の解決時に実行されるので、container から渡された解決 scope を使い、provider を保存したり、scoped な依存を root provider や singleton に保持したりしない。
 
 ### 根拠
 組み立てを composition root の一点に集めれば、どの具象が使われるかが一箇所で見渡せる。
 composition root が、本番の requirements を組み立てて runtime に与え、効果の実行を境界に置く。
-`IServiceProvider` からその場で引くのは service locator で、依存をシグネチャから隠す。
+処理の本体で `IServiceProvider` からその場で依存を引くと、依存をシグネチャから隠す service locator になる。
+[DI の登録 factory](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection/service-registration#registration-methods) は依存の配線を登録するものであり、[解決処理](https://github.com/dotnet/runtime/blob/60629d14374c56f1cb51819049ad1fa529307f8d/src/libraries/Microsoft.Extensions.DependencyInjection/src/ServiceLookup/CallSiteRuntimeResolver.cs) がその factory を現在の scope で呼び出す時点と、登録する時点は異なる。
+組立点への集約は配線の所有を定める規律であり、全ての依存が起動時に構築されるという意味ではない。
 
 ### 完了条件
 adapter の登録と requirements の組み立てが、composition root に限られている。
-`IServiceProvider` から依存を引く service locator を使っていない。
+処理の本体が、必要な依存を constructor または framework の型付き注入入口で受け取り、provider から直接解決していない。
+provider を受け取る処理が `Program.cs` の DI 登録 factory に限られ、配線だけを行い、解決 scope と service の lifetime が一致している。
 
 ### 禁止事項
-実行時に、`IServiceProvider` から依存を引くこと。
+DI 登録 factory の外で、`IServiceProvider` や `HttpContext.RequestServices` から依存を直接解決すること。
+登録 factory に業務判断を置いたり、provider を注入先へ渡したり保存したりして、処理の本体で依存を探索できるようにすること。
+登録 factory が解決時に実行される事実を、登録時だけの処理と説明して隠すこと。
+scoped な依存を、root provider で解決したり singleton に保持したりすること。
 
 ### 行動
 adapter の登録と requirements の組み立てを `Program.cs` に集め、runtime に requirements を与える。
+framework の型付き注入入口を使い、framework 内部の依存解決をアプリケーションの処理へ持ち出さない。
+DI 登録 factory が受け取る provider は、その factory 内の配線にだけ使い、解決 scope と lifetime を確認する。
 
 ### 例
-実行時に provider から依存を引く service locator は避ける。
+middleware や endpoint の本体で provider から依存を引く service locator は避ける。
 
 ```csharp
 var validator = _provider.GetService<IOrderValidator>();

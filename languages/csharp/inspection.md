@@ -167,7 +167,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 ## 規則と検証機構の対応
 
 この言語 ecosystem の全規律を、検証手段へ写像する。
-規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
+規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。
+上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
 標準 repository の verifier は、ecosystem の全ファイルの規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 検証手段は、型・構造検査・analyzer/lint・計測・mutation・runner 検査・artifact 検査・実行テスト・レビューの語で書き、複数の手段は + で連ねる。
@@ -185,8 +186,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | inspection | ドキュメントコメントの検査 | analyzer/lint(CS1591 と Roslyn analyzer)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | formation | 業務の値を型に封じる | 型(record・非公開 constructor・static factory) |
 | formation | 不正な状態を構築できなくする | 型(sealed record 階層)+analyzer(Roslyn suppressor・網羅の警告のエラー化)+構造検査(ArchUnitNET。階層外派生の検出) |
-| formation | 継承を判別共用体に限る | レビュー(継承の目的の判断) |
-| formation | 不変を既定にする | 型(init 専用プロパティ) |
+| formation | 継承を閉じた型階層と境界の契約に限る | 型(判別共用体の基底以外の自作 class と record class の sealed)+レビュー(継承が閉じた型階層の宣言か境界で必須の基底型契約への適合であること、後者の言語仕様または採用済み framework の API による根拠、業務の振る舞いの再利用と Template Method 拡張の不在) |
+| formation | 不変を既定にする | 型(init 専用プロパティ)+レビュー(値とイベントの更新が元を変えず新しい値を返すこと、値オブジェクトの全構築・更新経路が検証付き factory を通り、公開 init と with が不変条件を迂回しないこと、浅い複製で共有する参照先の不変性) |
 | formation | 意味と単位を型で区別する | 型(record) |
 | formation | 検証と生成を libs の analyzer project に分ける | 構造検査(analyzer project 境界)+型(netstandard2.0 の Analyzer 参照制約) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、production の SonarAnalyzer.CSharp 命名規則、test project では Sonar の method 命名規則だけを抑止して命名 analyzer で test attribute 付き entry の snake_case とその他 method の .NET 命名を検査) |
@@ -202,7 +203,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | connection | 要求する依存を型に出す | 型(IEffectRequirements・generic constraints)+analyzer(Roslyn analyzer。NoRequirements への迂回の検出) |
 | connection | 効果を境界で実行し analyzer と generator で縛る | analyzer と source generator(internal の EffectRuntime.Run に実行境界を限定し、Deadline と CancellationToken の伝播、ValueTask の戻り値、R の合成環境の生成、Bind 連鎖の要求包含、原始効果の閉じ込め、NoRequirements への迂回を検査)+実行テスト(`UninitializedEffectException` を Defected へ写すこと) |
 | connection | port を interface で宣言する | 型(interface) |
-| connection | 配線を composition root に限る | 構造検査(IServiceProvider の直接解決の検出)+レビュー(組立点に置く依存の粒度の判断) |
+| connection | 配線を composition root に限る | 構造検査(Program.cs の DI 登録 factory 外の IServiceProvider・RequestServices による直接解決と、provider の注入・保存の検出)+レビュー(登録 factory が配線だけを行い、解決 scope と lifetime が一致すること、組立点に置く依存の粒度の判断) |
 | dapper | 型付き SQL | analyzer(DapperAOT の DAP214・DAP236)+実行テスト(型・nullable の照合テスト) |
 | npgsql | 並行更新の表面 | 構造検査(集約の鍵の導出が一か所に定義され、`pg_advisory_xact_lock` 系の呼び出しがその導出を通ること)+実行テスト(集約の鍵を排他で取る集約で全経路の直列化と READ COMMITTED での鍵の後の検証、書き込み経路の role が事実の行へ `UPDATE` も `DELETE` もできないこと、複数の鍵を bigint の値の昇順の一つの順序で取ること、種類の違う集約の鍵が衝突せず範囲外の識別子から鍵を作らないこと、鍵を待った書き込みの業務事実の時刻が待つ間に確定した業務事実の時刻以後であること、版で衝突を検出する集約で並行更新の片方だけの確定と古い版の各経路からの拒否、共有の鍵か鍵なしで更新する可変属性の行への同じ行の同時の更新で片方だけが確定し他方が競合の Result になること、影響行数 0 と名前付き version 制約違反の競合写像、一回だけ起きる業務事実の二度目の追記で名前付き主キーの違反だけが競合に写ること、version と名前付き主キー以外の制約違反の非写像、必要な業務事実の追記前後の失敗で現在情報の更新・業務事実の追記・outbox の記録が全て確定するか全て確定しないこと、業務事実不要な更新の競合制御と追記の不在)+レビュー(集約の不変条件に対する競合制御、必要な業務事実の欠落と outbox による代用の禁止) |
 | npgsql | 書き込みパス | 構造検査(store・composition・domain の begin・commit・rollback の不在、application の scope port と AcquireRelease による制御と driver 型の非流入、use-case 全体を包む外側の controller の不在)+実行テスト(release 失敗時の元の終わりの保持、確定応答喪失時の CommitOutcomeUnknown、エラーの種類だけによる NotCommitted 判定の拒否、確定後の DisposeAsync 失敗時の確定結果の保持、取消後の transaction と advisory lock の非残存) |
@@ -217,7 +218,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | coordination | ライブラリの作法 | analyzer/lint(SonarAnalyzer.CSharp の ConfigureAwait 関連規則) |
 | coordination | 資源解放 | 型(using/await using、IDisposable、引数なしの IAsyncDisposable.DisposeAsync)+analyzer(Roslyn analyzer。AcquireRelease release と DisposeAsync を CancellationToken の必須規則から除外し、元の Deadline を保持する非取消の後始末として識別)+実行テスト(取消後も DisposeAsync が一度完了すること、子の後始末と全 Task の drain より後に所有者の資源が閉じること、処理と解放がともに失敗しても元の終了理由と解放の失敗が観測され他の必要な解放が試みられること) |
 | aspnet-core | server | 構造検査(middleware の順序、core 公開 API への ClaimsPrincipal・token・claim・認証主体の型の流入禁止、全 endpoint が `RequireAuthorization()` か `AllowAnonymous` の宣言を持つこと、endpoint が呼ぶ業務の入口を adapter の宣言された保護を適用する入口に限ること、handler が認可の呼出と許可結果の引数を持たないこと)+実行テスト(検証済み ClaimsPrincipal から認証主体への確定、同じ認証主体に確定した限定資格情報の scope 外操作・対象の拒否、認証主体に対する認可の維持と独立した session 経路による迂回の確認、`AuthorizationOptions.FallbackPolicy` による宣言のない endpoint の拒否と匿名公開の明示、adapter の入口が適用する操作と対象の policy が endpoint の認証の要求だけでは満たされないこと、主体を必要とする operation だけが認証主体から対応づけた業務入力を受けること、要求側が指定した主体の拒否、multi-tenant の TenantId・single-tenant sentinel・no-tenant sentinel の写像と相互混同拒否、server 発行 key と proof、proof のない別 client への保存 response 漏洩拒否)+レビュー(認証方式ごとの principal の妥当性の判断) |
-| aspnet-core | BFF | 構造検査(request-scoped SubjectAccessor から AuthenticatedSubject を DI すること、SubjectMapper 呼出を認証 middleware に限定すること、route の ClaimsPrincipal 参照と認証主体の再構築を拒否すること、route の業務呼出を adapter の宣言された保護を適用する入口に限定し、技術的な処理では libs の公開 API の直接利用を許すこと)+実行テスト(cookie 属性、認証 middleware が SubjectAccessor へ格納した認証主体と route に注入された AuthenticatedSubject の一致、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core 公開 API 呼出) |
+| aspnet-core | BFF | 構造検査(認証主体を確定する request-scoped IMiddleware への SubjectAccessor の constructor 注入、middleware と route の本体での provider 直接解決の不在、同じ request scope の SubjectAccessor から AuthenticatedSubject を解決する DI 登録 factory の配置、SubjectMapper 呼出を認証 middleware に限定すること、route の ClaimsPrincipal 参照と認証主体の再構築を拒否すること、route の業務呼出を adapter の宣言された保護を適用する入口に限定し、技術的な処理では libs の公開 API の直接利用を許すこと)+実行テスト(cookie 属性、認証 middleware が格納した主体が後続の route と adapter へ同じ主体として注入されること、並行する別 request の SubjectAccessor と認証主体の非共有、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core 公開 API 呼出)+レビュー(DI 登録 factory が解決時に実行され、主体の格納より前に解決せず、scoped な主体を singleton と root provider に保持しないこと) |
 | wolverine | worker | 構造検査(Wolverine の永続化設定・IMessageBus の constructor injection の検出)+実行テスト(payload commit 後の upstream delivery ack、処理結果・処理済み記録 commit 後の inbox processing completion、各停止点の再配送、安定した effect operation と event ID の冪等キー、外部効果成功後の処理済み記録、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視)+レビュー(CancellationToken の伝播) |
 | inspection | 型消去の cast allowlist | analyzer(Roslyn analyzer。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | photinox | desktop の host | 構造検査(bridge の引数に認証主体と資格情報の型が現れないこと、core の公開 API 呼出が adapter の宣言された保護を適用する入口に限られ、認証主体と資格情報を受けず必要な業務入力だけを受けること)+実行テスト(認証 adapter の資格情報から認証主体への確定、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core 公開 API の呼出、viewer 由来の認証主体と資格情報の拒否)+レビュー(native の widget を別に作っていないことの判断) |

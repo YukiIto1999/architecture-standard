@@ -8,7 +8,8 @@
 ## viewer の telemetry
 
 ### 要求
-viewer の trace と構造化 event の収集は、ui port の背後に閉じる。これを OpenTelemetry JS の modular な browser 構成で満たす。
+viewer の trace と構造化 event の収集は、ui port の背後に閉じる。
+これを OpenTelemetry JS の modular な browser 構成で満たす。
 trace と event は同じ文脈で相関させ、OTLP/HTTP で collector へ送る。
 SDK の登録と exporter の構成は、host の adapter が持つ。
 
@@ -16,7 +17,7 @@ SDK の登録と exporter の構成は、host の adapter が持つ。
 収集を境界の殻で行う規律([observability](../../concerns/observability/README.md))に、ui port の背後の OpenTelemetry で応える。
 viewer 本体が SDK に触れると、収集の機構が UI の関心へ漏れる。
 API と SDK を分ける OpenTelemetry の構成は、port の型を API だけに依存させ、SDK を adapter に隔離できる。
-独立した UI の event は、trace の文脈を付けた LogRecord で表すと、trace と同じ文脈で相関できる。
+UI の event を同じ active span の span event として記録すれば、trace と同じ文脈で相関できる。
 
 ### 完了条件
 収集の呼び出しが、ui port の型だけに依存している。

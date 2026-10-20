@@ -53,6 +53,12 @@ case "$TEST_ROOT" in
     exit 1
     ;;
 esac
+# 所有する回帰用一時領域に限定した終了時の後始末
+# - 対象: `$TEMP_BASE/architecture-standard-verify-test.*` に一致する既存の `TEST_ROOT`
+# - 副作用: 対象内の全ディレクトリへの所有者書き込み権限の付与
+# - 副作用: 対象ツリーの再帰削除
+# - 戻り値: 対象外か不存在なら 0 で削除時は `rm` の終了 status
+# - 失敗: 権限変更失敗時の実行中断
 cleanup() {
   case "$TEST_ROOT" in
     "$TEMP_BASE"/architecture-standard-verify-test.*)
@@ -71,6 +77,14 @@ trap 'exit 143' TERM
 passed=0
 failed=0
 
+# 現行の標準一式を基にした独立した回帰用 root の作成
+# - `$1`: `TEST_ROOT` 内に収まる fixture 名
+# - 入力: 複製元となる `STANDARD_ROOT` の標準一式
+# - 副作用: `$TEST_ROOT/$1` への fixture ツリーの作成
+# - 出力: 標準出力への fixture root の path
+# - 戻り値: 作成成功時の 0
+# - 失敗: directory 作成失敗か複製失敗での戻り値 1
+# - 失敗時の状態: 作成途中の fixture の残存
 make_fixture() {
   local name="$1"
   local fixture="$TEST_ROOT/$name"
@@ -89,6 +103,15 @@ make_fixture() {
   printf '%s\n' "$fixture"
 }
 
+# 呼び出し元の作業 directory を変えない Bash driver の隔離実行
+# - `$1`: `$2` から参照できる Bash driver の path
+# - `$2`: driver 専用 subshell の作業 directory
+# - `$3` 以降: driver へ渡す任意の引数
+# - 入力: driver へ継承する標準入力
+# - 実行環境: `TEST_ROOT` を上限とする Git repository 探索
+# - 出力: driver の標準エラー出力を統合した標準出力
+# - 戻り値: driver の終了 status
+# - 失敗: 作業 directory への移動失敗時の終了 status 1
 run_driver() {
   local driver="$1"
   local cwd="$2"
@@ -100,6 +123,13 @@ run_driver() {
   ) 2>&1
 }
 
+# fixture root を明示する検査 driver の起動
+# - `$1`: `--standard-root` に渡す検査対象の fixture root
+# - `$2`: 省略時か空文字列時に `$SCRIPT_DIR/verify.sh` を使う driver の path
+# - 作業 directory: `TEST_ROOT` の subshell
+# - 入力: driver へ継承する標準入力
+# - 出力: driver の標準エラー出力を統合した標準出力
+# - 戻り値: `run_driver` の終了 status
 run_verify() {
   local fixture="$1"
   local driver="${2:-$SCRIPT_DIR/verify.sh}"
@@ -107,17 +137,37 @@ run_verify() {
   run_driver "$driver" "$TEST_ROOT" --standard-root "$fixture"
 }
 
+# 全体集計へ加算する回帰ケースの成功記録
+# - `$1`: 結果行に載せるテスト名
+# - 出力: 標準出力への `PASS:` 行
+# - 副作用: `passed` の 1 加算
+# - 戻り値: 記録後の 0
 record_pass() {
   printf 'PASS: %s\n' "$1"
   passed=$((passed + 1))
 }
 
+# 後続ケースを継続する回帰ケースの失敗記録
+# - `$1`: 結果行に載せるテスト名
+# - `$2`: 字下げして表示する失敗理由
+# - 出力: 標準出力への失敗理由付きの `FAIL:` 行
+# - 副作用: `failed` の 1 加算
+# - 戻り値: 失敗の記録後も 0
 record_fail() {
   printf 'FAIL: %s\n' "$1"
   printf '%s\n' "$2" | sed 's/^/  /'
   failed=$((failed + 1))
 }
 
+# 対象の標準本文を受理する検査実行の合否記録
+# - `$1`: 結果行に載せるテスト名
+# - `$2`: 検査対象の fixture root
+# - `$3`: 省略時か空文字列時に `$SCRIPT_DIR/verify.sh` を使う driver の path
+# - 収集: driver の標準エラー出力を統合した標準出力
+# - 判定: driver の終了 status 0 による成功
+# - 出力: 失敗時に収集結果を添える標準出力への合否記録
+# - 副作用: 判定に対応する `passed` か `failed` の 1 加算
+# - 戻り値: 判定結果にかかわらない 0
 expect_pass() {
   local label="$1"
   local fixture="$2"
@@ -131,6 +181,15 @@ expect_pass() {
   fi
 }
 
+# 想定した診断を伴う標準本文の拒否の合否記録
+# - `$1`: 結果行に載せるテスト名
+# - `$2`: 検査対象の fixture root
+# - `$3` 以降: 統合出力内で全件の固定文字列一致を求める任意の診断
+# - 収集: 既定の `verify.sh` の標準エラー出力を統合した標準出力
+# - 判定: `verify.sh` の非 0 終了
+# - 出力: 不一致の理由を添える標準出力への合否記録
+# - 副作用: 判定に対応する `passed` か `failed` の 1 加算
+# - 戻り値: 判定結果にかかわらない 0
 expect_fail() {
   local label="$1"
   local fixture="$2"
@@ -152,6 +211,19 @@ $output"
   record_pass "$label"
 }
 
+# 本文検査の開始前に引数を拒否する driver の合否記録
+# - `$1`: 結果行に載せるテスト名
+# - `$2`: 期待する終了 status
+# - `$3`: 統合出力内で固定文字列一致を求める診断
+# - `$4`: 実行する Bash driver の path
+# - `$5`: driver 専用 subshell の作業 directory
+# - `$6` 以降: driver へ渡す任意の引数
+# - 収集: driver の標準エラー出力を統合した標準出力
+# - 判定: 期待する終了 status への一致
+# - 判定: 統合出力内の検査開始 marker `=== 1.` の不在
+# - 出力: 不一致の理由を添える標準出力への合否記録
+# - 副作用: 判定に対応する `passed` か `failed` の 1 加算
+# - 戻り値: 判定結果にかかわらない 0
 expect_rejected_before_checks() {
   local label="$1"
   local expected_status="$2"
@@ -177,6 +249,12 @@ $output"
   fi
 }
 
+# 対象 root に属する検査 package の独立した複製
+# - `$1`: 既存 package の置換を許す `TEST_ROOT` 配下の fixture root
+# - 入力: 複製元となる `SCRIPT_DIR` の script 一式
+# - 副作用: `$1/skills/standard-update/scripts` の既存ツリーの置換
+# - 戻り値: 複製 command の終了 status
+# - 失敗: 削除失敗か directory 作成失敗か複製失敗による実行中断
 place_package_copy() {
   local root="$1"
 
@@ -185,6 +263,15 @@ place_package_copy() {
   cp -a "$SCRIPT_DIR" "$root/skills/standard-update/scripts"
 }
 
+# package と対象 root の取り違えを検出する標準本文への違反注入
+# - `$1`: 本文の変更を許す `TEST_ROOT` 配下の fixture root
+# - 副作用: 逐語重複の注入
+# - 副作用: 必須節の順序違反の注入
+# - 副作用: 存在しない見出し引用の注入
+# - 副作用: 未登録製品名の注入
+# - 副作用: 統一済み語彙の旧表記の注入
+# - 戻り値: 最後の追記 command の終了 status
+# - 失敗: 書き込み失敗か置換失敗による実行中断
 poison_norm() {
   local root="$1"
   local overlap_line='検査用の「これは見出しではない引用でありそのまま重複判定に含まれる」文である。'
@@ -345,7 +432,24 @@ expect_pass "製品名の部分文字列だけでは違反にしない" "$fixtur
 
 fixture=$(make_fixture product-at-prefix)
 printf '\n@typespec/openapi3 を原則本文で名指しする。\n' >> "$fixture/principles/comment/no-code-explanation.md"
-expect_fail "@ で始まる製品名を正規名の境界で検出する" "$fixture" "台帳由来の製品名: @typespec/openapi3"
+expect_fail "@ で始まる製品名を正規名の境界で検出する" "$fixture" "@typespec/openapi3"
+
+fixture=$(make_fixture product-adoption-declaration)
+adoption_entry="$TEST_ROOT/product-adoption-declaration.md"
+awk '
+  /^採用は、/ {
+    print "採用は、Schemathesis と"
+    print "ContinuationProduct である。token は説明用の引数名である。"
+    print "back-channel logout token の検証の分担は別の採用機構が受け持つ。"
+    next
+  }
+  { print }
+' "$fixture/tools/build/schemathesis.md" > "$adoption_entry"
+mv -- "$adoption_entry" "$fixture/tools/build/schemathesis.md"
+printf '\ntoken を引数名として使う。\n' >> "$fixture/principles/comment/no-code-explanation.md"
+expect_pass "採用宣言に続く同一行と次行の説明中の token を製品名にしない" "$fixture"
+printf '\nContinuationProduct を原則本文で名指しする。\n' >> "$fixture/principles/comment/no-code-explanation.md"
+expect_fail "物理改行をまたぐ採用宣言の製品名の漏れを検出する" "$fixture" "ContinuationProduct"
 
 fixture=$(make_fixture product-build-registry)
 printf '\nNx は、task graph の orchestrator である。\n' >> "$fixture/structure/tests/layout.md"
@@ -407,9 +511,9 @@ fixture=$(make_fixture concept-ledger-missing-verification)
 sed -i 's/^- \[個人情報は最小化して載せ、期限で消す\](\.\/minimize-and-expire\.md).*$/- [個人情報は最小化して載せ、期限で消す](.\/minimize-and-expire.md)/' "$fixture/concerns/privacy/README.md"
 expect_fail "検証手段を欠く台帳行を検出する" "$fixture" "概念フォルダの台帳が不一致"
 
-fixture=$(make_fixture tool-entry-line-missing)
+fixture=$(make_fixture tool-entry-withdrawal-missing)
 sed -i '/^撤回条件は、/d' "$fixture/languages/rust/sqlx.md"
-expect_fail "languages のツール file の entry 4行の欠落を検出する" "$fixture" "entry の4行を欠くツール file あり"
+expect_fail "languages のツール file の撤回条件の欠落を検出する" "$fixture"
 
 fixture=$(make_fixture package-poisoned-norm)
 poison_norm "$fixture"
@@ -458,6 +562,249 @@ expect_rejected_before_checks "--standard-root の空の値を拒否する" 2 "�
 expect_rejected_before_checks "--standard-root の重複を拒否する" 2 "空でない path を一度だけ" "$verify_driver" "$valid_cwd" --standard-root "$valid_cwd" --standard-root "$valid_cwd"
 expect_rejected_before_checks "未知の引数を拒否する" 2 "不明な引数: --unknown" "$verify_driver" "$valid_cwd" --unknown
 expect_rejected_before_checks "= 形の --standard-root を未知の引数として拒否する" 2 "不明な引数: --standard-root=$valid_cwd" "$verify_driver" "$valid_cwd" "--standard-root=$valid_cwd"
+
+if output=$(node --input-type=module - "$SCRIPT_DIR" "$TEST_ROOT" <<'NODE'
+import { strict as assert, AssertionError } from "node:assert";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+
+const [scripts, temp] = process.argv.slice(2);
+const axes = ["formation", "translation", "connection", "coordination", "publication", "inspection", "conventions"];
+
+/**
+ * 実際の文書解析 CLI に渡す最小標準ツリーの作成
+ * @param {string} name - 一時 root 内で一意の fixture 名
+ * @param {Record<string, string[]>} documents - 相対パスをキーとする Markdown の行
+ * @returns {string} 作成した標準 root の絶対パス
+ * @throws {@link Error} fixture の書込み失敗
+ */
+function makeMarkdownRoot(name, documents) {
+  const root = join(temp, `markdown-${name}`);
+  for (const area of ["principles", "concerns", "structure", "tools", "languages", "process"]) {
+    mkdirSync(join(root, area), { recursive: true });
+  }
+  writeFileSync(join(root, "README.md"), "");
+  for (const language of ["rust", "csharp", "typescript"]) {
+    mkdirSync(join(root, "languages", language));
+    for (const axis of axes) writeFileSync(join(root, "languages", language, `${axis}.md`), "");
+  }
+  for (const [file, lines] of Object.entries(documents)) writeFileSync(join(root, file), lines.join("\n"));
+  return root;
+}
+
+/**
+ * 閉じ記号の判定を誤ると偽の本文を露出する文書の構築
+ * @param {string} marker - 三文字か四文字の同じフェンス記号
+ * @param {string[]} inside - フェンスの内部だけに現れる検査対象
+ * @param {string[]} outside - 有効な閉じ記号の後の実際の本文
+ * @returns {string[]} 元の行番号の期待値を計算できる文書の行
+ */
+function fencedDocument(marker, inside, outside) {
+  const other = (marker[0] === "`" ? "~" : "`").repeat(marker.length);
+  const close = marker + (marker.length > 3 ? marker[0] : "");
+  return [
+    ` \t${marker}markdown`,
+    ...inside,
+    marker.slice(1),
+    ...inside,
+    other,
+    ...inside,
+    `${marker}not-a-closer`,
+    ...inside,
+    ` \t${close} \t\r`,
+    ...outside,
+  ];
+}
+
+/**
+ * 最小標準ツリーに対する実際の文書解析 CLI の実行
+ * @param {string} script - 選択した package 内の解析 script の名前
+ * @param {string} root - 検査する最小標準ツリー
+ * @param {number} status - 契約上の終了 status
+ * @returns {string} 診断の検証に使う標準出力
+ * @throws {@link AssertionError} CLI の起動失敗
+ * @throws {@link AssertionError} 終了 status の不一致
+ */
+function analyze(script, root, status) {
+  const run = spawnSync(process.execPath, [join(scripts, script), "--standard-root", root], { encoding: "utf8" });
+  assert.ifError(run.error);
+  assert.equal(run.status, status, `${script}\n${run.stderr}\n${run.stdout}`);
+  return run.stdout;
+}
+
+for (const marker of ["```", "~~~", "````", "~~~~"]) {
+  const label = `${marker[0] === "`" ? "backtick" : "tilde"}-${marker.length}`;
+  const fakeHeading = "囲いの内部だけにある見出し";
+  const realHeading = "閉じ記号の後の実見出し";
+  const invalidCitation = `[規律](../principles/target.md) の「${fakeHeading}」に従う。`;
+  const citationLines = fencedDocument(marker, [
+    "[規律](../principles/target.md) の「存在しない引用」に従う。",
+  ], [
+    `[規律](../principles/target.md) の「${realHeading}」に従う。`,
+    invalidCitation,
+  ]);
+  const headingRoot = makeMarkdownRoot(`${label}-heading`, {
+    "principles/target.md": fencedDocument(marker, [`## ${fakeHeading}`], [`## ${realHeading}`]),
+    "concerns/source.md": citationLines,
+  });
+  const headingOutput = analyze("heading-citation-check.mjs", headingRoot, 1);
+  assert.match(headingOutput, /^citation violations: 1$/m, label);
+  assert.deepEqual(
+    [...headingOutput.matchAll(/^concerns\/source\.md:(\d+):/gm)].map((match) => Number(match[1])),
+    [citationLines.indexOf(invalidCitation) + 1],
+    label,
+  );
+
+  const namingLines = fencedDocument(marker, ["HiddenUnregistered である。"], [
+    "RegisteredAfterClosure である。",
+    "VisibleUnregistered である。",
+  ]);
+  const namingRoot = makeMarkdownRoot(`${label}-naming`, {
+    "tools/catalog.md": fencedDocument(marker, [
+      "## FencedRegistryName",
+      "採用は、VisibleUnregistered である。",
+    ], ["## RegisteredAfterClosure"]),
+    "concerns/source.md": namingLines,
+  });
+  const namingOutput = analyze("naming-registry-check.mjs", namingRoot, 0);
+  assert.match(namingOutput, /^violations: 1$/m, label);
+  assert.deepEqual(
+    [...namingOutput.matchAll(/^([^\t\r\n]+):(\d+)\t([^\t\r\n]+)\t".*"$/gm)].map((match) => ({
+      file: match[1], line: Number(match[2]), token: match[3],
+    })),
+    [{ file: "concerns/source.md", line: namingLines.indexOf("VisibleUnregistered である。") + 1, token: "VisibleUnregistered" }],
+    label,
+  );
+
+  const hiddenOverlap = "囲いの中の例文は十分に長くても逐語一致検査の対象には含めない。";
+  const realOverlap = "閉じたフェンスに続く実際の重複本文は元の行番号で検査する。";
+  const fakeOverlapHeading = "コードの例にしか存在しない長い見出しの引用は一致検査の対象";
+  const realOverlapHeading = "本文に実在する長い見出しの引用は一致検査の対象外";
+  const fakeQuote = `「${fakeOverlapHeading}」`;
+  const realQuote = `「${realOverlapHeading}」`;
+  const principleLines = fencedDocument(marker, [hiddenOverlap, `## ${fakeOverlapHeading}`], [
+    `## ${realOverlapHeading}`, realOverlap, fakeQuote, realQuote,
+  ]);
+  const concernLines = fencedDocument(marker, [hiddenOverlap], [realOverlap, fakeQuote, realQuote]);
+  const overlapRoot = makeMarkdownRoot(`${label}-overlap`, {
+    "principles/source.md": principleLines,
+    "concerns/source.md": concernLines,
+  });
+  const overlapOutput = analyze("verbatim-overlap.mjs", overlapRoot, 0);
+  assert.match(overlapOutput, /^candidates: 2$/m, label);
+  const overlaps = [...overlapOutput.matchAll(/^(\d+)\t([^:\t\r\n]+):(\d+)\t<->\t([^:\t\r\n]+):(\d+)\t"(.*)"$/gm)];
+  assert.deepEqual(overlaps.map((match) => ({
+    length: Number(match[1]),
+    concernFile: match[2],
+    concernLine: Number(match[3]),
+    principleFile: match[4],
+    principleLine: Number(match[5]),
+    text: match[6],
+  })), [realOverlap, fakeQuote].sort((a, b) => b.length - a.length).map((text) => ({
+    length: text.length,
+    concernFile: "concerns/source.md",
+    concernLine: concernLines.indexOf(text) + 1,
+    principleFile: "principles/source.md",
+    principleLine: principleLines.indexOf(text) + 1,
+    text,
+  })), label);
+
+  const unclosedRoot = makeMarkdownRoot(`${label}-unclosed`, {
+    "principles/source.md": [marker, hiddenOverlap],
+    "concerns/source.md": [marker, hiddenOverlap, "HiddenUnregistered である。", invalidCitation],
+  });
+  assert.match(analyze("heading-citation-check.mjs", unclosedRoot, 0), /^citation violations: 0$/m, label);
+  assert.match(analyze("naming-registry-check.mjs", unclosedRoot, 0), /^violations: 0$/m, label);
+  assert.match(analyze("verbatim-overlap.mjs", unclosedRoot, 0), /^candidates: 0$/m, label);
+}
+
+const knownCategoryRoot = makeMarkdownRoot("declared-size-and-multiline-adoption", {
+  "tools/catalog.md": [
+    "# FirstProduct",
+    "用途は、検査用である。",
+    "採用は、FirstProduct である。",
+    "追加の採用は ContinuationProduct である。",
+    "back-channel logout token の分担の説明語は ExplanationTerm とする。",
+    "判断基準は、検査用である。",
+    "撤回条件は、検査の終了である。",
+  ],
+  "concerns/source.md": [
+    "これらは Tiny と Huge である。",
+    "取得する機構は ContinuationProduct である。",
+    "登録のない機構は UnregisteredProduct である。",
+    "採用していない説明語は ExplanationTerm である。",
+  ],
+});
+mkdirSync(join(knownCategoryRoot, "structure/tests"));
+writeFileSync(join(knownCategoryRoot, "structure/tests/layout.md"), [
+  "## サイズによる配置",
+  "Tiny は、プロセス内の検査とする。",
+  "Huge は、外部環境の検査とする。",
+].join("\n"));
+const categoryOutput = analyze("naming-registry-check.mjs", knownCategoryRoot, 0);
+assert.match(categoryOutput, /^violations: 2$/m);
+assert.deepEqual(
+  [...categoryOutput.matchAll(/^([^\t\r\n]+):(\d+)\t([^\t\r\n]+)\t".*"$/gm)].map((match) => ({
+    file: match[1], line: Number(match[2]), token: match[3],
+  })),
+  [
+    { file: "concerns/source.md", line: 3, token: "UnregisteredProduct" },
+    { file: "concerns/source.md", line: 4, token: "ExplanationTerm" },
+  ],
+);
+
+const citationSource = [
+  "[connection](./connection.md) の「ReferenceOnlyMechanism」は、参照先の規律である。",
+  "[connection](./connection.md) の「ReferenceOnlyMechanism」と AdjacentUnregistered は、別の指定である。",
+  "[connection](./connection.md) の「QuotedUnregistered」は、存在しない規律名である。",
+  "ReferenceOnlyMechanism は、参照でない直接の指定である。",
+];
+const citedProductRoot = makeMarkdownRoot("product-candidates-beside-rule-citations", {
+  "languages/csharp/connection.md": ["## ReferenceOnlyMechanism"],
+  "languages/csharp/formation.md": citationSource,
+});
+const citedProductOutput = analyze("naming-registry-check.mjs", citedProductRoot, 0);
+assert.match(citedProductOutput, /^violations: 3$/m);
+assert.deepEqual(
+  [...citedProductOutput.matchAll(/^([^\t\r\n]+):(\d+)\t([^\t\r\n]+)\t".*"$/gm)].map((match) => ({
+    file: match[1], line: Number(match[2]), token: match[3],
+  })),
+  [
+    { file: "languages/csharp/formation.md", line: 2, token: "AdjacentUnregistered" },
+    { file: "languages/csharp/formation.md", line: 3, token: "QuotedUnregistered" },
+    { file: "languages/csharp/formation.md", line: 4, token: "ReferenceOnlyMechanism" },
+  ],
+);
+
+const genuineOverlap = "引用の外にある十分に長い本文の一致は検出する。";
+const quoteBoundaryRoot = makeMarkdownRoot("quoted-headings-are-not-filename-text", {
+  "principles/left-operations.md": [
+    "## 原則側の引用見出し",
+    "原則は「関心側の引用見出し」に従う。",
+    `${genuineOverlap}「関心側の引用見出し」原則の補足`,
+  ],
+  "concerns/right-operations.md": [
+    "## 関心側の引用見出し",
+    "関心は「原則側の引用見出し」に従う。",
+    `${genuineOverlap}「原則側の引用見出し」関心の補足`,
+  ],
+});
+const quoteBoundaryOutput = analyze("verbatim-overlap.mjs", quoteBoundaryRoot, 0);
+assert.match(quoteBoundaryOutput, /^candidates: 1$/m);
+assert.equal(quoteBoundaryOutput.includes("\u0000"), false);
+assert.deepEqual(
+  [...quoteBoundaryOutput.matchAll(/^(\d+)\t([^:\t\r\n]+):(\d+)\t<->\t([^:\t\r\n]+):(\d+)\t"(.*)"$/gm)].map((match) => ({
+    concernLine: Number(match[3]), principleLine: Number(match[5]), text: match[6],
+  })),
+  [{ concernLine: 3, principleLine: 3, text: genuineOverlap }],
+);
+NODE
+); then
+  record_pass "文書解析 CLI がフェンスの境界と元の診断行番号を共有する"
+else
+  record_fail "文書解析 CLI がフェンスの境界と元の診断行番号を共有する" "$output"
+fi
 
 package_driver="$SCRIPT_DIR/skill-package-check.sh"
 expect_rejected_before_checks "package checker は存在しない root を別の root へ置き換えない" 2 "$TEST_ROOT/missing-root" "$package_driver" "$valid_cwd" --standard-root "$TEST_ROOT/missing-root"
@@ -519,7 +866,6 @@ else
   record_fail "mktemp 失敗時に作成・コピー・削除を行わず終了する" "status=$mktemp_status
 $output"
 fi
-
 printf '\nテスト: %d passed, %d failed\n' "$passed" "$failed"
 if [ "$failed" -eq 0 ]; then
   exit 0

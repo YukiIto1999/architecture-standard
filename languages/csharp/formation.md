@@ -9,7 +9,8 @@ principles の [modeling](../../principles/modeling/README.md) が定める業�
 ### 要求
 業務の値は record で表し、constructor を非公開にして検証付きの static の factory に構築を一点化する。
 引数なしの構築を塞ぎ、検証を経ない既定値を作れないようにする。
-不変条件を完全に守る値オブジェクトは record class にする。readonly record struct は引数なしの構築を隠せず既定値を作れてしまうため、不変条件を守る値には使わない。
+不変条件を完全に守る値オブジェクトは record class にする。
+readonly record struct は引数なしの構築を隠せず既定値を作れてしまうため、不変条件を守る値には使わない。
 
 ### 根拠
 record は値の等価と非破壊的変更と不変の既定を備え、値オブジェクトの土台になる。
@@ -42,8 +43,8 @@ constructor を非公開にし、生成を検証付き factory へ一点化す�
 ```csharp
 public sealed record Address
 {
-    public string Street { get; init; }
-    public string ZipCode { get; init; }
+    public string Street { get; private init; }
+    public string ZipCode { get; private init; }
     private Address(string street, string zipCode) => (Street, ZipCode) = (street, zipCode);
     public static Result<Address, AddressFailure> Create(string street, string zipCode) =>
         IsValidZip(zipCode)
@@ -100,7 +101,8 @@ protected な copy constructor を経由した階層の外からの派生の防�
 var label = account switch { Account.Iban iban => iban.Value, _ => throw new ArgumentOutOfRangeException() };
 ```
 
-派生を内部に閉じ、default も破棄アームもない switch にする。suppressor は閉じた階層の CS8509 だけを抑止するため、バリアントを足すと未処理を検出できる。
+派生を内部に閉じ、default も破棄アームもない switch にする。
+suppressor は閉じた階層の CS8509 だけを抑止するため、バリアントを足すと未処理を検出できる。
 
 ```csharp
 public abstract record Account
@@ -115,33 +117,40 @@ public abstract record Account
 var label = account switch { Account.Iban iban => iban.Value, Account.Swift swift => swift.Value };
 ```
 
-## 継承を判別共用体に限る
+## 継承を閉じた型階層と境界の契約に限る
 
 ### 要求
-継承は、判別共用体の宣言にだけ使う。
+自作の class と record class の継承は、閉じた判別共用体の宣言か、言語または採用済み framework が必須とする基底型の契約への適合に限る。
+基底型の契約への適合は、その契約を実装する境界の型に閉じ、業務概念を表す型の階層を拡張する経路にしない。
 振る舞いの再利用や Template Method のために、abstract や継承を使わない。
-判別共用体の基底でない型は、sealed にする。
+自作の class と record class は、判別共用体の基底以外を sealed にする。
 振る舞いの共有は、継承でなく合成と委譲で得る。
 
 ### 根拠
-C# の継承は、abstract record の基底と sealed なバリアントで判別共用体を宣言する手段として要る。
+abstract record の基底と sealed なバリアントは、自分たちが所有する型の選択肢を、閉じた判別共用体として宣言する手段になる。
+[connection](./connection.md) の「効果を Effect 型で組む」が要求する `UninitializedEffectException : Exception` は、業務の選択肢を増やす継承でなく、欠陥を例外として送出する言語の契約への適合である。
+言語と framework が定める基底型への適合を、自分たちが所有する型階層の拡張と区別すれば、必要な接続を実装しても業務概念を表す型の集合を開かずに済む。
 振る舞いの再利用のための継承は、基底と派生を密に結び、基底の変更が全派生へ波及する。
 Template Method で派生に隙間を残すと、型の集合が外から開き、不正な状態の構築を許す。
-継承しない型を sealed にすると、想定しない派生を型で禁じ、型の集合が閉じたままになる。
+判別共用体の基底以外の自作の class と record class を sealed にすると、想定しない派生を型で禁じ、自分たちが所有する型の集合を閉じたままにできる。
 振る舞いを合成と委譲で組めば、各部品が独立して差し替えられ、結合が緩い。
 
 ### 完了条件
-継承が、判別共用体の宣言にだけ使われている。
-判別共用体の基底でない型が、sealed である。
+全ての基底型への継承が、閉じた判別共用体の宣言か、言語または採用済み framework が必須とする基底型の契約への適合として説明できる。
+後者の継承が境界の型に閉じ、必須の契約を言語仕様または採用済み framework の API から示せる。
+自作の class と record class が、判別共用体の基底以外は sealed である。
 振る舞いの共有が、合成と委譲で実現されている。
 
 ### 禁止事項
 振る舞いの再利用や Template Method のために、abstract や継承を使うこと。
-判別共用体の基底でない型を、sealed にせず派生の余地を残すこと。
+判別共用体の基底以外の自作の class と record class を、sealed にせず派生の余地を残すこと。
+基底型の契約への適合を理由に、業務概念を表す型の階層を開いたり、継承で業務の振る舞いを共有したりすること。
+基底型への継承が契約上必須でないのに、framework を使うことだけを理由として継承すること。
 
 ### 行動
-継承を、abstract record の基底と sealed なバリアントによる判別共用体の宣言にだけ使う。
-判別共用体の基底でない型を、sealed で宣言する。
+自分たちが所有する型の選択肢は、abstract record の基底と sealed なバリアントによる閉じた判別共用体で宣言する。
+言語または採用済み framework の API が基底型を要求する接続は、その契約を実装する境界の型へ閉じる。
+自作の class と record class は、判別共用体の基底以外を sealed で宣言する。
 共有したい振る舞いは、型を部品として持ち、委譲で呼ぶ。
 
 ### 例

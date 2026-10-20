@@ -6,14 +6,21 @@ BEGIN {
   required[5] = "行動"
 }
 
+# 次の規律単位に備えた必須節の集計状態の初期化
+# - ローカル `i`: 必須節の集計位置
+# - 状態 `counts`: 必須5節の出現回数の 0 への初期化
+# - 状態 `observed`: 必須節の出現順の空文字への初期化
+# - 状態 `marker_seen`: 必須節の検出有無の 0 への初期化
 function clear_section(    i) {
   for (i = 1; i <= 5; i++) counts[i] = 0
   observed = ""
   marker_seen = 0
 }
 
-# ツール file(ecosystem 直下の軸 file 以外)では、5節マーカーを一つも持たない H2 は
-# 採用エントリであり規律単位に数えない。軸 file では全 H2(免除以外)が単位。
+# 必須節のない entry を規律単位から除外する file 分類
+# - `file`: 軸 file の除外を判定する標準 root 相対 path
+# - ローカル `base`: 軸 file の除外判定に使う basename
+# - 戻り値: 採用を所有する tool file であることの真偽
 function is_tool_file(file,    base) {
   if (file !~ /(^|\/)(tools\/(build|platforms|services)|languages\/(rust|csharp|typescript))\/[^/]+\.md$/) return 0
   base = file
@@ -22,6 +29,10 @@ function is_tool_file(file,    base) {
   return !(base ~ /^(formation|translation|connection|coordination|publication|inspection|conventions)$/)
 }
 
+# 必須5節の検査対象から除外する案内見出しの判定
+# - `title`: `##` の接頭辞から分離した末尾空白のない節見出し
+# - `file`: 節を所有する検査対象 file の path
+# - 戻り値: file の配置に応じた除外見出しであることの真偽
 function is_non_unit(title, file) {
   if (file ~ /(^|\/)concerns\/[^/]+\.md$/) {
     return title == "概要" || title == "参照"
@@ -34,6 +45,20 @@ function is_non_unit(title, file) {
   return 0
 }
 
+# 確定した規律単位の必須節の検査結果の集計
+# - ローカル `i`: 必須節の検査位置
+# - ローカル `counts_text`: 必須節ごとの件数の診断文字列
+# - ローカル `expected_order`: 要求から行動までの正規の必須節順序
+# - ローカル `valid`: 必須節の件数と順序が規定どおりであることの真偽
+# - 入力状態: `has_section`・`non_unit`・`section_qualified`・`marker_seen` による検査対象の識別
+# - 入力状態: `counts`・`observed` に保持する必須節の出現状況
+# - 入力状態: `required` に保持する必須節名
+# - 入力状態: `section_file`・`section_line`・`section_title` に保持する節の出典
+# - 対象外: 未開始の節か案内見出し
+# - 対象外: 必須節が未検出の採用 file の節
+# - 状態: 検査対象の節数を保持する `units` の加算
+# - 状態: 不正な節数を保持する `violations` の加算
+# - 出力: 不正な節の出典を含む必須節診断の標準出力
 function flush_section(    i, counts_text, expected_order, valid) {
   if (!has_section || non_unit) return
   if (section_qualified && !marker_seen) return

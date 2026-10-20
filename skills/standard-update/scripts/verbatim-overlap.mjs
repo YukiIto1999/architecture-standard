@@ -1,11 +1,8 @@
 #!/usr/bin/env node
-// principles と concerns の逐語一致(5文節相当)を機械検出する。goal-04 の再発防止。
-// 手法: line 単位のseed-and-extend部分文字列一致(シード長10文字→最大一致まで拡張)。
-// 日本語は分かち書きが無いため、5文節をおよそ18文字以上の連続一致として近似する。
-// 閾値未満は出力しない。閾値以上は真陽性か偽陽性かを人が判定する(短い定型句の一致は偽陽性になりうる)。
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { markdownBodyLines } from "./markdown-body-lines.mjs";
 
 const args = process.argv.slice(2);
 if (args.length !== 0 && (args.length !== 2 || args[0] !== "--standard-root" || args[1] === "")) {
@@ -16,8 +13,7 @@ const ROOT = fs.realpathSync(args.length === 2 ? args[1] : fileURLToPath(new URL
 const SEED = 10;
 const THRESHOLD = 18;
 
-// 名指し規則(root README)は正本の見出しの逐語引用を要求するため、
-// 「」で囲まれた見出しの引用は意図した一致であり、重複判定から除く。
+// 正本の見出しの逐語引用が必須のため鉤括弧内の見出しの重複判定は不可
 const AREAS = ["principles", "concerns", "structure", "tools", "languages", "process"];
 const HEADINGS = new Set();
 for (const area of AREAS) {
@@ -28,7 +24,7 @@ for (const area of AREAS) {
       const p = path.join(dir, entry);
       if (fs.statSync(p).isDirectory()) stack.push(p);
       else if (entry.endsWith(".md")) {
-        for (const line of fs.readFileSync(p, "utf8").split("\n")) {
+        for (const line of markdownBodyLines(fs.readFileSync(p, "utf8"))) {
           const m = line.match(/^#{1,3} (.+)$/);
           if (m) HEADINGS.add(m[1].trim());
         }
@@ -37,6 +33,12 @@ for (const area of AREAS) {
   }
 }
 
+/**
+ * 原則と関心事の逐語一致を調べる本文の収集
+ * @param {string} dir - 標準 root 相対の検査対象ディレクトリ
+ * @returns {Array<{file: string, lineNo: number, text: string}>} 元の行番号を保持した引用の間の本文断片
+ * @throws {@link Error} 対象ツリーへのアクセス失敗
+ */
 function readLines(dir) {
   const files = [];
   const stack = [dir];
@@ -51,18 +53,18 @@ function readLines(dir) {
   const out = [];
   for (const f of files) {
     const raw = fs.readFileSync(path.join(ROOT, dir, f), "utf8");
-    const noFence = raw.replace(/```[\s\S]*?```/g, "");
-    const lines = noFence.split("\n");
+    const lines = markdownBodyLines(raw);
     lines.forEach((lineRaw, idx) => {
       let line = lineRaw;
-      if (/^\s*#/.test(line)) return; // heading / section marker
-      if (/^\s*\|/.test(line)) return; // table row
-      if (/^\s*- \[/.test(line)) return; // ledger row (構造メタデータ)
-      line = line.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1"); // link text keep, path drop
-      line = line.replace(/「([^「」]+)」/g, (whole, name) => (HEADINGS.has(name) ? `\u0000${dir}/${f}:${idx}\u0000` : whole));
-      line = line.trim();
-      if (line.length < SEED) return;
-      out.push({ file: `${dir}/${f}`, lineNo: idx + 1, text: line });
+      if (/^\s*#/.test(line)) return;
+      if (/^\s*\|/.test(line)) return;
+      if (/^\s*- \[/.test(line)) return;
+      line = line.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
+      line = line.replace(/「([^「」]+)」/g, (whole, name) => (HEADINGS.has(name) ? "\u0000" : whole));
+      for (const segment of line.split("\u0000")) {
+        const text = segment.trim();
+        if (text.length >= SEED) out.push({ file: `${dir}/${f}`, lineNo: idx + 1, text });
+      }
     });
   }
   return out;
@@ -82,6 +84,14 @@ principlesLines.forEach((entry, lineIdx) => {
   }
 });
 
+/**
+ * 共通シードを含む関心事側の最大一致範囲の取得
+ * @param {string} cText - 関心事側の比較対象の本文
+ * @param {number} cPos - 関心事側の一致済みシードの開始位置
+ * @param {string} pText - 原則側の比較対象の本文
+ * @param {number} pPos - 原則側の同じシードの開始位置
+ * @returns {{from: number, to: number}} 関心事側の開始位置を含み終了位置を含まない UTF-16 単位の一致範囲
+ */
 function extend(cText, cPos, pText, pPos) {
   let start = 0;
   while (

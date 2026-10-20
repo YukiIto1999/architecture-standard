@@ -19,7 +19,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-required_commands=(rg fd awk sed find wc tr head tail sort diff dirname paste basename cut node)
+required_commands=(rg fd awk sed find wc tr head tail sort diff dirname paste cut node)
 [ -n "$STANDARD_ROOT_ARG" ] || required_commands+=(git)
 for required_command in "${required_commands[@]}"; do
   if ! command -v "$required_command" >/dev/null 2>&1; then
@@ -50,14 +50,35 @@ cd "$STANDARD_ROOT" || exit 1
 
 FAILED=0
 
+# 検査項目の成功結果の表示
+# - `$1`: 成功と判定した検査項目のメッセージ
+# - 出力: `PASS:` を付けたメッセージの標準出力
+# - 戻り値: echo の終了 status
 pass() { echo "PASS: $1"; }
+
+# 総合判定へ反映する検査項目の失敗の記録
+# - `$1`: 失敗と判定した検査項目のメッセージ
+# - 出力: `FAIL:` を付けたメッセージの標準出力
+# - 状態: 総合判定を保持する `FAILED` の 1 への更新
+# - 戻り値: メッセージ出力の成否に関係しない終了 status 0
 fail() { echo "FAIL: $1"; FAILED=1; }
 
-# 見出し行が正規表現 $2 に一致する節の中で、表の区切り行より後の本体行から $3 列目の値を一行ずつ出す。
-# 節は同じ深さ以上の見出しで閉じる。
+# 同階層以上の見出しまでの表からの一列の抽出
+# - `$1`: Markdown の入力 file
+# - `$2`: 節を開く見出しの正規表現
+# - `$3`: 1 から数える列の位置
+# - 出力: 表の区切り行に続く各行の前後空白を除いた列値
+# - 戻り値: 入力 file の読込失敗を含む awk の終了 status
 markdown_table_cells() {
   awk -v heading="$2" -v column="$3" '
+    # 節の終了境界の比較に使う ATX 見出しの深さの取得
+    # - `line`: 先頭の `#` に続く本文を持つ見出し行
+    # - 戻り値: 先頭に連続する `#` の個数
     function heading_level(line) { return match(line, /[^#]/) - 1 }
+
+    # 表の照合値からの周辺空白の除去
+    # - `value`: 前後の空白を除くセル値
+    # - 戻り値: 前後の空白を除いたセル値
     function trim(value) {
       sub(/^[[:space:]]+/, "", value)
       sub(/[[:space:]]+$/, "", value)
@@ -72,19 +93,38 @@ markdown_table_cells() {
   ' "$1"
 }
 
+# 台帳件数の比較に使う非空行数の集計
+# - 標準入力: 改行区切りの集計対象
+# - 出力: 空白のみの行を含む非空行の件数
+# - 戻り値: 集計 pipeline の終了 status
 count_lines() {
   sed '/^$/d' | wc -l | tr -d ' '
 }
 
+# inspection 対応表との照合に使う本文規律レコードの抽出
+# - `$1`: `languages/` 直下の走査対象の言語 directory 名
+# - 前提: 標準 root を作業 directory とする呼出し
+# - 入力: 言語 directory 直下の README.md を除く Markdown file
+# - 抽出対象: code fence 外に `### 要求` を持つ `##` 規律見出し
+# - 除外: `概要`・`規則と検証機構の対応`・`参照` の見出し
+# - 出力: `軸名 | 規律名<TAB>file:行番号` 形式の規律レコード
+# - 戻り値: 対象 file がない場合の終了 status 0
+# - 戻り値: 対象 file がある場合の最後の awk 呼出しの終了 status
+# - 失敗: 探索失敗や途中の awk 失敗の非集約
 language_body_discipline_records() {
   local language="$1"
   local file
   local axis
 
   while IFS= read -r file; do
-    axis=$(basename "$file" .md)
+    axis=${file##*/}
+    axis=${axis%.md}
     awk -v axis="$axis" '
-      # 規律の H2 は「### 要求」を持つ塊だけ。採用エントリの H2(用途は、…)は規律でない。
+      # code fence 候補の先頭記号数の取得
+      # - `line`: 先頭の fence 記号列を測る文字列
+      # - ローカル `marker`: 先頭記号の作業領域
+      # - ローカル `cursor`: 記号列の走査位置
+      # - 戻り値: 先頭に連続する backtick か tilde の個数
       function fence_run_length(line, marker, cursor) {
         marker = substr(line, 1, 1)
         if (marker != "`" && marker != "~") return 0
@@ -92,6 +132,17 @@ language_body_discipline_records() {
         return cursor - 1
       }
 
+      # 本文規律の抽出から除外する code fence 行の判定
+      # - `line`: fence 状態を適用する Markdown 行
+      # - ローカル `trimmed`: 行頭空白を除く作業領域
+      # - ローカル `marker`: 判定対象の先頭記号
+      # - ローカル `run_length`: 先頭記号の連続数
+      # - ローカル `remainder`: 閉じ fence 候補の記号列に続く文字列
+      # - 入力状態: `in_fence`・`fence_marker`・`fence_length` に保持する現在の fence 境界
+      # - 状態: fence 開始時の境界状態の設定
+      # - 状態: fence 終了時の境界状態の消去
+      # - 戻り値: fence 境界行か fence 内の行の場合の 1
+      # - 戻り値: fence 外の通常行の場合の 0
       function consume_fence(line, trimmed, marker, run_length, remainder) {
         trimmed = line
         sub(/^[[:space:]]+/, "", trimmed)
@@ -120,6 +171,8 @@ language_body_discipline_records() {
 
       consume_fence($0) { next }
 
+      # 次の見出しへ持ち越さない規律候補の破棄
+      # - 状態: 未出力レコードを保持する `pending` の空文字への初期化
       function flush_pending() {
         pending = ""
       }
@@ -142,16 +195,31 @@ language_body_discipline_records() {
   done < <(find "languages/$language" -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | sort)
 }
 
+# 本文規律との照合に使う inspection 対応表レコードの抽出
+# - `$1`: `languages/` 直下の対象の言語 directory 名
+# - 前提: 標準 root を作業 directory とする呼出し
+# - 入力: `languages/$1/inspection.md`
+# - 抽出対象: code fence 外の `規則と検証機構の対応` 節の表
+# - 出力: `軸名 | 規律名<TAB>file:行番号` 形式の規律レコード
+# - 戻り値: 入力 file の読込失敗を含む awk の終了 status
 language_inspection_discipline_records() {
   local language="$1"
 
   awk '
+    # 対応表の照合値からの周辺空白の除去
+    # - `value`: 前後の空白を除くセル値
+    # - 戻り値: 前後の空白を除いたセル値
     function trim(value) {
       sub(/^[[:space:]]+/, "", value)
       sub(/[[:space:]]+$/, "", value)
       return value
     }
 
+    # code fence 候補の先頭記号数の取得
+    # - `line`: 先頭の fence 記号列を測る文字列
+    # - ローカル `marker`: 先頭記号の作業領域
+    # - ローカル `cursor`: 記号列の走査位置
+    # - 戻り値: 先頭に連続する backtick か tilde の個数
     function fence_run_length(line, marker, cursor) {
       marker = substr(line, 1, 1)
       if (marker != "`" && marker != "~") return 0
@@ -159,6 +227,17 @@ language_inspection_discipline_records() {
       return cursor - 1
     }
 
+    # 対応表の抽出から除外する code fence 行の判定
+    # - `line`: fence 状態を適用する Markdown 行
+    # - ローカル `trimmed`: 行頭空白を除く作業領域
+    # - ローカル `marker`: 判定対象の先頭記号
+    # - ローカル `run_length`: 先頭記号の連続数
+    # - ローカル `remainder`: 閉じ fence 候補の記号列に続く文字列
+    # - 入力状態: `in_fence`・`fence_marker`・`fence_length` に保持する現在の fence 境界
+    # - 状態: fence 開始時の境界状態の設定
+    # - 状態: fence 終了時の境界状態の消去
+    # - 戻り値: fence 境界行か fence 内の行の場合の 1
+    # - 戻り値: fence 外の通常行の場合の 0
     function consume_fence(line, trimmed, marker, run_length, remainder) {
       trimmed = line
       sub(/^[[:space:]]+/, "", trimmed)
@@ -203,10 +282,18 @@ language_inspection_discipline_records() {
   ' "languages/$language/inspection.md"
 }
 
+# 規律レコード間の集合比較に使う一意なキー一覧の抽出
+# - 標準入力: 第1列を照合キーとするタブ区切りの規律レコード
+# - 出力: 重複を除いた非空キーのソート済み一覧
+# - 戻り値: 抽出 pipeline の終了 status
 record_keys() {
   cut -f1 | sed '/^$/d' | sort -u
 }
 
+# 出典診断の対象にする重複規律キーの抽出
+# - 標準入力: 第1列を照合キーとするタブ区切りの規律レコード
+# - 出力: 複数回出現する非空キーを各1回並べたソート済み一覧
+# - 戻り値: 抽出 pipeline の終了 status
 duplicate_record_keys() {
   cut -f1 \
     | sed '/^$/d' \
@@ -217,19 +304,36 @@ duplicate_record_keys() {
       '
 }
 
+# 対応表の欠落や余分な規律を示す差分候補の抽出
+# - `$1`: 改行区切りの差分候補
+# - `$2`: 改行区切りの除外対象
+# - 出力: 除外対象に同一行がない非空候補の入力順の一覧
+# - 戻り値: 最終反復の終了 status
+# - 戻り値: 候補がない場合の終了 status 0
 set_difference() {
   local candidates="$1"
   local existing="$2"
-  local candidate
+  local candidate existing_key
+  local -A existing_keys=()
 
+  while IFS= read -r existing_key; do
+    [ -z "$existing_key" ] && continue
+    existing_keys["$existing_key"]=1
+  done <<< "$existing"
   while IFS= read -r candidate; do
     [ -z "$candidate" ] && continue
-    if ! rg -qF -x -- "$candidate" <<< "$existing"; then
+    if [ -z "${existing_keys["$candidate"]+present}" ]; then
       printf '%s\n' "$candidate"
     fi
   done <<< "$candidates"
 }
 
+# 規律キーごとの診断用出典一覧の表示
+# - `$1`: `キー<TAB>file:行番号` 形式の改行区切りの規律レコード
+# - `$2`: 表示対象の改行区切りの照合キー
+# - 出力: 非空キーごとの字下げ済み出典一覧の標準出力
+# - 戻り値: 最終反復の終了 status
+# - 戻り値: 表示対象がない場合の終了 status 0
 print_record_sources() {
   local records="$1"
   local keys="$2"
@@ -243,8 +347,11 @@ print_record_sources() {
   done <<< "$keys"
 }
 
+# 製品名漏出検査の対象外トークンの判定
+# - `$1`: 採用宣言から抽出した製品名候補のトークン
+# - 戻り値: 除外リストへの完全一致時の終了 status 0
+# - 戻り値: 除外リストへの不一致時の終了 status 1
 is_non_product_token() {
-  # 採用行に併記される言語名・規格名・機構の一般語だけを除き、製品名の候補は行から毎回導出する。
   case "$1" in
     "API"|"HTTP"|"Build"|"C#"|"CI"|"CSS"|"Core"|"JSON"|"JSON-RPC"|"Minimal"|"NET"|"OpenAPI"|"Rust"|"SPDX"|"TypeScript"|\
     "analyzer"|"backend"|"client"|"ID"|"collector"|"commit"|"tree"|"companion"|"cookie"|"core"|"coverage"|"desktop"|"for"|"framing"|"generation"|"generator"|"handler"|"library"|"mobile"|"node"|"one-time"|"package"|"plugin"|"project"|"provider"|"queue"|"record"|"repository"|"root"|"runtime"|"rust"|"schema"|"script"|"sealed"|"source"|"tests/"|"tools"|"type-aware"|"union"|"up"|"v1"|"v8")
@@ -258,15 +365,14 @@ is_non_product_token() {
 
 echo "=== 1. broken links(principles/concerns/structure/tools/languages/process + README。file と directory の両方) ==="
 broken=0
-while IFS= read -r f; do
-  d=$(dirname "$f")
-  while IFS= read -r l; do
-    [ -z "$l" ] && continue
-    l=${l%%#*}
-    [ -z "$l" ] && continue
-    [ -e "$d/$l" ] || { echo "  broken: $f -> $l"; broken=1; }
-  done < <(rg -oN '\]\((\.[^)]*)\)' "$f" -r '$1' 2>/dev/null)
-done < <(fd . principles concerns structure tools languages process -e md 2>/dev/null; echo README.md)
+mapfile -d '' -t linked_files < <(fd . principles concerns structure tools languages process -e md --print0 2>/dev/null; printf 'README.md\0')
+while IFS= read -r -d '' f && IFS= read -r l; do
+  d=${f%/*}
+  [ "$d" != "$f" ] || d=.
+  l=${l%%#*}
+  [ -z "$l" ] && continue
+  [ -e "$d/$l" ] || { echo "  broken: $f -> $l"; broken=1; }
+done < <(rg --with-filename --no-heading --no-column --null -oN '\]\((\.[^)]*)\)' -r '$1' -- "${linked_files[@]}" 2>/dev/null)
 if [ "$broken" = 0 ]; then pass "リンク切れなし"; else fail "リンク切れあり(上記 broken 行)"; fi
 
 echo
@@ -299,23 +405,32 @@ if rg -nP '\b(sqlx|tokio|axum|Dapper|Npgsql|EF Core|zod|valibot|SolidJS|ON CONFL
   principles_leak=1
 fi
 
+if ! product_names=$(node "$SCRIPT_DIR/naming-registry-check.mjs" --standard-root "$STANDARD_ROOT" --products); then
+  fail "採用の正本から製品名を取得できない"
+  principles_leak=1
+fi
 product_count=0
+product_patterns=()
 while IFS= read -r product; do
   [ -z "$product" ] && continue
   is_non_product_token "$product" && continue
   product_count=$((product_count + 1))
-  product_matches=$(rg --with-filename -nP "(?<![A-Za-z0-9_.#+@/-])\\Q${product}\\E(?![A-Za-z0-9_.#+@/-])" principles 2>/dev/null || true)
-  if [ -n "$product_matches" ]; then
-    echo "  台帳由来の製品名: $product"
+  product_patterns+=("(?<![A-Za-z0-9_.#+@/-])\\Q${product}\\E(?![A-Za-z0-9_.#+@/-])")
+done <<< "$product_names"
+if [ "${#product_patterns[@]}" -gt 0 ]; then
+  if product_matches=$(rg --with-filename -nP -f <(printf '%s\n' "${product_patterns[@]}") principles); then
+    echo "  台帳由来の製品名を含む行:"
     while IFS= read -r product_match; do echo "    $product_match"; done <<< "$product_matches"
     principles_leak=1
+  else
+    product_search_status=$?
+    if [ "$product_search_status" -ne 1 ]; then
+      fail "採用の正本から得た製品名を照合できない"
+      principles_leak=1
+    fi
   fi
-done < <(
-  rg --no-filename '^採用は、' tools languages -g '*.md' 2>/dev/null \
-    | rg -o '[@A-Za-z][A-Za-z0-9_.#+@/-]*' \
-    | sort -u
-)
-echo "tools と languages の採用行から抽出した製品名: $product_count"
+fi
+echo "tools と languages の採用宣言から抽出した製品名: $product_count"
 if [ "$principles_leak" = 0 ]; then
   pass "principles に言語/製品/方言の漏れなし"
 else
@@ -500,7 +615,6 @@ fi
 
 echo
 echo "=== 12. structure の台帳が本文ファイルを file 粒度で網羅しているか ==="
-# 台帳の宣言側: 各行の「ファイル」列を stem へ展開し、path として並べる
 ledger_declared=$(
   for spec in "structure/README.md:structure" \
               "structure/surfaces/README.md:structure/surfaces" \
@@ -557,7 +671,8 @@ echo "=== 15. principles/concerns の各概念フォルダに下位の消費者�
 orphan_files=""
 for consumer_area in principles concerns; do
   while IFS= read -r body_dir; do
-    body_key="$consumer_area/$(basename "$body_dir")/"
+    body_key=${body_dir##*/}
+    body_key="$consumer_area/$body_key/"
     if ! rg -q -F "$body_key" process structure tools languages 2>/dev/null; then
       orphan_files="$orphan_files $body_key"
     fi
@@ -577,12 +692,21 @@ for concept_dir in principles/*/ concerns/*/; do
   readme="${concept_dir}README.md"
   if [ ! -f "$readme" ]; then echo "  $concept_dir: README.md がない"; ledger_ok=0; continue; fi
   ledger_records=$(rg -oN '^- \[([^]]+)\]\(\./([^)]+)\.md\) — (機械|機械\+レビュー|レビュー)\(.+\)$' "$readme" -r '$2'$'\t''$1' | sort)
-  actual_records=$(
-    while IFS= read -r rule_file; do
-      heading=$(rg -m1 -oN '^## (.+)$' "$rule_file" -r '$1')
-      printf '%s\t%s\n' "$(basename "$rule_file" .md)" "$heading"
-    done < <(find "$concept_dir" -maxdepth 1 -type f -name '*.md' ! -name 'README.md') | sort
-  )
+  mapfile -d '' -t rule_files < <(find "$concept_dir" -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0)
+  actual_records=""
+  if [ "${#rule_files[@]}" -gt 0 ]; then
+    actual_records=$(awk '
+      /^## .+$/ && !(FILENAME in headings) { headings[FILENAME] = substr($0, 4) }
+      END {
+        for (file = 1; file < ARGC; file++) {
+          base = ARGV[file]
+          sub(/^.*\//, "", base)
+          sub(/\.md$/, "", base)
+          printf "%s\t%s\n", base, headings[ARGV[file]]
+        }
+      }
+    ' "${rule_files[@]}" | sort)
+  fi
   if [ "$ledger_records" != "$actual_records" ]; then
     echo "  $concept_dir: 台帳と実 file/規律名が不一致"
     diff <(echo "$ledger_records") <(echo "$actual_records") | sed 's/^/    /'
@@ -596,24 +720,46 @@ else
 fi
 
 echo
-echo "=== 17. ツール file の entry 書式(用途・採用・判断基準・撤回条件の4行) ==="
+echo "=== 17. ツール file の entry 書式(用途・採用・判断基準・撤回条件の4項目) ==="
 entry_ok=1
-while IFS= read -r tool_file; do
-  base=$(basename "$tool_file" .md)
-  case "$base" in
-    README|formation|translation|connection|coordination|publication|inspection|conventions) continue ;;
-  esac
-  for prefix in 用途は、 採用は、 判断基準は、 撤回条件は、; do
-    if ! rg -q "^$prefix" "$tool_file"; then
-      echo "  $tool_file: 「$prefix」で始まる行がない"
-      entry_ok=0
-    fi
-  done
-done < <(find tools languages -mindepth 2 -maxdepth 2 -type f -name '*.md')
+mapfile -d '' -t tool_files < <(find tools languages -mindepth 2 -maxdepth 2 -type f -name '*.md' -print0)
+entry_out=""
+if [ "${#tool_files[@]}" -gt 0 ]; then
+  if ! entry_out=$(awk '
+    BEGIN {
+      prefixes[1] = "用途は、"
+      prefixes[2] = "採用は、"
+      prefixes[3] = "判断基準は、"
+      prefixes[4] = "撤回条件は、"
+    }
+    {
+      for (item = 1; item <= 4; item++) {
+        if (index($0, prefixes[item]) == 1) present[FILENAME, item] = 1
+      }
+    }
+    END {
+      for (file = 1; file < ARGC; file++) {
+        base = ARGV[file]
+        sub(/^.*\//, "", base)
+        sub(/\.md$/, "", base)
+        if (base ~ /^(README|formation|translation|connection|coordination|publication|inspection|conventions)$/) continue
+        for (item = 1; item <= 4; item++) {
+          if (!present[ARGV[file], item]) printf "  %s: 「%s」で始まる行がない\n", ARGV[file], prefixes[item]
+        }
+      }
+    }
+  ' "${tool_files[@]}"); then
+    entry_ok=0
+  fi
+fi
+if [ -n "$entry_out" ]; then
+  printf '%s\n' "$entry_out"
+  entry_ok=0
+fi
 if [ "$entry_ok" = 1 ]; then
-  pass "全ツール file が entry の4行を持つ"
+  pass "全ツール file が entry の4項目を持つ"
 else
-  fail "entry の4行を欠くツール file あり"
+  fail "entry の4項目を欠くツール file あり"
 fi
 
 echo

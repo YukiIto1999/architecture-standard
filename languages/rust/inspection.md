@@ -49,6 +49,7 @@ contracts/adapters の mapper の配置、core の公開 application 入力構�
 ### 要求
 rustc と clippy の警告は、`[workspace.lints.rust]` の `warnings = "deny"` で検証入口のエラーとして扱う。
 lint は clippy を `[workspace.lints.clippy]` で強制し、unwrap_used・expect_used を deny にする。
+全ての workspace member の `Cargo.toml` に `[lints] workspace = true` を設定し、workspace の lint を継承させる。
 テストの unwrap・expect は、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可する。
 大きさとネストのしきい値は too_many_lines・excessive_nesting の lint の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 excessive_nesting は既定のしきい値を持たないため、project が clippy.toml にしきい値を定め、決定の記録に残す。
@@ -63,13 +64,13 @@ unsafe を要する project は理由を決定の記録に残し、`#[allow(unsa
 同じ理由を共有する複数の item に限り、それらを収める最小の module に `#[allow(unsafe_code)]` を付ける。
 
 ### 根拠
-`warnings = "deny"` を workspace の lints に設定すれば、個別に deny を書き漏らした警告も含めて検証入口が黙って通過しない。
-lint を workspace の lints で強制すれば、規則が全体に一律に効く。
+`warnings = "deny"` を workspace の lints に設定し、全 member が継承すれば、個別に deny を書き漏らした警告も含めて検証入口が黙って通過しない。
+workspace の lints は member ごとの継承を要するため、root だけの設定では規則が全体に効かない。
 unwrap_used・expect_used を deny にすれば、想定された失敗を握り潰すコードがビルドで止まる。
-`unsafe_code = "deny"` を workspace の lints に設定すれば、unsafe の使用が既定でビルドを止め、無秩序な混入を防ぐ。
+`unsafe_code = "deny"` を全 member が継承すれば、unsafe の使用が既定でビルドを止め、無秩序な混入を防ぐ。
 unsafe が要る最小の item に `#[allow(unsafe_code)]` を付け、理由を決定の記録に残せば、逸脱が可視化されたまま最小に保たれる。
 同じ理由を共有する item だけを最小の module にまとめれば、同じ allow の重複を避けても許可範囲を広げずに済む。
-clippy の lint 属性は crate 全体と item の単位に付けられ(文・式への属性は stable Rust では安定化されていない stmt_expr_attributes を要するため使えない)、Cargo.toml の `[lints]` はターゲット単位の上書きを持たないため、テストの除外は clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で行う。
+Cargo.toml の `[lints]` はターゲット単位の上書きを持たないため、テストの除外は clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で行う。
 too_many_lines と excessive_nesting は、関数の肥大化とネストの深さを早く気づかせる。
 data・info・temp のような汎用名は生成時に混入しやすく、disallowed-names は [restrict-generic-names](../../principles/naming/restrict-generic-names.md) の「汎用名・略語・一時名を制限する」を識別子の denylist として機械化する。
 環境変数の直読は [single-config-source](../../concerns/configuration/single-config-source.md) の「定めた源からまとめて読む」に反する散在を作るため、disallowed-methods がビルドで止める。
@@ -82,6 +83,7 @@ clippy 公式はこの lint を測定の道具として推奨せず restriction 
 ### 完了条件
 `[workspace.lints.rust]` に `warnings = "deny"` が設定され、rustc と clippy の警告が検証入口でエラーとして扱われている。
 workspace の lints に、unwrap_used・expect_used の deny の設定がある。
+全ての workspace member の `Cargo.toml` に `[lints] workspace = true` があり、継承漏れを構造検査が検出する。
 テストの unwrap・expect が、clippy.toml の allow-unwrap-in-tests・allow-expect-in-tests で許可されている。
 大きさとネストのしきい値が、too_many_lines・excessive_nesting の lint の規則として定められている。
 excessive_nesting のしきい値が、project の clippy.toml に定められ決定の記録に残されている。
@@ -107,6 +109,7 @@ cognitive_complexity を、crate または module の単位で抑止すること
 ### 行動
 `[workspace.lints.rust]` に `warnings = "deny"` を設定する。
 `[workspace.lints.clippy]` に unwrap_used・expect_used を deny で設定し、clippy.toml に allow-unwrap-in-tests・allow-expect-in-tests を設定する。
+全ての member の `Cargo.toml` に `[lints] workspace = true` を設定し、構造検査で継承漏れを拒否する。
 too_many_lines・excessive_nesting を有効にし、excessive_nesting のしきい値と緩和は project の決定の記録に明記する。
 cognitive_complexity を有効にし、clippy.toml に cognitive-complexity-threshold を定め、基線台帳に記録した既存の違反の関数に reason 付きの `#[expect]` を付ける。
 `[workspace.lints.rust]` に `unsafe_code = "deny"` を設定する。
@@ -126,6 +129,13 @@ cognitive_complexity = "warn"
 [workspace.lints.rust]
 warnings = "deny"
 unsafe_code = "deny"
+```
+
+各 member の `Cargo.toml` で workspace の設定を継承する。
+
+```toml
+[lints]
+workspace = true
 ```
 
 ワークスペースルートの `clippy.toml` では、テストの `unwrap` と `expect` を許可し、関数の複雑さのしきい値を定める。
@@ -203,7 +213,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 ## 規則と検証機構の対応
 
 この言語 ecosystem の全規律を、検証手段へ写像する。
-規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
+規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。
+上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
 標準 repository の verifier は、ecosystem の全ファイルの規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 検証手段は、型・構造検査・analyzer/lint・計測・mutation・runner 検査・artifact 検査・実行テスト・レビューの語で書き、複数の手段は + で連ねる。
@@ -222,7 +233,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | formation | 業務の値を型に封じる | 型(newtype・非公開フィールド・Rust の可視性機構) |
 | formation | 不正な状態を構築できなくする | 型(enum・網羅 match・コンパイラの網羅性検査) |
-| formation | 不変の束縛と共有参照を既定にする | 型(所有権・不変束縛・共有参照・排他借用) |
+| formation | 不変の束縛と共有参照を既定にする | 型(所有権・不変束縛・共有参照・排他借用)+レビュー(所有権と借用だけでは強制できない不変性を状態遷移の実装・構築関数・局所更新の箇所で照合し、既存の domain の集約・値・イベントと境界を越えて共有する値を変更せず、遷移が不変条件を保つ新しい値とイベントを返すこと、`&mut T` の局所更新が共有も外部観測もされない infrastructure の所有状態または構築途中の値に限られること、構築途中の局所 accumulator の更新と既存の domain 値の変更の区別、完成した値の公開前の不変条件の充足) |
 | formation | 意味と単位を型で区別する | 型(newtype) |
 | formation | 生成と検証の macro を libs の proc-macro crate に分ける | 構造検査(proc-macro crate 境界)+型(proc-macro crate type の compiler 制約) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(rustfmt --check、rustc の non_snake_case 系 lint) |

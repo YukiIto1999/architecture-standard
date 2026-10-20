@@ -121,8 +121,8 @@ CSRF の検査は、session に保持した token と専用 header の一致を�
 access token と refresh token は server 側に保持し、ブラウザへは session を指す識別子だけを持つ認証の cookie を渡す。
 認証チケットは `ITicketStore` で `CookieAuthenticationOptions.SessionStore` に差し、retention の Valkey に保持する。
 認証 middleware は、検証済みの `ClaimsPrincipal` を `SubjectMapper` で認証主体へ確定する。
-認証 middleware は、認証主体を server の境界内の request-scoped `SubjectAccessor` へ格納する。
-request-scoped の `AuthenticatedSubject` は、同じ `SubjectAccessor` から DI で解決する。
+認証主体を確定する middleware は request-scoped の `IMiddleware` として登録し、constructor で受け取った server の境界内の request-scoped `SubjectAccessor` へ認証主体を格納する。
+request-scoped の `AuthenticatedSubject` は、認証主体の格納後に、組立点で登録した DI factory が同じ request scope の `SubjectAccessor` から解決する。
 BFF の route は、`AuthenticatedSubject` と境界で検証した入力を、[structure/contracts/adapters](../../structure/contracts/adapters.md) の宣言された保護を適用する入口へ渡し、core の公開 API へは渡さない。
 BFF の route は、`ClaimsPrincipal` を参照しない。
 `SubjectMapper` は、認証 middleware からだけ呼び出す。
@@ -133,15 +133,16 @@ BFF の route は、`ClaimsPrincipal` を参照しない。
 Duende.AccessTokenManagement は、token の保持と更新を server 側で担う。
 principal を認証境界で認証主体へ確定して境界内に保てば、core は token と認証方式を知らず、主体を必要とする operation だけが adapter の対応づけた業務入力として主体を受け取る。
 認証主体を request-scoped の `SubjectAccessor` に一度格納し、DI で同じ認証主体を adapter の入口へ渡せば、認証境界と route が別の主体を構築しない。
-route が埋め込んだ core の公開 API を呼べば、認証境界と業務処理を同じ process の型付き呼出で接続できる。
+[factory-based middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/extensibility?view=aspnetcore-10.0) は要求ごとに有効化されるので、`IMiddleware` の constructor に scoped な `SubjectAccessor` を注入しても、起動時に構築する middleware に要求の状態を保持させずに済む。
+route が保護された adapter の入口を通じて埋め込んだ core の公開 API を呼べば、認証境界と業務処理を同じ process の型付き呼出で接続できる。
 
 ### 完了条件
 session が cookie 認証、OIDC が標準の handler で行われている。
 token の管理が Duende.AccessTokenManagement で行われている。
 access token・refresh token が server 側の `ITicketStore` に保持され、ブラウザへ渡る cookie が session を指す識別子だけである。
 検証済みの `ClaimsPrincipal` が、認証 middleware の `SubjectMapper` で認証主体へ確定されている。
-認証 middleware が、認証主体を request-scoped `SubjectAccessor` へ格納している。
-DI が同じ `SubjectAccessor` から `AuthenticatedSubject` を解決し、BFF の route へ注入している。
+認証に成功した要求では、request-scoped の `IMiddleware` が constructor 注入で同じ request scope の `SubjectAccessor` を受け取り、認証主体を格納してから後続へ進んでいる。
+組立点の DI factory が格納後に同じ request scope の `SubjectAccessor` から `AuthenticatedSubject` を解決し、BFF の route へ注入している。
 BFF の route が、注入された `AuthenticatedSubject` と検証済みの入力を adapter の宣言された保護を適用する入口へ渡し、core の公開 API を直接呼んでいない。
 BFF の route が、`ClaimsPrincipal` を参照していない。
 `SubjectMapper` が、認証 middleware からだけ呼び出されている。
@@ -153,25 +154,32 @@ access token・refresh token を、ブラウザへ渡すこと。
 token の管理で、Duende の商用製品(BFF・IdentityServer)に踏み込むこと。
 ASP.NET Core の Antiforgery を CSRF の検査に使い、期待値の保持を cookie に頼ること。
 cookie の HttpOnly・Secure・SameSite を、緩めること。
-BFF の route から、埋め込んだ core の公開 API 以外の業務処理を呼ぶこと。
+BFF の route から、adapter の宣言された保護を適用する入口以外の業務処理を呼ぶこと。
 token、未検証の principal、認証主体を、core へ渡すこと。
 BFF の route で、`ClaimsPrincipal` を受け取ること。
 BFF の route で、adapter の保護を適用する入口を通さず core の公開 API を呼ぶこと。
 認証 middleware の外から、`SubjectMapper` を呼び出すこと。
 認証 middleware が格納した認証主体と異なる主体を、BFF の route で構築すること。
+認証主体を確定する middleware や route の本体で、provider から依存を直接解決すること。
+`SubjectAccessor` または `AuthenticatedSubject` を、root provider で解決したり singleton に保持したりすること。
 
 ### 行動
 OIDC を code と PKCE で server で終端し、token を server 側に保持する。
 `CookieAuthenticationOptions.SessionStore` に `ITicketStore` の実装を差し、認証チケットを retention の Valkey に保持する。
 cookie を HttpOnly・Secure・SameSite=Strict にする。
-認証 middleware で検証済みの `ClaimsPrincipal` を `SubjectMapper` へ渡し、得た認証主体を request-scoped `SubjectAccessor` へ格納する。
-同じ `SubjectAccessor` から request-scoped の `AuthenticatedSubject` を DI で解決する。
+認証主体を確定する middleware を `IMiddleware` として request-scoped で登録し、constructor で同じ request scope の `SubjectAccessor` を受け取る。
+その middleware を `UseAuthentication()` と `UseAuthorization()` の間へ置き、検証済みの `ClaimsPrincipal` を `SubjectMapper` へ渡して得た認証主体を `SubjectAccessor` へ格納する。
+`Program.cs` の DI factory は、その格納後に同じ request scope の `SubjectAccessor` から request-scoped の `AuthenticatedSubject` を解決する。
 BFF の route は、DI で注入された `AuthenticatedSubject` と検証済みの入力を adapter の宣言された保護を適用する入口へ渡す。
 BFF の route から `ClaimsPrincipal` と `SubjectMapper` の参照を除く。
 CSRF の検査は、session の token と専用 header の一致を CSRF middleware で検査する。
 
 ### 例
-チケットは retention の Valkey に保持し、cookie には識別子だけを置く。`ITicketStore` は DI に登録し、options 構築時に解決する。検証済み principal は認証主体へ確定して request scope に保持し、route から検証済み入力とともに adapter の入口へ渡す。
+チケットは retention の Valkey に保持し、cookie には識別子だけを置く。
+`ITicketStore` は DI に登録し、options 構築時に解決する。
+検証済み principal は認証主体へ確定して request scope に保持し、route から検証済み入力とともに adapter の入口へ渡す。
+`AddScoped` は factory を登録するだけであり、その本体は認証主体を要求する route への注入時に request scope で実行される。
+この factory の provider 利用は [connection](./connection.md) の「配線を composition root に限る」に従い、middleware と route の本体は provider を参照しない。
 
 ```csharp
 builder.Services.AddSingleton<ITicketStore, ValkeyTicketStore>();
@@ -185,21 +193,31 @@ builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDef
     .Configure<ITicketStore>((options, store) => options.SessionStore = store);
 builder.Services.AddOpenIdConnectAccessTokenManagement();
 builder.Services.AddScoped<SubjectAccessor>();
-builder.Services.AddScoped(sp => sp.GetRequiredService<SubjectAccessor>().RequiredSubject);
+builder.Services.AddScoped<AuthenticatedSubject>(sp => sp.GetRequiredService<SubjectAccessor>().RequiredSubject);
+builder.Services.AddScoped<AuthenticatedSubjectMiddleware>();
 
+var app = builder.Build();
 app.UseAuthentication();
-app.Use(async (context, next) =>
-{
-    var authentication = await context.AuthenticateAsync();
-    if (authentication.Succeeded && authentication.Principal is not null)
-    {
-        context.RequestServices.GetRequiredService<SubjectAccessor>()
-            .Set(SubjectMapper.FromVerified(authentication.Principal));
-    }
-    await next(context);
-});
+app.UseMiddleware<AuthenticatedSubjectMiddleware>();
 app.UseAuthorization();
+```
 
+認証主体を確定する middleware は、型付きの `IMiddleware` 契約を実装し、注入された accessor にだけ要求の主体を格納する。
+`InvokeAsync(HttpContext, RequestDelegate)` の署名と、要求の scope での有効化は、[API の契約](https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.http.imiddleware.invokeasync?view=aspnetcore-10.0) と [UseMiddleware の実装](https://github.com/dotnet/aspnetcore/blob/7387de91234d3ef751fa50b3d1bfede4130213ff/src/Http/Http.Abstractions/src/Extensions/UseMiddlewareExtensions.cs) に従う。
+
+```csharp
+public sealed class AuthenticatedSubjectMiddleware(SubjectAccessor subjects) : IMiddleware
+{
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    {
+        var authentication = await context.AuthenticateAsync();
+        if (authentication.Succeeded && authentication.Principal is not null)
+        {
+            subjects.Set(SubjectMapper.FromVerified(authentication.Principal));
+        }
+        await next(context);
+    }
+}
 ```
 
 保護された契約 adapter を呼ぶ handler の本体には、要求の境界で生成した絶対期限と、ASP.NET Core が要求から渡す取消を個別に渡す。

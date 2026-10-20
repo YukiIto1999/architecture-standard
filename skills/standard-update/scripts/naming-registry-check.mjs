@@ -1,31 +1,52 @@
 #!/usr/bin/env node
-// concerns・structure・languages の製品名指しが、tools と languages の採用エントリに登録済みかを機械照合する。goal-25・goal-26。
-//
-// 手法:
-//   1. tools と languages の各ツール file の `# 見出し`・`## 見出し` と「採用は、」で始まる行から、
-//      名指し語(Latin token)の registry を作る。
-//      「判断基準」欄は却下・比較の記述を含みうるため、registry の抽出対象にしない。
-//   2. concerns/**/*.md・structure/**/*.md・languages の軸 file の、fenced code と inline code(`...`)を
-//      除いた本文のうち「である。」で終わる行(採用行と同じ宣言文型)から、
-//      大文字で始まり内部に小文字を含む token を候補として抽出する。
-//      `*.md` で終わる token(標準内の自己参照ファイル名)は候補から除く。
-//      inline code を除くのは、言語の型・API 名(`Effect`・`Drop` 等)を製品名と区別するためである。
-//   3. 候補が registry に無ければ、未登録の製品名指しとして報告する。
-//
-// 限界: 「…である。」の宣言文型に絞った検出であり、あらゆる言い回しを機械的に網羅する
-//   汎用の固有名詞抽出ではない。HTTP・API のような一般的な頭字語(小文字を含まない token)は
-//   候補から外れる。これは、規格・頭字語と、市場から選ぶ製品名を区別するための意図的な絞り込みである。
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { markdownBodyLines } from "./markdown-body-lines.mjs";
 
 const args = process.argv.slice(2);
+const productsOnly = args.at(-1) === "--products";
+if (productsOnly) args.pop();
 if (args.length !== 0 && (args.length !== 2 || args[0] !== "--standard-root" || args[1] === "")) {
-  console.error("usage: naming-registry-check.mjs [--standard-root ROOT]");
+  console.error("usage: naming-registry-check.mjs [--standard-root ROOT] [--products]");
   process.exit(2);
 }
 const ROOT = fs.realpathSync(args.length === 2 ? args[1] : fileURLToPath(new URL("../../../", import.meta.url)));
 
+/**
+ * 採用欄の説明文と区別した機構の選定宣言の取得
+ *
+ * 対象範囲は次の見出しか entry 項目までの採用欄
+ * 宣言単位は物理改行をまたぐ句点区切りの文
+ * 採用の明示は文頭の `採用は` か `追加の採用は` による指定
+ * 使用指定は `には` に続く `を使う` か `を使い` による指定
+ * 出力指定は `には` に続く `で ... を出力する` による指定
+ *
+ * @param {string[]} lines - コードフェンス外の Markdown 本文の行
+ * @returns {string[]} 物理改行をまたぐ採用の明示文か用途への機構の使用指定文
+ */
+function adoptionDeclarations(lines) {
+  const sentences = [];
+  let field = "";
+  for (const line of lines) {
+    if (/^#+ |^(用途|採用|判断基準|撤回条件)は、/.test(line)) {
+      if (field !== "") sentences.push(...field.split("。"));
+      field = "";
+    }
+    if (line.startsWith("採用は、") || field !== "") field += `${line}\n`;
+  }
+  if (field !== "") sentences.push(...field.split("。"));
+  return sentences.map((sentence) => sentence.trim()).filter((sentence) =>
+    /^(追加の)?採用は(?:、|\s)/.test(sentence) ||
+    /には[\s\S]*(?:を使[うい]|で[\s\S]*を出力する)/.test(sentence)
+  );
+}
+
+/**
+ * 採用エントリの選定宣言から得る製品名の検査用レジストリの構築
+ * @returns {{registry: Set<string>, products: Set<string>}} 名前の照合用語と選定宣言に含まれる正規の製品名
+ * @throws {@link Error} 採用エントリへのアクセス失敗
+ */
 function extractRegistry() {
   const AXIS_FILES = new Set(
     ["formation", "translation", "connection", "coordination", "publication", "inspection", "conventions"].map(
@@ -36,64 +57,128 @@ function extractRegistry() {
   const files = [];
   walk(path.join(ROOT, "tools"), files);
   walk(path.join(ROOT, "languages"), files);
-  const tokenRe = /[A-Za-z][A-Za-z0-9_.#+@/-]*/g;
+  const tokenRe = /[@A-Za-z][A-Za-z0-9_.#+@/-]*/g;
   const registry = new Set();
+  const products = new Set();
   for (const file of files) {
     const base = path.basename(file);
     const dir = path.basename(path.dirname(file));
-    if (ECOSYSTEMS.has(dir) && AXIS_FILES.has(base)) continue; // 軸 file は実現規律であり採用の正本でない
-    const text = fs.readFileSync(file, "utf8");
-    let source = "";
-    for (const line of text.split("\n")) {
-      if (line.startsWith("# ") || line.startsWith("## ") || line.includes("採用は、")) source += `${line}\n`;
+    // 採用の正本でない軸 file による自己許可を防ぐため registry への追加は不可
+    if (ECOSYSTEMS.has(dir) && AXIS_FILES.has(base)) continue;
+    const lines = markdownBodyLines(fs.readFileSync(file, "utf8"));
+    for (const line of lines) {
+      if (!line.startsWith("# ") && !line.startsWith("## ")) continue;
+      for (const token of line.matchAll(tokenRe)) {
+        const product = token[0];
+        registry.add(product.startsWith("@") ? product.slice(1) : product);
+      }
     }
-    let m;
-    while ((m = tokenRe.exec(source))) registry.add(m[0]);
+    for (const declaration of adoptionDeclarations(lines)) {
+      for (const token of declaration.matchAll(tokenRe)) {
+        const product = token[0];
+        registry.add(product.startsWith("@") ? product.slice(1) : product);
+        products.add(product);
+      }
+    }
   }
-  return registry;
+  return { registry, products };
 }
 
+/**
+ * レジストリや候補の対象にする Markdown ファイルの収集
+ * @param {string} dir - 探索を始めるディレクトリ
+ * @param {string[]} out - 発見したパスを末尾へ追加する配列
+ * @returns {string[]} 発見したパスを追加済みの入力配列
+ * @throws {@link Error} 対象ツリーへのアクセス失敗
+ */
 function walk(dir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(p, out);
-    else if (p.endsWith(".md")) out.push(p);
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) walk(entryPath, out);
+    else if (entryPath.endsWith(".md")) out.push(entryPath);
   }
   return out;
 }
 
-function stripFences(text) {
-  const lines = text.split("\n");
-  let inFence = false;
-  const out = [];
-  for (const line of lines) {
-    if (line.trim().startsWith("```")) {
-      inFence = !inFence;
+/**
+ * 製品名の候補と区別するテストサイズの正本の語彙の取得
+ * @param {string[]} files - 候補の対象として列挙済みの Markdown ファイル
+ * @returns {Set<string>} サイズの節で定義された分類名
+ * @throws {@link Error} 列挙したサイズ定義の読取り失敗
+ */
+function testSizeVocabulary(files) {
+  const definition = files.find((file) => path.relative(ROOT, file) === "structure/tests/layout.md");
+  const names = new Set();
+  if (definition === undefined) return names;
+  let sizes = false;
+  for (const line of markdownBodyLines(fs.readFileSync(definition, "utf8"))) {
+    if (line.startsWith("## ")) {
+      sizes = line === "## サイズによる配置";
       continue;
     }
-    out.push(inFence ? "" : line);
+    const definition = sizes && line.match(/^([A-Z][A-Za-z0-9]*) は、/);
+    if (definition) names.add(definition[1]);
   }
-  return out;
+  return names;
 }
 
+/**
+ * 製品名候補から除外する単一バッククォートのコード表記の除去
+ * @param {string} line - フェンス外の本文の一行
+ * @returns {string} インラインコードを空文字に置き換えた本文
+ */
 function stripInlineCode(line) {
   return line.replace(/`[^`]*`/g, "");
 }
 
-function findCandidates(files) {
+/**
+ * 製品の選定宣言と区別する参照先の規律名の除去
+ * @param {string} line - フェンス外の本文の一行
+ * @param {string} file - 本文を持つ Markdown ファイルのパス
+ * @param {Map<string, Set<string>>} headings - 参照先ごとに保持する規律名
+ * @returns {string} ローカルリンク直後の正しい規律名だけを除いた本文
+ * @throws {@link Error} 参照先の読取り失敗
+ */
+function stripHeadingCitations(line, file, headings) {
+  if (!line.includes("「")) return line;
+  return line.replace(/(\[[^\]]+\]\((\.[^#)]*\.md)(?:#[^)]*)?\)\s*(?:の\s*)?)「([^」]+)」/g,
+    (citation, link, relative, title) => {
+      const target = path.resolve(path.dirname(file), relative);
+      const withinRoot = path.relative(ROOT, target);
+      if (withinRoot.startsWith("..") || path.isAbsolute(withinRoot)) return citation;
+      if (!headings.has(target)) {
+        headings.set(target, new Set(
+          markdownBodyLines(fs.readFileSync(target, "utf8"))
+            .filter((body) => body.startsWith("## "))
+            .map((body) => body.slice(3))
+        ));
+      }
+      return headings.get(target).has(title) ? link : citation;
+    });
+}
+
+/**
+ * 採用レジストリとの照合に使う製品名候補の抽出
+ * @param {string[]} files - 製品名の記載を調べる Markdown ファイルのパス
+ * @param {Set<string>} vocabulary - 採用物でない分類名として正本に定義された語
+ * @returns {Array<{file: string, line: number, token: string, text: string}>} 標準 root 相対のパスと元の行番号を持つ候補
+ * @throws {@link Error} 対象ファイルの読取り失敗
+ */
+function findCandidates(files, vocabulary) {
   const candidateRe = /\b[A-Z][A-Za-z0-9_.#+@/-]*/g;
   const found = [];
+  const headings = new Map();
   for (const file of files) {
-    const lines = stripFences(fs.readFileSync(file, "utf8"));
+    const lines = markdownBodyLines(fs.readFileSync(file, "utf8"));
     lines.forEach((rawLine, idx) => {
       const trimmed = rawLine.trim();
       if (!trimmed.endsWith("である。")) return;
-      const line = stripInlineCode(trimmed);
-      let m;
-      while ((m = candidateRe.exec(line))) {
-        const tok = m[0];
-        if (tok.endsWith(".md")) continue; // 標準内の自己参照ファイル名
-        if (!/[a-z]/.test(tok)) continue; // 内部に小文字を含まない頭字語(HTTP・API等)は対象外
+      const line = stripInlineCode(stripHeadingCitations(trimmed, file, headings));
+      let candidateMatch;
+      while ((candidateMatch = candidateRe.exec(line))) {
+        const tok = candidateMatch[0];
+        if (tok.endsWith(".md") || vocabulary.has(tok)) continue;
+        if (!/[a-z]/.test(tok)) continue;
         found.push({ file: path.relative(ROOT, file), line: idx + 1, token: tok, text: trimmed });
       }
     });
@@ -101,7 +186,11 @@ function findCandidates(files) {
   return found;
 }
 
-const registry = extractRegistry();
+const { registry, products } = extractRegistry();
+if (productsOnly) {
+  console.log([...products].sort().join("\n"));
+  process.exit(0);
+}
 
 const files = [];
 walk(path.join(ROOT, "concerns"), files);
@@ -112,7 +201,7 @@ for (const language of ["rust", "csharp", "typescript"]) {
   }
 }
 
-const candidates = findCandidates(files);
+const candidates = findCandidates(files, testSizeVocabulary(files));
 const violations = candidates.filter((c) => !registry.has(c.token));
 
 console.log(`adoption registry size: ${registry.size}`);

@@ -1,10 +1,8 @@
 #!/usr/bin/env node
-// 鉤括弧「」で引用された規律名が、同じ行の link 先 file の見出しに逐語一致するかを検査する。
-// 対象は標準本文(principles/concerns/structure/tools/languages/process + root README.md)。
-// fenced code の中は見出しとしても引用としても数えない。
 import { readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { markdownBodyLines } from "./markdown-body-lines.mjs";
 
 const args = process.argv.slice(2);
 if (args.length !== 0 && (args.length !== 2 || args[0] !== "--standard-root" || args[1] === "")) {
@@ -14,6 +12,12 @@ if (args.length !== 0 && (args.length !== 2 || args[0] !== "--standard-root" || 
 const ROOT = realpathSync(args.length === 2 ? args[1] : fileURLToPath(new URL("../../../", import.meta.url)));
 const AREAS = ["principles", "concerns", "structure", "tools", "languages", "process"];
 
+/**
+ * 標準の見出し索引に含める Markdown ファイルの列挙
+ * @param {string} dir - 探索を始める領域のディレクトリ
+ * @returns {string[]} 配下の Markdown ファイルのパス
+ * @throws {@link Error} 対象ツリーへのアクセス失敗
+ */
 function mdFiles(dir) {
   const out = [];
   for (const entry of readdirSync(dir)) {
@@ -27,32 +31,20 @@ function mdFiles(dir) {
 const files = AREAS.flatMap((area) => mdFiles(join(ROOT, area)));
 files.push(join(ROOT, "README.md"));
 
+/**
+ * 引用診断の行番号を保持する Markdown 本文の読取り
+ * @param {string} path - 検査対象の Markdown ファイルのパス
+ * @returns {string[]} フェンスの行を空文字に置き換えた元の行番号順の本文
+ * @throws {@link Error} 対象ファイルの読取り失敗
+ */
 function bodyLines(path) {
-  const lines = [];
-  let inFence = false;
-  let fenceMark = "";
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const fence = line.match(/^\s*(`{3,}|~{3,})/);
-    if (fence) {
-      if (!inFence) {
-        inFence = true;
-        fenceMark = fence[1][0];
-      } else if (fence[1][0] === fenceMark) {
-        inFence = false;
-      }
-      lines.push(null);
-      continue;
-    }
-    lines.push(inFence ? null : line);
-  }
-  return lines;
+  return markdownBodyLines(readFileSync(path, "utf8"));
 }
 
 const headings = new Map();
 for (const file of files) {
   const set = new Set();
   for (const line of bodyLines(file)) {
-    if (line === null) continue;
     const m = line.match(/^#{1,3} (.+)$/);
     if (m) set.add(m[1].trim());
   }
@@ -64,8 +56,6 @@ let citations = 0;
 for (const file of files) {
   const dir = dirname(file);
   bodyLines(file).forEach((line, index) => {
-    if (line === null) return;
-    // 引用の検査対象は link を含む行だけ。引用は link 先の見出しに加え、同じ file 内の見出しも指せる。
     const targets = [resolve(file)];
     let hasLink = false;
     for (const link of line.matchAll(/\]\(([^)#\s]+\.md)\)/g)) {

@@ -12,26 +12,26 @@ Web BFF frontend の token 非公開はこの軸で扱い、Chromium host の資
 
 ### 要求
 効果が要求する依存は環境で受け取り、module の最上位に可変な singleton を作らない。
-host に求める能力は ui port の型で宣言し、実装は host の composition が注入する。
+host に求める能力は viewer の ui port または extension の host port の型で宣言し、実装は host の composition が注入する。
 本番とテストで、環境の実装を差し替える。
 
 ### 根拠
 依存を環境で受ければ、計算が要求する能力が型に出て、組立点だけが具象を知る。
 module の最上位の可変な singleton は、隠れた共有状態になり、差し替えとテストを阻む。
-host の能力を ui port の型で宣言すれば、実装に縛られず host の composition が差し込める。
+host の能力を viewer の ui port または extension の host port の型で宣言すれば、実装に縛られず host の composition が差し込める。
 本番とテストで環境を差し替えると、host の能力をテストで制御できる。
 
 ### 完了条件
 効果が要求する依存が、環境で受け取られている。
 module の最上位に、可変な singleton がない。
-host に求める能力が ui port の型で宣言され、host の composition が注入している。
+host に求める能力が viewer の ui port または extension の host port の型で宣言され、host の composition が注入している。
 
 ### 禁止事項
 module の最上位に、可変な singleton を作ること。
 業務の核で、依存を直接生成すること。
 
 ### 行動
-依存を環境で受け、host の能力を ui port の型で宣言し、host の composition が注入する。
+依存を環境で受け、host の能力を viewer の ui port または extension の host port の型で宣言し、host の composition が注入する。
 本番とテストで、環境の実装を差し替える。
 
 ### 例
@@ -41,7 +41,7 @@ module の最上位に、可変な singleton を作ること。
 export const userGateway = new UserGateway();
 ```
 
-依存を環境で受け、host の能力を ui port で宣言する。
+viewer の例では、依存を環境で受け、host の能力を ui port で宣言する。
 
 ```typescript
 interface HasUsers { users: UserGateway }

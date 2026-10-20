@@ -77,7 +77,8 @@ throw し得る同期 DOM API または postMessage を、`Result.wrap` の関�
 
 ### 行動
 TypeScript compiler API で解決した依存 edge に層の参照禁止と exports の外への到達の禁止を規則として当て、検証入口で回す。
-skeleton の production のソース依存表と build・test-only 依存表を TypeScript compiler API で読み、runtime・build・test phase の許可 edge を生成して、同じ構造検査が列挙した依存 graph と照合する。成果物の消費表は import の依存 edge と別に照合する。
+skeleton の production のソース依存表と build・test-only 依存表を TypeScript compiler API で読み、runtime・build・test phase の許可 edge を生成して、同じ構造検査が列挙した依存 graph と照合する。
+成果物の消費表は import の依存 edge と別に照合する。
 production の成果物を構成する依存 closure に build または test のソース依存があれば失敗させる。
 TypeScript compiler API で外部 I/O、待機、下流 Effect の call expression を列挙し、`withDeadlineEffect` の operation 内にあることを検証入口で検査する。
 Promise を返す前に同期で throw し得る境界 API と、throw し得る同期 DOM API と postMessage の symbol を別々に設定へ列挙する。
@@ -116,7 +117,8 @@ noUncheckedIndexedAccess は配列・索引アクセスの結果に `undefined` 
 型検査と lint の警告をエラーにすれば、規則の違反がビルドで止まる。
 oxlint は、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
 max-lines・max-lines-per-function・max-depth は、ファイル・関数の大きさとネストの深さを早く気づかせる。
-oxlint の complexity 規則が測る cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない。標準が必須の検証へ割り当てる複雑度は cognitive complexity であり、cyclomatic complexity は必須の検証へ割り当てていないため、oxlint の complexity 規則は有効にしない。
+oxlint の complexity 規則が測る cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない。
+標準が必須の検証へ割り当てる複雑度は cognitive complexity であり、cyclomatic complexity は必須の検証へ割り当てていないため、oxlint の complexity 規則は有効にしない。
 採用済みの oxlint に環境変数の直読を禁止する native の規則がないため、compiler API の構造検査で補い、[single-config-source](../../concerns/configuration/single-config-source.md) の「定めた源からまとめて読む」を機械の gate にする。
 既定から緩める判断を決定の記録に残せば、緩和の理由が追える。
 tsc の emit は build 基盤の変換と重複し、二重の変換経路を生む。
@@ -170,7 +172,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 ## 規則と検証機構の対応
 
 この言語 ecosystem の全規律を、検証手段へ写像する。
-規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
+規律は軸ファイルと採用したツールのファイルに住み、ファイル列は規律が住むファイルの名前である。
+上位規律を ecosystem の機構で満たす規律も、軸ファイルか採用したツールのファイルに置く。
 標準 repository の verifier は、ecosystem の全ファイルの規律を表す H2 見出しの集合と、この対応表の規律の集合を照合し、欠落、余分、重複があれば失敗する。
 機械検査を置けない規律は、レビューで確認すると明記し、割り当てを欠かさない。
 検証手段は、型・構造検査・analyzer/lint・計測・mutation・runner 検査・artifact 検査・実行テスト・レビューの語で書き、複数の手段は + で連ねる。
@@ -207,7 +210,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | ts-results-es | 想定内失敗を Result で返す | 型(ts-results-es の Result・判別子つき union) |
 | ts-results-es | 非同期 API の送出を AsyncResult へ変換する | 構造検査(TypeScript compiler API。設定した Promise を返す境界 API の呼出しを `Result.wrapAsync` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(関数呼出時の同期 throw と返した Promise の rejection を同じ mapper が Err にし、欠陥と AbortError は元の error のまま rejection になること) |
 | ts-results-es | 同期 API の送出を Result へ変換する | 構造検査(TypeScript compiler API。設定した同期 DOM API と postMessage の呼出しを `Result.wrap` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(同期の戻り値と throw、想定外の欠陥の再送出) |
-| connection | 依存を環境で受け、host の能力を port で宣言する | 型(環境の型・ui port の型)+レビュー(singleton を作らないことの判断) |
+| connection | 依存を環境で受け、host の能力を port で宣言する | 型(環境の型・viewer の ui port または extension の host port の型)+レビュー(singleton を作らないことの判断) |
 | inspection | 型消去の cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | solidjs | 状態の機構 | レビュー(structure の分類に対応する remote/URL/横断/一時 の機構の選択) |
 | solidjs | remote の規律 | レビュー(local の横断 store への複製禁止の判断) |
