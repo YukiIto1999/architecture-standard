@@ -27,6 +27,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [apalis](./apalis.md) | 背景処理と定期実行の daemon の骨格である | Rust は apalis と apalis-postgres であり、PostgreSQL を backend にした queue に限って使う |
 | [async-trait](./async-trait.md) | 実行時に差し替える非同期の port を動的ディスパッチで扱う機構である | Rust は async-trait である |
 | [axum](./axum.md) | HTTP の API を公開する surface の骨格である | Rust は axum である |
+| [cargo-auditable](./cargo-auditable.md) | 最終成果物へ実際に含まれる crate の依存情報を埋め込み、SBOM の部品を成果物の走査だけで回収できるようにする機構である | Rust は cargo-auditable である |
 | [cargo-llvm-cov](./cargo-llvm-cov.md) | テストが実行していない箇所を見つけるカバレッジ計測である | Rust は cargo-llvm-cov である |
 | [cargo-mutants](./cargo-mutants.md) | テストが振る舞いを固定しているかを測る mutation 検査である | Rust は cargo-mutants である |
 | [cargo-nextest](./cargo-nextest.md) | 単体・性質・結合のテストの実行系である | Rust は cargo-nextest である |

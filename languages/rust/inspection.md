@@ -240,6 +240,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、引数・型引数・戻り値の記述、伝播する欠陥、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(命名照合) |
 | cargo-llvm-cov | カバレッジ | 計測(stable toolchain の `cargo llvm-cov nextest` が region と line を数え、`--fail-under-regions` と `--fail-under-lines` を与えた終了値で project 記録の下限を検証入口で判定し、`--json` の出力を記録に残す) |
+| cargo-auditable | 成果物の依存情報 | artifact 検査(release する最終 binary だけを Cargo.lock のない場所へ置いて Syft で走査し、crate の部品が `cargo metadata` の `dep_kinds` と参照先 target の kind で分類した成果物の package の runtime 依存の crate と版を欠かさず含むこと、依存情報を持たない binary が拒否されること、Nix の既定が無効になった build を build の設定でなく最終 binary で検出すること)+構造検査(検証入口に OSV-Scanner と別の advisory 検査が並置されていないこと)+レビュー(build の経路が既に cargo auditable を適用しているかの判断) |
 | serde | 境界で一度だけ parse してドメイン型へ移す | 型(生成 DTO・Result を返す contracts/adapters の mapper・コンテキストの検証付き入力構築)+構造検査(crate の型所有と変換の配置)+実行テスト(既知項目の不正の拒否、全 variant と入れ子 object の未知キーの位置捕捉とログ到達、捕捉値の domain と応答への非流入) |
 | translation | 境界表現の型を surface の crate に置き、From で写す | 構造検査(syn。生成 DTO を保持または参照する surface 固有の型への枠組みの trait 実装、`Into` と `TryInto` の不在、失敗を写す `From` の enum 網羅)+実行テスト(variant ごとの status と終了の値、生成 DTO の body の保持) |
 | progenitor | 生成した契約を使い、drift を検査の gate にする | 構造検査(データ型の crate と reqwest を使う client の crate の依存分離)+実行テスト(drift 検査・conformance の検証入口の判定) |

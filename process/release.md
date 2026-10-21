@@ -6,6 +6,7 @@ release は、成果物の検証から配備先への反映まで、戻せる状
 ## 順序
 
 1. 成果物の生成と同時に、SLSA provenance と SBOM と署名を生成する([structure/deploy](../structure/deploy/layout.md) の provenance に従う)。
+   SBOM から既知の脆弱性を検査し、検出があれば先へ進めない。
 2. 配備の前に、provenance と署名を検証し、検証できない成果物を配備しない。
 3. datastore の schema migration は、新しい版のアプリケーションへ切り替える前に適用する。
    migration の実施は delivery の反映手順の一部とし、アプリケーションの起動処理へ埋め込まない。
@@ -18,6 +19,7 @@ release は、成果物の検証から配備先への反映まで、戻せる状
 
 release する commit が、[verification](./verification.md) の「順序」の T1 と T2 に合格していることを確かめる。
 反映時の生存と準備は、[concerns/lifecycle](../concerns/lifecycle/README.md) の完了条件と禁止事項に照合する。
+既知の脆弱性の検査は、[concerns/security](../concerns/security/README.md) の完了条件と禁止事項に照合する。
 migration の段の区切りは、[concerns/migration](../concerns/migration/README.md) に照合する。
 稼働中のデータを移す配備は、[migration](./migration.md) に従う。
 
