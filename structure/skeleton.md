@@ -45,7 +45,7 @@ libs は、対応する機構があるときに置く。
 | surfaces | 対話様式ごとの入口を束ねる。直下に server・console・worker・viewer・extension・埋め込み surface を置く。 |
 | server | API の surface。core を埋め込み、http を公開する。Web BFF を提供する場合は、token を仲介する。 |
 | console | CLI の surface。core を埋め込む。 |
-| worker | 背景処理・定期実行の daemon。core を埋め込む。 |
+| worker | 背景処理・定期実行の surface。core を埋め込む。 |
 | viewer | GUI の surface。被ホストで、host は runtimes に置く。 |
 | extension | 拡張の surface。被ホストで、host は runtimes に置く。core は埋め込まない。 |
 | 埋め込み surface | core を埋め込み protocol を公開する surface。host が同梱起動する。 |

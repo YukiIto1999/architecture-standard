@@ -7,6 +7,7 @@ platforms は、セルフホストする基盤の採用を定める。
 
 | 用途 | 採用 | ファイル |
 |---|---|---|
+| server と worker の OS | NixOS | [nixos.md](./nixos.md) |
 | datastore | PostgreSQL | [postgresql.md](./postgresql.md) |
 | 一時 store | Valkey | [valkey.md](./valkey.md) |
 | 認可の engine | OpenFGA | [openfga.md](./openfga.md) |

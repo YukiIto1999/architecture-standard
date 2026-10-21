@@ -48,7 +48,7 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [streamjsonrpc](./streamjsonrpc.md) | extension が接続する core のプロセスとの間で、JSON-RPC の小さい契約だけを外へ出す機構である | C# は StreamJsonRpc である |
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | C# は Testcontainers for .NET である |
 | [tunit](./tunit.md) | 単体・性質・結合のテストの実行系である | C# は TUnit である |
-| [wolverine](./wolverine.md) | 背景処理と定期実行の daemon の骨格である | C# は Wolverine であり、PostgreSQL を backend にした queue に限って使う |
+| [wolverine](./wolverine.md) | 背景処理の durable な queue と、業務のデータが決める時刻の予約の骨格である | C# は Wolverine であり、PostgreSQL を backend にした queue に限って使う |
 
 ## 言語機構で満たす用途
 

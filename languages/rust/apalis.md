@@ -1,15 +1,17 @@
 # apalis
 
-用途は、背景処理と定期実行の daemon の骨格である。
+用途は、背景処理の durable な queue と、業務のデータが決める時刻の予約の骨格である。
 採用は、Rust は apalis と apalis-postgres であり、PostgreSQL を backend にした queue に限って使う。
-判断基準は、queue と scheduler を既存の datastore に閉じ、外部の broker を開かず、backend が [sqlx](./sqlx.md) の採用と同じ系の SQL client を要求することである。
+判断基準は、queue と予約を既存の datastore に閉じ、外部の broker を開かず、backend が [sqlx](./sqlx.md) の採用と同じ系の SQL client を要求することである。
 撤回条件は、判断基準を満たさなくなることであり、backend の対応状況の変化と apalis の安定版の到達を再評価のトリガーとする。
 
 ## worker
 
 ### 要求
-worker は apalis を、PostgreSQL を backend にした queue と scheduler に限って使う。
+worker は apalis を、PostgreSQL を backend にした queue と、業務のデータが決める時刻の予約に限って使う。
 broker・durable workflow・外部の message bus としての利用は標準外とする。
+予約は、実行時刻を持つ task として PostgreSQL へ積み、同じ業務事実から導いた冪等の鍵で二重に積まない。
+固定の時刻と間隔による定期実行は、apalis-cron を含む cron 式の scheduler で組まず、OS の定時起動から [worker](../../structure/surfaces/worker/layout.md) の「定時起動」の入口が受ける。
 handler の依存は `Data` extractor で受け取り、handler の中で直接生成しない。
 再配送契約を持つ source の event は durable inbox の容量を予約し、payload の commit 後だけ upstream delivery ack を返す。
 inbox processing completion と処理 item の削除は、処理結果と処理済み記録の commit 後だけ行う。
@@ -19,7 +21,8 @@ durable inbox が満杯なら nack または再試行可能な失敗を返し、
 
 ### 根拠
 queue を PostgreSQL に閉じれば、外部の broker や message bus を開かず、攻撃面が増えない。
-apalis の cron 機構を scheduler に使えば、定期実行も同じ PostgreSQL backend の queue に閉じる。
+予約を実行時刻を持つ task として PostgreSQL に積めば、予約も同じ backend の durable な queue に閉じ、停止の後も失われず、再配送の対象になる。
+固定の時刻と間隔の起動を OS が担えば、worker の内部に cron 式の scheduler を足さずに済み、起動の合図の重複と欠落は定時起動の入口の冪等で吸収できる。
 job の処理を queue から受ける形にすれば、副作用が処理の中に集まる。
 `Data` extractor で依存を渡せば、依存がシグネチャに現れ、組立点だけが具象を知る。
 broker・durable workflow・外部の message bus は別の関心で、ここで担うと面が広がる。
@@ -29,8 +32,11 @@ payload commit 後だけ upstream delivery ack を返せば、前段の停止で
 容量を予約できない event を nack すれば、必要な入力を受領済みとして失わない。
 
 ### 完了条件
-worker が、apalis を PostgreSQL を backend にした queue と scheduler に限って使っている。
+worker が、apalis を PostgreSQL を backend にした queue と、業務のデータが決める時刻の予約に限って使っている。
 broker・durable workflow・外部の message bus として、使われていない。
+予約した task が、実行時刻の前に実行されず、停止の後も失われず、実行時刻の後に実行されることと、同じ業務事実から二度積んでも一つの task になることが、実行テストで検証されている。
+Cargo 依存に、apalis-cron を含む cron 式の scheduler の crate がない。
+固定の時刻と間隔の起動が、OS の定時起動と worker の定時起動の入口で行われている。
 handler の依存が、`Data` extractor で受け取られ、handler の中で直接生成されていない。
 upstream delivery ack が、payload の durable inbox への commit 後だけ返されている。
 inbox processing completion と処理 item の削除が、処理結果と処理済み記録の commit 後だけ行われている。
@@ -40,6 +46,7 @@ durable inbox の容量上限で nack または再試行可能な失敗が返さ
 
 ### 禁止事項
 worker を、broker・durable workflow・外部の message bus として使うこと。
+固定の時刻と間隔の起動のために、apalis-cron などの cron 式の scheduler を worker の中へ追加すること。
 handler の中で、依存を直接生成すること。
 payload の durable inbox への commit 前に、upstream delivery ack を返すこと。
 処理結果と処理済み記録の commit 前に、inbox processing completion または処理 item の削除を行うこと。
@@ -49,7 +56,8 @@ durable inbox が満杯の event を受領済みとして捨てること。
 
 ### 行動
 queue を PostgreSQL の backend に限り、apalis で enqueue と worker を組む。
-定期実行は apalis の cron 機構で scheduler として組む。
+固定の時刻と間隔の起動は OS の宣言へ置き、worker には cron 式の scheduler を追加しない。
+業務のデータが決める時刻の予約は、実行時刻を持つ task として積み、同じ業務事実から導いた冪等の鍵を付ける。
 worker の起動は WorkerBuilder で組み、apalis の Monitor で走らせる。
 handler の依存は `Data` extractor で渡す。
 受領時に durable inbox の容量を予約し、payload を commit してから upstream delivery ack を返す。

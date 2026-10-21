@@ -10,6 +10,7 @@
 1. project の関心を列挙し、[structure/skeleton](../structure/skeleton.md) の条件で root と surface の境界集合を決める。
 2. project の実装単位と言語の対応を入力として確定し、[languages](../languages/) の各 ecosystem の README が定める言語の採用に照合する。
 3. [languages](../languages/) の6つの実現軸と全域規律 conventions で、言語の機構を固定する。
+   server と worker を持つ場合は、OS が担う起動・監視・資源制限・定時起動と、アプリが担う durable な queue・予約・再配送の分担を、[structure/surfaces/worker](../structure/surfaces/worker/layout.md) の「OS と worker の分担」に従って決める。
 4. 必要な機構を [structure/libs](../structure/libs/layout.md) に従い target の `libs/<mechanism>` へ初期化する。
    target 内で管理する機構は、その path にコードと `spec.md` を置く。
    独立した repository から共有する機構だけを、[tools/build/vendoring](../tools/build/vendoring.md) が定める取得機構で、記録した exact commit から取り込む。
@@ -21,6 +22,7 @@
 
 project の実装単位と言語の対応が入力として明示され、共通の skeleton と使用する各言語の規律が適用されていることを確かめる。
 機構の固定の時点で、採用する道具が [tools](../tools/) と [languages](../languages/) の採用と一致していることを確かめる。
+server と worker を持つ場合は、OS が担う仕事が worker の内部に再実装されていないことと、定時起動の入口が予定時刻から導いた冪等の鍵で要求を渡していることを、[structure/surfaces/worker](../structure/surfaces/worker/layout.md) の「定時起動」に照合する。
 機構の初期化後に、[structure/libs](../structure/libs/layout.md) に従い、機構の技術契約、公開面、`spec.md` の機構名と検査対象が対応していることを確かめる。
 独立した repository から取り込んだ場合は、記録した origin、path、exact commit と、`libs/<mechanism>` に置いたコードおよび `spec.md` が一致していることを確かめる。
 target 内で管理する機構には、外部の origin、exact commit、UPSTREAM や実際の公開を初期化の条件にしない。

@@ -54,9 +54,10 @@ deploy は、surface と runtime が作る成果物を配備対象として受�
 deploy は core の業務型や operation を参照せず、成果物とその起動・設定の公開契約を配備の入力として使う。
 プログラムの起動、動作に必要な初期化、接続と終了は、surface と runtime および [concerns/lifecycle](../../concerns/lifecycle/README.md) が定める。
 配備の処理を、プログラムや test の起動部品として共用しない。
-deploy は、特定の配備先に縛られない。
+deploy の規律は、特定の配備先に縛られない。
 配備先ごとの違いは、infrastructure と delivery の定義に閉じ込める。
-具体の platform と tool は標準に固定せず、project が単一の採用を決定の記録に明記する。
+server と worker を載せる OS と service の管理は、[tools/platforms/nixos](../../tools/platforms/nixos.md) が定める。
+利用者の端末の OS は、server と worker の OS の採用の対象に含まれない。
 利用者の端末で動く成果物(desktop・extension・console など)を store や marketplace で配布する経路は、deploy の配備先に含めない。
 配布は、配布 channel を使う場合、release の成果物を提出手順へ渡す形で行い、更新も配布機構に任せる。
 配布する成果物について、配布機構が更新を提供しない場合は、署名を検証する自動更新の配布先を project が運用し、その配備先の宣言を infrastructure に置く。
@@ -71,11 +72,15 @@ infrastructure は、配備先を宣言的に定義する。
 secret を含む state の暗号化は、[concerns/secrets](../../concerns/secrets/README.md) の規律に従う。
 infrastructure の内部は、配備先の単位ごとに分ける。
 一つの配備先の宣言を一つの単位にまとめ、複数の配備先の定義を一つの単位に混ぜない。
+server と worker の配備先では、service の起動・監視・再起動、資源制限、固定の時刻と間隔による起動の宣言も infrastructure に置く。
+その宣言が起動する入口と設定は、成果物の起動と設定の公開契約を入力にする。
+OS が担う仕事とアプリケーションが担う仕事の分担は、[worker](../surfaces/worker/layout.md) の「OS と worker の分担」に従う。
 
 ## delivery
 
 delivery は、immutable な成果物を配備先へ反映する。
-成果物の標準の形は、container artifact とする。
+成果物は、配備先の宣言的な配備機構が運ぶ immutable な形とし、container を前提にしない。
+server と worker の成果物は、OS の宣言が起動し、OS が持つ起動・監視・資源制限を container で重ねて再現しない。
 成果物の semantic versioning による版づけと不変性は [concerns/security](../../concerns/security/README.md) に、generated の drift 検査は [contracts/generated](../contracts/generated.md) に従う。
 配備先の desired state を、宣言として版で管理する。
 running な配備先を、手続きで直接書き換えない。
@@ -94,6 +99,7 @@ migration が満たす拡張・移行・収縮の段の区切りは [concerns/mi
 
 provenance は、成果物の出所の証明と署名を、配備の前に検証できるようにする。
 SLSA provenance と SBOM と署名の生成は、release が行う。
+SBOM は、配備先へ届ける最終成果物から生成する。
 配備の前の provenance と署名の検証は、[process/release](../../process/release.md) が定める。
 attestation は、署名と内容を検証するまで、安全の証明にならない。
 
