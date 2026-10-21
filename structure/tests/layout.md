@@ -37,6 +37,16 @@ smoke の到達点と visual の受入判定は、[methods](./methods.md) の「
 integration は、複数の実装単位または境界を組み合わせて検証する。
 検証の重みは、公開 interface 越しのuse-caseの検証に置き、内側の個別のテストは型と契約の保証で減らす([principles/verification](../../principles/verification/README.md) に従う)。
 
+## 実行可能な仕様
+
+業務の受入条件は、Gherkin の feature と scenario に、前提、操作、外から観測できる結果を業務の語彙で表す。
+実装の class、DB の列、UI のクリック手順を、業務の仕様の語彙にしない。
+成功だけでなく、業務上の拒否と、結果を変える境界条件を scenario へ含める。
+実装前に scenario の期待結果を確定し、仕様の変更と実装の追随を同じ変更理由で扱う。
+scenario は言語固有の step binding から公開 interface を検証し、記法を揃えることと、実行や保証を実現する機構を同じにすることを混同しない。
+実行系と feature、step binding、公開 interface の対応検査は [languages](../../languages/) に従い、仕様の実行を repository の検証入口へ含める。
+UI の smoke と visual は、業務の仕様の代替にしない。
+
 ## サイズによる配置
 
 テストを、実際に使う依存の範囲で Small・Medium・Large に分ける。
