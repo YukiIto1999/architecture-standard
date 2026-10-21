@@ -31,8 +31,8 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [coverlet-mtp](./coverlet-mtp.md) | テストが実行していない箇所を見つけるカバレッジ計測である | C# は coverlet.MTP である |
 | [cscheck](./cscheck.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | C# は CsCheck である |
 | [csharpier](./csharpier.md) | 表記を道具の既定で一意に揃える formatter である | C# は CSharpier である |
-| [dapper-aot](./dapper-aot.md) | SQL 中の placeholder と parameter member の対応を DB を起動せずに補助検査する道具である | C# は DapperAOT である |
-| [dapper](./dapper.md) | SQL を型で扱いながら書く永続化アクセス層である | C# は Npgsql の上の Dapper である |
+| [dapper-aot](./dapper-aot.md) | Dapper の SQL 結果から型への写像をビルド時に生成し、対応する呼出しの利用を補助検査する道具である | C# は DapperAOT である |
+| [dapper](./dapper.md) | 手書き SQL の実行結果を型へ薄く写す永続化アクセス層である | C# は Npgsql の上の Dapper である |
 | [duende-access-token-management](./duende-access-token-management.md) | BFF が保持する token の交換と更新を担う機構である | C# は Duende.AccessTokenManagement である |
 | [grate](./grate.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | C# は grate の up の one-time script である |
 | [maui-hybridwebview](./maui-hybridwebview.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が C# のときは mobile は .NET MAUI の HybridWebView である |
