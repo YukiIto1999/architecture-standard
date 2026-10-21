@@ -78,10 +78,9 @@ docs: Git の公開済み履歴を書き換える手順の追記
 検証入口は root の `package.json` の `verify` です。
 標準本文の形式検査、検査器の回帰検査、Skill の frontmatter と script 構文の検査を順に実行します。
 実行には Node.js、Bash、Git、fd、ripgrep と、各 script が確認する基本 command が必要です。
-以下の command は、`dotfiles-agent-verify` を供給する dotfiles-wsl の Agent 環境で実行します。
 
 ```bash
-dotfiles-agent-verify -- npm run verify
+npm run verify
 ```
 
 Skill を変更した場合は、[standard-update](./skills/standard-update/SKILL.md) が定める package 検査と scoped audit も行います。

@@ -14,7 +14,6 @@ description: architecture-standard に対する対象プロジェクトの適合
 
 - `<standard-root>` は現行規範 root であり、標準を管理する owner が現在の規範として指定した checkout の root である。
   依頼が明示した値か、host の agent policy が案内する値を使う。
-  gate がある host では `dotfiles-agent-gate standard-root` がこの値を出力する。
   この Skill の配備先、固定 Rev、remote の HEAD、`pwd`、対象 project 内の複製から導かない。
   値を得られなければ不足する前提として報告し、配備済み source の標準本文で監査を始めない。
 - 基準は `<standard-root>` の現在の `README.md` と、`principles/`、`concerns/`、`structure/`、`tools/`、`languages/`、`process/` 配下の規範文書とする。
@@ -144,7 +143,7 @@ principles と concerns は概念 README の規律台帳、languages は `langua
 
 ## 基線台帳
 
-基線台帳は対象 project が所有する実ファイルであり、標準側や dotfiles 側へ移さない。
+基線台帳は対象 project が所有する実ファイルであり、標準や配備を所有する別の repository へ移さない。
 台帳の path を別の空ファイルへ切り替えて、既存違反との比較を回避しない。
 内容は `{ "violations": [...] }` とし、各違反は報告と同じ `rule`、`file`、`line`、`evidence`、`mechanizable` の五つの field を持つ。
 既存違反と認めるのは、実基線台帳の項目と五つすべてが一致した違反だけである。

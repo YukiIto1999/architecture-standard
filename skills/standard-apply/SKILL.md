@@ -13,7 +13,6 @@ description: architecture-standard 以外の標準には使わず、「別 repos
 - 依頼で示された repository を対象 project とする。
 - `<standard-root>` は現行規範 root であり、標準を管理する owner が現在の規範として指定した checkout の root である。
   依頼が明示した値か、host の agent policy が案内する値を使う。
-  gate がある host では `dotfiles-agent-gate standard-root` がこの値を出力する。
   この skill の配備先、固定 Rev、remote の HEAD、`pwd`、`git rev-parse`、対象 project 内の複製から再発見しない。
   値を得られなければ標準適用を開始せず、依頼での指定または agent policy に root の値が必要と返す。
   読める README や標準の本文があっても規範 root として代用せず、本文の引用、照合、適合や違反の判定を行わない。

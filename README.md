@@ -83,8 +83,8 @@ process は順序と確認点だけを所有し、性質の規範を再定義し
 標準自体の変更は [standard-update](./skills/standard-update/SKILL.md)、読み取り専用監査は [standard-audit](./skills/standard-audit/SKILL.md) を入口にします。
 CLI の人と script の呼び出しの設計は [cli-design](./skills/cli-design/SKILL.md)、契約から生成器と oracle、操作列、反例の分類へ落とす検査は [property-testing](./skills/property-testing/SKILL.md) を使います。
 
-dotfiles-wsl は、固定した Nix source と `skills/plugins/module.nix` の明示的な採用表から、選択済み client へ Skill package を配備します。
-OMP の `.omp/agent/skills/` など client ごとの配備先は投影先であり、正本の所有先ではありません。
+Skill package の配備は、採用する client の設定と外部 source の登録を所有する host が行います。
+本標準は特定の配備 repository、package manager、client の配置を前提にせず、配備先を正本にしません。
 配備済み source は読み取り専用とし、標準の編集と検証には作業 checkout を使います。
 配備した Skill package は、手順と同梱の reference と script を提供する単位であり、現行の標準本文の所在ではありません。
 標準本文を読む root と Skill package を実行する root の分離は、標準リポジトリの参照方法が定めます。
