@@ -10,6 +10,9 @@ compiler API が call expression の symbol、callee expression の型、paramet
 
 ### 要求
 採用している TypeScript の構造検査は、@typescript/typescript6 の compiler API で構文木と semantic model を取得する。
+compiler の実行用 package と compiler API の package を分離し、TypeScript 7 の package を API の提供元として解決しない。
+`typescript` という名前から compiler API を読む JS plugin とその依存には、`typescript` を `@typescript/typescript6` の package alias として解決させる。
+TypeScript 7 の実行用 package は `typescript-native` の package alias とし、[inspection](./inspection.md) の「予防」が定める入口から呼ぶ。
 call expression の symbol、callee expression の型、parameter の initializer、destructuring の binding element、および import 宣言と export 宣言の module specifier の解決先 file と型だけの import かどうかを構造検査で取得する。
 取得した構造と型を、依存方向・公開面・副作用の参照禁止の規則へ照合する。
 
@@ -17,6 +20,8 @@ call expression の symbol、callee expression の型、parameter の initialize
 採用している TypeScript は検査が必要とする安定した compiler API を同梱せず、@typescript/typescript6 がその compiler API と宣言を提供する。
 compiler API の構文木と semantic model を使えば、call expression、callee expression の型、parameter の initializer、destructuring の binding element、および module specifier の解決先 file を同じ構造検査で照合できる。
 解決は採用している TypeScript と同じ規則に従うため、package の公開面を迂回する参照は解決の失敗として現れる。
+TypeScript 7 の package は安定した compiler API を提供しないため、JS plugin の依存が `typescript` を7系へ解決すると、API の読込み時に失敗しうる。
+package alias を分ければ、compiler API を必要とする依存へ6系を渡し、型検査は7系の実行用入口から行える。
 
 ### 完了条件
 構造検査が、@typescript/typescript6 の compiler API を取得している。
@@ -24,12 +29,15 @@ compiler API の構文木と semantic model を使えば、call expression、cal
 構造検査が、parameter の initializer と destructuring の binding element を取得している。
 構造検査が、module specifier の解決先 file と型だけの import かどうかを取得している。
 取得した構造と型が、依存方向・公開面・副作用の参照禁止の規則へ照合されている。
+JS plugin とその依存が使う `typescript` が6系の compiler API へ解決され、型検査が別に固定した7系の実行用 package から行われている。
 
 ### 禁止事項
 検査が必要とする安定した compiler API の代わりに、採用している TypeScript の unstable な subpath API だけへ依存すること。
 compiler API が取得できる構造を、文字列の検索だけで判定すること。
+package manager の `.bin/tsc` が指す版を確かめずに、compiler API 用の6系を採用している7系の型検査として使うこと。
 
 ### 行動
 @typescript/typescript6 から compiler API を取得する。
+`typescript` は `@typescript/typescript6` への alias、`typescript-native` は TypeScript 7 への alias として manifest と lockfile に固定し、JS plugin の推移的な依存からの解決先も確認する。
 compiler API で call expression の symbol、callee expression の型、parameter の initializer、destructuring の binding element、および import 宣言と export 宣言の module specifier の解決先 file と型だけの import かどうかを列挙する。
 列挙した構造と型を、検証入口で規則へ照合する。

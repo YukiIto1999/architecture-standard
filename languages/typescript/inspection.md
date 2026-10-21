@@ -104,9 +104,11 @@ factory 本体が `deferEffect` を直接呼び、実行用の関数リテラル
 
 ### 要求
 tsconfig は strict を有効にし、型検査と lint の警告を検証入口でエラーとして扱う。
-tsc は型検査の専用に使い、JS への変換は build 基盤に委ねる。
+型検査は、TypeScript 7 を固定した `typescript-native` の package alias から `node node_modules/typescript-native/bin/tsc --noEmit` を実行し、JS への変換は build 基盤に委ねる。
 tsconfig は strict に加え、noUncheckedIndexedAccess と exactOptionalPropertyTypes も有効にする。
+tsconfig は、tsgolint の経路が対応しない `baseUrl` を使わない。
 linter は oxlint を使い、型認識の検査は tsgolint による oxlint の type-aware 実行で行う。
+`vite.config.ts` の `lint.options` は、`typeAware` と `denyWarnings` を有効にし、`typeCheck` を無効にする。
 ファイル・関数の大きさとネストの深さのしきい値は oxlint の max-lines(ファイル)・max-lines-per-function(関数)・max-depth(ネスト)の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 環境変数の直読は、TypeScript compiler API による構造検査で process.env と import.meta.env の参照を設定の parse を持つ組立点だけに限る。
 関数の複雑さは、[eslint-plugin-sonarjs](./eslint-plugin-sonarjs.md) の「関数の複雑さを lint で止める」に従い、oxlint 側の複雑度の規則(complexity)は有効にしない。
@@ -116,6 +118,8 @@ strict を有効にすれば、不在や暗黙の any が型検査で止まる�
 noUncheckedIndexedAccess は配列・索引アクセスの結果に `undefined` を型で強制し、exactOptionalPropertyTypes は省略可能なプロパティへの明示的な `undefined` 代入を区別するので、formation が定める不在の union と厳密な型検査の規律を tsconfig が機械で支える。
 型検査と lint の警告をエラーにすれば、規則の違反がビルドで止まる。
 oxlint は、tsgolint の type-aware 実行により floating promise や unsafe な型変換を検出できる。
+tsgolint の type check は file の構文と意味の診断を返すが、global と program の診断を含む compiler の検査全体を代替しないため、compiler の型検査を独立して残す。
+tsgolint の経路は `baseUrl` に対応しないので、`baseUrl` を使う tsconfig は型情報を要する lint の経路を成立させない。
 max-lines・max-lines-per-function・max-depth は、ファイル・関数の大きさとネストの深さを早く気づかせる。
 oxlint の complexity 規則が測る cyclomatic complexity は cognitive complexity と別の性質であり、重複検証ではない。
 標準が必須の検証へ割り当てる複雑度は cognitive complexity であり、cyclomatic complexity は必須の検証へ割り当てていないため、oxlint の complexity 規則は有効にしない。
@@ -132,17 +136,33 @@ oxlint が linter として使われ、型認識の検査が tsgolint で行わ�
 process.env と import.meta.env の参照が、設定の parse を持つ組立点に限られている。
 緩和が、project の決定の記録に明記されている。
 oxlint の complexity 規則が、有効になっていない。
-tsc が型検査の専用に設定され、JS への変換が build 基盤に委ねられている。
+型検査が、固定した7系の実行用 package の入口から `--noEmit` で行われ、JS への変換が build 基盤に委ねられている。
+`lint.options` の `typeAware` と `denyWarnings` が有効で、`typeCheck` が無効になっている。
+tsconfig に `baseUrl` が無い。
 
 ### 禁止事項
 大きさと複雑さのしきい値を、既定から黙って緩めること。
 cognitive complexity を、oxlint の complexity 規則で測ること。
 tsc を、JS への変換に使うこと。
+`vp check` の type check の診断だけで、compiler の型検査を代替すること。
+tsconfig に `baseUrl` を置くこと。
 
 ### 行動
 strict を有効にし、型検査と lint の警告を検証入口でエラーにする。
 noUncheckedIndexedAccess と exactOptionalPropertyTypes を strict と併記して有効にする。
-oxlint を導入し tsgolint で type-aware の検査を行い、max-lines・max-lines-per-function・max-depth のしきい値を定める。
+Vite+ の `lint` block で `typeAware` と `denyWarnings` を有効にし、`typeCheck` を無効にして、7系の実行用 package を指定した compiler の型検査を同じ検証入口から実行し、max-lines・max-lines-per-function・max-depth のしきい値を定める。
+
+### 例
+`typeCheck` を有効にして file の型不整合が検出されても、compiler の全ての診断を検査したことにはならない。
+lint は型情報を使って実行し、型検査は同じ検証入口から `node node_modules/typescript-native/bin/tsc --noEmit` を実行する。
+
+```typescript
+export default defineConfig({
+  lint: {
+    options: { typeAware: true, typeCheck: false, denyWarnings: true },
+  },
+});
+```
 
 ## 型消去の cast allowlist
 
@@ -181,17 +201,17 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 
 | ファイル | 規律 | 検証手段 |
 |---|---|---|
-| vitest | 実行 | 実行テスト(Vitest の単体・性質・結合を検証入口で実行し、発見件数0を失敗にする) |
+| vitest | 実行 | 実行テスト(`vp test` が駆動する Vitest の単体・性質・結合を検証入口で実行し、発見件数0を失敗にする) |
 | fast-check | 性質 | 実行テスト(fast-check の生成・縮小・stateful property と回帰 seed の再実行) |
 | cucumber-js | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber-js を実装と同じ検証入口で実行) |
 | playwright-bdd | UI smoke の Gherkin を Playwright の test へ変換する | 実行テスト(playwright-bdd が変換した test を Playwright の runner で実装と同じ検証入口から実行)+レビュー(executable spec と UI の E2E smoke・visual を代替に並べていないことの判断) |
 | axe-core-playwright | accessibility | 実行テスト(@axe-core/playwright による自動判定可能な違反、Playwright による keyboard 操作・pointer target の bounding box・WCAG 2.2 Level AA の text/non-text contrast と例外記録の照合)+レビュー(自動判定できない WCAG 2.2 Level AA の確認) |
-| testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`vitest list --json` と Playwright `--list` が返す project・file・suite・test の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。cucumber-js scenario は URI・line・name の組を同じ集合へ加える) |
+| testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`vp test list --json` と Playwright `--list` が返す project・file・suite・test の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。cucumber-js scenario は URI・line・name の組を同じ集合へ加える) |
 | knip | 未使用 | analyzer/lint(knip で未使用のファイル・export・依存を検出し検証入口で失敗) |
 | stryker-js | 有効性 | mutation(diff から作る変更部分と別に導く未変更の影響部分の和集合を `mutate` へ渡し、生成対象と被覆テストの選択を分ける。実行可能な mutant の全検出と対象全体の完了を確認し、totalUndetected または Survived+NoCoverage を数える。型として成立しない変異は検出に数えず、非空の選択集合を runner が実行しないなどの未完了は失敗にする。既知の欠陥を仕込んだ確認で検出の成立を確認する) |
 | inspection | 構造 | 構造検査(TypeScript compiler API が解決した依存 edge と skeleton の production のソース依存表・build・test-only 依存表から runtime・build・test edge を生成し、成果物の消費表を import の依存 edge と区別して照合し、production の成果物への build・test のソース依存の混入を失敗にする) |
-| typescript-compiler-api | 構造検査 | 構造検査(@typescript/typescript6 の compiler API による call expression の symbol・callee expression の型・parameter の initializer・destructuring の binding element・module specifier の解決先 file と型だけの import かどうかの取得と規則照合) |
-| inspection | 予防 | analyzer/lint(tsc・oxlint・`oxlint --type-aware`・`oxlint-tsgolint` の設定と診断を検証入口でエラー化) |
+| typescript-compiler-api | 構造検査 | 構造検査(@typescript/typescript6 の compiler API による call expression の symbol・callee expression の型・parameter の initializer・destructuring の binding element・module specifier の解決先 file と型だけの import かどうかの取得と規則照合、JS plugin の依存の API 解決先と7系 compiler の実行用 package の分離) |
+| inspection | 予防 | 型(TypeScript 7 を固定した `typescript-native` の package alias の `bin/tsc --noEmit`)+analyzer/lint(`vp check` が実行する oxlint と `oxlint-tsgolint` の type-aware 規則を、`typeAware` と `denyWarnings` が有効で `typeCheck` が無効な `vite.config.ts` の `lint` block でエラー化)+構造検査(tsconfig の `baseUrl` の不在) |
 | eslint-plugin-sonarjs | 関数の複雑さを lint で止める | analyzer/lint(oxlint の JS plugin として読み込んだ sonarjs/cognitive-complexity の error 化と、reportUnusedDisableDirectives による残った抑止の error 化) |
 | tsdoc | ドキュメントコメントの検査 | 構造検査(TypeScript compiler API と `@microsoft/tsdoc`)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | valibot | 業務の値を型に封じる | 型(valibot の brand・safeParse)+実行テスト(factory の単体テスト) |
@@ -201,7 +221,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+構造検査(TypeScript compiler API による型・値の PascalCase・camelCase の命名照合) |
 | conventions | ドキュメントコメントを書く | 構造検査(TypeScript compiler API と @microsoft/tsdoc。存在・構文・宣言と tag の対応・`@throws {@link ErrorType} 条件`・外へ伝播する直接の throw の型と link・try/catch で吸収される throw の除外・先頭行の一行と句読点)+レビュー(実効的な可視境界に応じた外部契約または内部契約、call/rejected Promise から伝播する欠陥と @throws、再述でない意味、統一した語彙) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(TypeScript compiler API による命名照合) |
-| vitest | カバレッジ | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定) |
+| vitest | カバレッジ | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定)+構造検査(coverage の provider の版と `vite-plus` が同梱する Vitest の版の一致) |
 | valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・生成 schema と生成 DTO の対応・全 variant と入れ子・配列内 object の未知キーの受容と位置捕捉、境界の警告到達、捕捉値の非流入、必須項目欠落・制約違反・判別子と payload の不一致の拒否)+構造検査(公開契約の schema の生成元と受信側固有の schema の区別) |
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |
 | http-client-js | 生成した契約を使い、drift を検査の gate にする | 構造検査(データ型の公開入口の runtime 依存 closure の通信 client と transport からの分離)+実行テスト(契約からの生成、再生成の差分、判別付き直和の判別子つき union と網羅の型検査、生成 client への transport の注入、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
@@ -224,7 +244,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | solidjs | viewer | レビュー(props の分割代入の禁止) |
 | opentelemetry-js | viewer の telemetry | 型(ui port の型)+レビュー(SDK の adapter への隔離の判断) |
 | tailwind | styling | 構造検査(design token の定義が `@theme` に限られることの照合)+レビュー(token の粒度と命名の判断) |
-| vite | viewer を載せる host の entry と build | レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
+| vite-plus | 実行入口を一つに集約する | analyzer/lint(`vp check` を検証入口でエラー化)+実行テスト(`vp test` を検証入口で実行)+構造検査(manifest と lockfile の `vite-plus` の版、`vite` と `vitest` の override と同梱版の一致、採用している Vite plugin の peer 宣言と alias した `vite` の整合、部品ごとの設定 file と `vite.config.ts` の `run` block の不在、Nx の target の command が `vp` の built-in command であること)+artifact 検査(`vp build` が採用している Vite plugin を登録して生成する成果物) |
+| vite | viewer を載せる host の entry と build | artifact 検査(`vp build` が @solidjs/vite-plugin を登録した設定で生成する viewer の成果物)+レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
 | publication | extension | 型(port の interface) |
 | vscode | ide の host | 型(判別子つき union の schema・safeParse)+実行テスト(postMessage 受信の単体テスト) |
 | chromium | 実行 context ごとに組み立てる | 構造検査(manifest の宣言と動的な登録・注入の build 出力への対応、Chrome の API・型の参照を runtime へ限定、listener が非同期準備より先に同期登録されること)+実行テスト(worker 停止・再開、依存準備の失敗、tab 切替と document 変更時の操作拒否) |

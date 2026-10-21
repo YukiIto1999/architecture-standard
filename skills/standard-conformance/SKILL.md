@@ -45,7 +45,7 @@ principles と concerns は概念 README の規律台帳、languages は `langua
 1. `<standard-root>/README.md` と `<standard-root>/process/audit.md` を読み、現在の判定の枠と監査順序を使う。
    対象 project の README、manifest、source、設定、test、決定の記録から、言語、実行経路、境界、依存方向、検証入口を確認する。
 2. 監査順序に沿って、設定 drift、境界、横断規律、原則、言語と道具の規律を照合する。
-   `BannedSymbols`、`clippy.toml`、`oxlint`、`biome`、`.editorconfig` 等の設定は、対象が採用している機構について確認する。
+   `BannedSymbols`、`clippy.toml`、`vite.config.ts` の `lint` と `fmt`、`.editorconfig` 等の設定は、対象が採用している機構について確認する。
 3. 規律ごとに適用条件を標準本文と project の出典で判断し、`checked`、`not-applicable`、`unresolved` のいずれかを記録する。
    すべての言語や道具を一律に適用対象にしない一方、条件付きの規律や文書を列挙から外さない。
    非適用には、適用条件を定める本文と、対象が条件を満たさない観測を対応付けた理由を残す。

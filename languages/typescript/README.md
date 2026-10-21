@@ -37,7 +37,7 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 | [kobalte](./kobalte.md) | 見た目を持たない振る舞いだけの UI component を提供する機構である | @kobalte/core の SolidJS 2.0 対応版である |
 | [opentelemetry-js](./opentelemetry-js.md) | 利用者の環境で動く viewer の trace と構造化 event を、境界の殻で収集する機構である | TypeScript は OpenTelemetry JS の WebTracerProvider と span event、OTLP/HTTP の trace exporter である |
 | [oxfmt](./oxfmt.md) | 表記を道具の既定で一意に揃える formatter である | TypeScript は oxfmt である |
-| [oxlint](./oxlint.md) | 規則の違反をビルドで止める linter である | TypeScript は oxlint である |
+| [oxlint](./oxlint.md) | 型情報を要さない規則の違反をビルドで止める linter である | TypeScript は oxlint である |
 | [playwright-bdd](./playwright-bdd.md) | Gherkin の feature を Playwright Test のテストファイルへ変換し、UI smoke を Gherkin で書けるようにする変換器である | TypeScript は playwright-bdd である |
 | [playwright](./playwright.md) | UI をブラウザ越しに操作し見た目と疎通を確かめる実行系である | TypeScript は Playwright である |
 | [solidjs](./solidjs.md) | GUI の surface を組む骨格である | SolidJS 2.0 系、@solidjs/web、@solidjs/vite-plugin である |
@@ -46,10 +46,11 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | TypeScript は testcontainers の node 実装である |
 | [ts-results-es](./ts-results-es.md) | viewer・extension・host の軽い役割に見合う、副作用と想定内失敗を型で表す機構である | TypeScript は ts-results-es である |
 | [tsdoc](./tsdoc.md) | ドキュメントコメントの存在、構文、宣言と tag の機械判定できる対応、最初の一行と句読点を検査する道具である | TypeScript は @typescript/typescript6 と @microsoft/tsdoc を使う構造検査である |
-| [tsgolint](./tsgolint.md) | 規則の違反をビルドで止める linter である | TypeScript は `oxlint --type-aware` と `oxlint-tsgolint` の組である |
+| [tsgolint](./tsgolint.md) | 型情報を要する規則の違反を、ビルドで止める linter である | TypeScript は `oxlint-tsgolint` である |
 | [typescript-compiler-api](./typescript-compiler-api.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | TypeScript は @typescript/typescript6 の compiler API を使う AST 構造検査である |
 | [valibot](./valibot.md) | 外部入力を schema で検証し、検証済みの値だけに型を名乗らせる機構である | TypeScript は valibot である |
 | [vite](./vite.md) | viewer を載せる host の entry と bundler である | Vite と @solidjs/vite-plugin である |
+| [vite-plus](./vite-plus.md) | TypeScript の build、lint、format、テストを、一つの入口と一つの設定で駆動する統合 toolchain である | TypeScript は `vite-plus` である |
 | [vitest](./vitest.md) | 単体・性質・結合のテストの実行系と、テストが実行していない箇所を見つけるカバレッジ計測である | TypeScript は Vitest と Vitest の coverage(v8 provider)である |
 | [vscode-jsonrpc](./vscode-jsonrpc.md) | extension が接続する core のプロセスとの間で、JSON-RPC の小さい契約だけを外へ出す機構である | TypeScript は vscode-jsonrpc である |
 | [vscode](./vscode.md) | extension の surface を動かす ide の host である | VSCode である |

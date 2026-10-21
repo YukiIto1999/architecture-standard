@@ -1,9 +1,9 @@
 # oxlint
 
-用途は、規則の違反をビルドで止める linter である。
+用途は、型情報を要さない規則の違反をビルドで止める linter である。
 採用は、TypeScript は oxlint である。
-判断基準は、[typescript](./inspection.md) の inspection が割り当てる規則を TypeScript の全体に一律に強制し、警告をリポジトリの検証入口でエラーとして扱えることである。
-撤回条件は、判断基準を満たさなくなることであり、保守の停止と、採用している bundler と同じ実体を駆動する統合 CLI が同じ判断基準を満たすようになることを再評価のトリガーとする。
+判断基準は、[typescript](./inspection.md) の inspection が割り当てる規則を TypeScript の全体に一律に強制し、警告をリポジトリの検証入口でエラーとして扱え、規則の設定を [vite-plus](./vite-plus.md) の `vite.config.ts` の `lint` block に置けることである。
+撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 ## 汎用名と裸ループと自由文出力を lint で止める
 
@@ -27,5 +27,5 @@ no-console が有効で、許可が telemetry の port と console 相当の出�
 telemetry を経ない console 出力を業務コードに置くこと。
 
 ### 行動
-oxlint の設定へ id-denylist・typescript/prefer-for-of・no-console を定め、違反箇所は名前の付け直し・名前のある集合操作・telemetry の port へ直す。
+[vite-plus](./vite-plus.md) の `vite.config.ts` の `lint` block へ id-denylist・typescript/prefer-for-of・no-console を定め、違反箇所は名前の付け直し・名前のある集合操作・telemetry の port へ直す。
 

@@ -4,60 +4,65 @@
 
 用途は、単体・性質・結合のテストの実行系である。
 採用は、TypeScript は Vitest である。
-判断基準は、テストを速く決定的に回せることと、build の設定をテストと共有して変換の前提がテストと本体でずれないことである。
-撤回条件は、判断基準を満たさなくなることであり、実行基盤の対応状況の変化を再評価のトリガーとする。
+判断基準は、テストを速く決定的に回せることと、build の設定をテストと共有して変換の前提がテストと本体でずれないことであり、[vite-plus](./vite-plus.md) の `vp test` が同梱の版で駆動することを含む。
+撤回条件は、判断基準を満たさなくなることであり、`vite-plus` が同梱する Vitest の major の変化と、実行基盤の対応状況の変化を再評価のトリガーとする。
 
 ## カバレッジ計測
 
 用途は、テストが実行していない箇所を見つけるカバレッジ計測である。
 採用は、TypeScript は Vitest の coverage(v8 provider)である。
-判断基準は、採用済みのテスト実行系と統合して機械可読な coverage report を branch まで数える設定で出力し、記録した下限を判定する検証入口の入力にできることである。
+判断基準は、採用済みのテスト実行系と統合して機械可読な coverage report を branch まで数える設定で出力し、記録した下限を判定する検証入口の入力にでき、provider の版を `vite-plus` が同梱する Vitest の版に揃えられることである。
 撤回条件は、判断基準を満たさなくなることであり、保守の停止、report 形式、branch を数える設定の変化、test runner との統合方法の変化を再評価のトリガーとする。
 
 ## 実行
 
 ### 要求
 単体・性質のテストの実行は、build の設定を共有し変換の前提がずれないようにして速く行う。
-これを Vitest で満たす。
+これを `vp test` が駆動する Vitest で満たす。
 仕様は cucumber-js、UI の E2E smoke と visual は Playwright で別に実行する。
 
 ### 根拠
 Vitest は build の設定をテストと共有し、変換の前提がテストと本体でずれない。
-テストを速く回し、検証入口では一度きりの実行になる。
+`vp test` は watch に入らない一度きりの実行を既定とするので、テストを速く回し、検証入口で使える。
 仕様と UI の E2E smoke・visual は目的が異なる別の実行系(cucumber-js・Playwright)を持つので、単体・性質の実行を Vitest に限ってもテスト全体の実行手段は欠けない。
 
 ### 完了条件
-単体・性質のテストの実行が、Vitest で行われている。
+単体・性質のテストの実行が、`vp test` が駆動する Vitest で行われている。
 仕様の実行が cucumber-js、UI の E2E smoke と visual の実行が Playwright で行われている。
 
 ### 禁止事項
 build とテストで、変換の設定を食い違わせること。
 
 ### 行動
-単体・性質のテストを Vitest で実行し、build の設定を共有する。
+単体・性質のテストを `vp test` で実行し、build の設定を共有する。
 
 ## カバレッジ
 
 ### 要求
 カバレッジは Vitest の coverage で計測し、branch と line を数える。
+coverage の provider package は、`vite-plus` が同梱する Vitest と同じ版に固定する。
 下限は、project が branch と line のそれぞれに記録する。
 記録した下限は、coverage の機械可読な出力から検証入口で判定する。
 カバーしない箇所の扱いと、数値を目標にしない扱いは、[structure/tests の methods](../../structure/tests/methods.md) に従う。
 
 ### 根拠
 採用しているテスト実行系と同じ変換で計測すれば、計測の対象と実行の対象がずれない。
+provider の版を同梱の Vitest と揃えれば、`vp test` が使う runner と provider が食い違わない。
 branch を数えれば、実行した行の中の未実行の分岐が見える。
 
 ### 完了条件
 カバレッジが Vitest の coverage で計測され、branch と line が数えられている。
+coverage の provider の版が、`vite-plus` が同梱する Vitest の版と一致している。
 project が、branch と line の下限を記録している。
 記録した下限が、機械可読な出力から検証入口で判定されている。
 
 ### 禁止事項
 line の下限だけで、カバレッジの判定を済ませること。
 カバレッジの数値を、テストの有効性が足りている証拠として扱うこと。
+coverage の provider の版を、同梱の Vitest の版と食い違わせること。
 
 ### 行動
 Vitest の coverage を検証入口に組み、機械可読な出力を残す。
+`vp toolchain` で確かめた同梱の Vitest の版へ、coverage の provider を固定する。
 出力から branch と line の下限を判定し、割ったら止める。
 未実行の箇所を読み、テストの取りこぼしを塞ぐ。
