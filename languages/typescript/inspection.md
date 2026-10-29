@@ -220,7 +220,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | formation | 意味と単位を型で区別する | 型(branded type) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+構造検査(TypeScript compiler API による型・値の PascalCase・camelCase の命名照合) |
 | conventions | ドキュメントコメントを書く | 構造検査(TypeScript compiler API と @microsoft/tsdoc。存在・構文・宣言と tag の対応・`@throws {@link ErrorType} 条件`・外へ伝播する直接の throw の型と link・try/catch で吸収される throw の除外・先頭行の一行と句読点)+レビュー(実効的な可視境界に応じた外部契約または内部契約、call/rejected Promise から伝播する欠陥と @throws、再述でない意味、統一した語彙) |
-| conventions | 型名の接尾辞を役割で揃える | 構造検査(TypeScript compiler API による命名照合) |
+| conventions | 型名の接尾辞を役割で揃える | 構造検査(TypeScript compiler API による保存用と binding 固有の型の役割別の命名照合)+レビュー(行と列の保存構造、wire の全体と部分の割当、既存の契約名との対応、接尾辞だけの同義型の不在) |
 | vitest | カバレッジ | 計測(Vitest coverage の v8 provider で project 記録の branch 下限を検証入口で判定)+構造検査(coverage の provider の版と `vite-plus` が同梱する Vitest の版の一致) |
 | valibot | unknown で受けて一度だけ parse する | 型/実行テスト(valibot の safeParse・生成 schema と生成 DTO の対応・全 variant と入れ子・配列内 object の未知キーの受容と位置捕捉、境界の警告到達、捕捉値の非流入、必須項目欠落・制約違反・判別子と payload の不一致の拒否)+構造検査(公開契約の schema の生成元と受信側固有の schema の区別) |
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |

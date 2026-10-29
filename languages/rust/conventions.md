@@ -78,24 +78,29 @@ pub fn place(cart: ValidCart) -> Result<Order, OrderError> { /* ... */ }
 
 ### 要求
 永続化から読んだ行を表す型には Record を付ける。
-binding 固有の wire envelope の型には Request・Response を付け、生成 DTO は canonical の command・query・result・view の意味の名前を保つ。
+binding 固有の要求と応答の wire envelope には、それぞれ Request と Response を付ける。
+行の列に保存する専用の直列化構造には Payload を付け、行全体を表す Record と区別する。
+binding 固有の message の params 部分には Params、result 部分には Result を付け、封筒全体の型と区別する。
+前述の接尾辞は専用の保存表現と binding 表現の型に適用し、canonical の生成 DTO と利用する protocol の既存の型は契約の名前を優先する。
 一方の型からもう一方への変換を担う専用の関数やモジュールには mapper を含む名前を付ける。
 
 ### 根拠
-役割ごとに接尾辞を揃えると、型の名前だけで永続化の行か境界の wire か変換かが区別でき、同じ業務概念を指す型が複数あっても取り違えない。
+型名が保存や通信の単位を表せば、行全体と列の値、wire の封筒とその部分を取り違えず、同じ業務概念を指す型と変換の役割も区別できる。
 
 ### 完了条件
 永続化から読んだ行の型名が、Record で終わっている。
-binding 固有の wire envelope の型名が Request または Response で終わり、生成 DTO の意味の名前が canonical と対応している。
+binding 固有の要求の封筒は Request、応答の封筒は Response で終わっている。
+列の保存専用の構造が Payload、binding 固有の params と result の型が Params と Result で終わり、全体と部分が混同されていない。
+生成 DTO と protocol の既存の型の名前が、それぞれの契約に対応している。
 変換を担う専用の関数やモジュールの名前が、mapper を含んでいる。
 
 ### 禁止事項
-役割の異なる型に、同じ接尾辞を付けること。
-接尾辞なしに、役割を型名から判別できない名前を付けること。
+列の保存専用の構造を行全体として、message の部分の専用の型を封筒全体として命名すること。
 
 ### 行動
-永続化の行の型は `<対象>Record`、binding 固有の wire envelope は `<対象>Request`・`<対象>Response` の名前にする。
-生成 DTO は canonical の意味の名前を使い、接尾辞を揃えるためだけの同義 DTO や alias を追加しない。
+永続化の行の型は `<対象>Record`、列の保存専用の構造は `<対象>Payload` の名前にする。
+binding 固有の要求と応答の封筒は `<対象>Request`・`<対象>Response`、その params と result の専用の型は `<操作>Params`・`<操作>Result` とする。
+生成 DTO や protocol の既存の型は契約の名前で再利用し、意味と保証が同じなら、利用位置や接尾辞だけのために同義 DTO や alias を追加しない。
 `From`・`TryFrom` の実装でなく専用の変換関数やモジュールを置くときは、名前に mapper を含める。
 
 ### 例
@@ -106,11 +111,14 @@ Order
 OrderIn
 ```
 
-永続化の行、境界の入出力、変換の役割を、接尾辞と module 名で区別する。
+保存の全体と部分、wire の封筒とその部分、変換を、接尾辞と module 名で区別する。
 
 ```text
 OrderRecord
+PlacedPayload
 CreateOrderRequest
+InitializeParams
+InitializeResult
 OrderResponse
 order_mapper
 ```

@@ -192,7 +192,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | formation | 検証と生成を libs の analyzer project に分ける | 構造検査(analyzer project 境界)+型(netstandard2.0 の Analyzer 参照制約) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、production の SonarAnalyzer.CSharp 命名規則、test project では Sonar の method 命名規則だけを抑止して命名 analyzer で test attribute 付き entry の snake_case とその他 method の .NET 命名を検査) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化。公開要素のコメント欠落)+analyzer(Roslyn analyzer。全宣言のコメント存在・param/typeparam/returns/value・先頭行・当該宣言内で機械判定できる欠陥の exception)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
-| conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET の命名照合) |
+| conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET による保存用と binding 固有の型の役割別の命名照合)+レビュー(行と列の保存構造、wire の全体と部分の割当、既存の契約名との対応、接尾辞だけの同義型の不在) |
 | coverlet-mtp | カバレッジ | 計測(branch を数える設定は `--coverlet` で有効にする coverlet.MTP の cobertura 出力であり、その `branches-covered` と `branches-valid` から project 記録の branch 下限を検証入口で判定) |
 | translation | 境界で一度だけ parse してドメイン型へ移す | 型(生成 DTO・JsonSerializerContext・required・生成 converter・JsonExtensionData)+構造検査(contracts/adapters の Mapper とコンテキストの検証付き入力構築の配置、旧版を受ける互換の生成 DTO と変換の参照が contracts/adapters の写像に閉じ、内側が現在の検証済みの型だけを受けること)+実行テスト(公開入力の endpoint が実際に受ける経路と内部の durable queue の実際の受信経路へ渡した必須項目の欠落・契約が許さない null・既知項目の不正・判別子と payload の不一致の拒否と業務処理の非開始と既定値による補完の不在、未知の追加項目だけを加えた入力の受容、全 variant と入れ子 object の未知キーの位置捕捉とログ到達、捕捉値の domain と応答への非流入、保持する旧版の事実の変換が各版を独立した期待値へ照合して現在の検証済みの型だけを内側へ渡し保存行を変えないこと)+レビュー(保持の契約が旧版の事実を必要とする範囲、真の業務上の不明と互換のための任意化の区別、変換の意味、保存や送信で存在しなかった事実を作っていないこと) |
 | aspnet-core | 公開するエラーを境界で problem+json へ写す | 実行テスト(ProblemDetails の単体テスト) |
