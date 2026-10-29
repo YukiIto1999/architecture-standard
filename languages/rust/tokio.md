@@ -40,6 +40,7 @@ abort は、Future を drop しても必要な後始末と外部効果の整合�
 長寿命の処理は host の長寿命の所有者の JoinSet に開始時から所属させ、request の終了ではなく、その所有者の停止で回収する。
 並行して需要を処理する job task の数は tokio::sync::Semaphore で上限を定める。
 共有状態を単一所有する owner task は需要を並行処理する job task ではないため、Semaphore の permit の対象外とする。
+apalis の worker が自身の中で並行に走らせる job の handler の寿命の所有、上限、停止での合流、panic の観測は、[apalis](./apalis.md) の「handler の並行と停止」に従い、handler の内側に上限のための JoinSet と Semaphore を重ねない。
 job task の permit 待ちは、期限付きの permit 取得と CancellationToken の取消を select! で競わせる。
 取消と permit 取得が同時に成立した場合は、取消を先に選び permit を取得しない。
 

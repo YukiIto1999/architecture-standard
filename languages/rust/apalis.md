@@ -3,7 +3,7 @@
 用途は、背景処理の durable な queue と、業務のデータが決める時刻の予約の骨格である。
 採用は、Rust は apalis と apalis-postgres であり、PostgreSQL を backend にした queue に限って使う。
 判断基準は、queue と予約を既存の datastore に閉じ、外部の broker を開かず、backend が [sqlx](./sqlx.md) の採用と同じ系の SQL client を要求することである。
-撤回条件は、判断基準を満たさなくなることであり、backend の対応状況の変化と apalis の安定版の到達を再評価のトリガーとする。
+撤回条件は、判断基準を満たさなくなることであり、backend の対応状況の変化と apalis の major の変化を再評価のトリガーとする。
 
 ## worker
 
@@ -109,3 +109,58 @@ payment.capture(item.amount(), key).await?;
 record_processed_in_transaction(item.id()).await?;
 inbox.complete(item.id()).await?;
 ```
+
+## handler の並行と停止
+
+### 要求
+worker が自身の中で並行に走らせる job の handler は [tokio](./tokio.md) の「構造化並行」が定める job task にあたり、その寿命の所有、上限、停止での合流、panic の観測をこの規律で満たす。
+handler ごとの task は worker が保持して回収するため、project の JoinSet への所属と、兄弟への協調取消は handler に適用せず、一つの job の失敗で同じ worker の他の job を取り消さない。
+handler が自身の中で始める子の処理には、handler を所有者として tokio の「構造化並行」を適用する。
+handler の並行度は `.concurrency(n)` で上限を定め、handler の内側へ上限のための JoinSet と Semaphore を重ねない。
+backend が一度に取り出す件数は、並行度の上限以下にする。
+handler は `.parallelize(tokio::spawn)` で handler ごとの task に分け、handler の本体の外で起きた panic でも同じ worker の他の handler を止めない。
+handler の本体の panic は再試行しても回復しない欠陥であり、handler は本体を `catch_unwind` で包んで panic を `AbortError` で返し、その job を [resilience](../../concerns/resilience/dead-letter-exit.md) の「再試行の出口を持つ」に従う行き止まりとして `Killed` へ送る。
+worker は Monitor で走らせ、Monitor の run future を host の長寿命の所有者に所属させ、停止経路で shutdown を要求してから完了まで await する。
+`run_with_signal` の terminator と Monitor の `shutdown_timeout` による打ち切りを、停止の完了として使わない。
+handler は host の停止と同じ系統の CancellationToken を `Data` extractor で受け取り、job の境界である handler の入口で Deadline を一度だけ生成し、停止の要求で新しい外部効果を始めずに終える。
+
+### 根拠
+採用版の worker は handler の future を自身で保持して poll し、`.concurrency` を付けなければ取り出せるだけの handler を同時に走らせる。
+`.concurrency` の上限に達すると backend からの取り出しが止まり、需要の signal による背圧が worker の中で成り立つ。
+取り出しは一度に取る件数の単位で進むため、取り出し済みで未着手の task は他の worker から取れず、停止のときに試行を一つ数えて再投入される。
+取り出す件数を並行度の上限以下にすれば、他の worker から隠れる task と、停止のたびに消費される試行を抑えられる。
+`.parallelize(tokio::spawn)` を使わずに handler を worker の poll の中で直接走らせると、一つの handler の panic が worker を止め、同じ worker の他の handler を途中で drop する。
+handler ごとの task に分ければ、panic は join の結果として `Event::Error` に観測され、他の handler は完了まで走る。
+ただし task の panic と `.catch_panic()` の layer は、job の終了を書く処理の外で panic を受けるため、panic した job は実行中の印のまま残り、その worker が heartbeat を続ける限り再投入もされない。
+handler の本体の中で panic を捕捉して `AbortError` を返せば、job は再試行されない `Killed` になり、内容、panic の理由、試行の回数が queue に残り、worker は続く。
+本体の panic を通常の失敗として返すと、job は後退する間隔なしに上限まで再実行され、回復しない欠陥を再試行で繰り返す。
+Monitor の run は停止の要求の後、新しい task を取り出さず、実行中の handler の完了を待ってから返る。
+`run_with_signal` の terminator が先に成立すると、実行中の handler を残したまま正常の終了を返し、handler ごとの task に分けた handler は所有者のないまま走り続ける。
+worker の停止の判定は handler が読む値であり、待機を中断する合図にならないため、待機を伴う handler には CancellationToken を渡す必要がある。
+
+### 完了条件
+handler の同時実行数が `.concurrency(n)` の上限を越えないことが、PostgreSQL を backend にした実際の queue で実行テストにより確かめられている。
+backend の取り出し件数が、並行度の上限以下に設定されている。
+handler が `.parallelize(tokio::spawn)` で task ごとに分かれ、同じ worker の他の handler が完了まで走ることが実行テストで確かめられている。
+handler の本体の panic が `AbortError` で返され、その job が再試行されずに `Killed` になり、panic の理由と試行の回数が残り、worker が続くことが、実際の queue で観測されている。
+Monitor の run future が host の長寿命の所有者に所属し、停止経路で shutdown の後に完了まで await されている。
+停止の要求の後に新しい task が取り出されず、実行中の handler の完了を待って run が返ることが実行テストで確かめられている。
+`run_with_signal` の terminator と Monitor の `shutdown_timeout` が、停止の経路に使われていない。
+handler が host の停止と同じ系統の CancellationToken を受け取り、handler の入口で job ごとに Deadline を生成し、停止の要求で新しい外部効果を始めずに終えている。
+
+### 禁止事項
+`.concurrency` を付けずに、worker を走らせること。
+handler の内側に、上限のための JoinSet と Semaphore を重ねること。
+`.parallelize(tokio::spawn)` を使わずに、handler を worker の poll の中で直接走らせること。
+handler の本体の panic を、通常の失敗として返して再試行させること。
+task の panic の観測や `.catch_panic()` の layer だけで、panic した job の終了を扱うこと。
+Monitor の run future を、timeout、select!、abort で drop すること。
+`run_with_signal` の terminator や Monitor の `shutdown_timeout` の成立を、停止の完了として扱うこと。
+組立のときに作った一つの Deadline を、`Data` で全ての job へ共有すること。
+worker の停止の判定だけを、handler の待機を中断する手段にすること。
+
+### 行動
+WorkerBuilder に `.concurrency(n)` と `.parallelize(tokio::spawn)` を設定し、backend の取り出し件数を n 以下にし、handler の本体を `catch_unwind` で包んで panic を `AbortError` で返す。
+Monitor の run future を host の長寿命の所有者の JoinSet に登録し、停止経路では shutdown を要求してから完了まで await する。
+host の停止と同じ系統の CancellationToken を `Data` で handler へ渡し、handler の入口で job ごとに Deadline を生成して、handler の待機を select! で取消と競わせる。
+並行度の上限、停止の後に取り出さないこと、実行中の handler の完了待ち、panic の隔離と、panic した job の `Killed` への遷移と再試行の不在を、実際の PostgreSQL の queue を使う実行テストで確かめる。
