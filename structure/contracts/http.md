@@ -26,17 +26,24 @@ method は操作の意図で選び、応答の cache 可能性を中核の差に
 ## リクエストの置き場所
 
 操作の入力は、body を既定にする。
-header は、認証や追跡のような横断的関心事に限り、エンドポイント固有の入力を置かない。
+header は、認証や追跡のような横断的関心事と [Content-Type](https://httpwg.org/specs/rfc9110.html#field.content-type) のような標準の表現・protocol metadata に限り、それ以外のエンドポイント固有の入力を置かない。
 query は、集合の絞り込み・並び・頁に限る。
 
 ## スタイル
 
 http は、REST と OpenAPI 3.x に従う。
-表現の形式は、JSON に統一する。
+構造化データは JSON に統一し、ファイル本体はそのファイル形式で表す。
 エラーの表現は、RFC 9457 の problem+json に束ねる。
 HTTP 仕様の SHOULD の規定には、明確な理由がない限り従う。
 エラーの内部の詳細は外部の応答へ出さず、利用者の語彙へ翻訳して返す。
 内部の詳細を出さない規律は [concerns/effect](../../concerns/effect/README.md) に従う。
+
+## ファイルの表現
+
+画像、原本の upload・download、既存のファイル形式の export は、media type と本文の形式を binding に宣言する。
+ファイル本体を JSON に包むためだけの base64 化は行わない。
+binary と付随する属性を同じ要求で受ける場合は [multipart/form-data](https://www.rfc-editor.org/rfc/rfc7578#section-4) の body に束ね、part ごとの形式、標準 metadata と canonical の値への対応を binding に定める。
+ファイル名などの属性を、本文が binary であることだけを理由に query や独自 header へ移さない。
 
 ## 作成の応答
 

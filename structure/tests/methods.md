@@ -164,6 +164,8 @@ replay は、履歴から導出する projection に対して、保存したイ�
 契約駆動の fuzz は、生成した OpenAPI を駆動元にし、道具の採用は [tools/build](../../tools/build/README.md) が定める。
 公開 API の契約への適合も、同じ機構で検証する。
 protocol 経路の適合は、生成物と実装の drift の検査と conformance で検証する。
+ファイルを運ぶ HTTP binding は [contracts/http](../contracts/http.md) の「ファイルの表現」に照合し、実際の送受信経路で Content-Type、復元した本文の byte 列、multipart の part と属性の対応を独立した期待値へ照合する。
+ファイルの操作が宣言する失敗も、契約どおりの status と problem+json で返ることを検証する。
 契約 generator の生成結果は、[contracts/generated](../contracts/generated.md) の「生成能力」に照合し、全 variant の判別子と payload を serialize と deserialize で往復する generated-contract round-trip で検証する。
 未知項目を検知する生成経路は、全 variant、入れ子の object と配列内の object に未知キーを加え、その受容、捕捉と境界の報告を各言語の規律に照合する。
 同じ入力集合について、既知の必須項目の欠落、値の制約違反、判別子と payload の不一致が拒否されることも検証し、未知項目の受容で既知項目の検証を失わないことを確かめる。
@@ -192,7 +194,7 @@ transaction の検証は、application が開始から確定または中止ま�
 |---|---|
 | ドメイン型・操作・不変条件と状態遷移 | 型による入力・操作・構築の拒否、constructor の拒否、値の計算と比較、区分判断と分類条件、集合の結果と集合としての拒否、状態遷移の property、網羅する outcome |
 | use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、中間状態の面ごとの通過集合、未検出 mutant |
-| canonical と binding | operation・型・error の欠落と余剰、公開区分と業務区分の意味の対応、generated drift、全 variant の serialize round-trip、未知項目の受容・捕捉・報告と既知項目の不正の拒否、generated のデータ型と通信の依存単位の分離、POST・PUT・status・cache・405 を含む HTTP method semantics、protocol conformance |
+| canonical と binding | operation・型・error の欠落と余剰、公開区分と業務区分の意味の対応、generated drift、全 variant の serialize round-trip、未知項目の受容・捕捉・報告と既知項目の不正の拒否、generated のデータ型と通信の依存単位の分離、POST・PUT・status・cache・405 を含む HTTP method semantics、ファイルの media type・本文・multipart の対応、protocol conformance |
 | 認証と認可 | 各認証境界の credential 拒否と認証主体の確定、資格情報の種類ごとの検証根拠と拒否条件の対応、自己申告の OS 主体と file の可読性だけによる昇格の拒否、認証に関する値の core 非流入、必要な業務主体との対応や代理・委任の検証、主体・操作・資源・条件の許可と拒否、宣言のない入口と保護の迂回の拒否、匿名公開の宣言、対象依存の認可と確定時の状態の整合 |
 | 永続化、transaction、messaging | 実 datastore の制約、業務区分と定義の識別子の対応、廃止した定義の参照と新規選択の分離、外部キーの循環の不在、参照先の存続と削除規則、期間の判定、事実の行の更新と削除の拒否、消せる行のビューの外の削除の拒否、業務事実の時刻の列への書き込み権限と利用者定義の手続きの不在、期間の重なりと件数の不変条件の全書込経路の競合制御、version conflict、単一の確定点、現在情報と必要な業務事実の同時確定、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、派生読みモデルの再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、件数を変えても変わらない問い合わせ数 |
 | effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test |
