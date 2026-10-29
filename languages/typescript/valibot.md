@@ -65,6 +65,7 @@ HTTP の応答と postMessage の受信は、どちらもこの parse を通す�
 公開契約の境界 schema は canonical と binding から valibot の schema として生成し、生成 DTO と field、variant、制約を共有する。
 公開契約の decode は通信を所有する host の adapter で行い、viewer と extension へは検証済みの生成 DTO を port から渡す。
 生成した decode は、既知の必須項目、値の制約、判別子と variant の対応を検証し、全 variant と入れ子・配列内の object で契約にないキーの位置と名前を捕捉する。
+未指定と null は [canonical](../../structure/contracts/canonical.md) の「値の不在」に対応させ、契約上必要な区別を生成 DTO と schema で失わない。
 未知キーを受容しても既知項目の不正を受容せず、捕捉情報を生成 DTO の業務データと送信 payload へ混ぜない。
 decode を所有する host の adapter は、捕捉した位置とキーを警告として記録し、値そのものや未知の資格情報をログに載せない。
 受信側固有の業務型の schema は formation が定める型封入に合わせ、その受信側が新たに保証する性質だけを所有する。

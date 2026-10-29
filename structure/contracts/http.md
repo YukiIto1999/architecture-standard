@@ -28,6 +28,7 @@ method は操作の意図で選び、応答の cache 可能性を中核の差に
 操作の入力は、body を既定にする。
 header は、認証や追跡のような横断的関心事と [Content-Type](https://httpwg.org/specs/rfc9110.html#field.content-type) のような標準の表現・protocol metadata に限り、それ以外のエンドポイント固有の入力を置かない。
 query は、集合の絞り込み・並び・頁に限る。
+query の省略は canonical の未指定へ写し、空文字や文字列 null を未指定や null と暗黙に同一視しない。
 
 ## スタイル
 
