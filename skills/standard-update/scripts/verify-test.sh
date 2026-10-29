@@ -799,6 +799,43 @@ assert.deepEqual(
   })),
   [{ concernLine: 3, principleLine: 3, text: genuineOverlap }],
 );
+
+const referenceSymbol = "shared-consistency-boundary-reference";
+const referenceHeading = "参照する規律の十分に長い正式な見出しの名前";
+const linkedRequirement = "規範として使うリンクの文言の一致は検出する。";
+const referenceBoundaryRoot = makeMarkdownRoot("reference-symbols-are-not-body", {
+  [`principles/${referenceSymbol}.md`]: [`## ${referenceHeading}`],
+  "principles/left-reference.md": [
+    "## 原則側の参照元",
+    `集約の約束は [${referenceSymbol}](./${referenceSymbol}.md) の「${referenceHeading}」に従う。`,
+    `左の配置は [principles/${referenceSymbol}](./${referenceSymbol}.md) を基準にする。`,
+    `左の参照先は [${referenceHeading}](./${referenceSymbol}.md) にある。`,
+    `参照前にある短い本文断片[${referenceSymbol}](./${referenceSymbol}.md)参照後にある短い本文断片`,
+    `${genuineOverlap}[${referenceSymbol}](./${referenceSymbol}.md)原則の補足`,
+    `[${linkedRequirement}](./${referenceSymbol}.md)原則の補足`,
+  ],
+  "concerns/right-reference.md": [
+    "## 関心側の参照元",
+    `確定の単位は [${referenceSymbol}](../principles/${referenceSymbol}.md) の「${referenceHeading}」に委ねる。`,
+    `右の配置は [principles/${referenceSymbol}](../principles/${referenceSymbol}.md) に合わせる。`,
+    `右の参照先は [${referenceHeading}](../principles/${referenceSymbol}.md) を指す。`,
+    `参照前にある短い本文断片[${referenceSymbol}](../principles/${referenceSymbol}.md)参照後にある短い本文断片`,
+    `${genuineOverlap}[${referenceSymbol}](../principles/${referenceSymbol}.md)関心の補足`,
+    `[${linkedRequirement}](../principles/${referenceSymbol}.md)関心の補足`,
+  ],
+});
+const referenceBoundaryOutput = analyze("verbatim-overlap.mjs", referenceBoundaryRoot, 0);
+assert.match(referenceBoundaryOutput, /^candidates: 2$/m);
+assert.equal(referenceBoundaryOutput.includes("\u0000"), false);
+assert.deepEqual(
+  [...referenceBoundaryOutput.matchAll(/^(\d+)\t([^:\t\r\n]+):(\d+)\t<->\t([^:\t\r\n]+):(\d+)\t"(.*)"$/gm)].map((match) => ({
+    concernLine: Number(match[3]), principleLine: Number(match[5]), text: match[6],
+  })).sort((left, right) => left.concernLine - right.concernLine),
+  [
+    { concernLine: 6, principleLine: 6, text: genuineOverlap },
+    { concernLine: 7, principleLine: 7, text: linkedRequirement },
+  ],
+);
 NODE
 ); then
   record_pass "文書解析 CLI がフェンスの境界と元の診断行番号を共有する"

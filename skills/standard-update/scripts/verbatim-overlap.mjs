@@ -16,14 +16,19 @@ const THRESHOLD = 18;
 // 正本の見出しの逐語引用が必須のため鉤括弧内の見出しの重複判定は不可
 const AREAS = ["principles", "concerns", "structure", "tools", "languages", "process"];
 const HEADINGS = new Set();
+const REFERENCE_NAMES = new Set();
 for (const area of AREAS) {
   const stack = [path.join(ROOT, area)];
   while (stack.length > 0) {
     const dir = stack.pop();
+    REFERENCE_NAMES.add(path.relative(ROOT, dir).replaceAll(path.sep, "/"));
+    REFERENCE_NAMES.add(path.basename(dir));
     for (const entry of fs.readdirSync(dir)) {
       const p = path.join(dir, entry);
       if (fs.statSync(p).isDirectory()) stack.push(p);
       else if (entry.endsWith(".md")) {
+        REFERENCE_NAMES.add(entry.slice(0, -3));
+        REFERENCE_NAMES.add(path.relative(ROOT, p).slice(0, -3).replaceAll(path.sep, "/"));
         for (const line of markdownBodyLines(fs.readFileSync(p, "utf8"))) {
           const m = line.match(/^#{1,3} (.+)$/);
           if (m) HEADINGS.add(m[1].trim());
@@ -36,7 +41,7 @@ for (const area of AREAS) {
 /**
  * 原則と関心事の逐語一致を調べる本文の収集
  * @param {string} dir - 標準 root 相対の検査対象ディレクトリ
- * @returns {Array<{file: string, lineNo: number, text: string}>} 元の行番号を保持した引用の間の本文断片
+ * @returns {Array<{file: string, lineNo: number, text: string}>} 元の行番号を保持した比較対象の本文断片
  * @throws {@link Error} 対象ツリーへのアクセス失敗
  */
 function readLines(dir) {
@@ -59,7 +64,10 @@ function readLines(dir) {
       if (/^\s*#/.test(line)) return;
       if (/^\s*\|/.test(line)) return;
       if (/^\s*- \[/.test(line)) return;
-      line = line.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
+      line = line.replace(/\[([^\]]*)\]\([^)]*\)/g, (_link, name) => {
+        const symbol = name.replace(/^`([^`]*)`$/, "$1");
+        return HEADINGS.has(symbol) || REFERENCE_NAMES.has(symbol.replace(/\.md$/, "")) ? "\u0000" : name;
+      });
       line = line.replace(/「([^「」]+)」/g, (whole, name) => (HEADINGS.has(name) ? "\u0000" : whole));
       for (const segment of line.split("\u0000")) {
         const text = segment.trim();
