@@ -37,6 +37,8 @@ use-case の順序、結果による分岐、再開、補償は、コンテキ�
 composition は、コンテキストが公開した入力構築をそのまま利用できるように配線し、業務型の constructor を外へ公開しない。
 外部の canonical operation と core API の接続、生成 DTO との写像は [contracts/adapters](../contracts/adapters.md) が所有する。
 core は、公開契約の schema、生成 DTO、通信 client と stub を参照しない。
+canonical との対応は外部へ業務契約として公開する operation を対象とし、構築用 API、port、内部の application 入口を同数の operation として追加しない。
+コンテキストの管理操作も application の公開する実行契約へ配線し、composition 自身に処理の順序や実行本体を置かない。
 イベントの公開と配送は [application](./application.md) と [concerns/messaging](../../concerns/messaging/README.md) に従う。
 
 ## トランザクションの能力の配線

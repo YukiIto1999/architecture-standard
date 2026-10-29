@@ -204,11 +204,11 @@ transaction の検証は、application が開始から確定または中止ま�
 | console の呼び出しと terminal | stdout・stderr・終了 status と状態変化、TTY と非 TTY、非対話での入力不足、破壊操作の確認、再実行、確定前後の取り消し、terminal の復元と一時引き渡し、cell 幅と resize、入力 loop が処理中も操作を受けること |
 | performance | 固定した workload と環境での SLO 計測、変更前後の比較、計測結果を伴う退行判定 |
 
-公開入口は、業務の operation を公開する入口と、それを提供せず通信や認証を成立させる技術 protocol の入口を区別し、所有する契約と公開する意味を対応付ける。
+公開入口は、業務の operation を公開する入口と、それを提供せず通信、認証、管理や技術機構を実行する入口を区別し、所有する契約と公開する意味を対応付ける。
 業務の入口は、canonical operation から契約 adapter、core の公開 application API、surface の binding または command、公開 interface の scenario までを一つの対応として列挙する。
 欠落した operation、実体のない mapping、canonical に対応しない業務の入口、scenario が一つもない公開 operation は失敗する。
-技術 protocol の入口は、その protocol の仕様、所有する surface または host、binding、成功と拒否の scenario を対応付け、業務の operation を作って数合わせしない。
-入口の区分は名前や path の除外リスト、core を直接呼ばないことだけから決めず、公開する意味と実際の実行先を照合し、業務の操作を技術 protocol の入口として検査から外さない。
+技術的な入口は、機構や protocol の仕様、所有者、binding、command または実行 Interface、成功と拒否の scenario を対応付け、業務の operation を作って数合わせしない。
+入口の区分は名前や path の除外リスト、core を直接呼ばないことだけから決めず、公開する意味と実際の実行先を照合し、業務の操作を技術的な入口として検査から外さない。
 入口の一覧は実際に公開する route、command、protocol の受信口から得て、どちらの契約と scenario にも対応しない入口を失敗にする。
 ある規範を型、静的検査、実行テスト、計測のいずれでも判定できない場合だけ人手レビューへ割り当て、判定理由と見る箇所を明記する。
 

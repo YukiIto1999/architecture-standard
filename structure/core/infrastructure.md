@@ -33,7 +33,8 @@ infrastructure は、application が要求する具体的な接続、取得、�
 派生読みモデルの再構築は、正本の現在情報または業務イベントを port から読み出す application workflow として、読みモデルを所有するコンテキストに置く。
 起動は workflow を呼べる surface の layout に従う。
 schema migration の実装は infrastructure に置き、適用の順序は [process/migration](../../process/migration.md) が定める。
-個人データを消去する port の実装と管理操作は infrastructure に置き、消去する情報と期限は [concerns/privacy](../../concerns/privacy/README.md) に従う。
+個人データの消去や鍵の入れ替えなど、コンテキストの状態を扱う管理操作は application の use-case または workflow が制御し、この層には port の I/O 実装を置く。
+消去する情報と期限は [concerns/privacy](../../concerns/privacy/README.md) に従う。
 管理操作と消去の証跡は [concerns/audit-trail](../../concerns/audit-trail/README.md) に従う。
 
 ## 外部システム

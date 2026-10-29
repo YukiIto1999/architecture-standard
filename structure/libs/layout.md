@@ -37,6 +37,9 @@ core・surface・runtime は、必要な機構の公開 API を直接参照し�
 単一の業務境界の port を実装するだけの接続は、その境界の adapter に置く。
 業務型を技術契約へ写す adapter も利用側に置き、libs に業務を持ち込まない。
 境界の殻で行う観測の配線は、その境界の composition に置き、配線だけを機構として切り出さない。
+自分の実行 file を子 process として使う技術機構は、起動の識別、入力と出力、失敗と終了を `spec.md` の契約に含め、実行入口を application の公開 API として提供する。
+surface または host の main は通常の起動と子 process の起動を分け、子の経路をその機構の公開 API へ接続し、core の組み立てや業務の入口を経由させない。
+コンテキスト固有の管理操作は、その application の実行契約と infrastructure の実装に分け、機構のためだけに core の内部の型や保存 schema を libs へ移さない。
 
 ## 機構の単位と粒度
 

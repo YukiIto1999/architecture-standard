@@ -124,3 +124,5 @@ shared-kernel も、値・エラーが二つ以上になれば、同じ規則で
 core の構築入口は composition の `build_core` だけである。
 `build_core` は組み立て済みの API を返し、公開 application 入口、公開入力構築、result と outcome の Interface を利用側へ渡す。
 プロセスの起動は、core を埋め込む surface または host が担う。
+外部からの実行は、組み立て済みの API が公開する application の入口を通し、infrastructure の関数や識別子を composition から再公開しない。
+業務を知らずに定められる技術的な子 process の契約と実行入口は [libs](../libs/layout.md) が所有し、core をその仲介にしない。
