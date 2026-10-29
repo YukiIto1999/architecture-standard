@@ -116,9 +116,11 @@ app.MapGet("/health", () => Results.Ok()).AllowAnonymous();
 
 ### 要求
 session は ASP.NET Core の cookie 認証、OIDC は標準の handler を使う。
-token の管理は Duende.AccessTokenManagement を使う。
+[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) が定める利用者の代理で API を呼ぶ BFF の token の管理は、Duende.AccessTokenManagement を使う。
 CSRF の検査は、session に保持した token と専用 header の一致を検査する CSRF middleware で行う([structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) に従う)。
-access token と refresh token は server 側に保持し、ブラウザへは session を指す識別子だけを持つ認証の cookie を渡す。
+ブラウザへは session を指す識別子だけを持つ認証の cookie を渡し、token を渡さない。
+利用者の代理で API を呼ぶ BFF は、access token と refresh token を server 側に保持する。
+利用者の代理で API を呼ばない BFF は、`SaveTokens` を有効にせず、access token と refresh token を認証チケットへ載せない。
 認証チケットは `ITicketStore` で `CookieAuthenticationOptions.SessionStore` に差し、retention の Valkey に保持する。
 認証 middleware は、検証済みの `ClaimsPrincipal` を `SubjectMapper` で認証主体へ確定する。
 認証主体を確定する middleware は request-scoped の `IMiddleware` として登録し、constructor で受け取った server の境界内の request-scoped `SubjectAccessor` へ認証主体を格納する。
@@ -128,9 +130,10 @@ BFF の route は、`ClaimsPrincipal` を参照しない。
 `SubjectMapper` は、認証 middleware からだけ呼び出す。
 
 ### 根拠
-`SaveTokens=true` は既定で token を `AuthenticationProperties` に載せ、`SessionStore` を差さない cookie 認証はその `AuthenticationProperties` を含む認証チケットをそのまま cookie に暗号化して詰める。
+`SaveTokens` を有効にすると token は `AuthenticationProperties` に載り、`SessionStore` を差さない cookie 認証はその `AuthenticationProperties` を含む認証チケットをそのまま cookie に暗号化して詰める。
 `SessionStore` に `ITicketStore` を差せば、cookie は session を指す識別子だけになり、token を含む認証チケットは server 側の store に残る。
 Duende.AccessTokenManagement は、token の保持と更新を server 側で担う。
+`SaveTokens` は既定で無効であり、利用者の代理で API を呼ばない BFF はこれを有効にしなければ、使わない token を保持と更新の対象にしない。
 principal を認証境界で認証主体へ確定して境界内に保てば、core は token と認証方式を知らず、主体を必要とする operation だけが adapter の対応づけた業務入力として主体を受け取る。
 認証主体を request-scoped の `SubjectAccessor` に一度格納し、DI で同じ認証主体を adapter の入口へ渡せば、認証境界と route が別の主体を構築しない。
 [factory-based middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/extensibility?view=aspnetcore-10.0) は要求ごとに有効化されるので、`IMiddleware` の constructor に scoped な `SubjectAccessor` を注入しても、起動時に構築する middleware に要求の状態を保持させずに済む。
@@ -138,8 +141,9 @@ route が保護された adapter の入口を通じて埋め込んだ core の�
 
 ### 完了条件
 session が cookie 認証、OIDC が標準の handler で行われている。
-token の管理が Duende.AccessTokenManagement で行われている。
-access token・refresh token が server 側の `ITicketStore` に保持され、ブラウザへ渡る cookie が session を指す識別子だけである。
+利用者の代理で API を呼ぶ BFF では、token の管理が Duende.AccessTokenManagement で行われ、access token・refresh token が server 側の `ITicketStore` に保持されている。
+利用者の代理で API を呼ばない BFF では、`SaveTokens` が有効にされず、認証チケットに access token と refresh token が載っていない。
+ブラウザへ渡る cookie が、session を指す識別子だけである。
 検証済みの `ClaimsPrincipal` が、認証 middleware の `SubjectMapper` で認証主体へ確定されている。
 認証に成功した要求では、request-scoped の `IMiddleware` が constructor 注入で同じ request scope の `SubjectAccessor` を受け取り、認証主体を格納してから後続へ進んでいる。
 組立点の DI factory が格納後に同じ request scope の `SubjectAccessor` から `AuthenticatedSubject` を解決し、BFF の route へ注入している。
@@ -151,6 +155,7 @@ CSRF の検査が、[structure/surfaces/server/layout](../../structure/surfaces/
 ### 禁止事項
 access token・refresh token を、ブラウザへ渡すこと。
 `SessionStore` を差さずに `SaveTokens` だけに頼り、token を含む認証チケットを cookie に詰めてブラウザへ渡すこと。
+利用者の代理で API を呼ばない BFF で、`SaveTokens` を有効にすること。
 token の管理で、Duende の商用製品(BFF・IdentityServer)に踏み込むこと。
 ASP.NET Core の Antiforgery を CSRF の検査に使い、期待値の保持を cookie に頼ること。
 cookie の HttpOnly・Secure・SameSite を、緩めること。
@@ -164,7 +169,7 @@ BFF の route で、adapter の保護を適用する入口を通さず core の�
 `SubjectAccessor` または `AuthenticatedSubject` を、root provider で解決したり singleton に保持したりすること。
 
 ### 行動
-OIDC を code と PKCE で server で終端し、token を server 側に保持する。
+OIDC を code と PKCE で server で終端し、利用者の代理で API を呼ぶ場合だけ access token と refresh token を server 側に保持する。
 `CookieAuthenticationOptions.SessionStore` に `ITicketStore` の実装を差し、認証チケットを retention の Valkey に保持する。
 cookie を HttpOnly・Secure・SameSite=Strict にする。
 認証主体を確定する middleware を `IMiddleware` として request-scoped で登録し、constructor で同じ request scope の `SubjectAccessor` を受け取る。
@@ -175,7 +180,8 @@ BFF の route から `ClaimsPrincipal` と `SubjectMapper` の参照を除く。
 CSRF の検査は、session の token と専用 header の一致を CSRF middleware で検査する。
 
 ### 例
-チケットは retention の Valkey に保持し、cookie には識別子だけを置く。
+次の例は利用者の代理で API を呼ぶ BFF であり、チケットは retention の Valkey に保持し、cookie には識別子だけを置く。
+利用者の代理で API を呼ばない BFF は、`SaveTokens` を有効にせず、`AddOpenIdConnectAccessTokenManagement` を登録しない。
 `ITicketStore` は DI に登録し、options 構築時に解決する。
 検証済み principal は認証主体へ確定して request scope に保持し、route から検証済み入力とともに adapter の入口へ渡す。
 `AddScoped` は factory を登録するだけであり、その本体は認証主体を要求する route への注入時に request scope で実行される。

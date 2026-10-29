@@ -1,7 +1,7 @@
 # server の構造
 
 server は、API の surface である。
-core を埋め込み、http を公開し、Web BFF を提供する場合は token を仲介する。
+core を埋め込み、http を公開し、Web BFF を提供する場合は利用者の OIDC の flow を終端し、利用者の代理で API を呼ぶ場合は token を仲介する。
 自己ホストであり、自身でプロセスを起動する。
 server は [skeleton](../../skeleton.md) の依存と命名に従う。
 資格情報の検証と認証主体の確定は [concerns/authentication](../../../concerns/authentication/README.md) に、操作と対象への許可の評価は [concerns/authorization](../../../concerns/authorization/README.md) に、資格情報の取得と保持は [concerns/secrets](../../../concerns/secrets/README.md) に従う。
@@ -17,7 +17,7 @@ server/
 │  └─ adapters      受理する資格情報ごとの検証と、認可評価への許可範囲の引き渡し。
 ├─ bff/
 │  ├─ session       session と cookie の発行・更新・失効。
-│  ├─ token         Web frontend に代わる OIDC と OAuth の client、token broker。
+│  ├─ token         Web frontend に代わる OIDC と OAuth の client と、利用者の代理で API を呼ぶ場合の token broker。
 │  ├─ csrf          CSRF の検査。
 │  └─ throttle      流入制限のカウンタの adapter。
 └─ composition      core の埋め込み・境界の仕込み・request context の構築・http の起動。
@@ -70,12 +70,18 @@ session の資格情報の検証と認証主体の確定は共通の認証境界
 implicit grant と resource owner password credentials grant を使わない。
 同一 domain の frontend と API が認証済み session で接続することだけを理由に、自分の API 向けの access token 発行を追加しない。
 
-token broker は access token と refresh token の交換、保持、更新、失効を担う。
-token と認証 flow の一時状態は server 側の session に保持し、ブラウザへは session を指す推測不能で opaque な cookie だけを渡す。
+callback の後も利用者の access token で protected resource を呼ぶ Web BFF を、利用者の代理で API を呼ぶ BFF とする。
+callback の中だけで UserInfo endpoint を呼ぶ場合と、BFF 自身の資格情報で外部の API を呼ぶ場合は、これに含めない。
+token broker は利用者の代理で API を呼ぶ BFF に置き、access token と refresh token の交換、保持、更新、失効を担う。
+利用者の代理で API を呼ばない BFF は token broker を置かず、callback で ID Token の検証と `at_hash` の照合を終えた access token と refresh token を session に保持せず破棄する。
+ID Token は、RP-Initiated Logout の `id_token_hint` に使う場合に限り session に保持してよい。
+保持する token と認証 flow の一時状態は server 側の session に置き、ブラウザへは session を指す推測不能で opaque な cookie だけを渡す。
 token broker が行う認証付き通信は、許可された操作と resource server への対応を固定し、任意の URL、method、header を受け取る代理機能にしない。
-session と token の状態、外部 logout の対応、失効記録はプロセス外の共有 store に置く。
-token の更新は単一の更新に制御し、logout では cookie の破棄に加えて共有 store の session を失効させる。
-identity provider から logout の通知を受けた場合は、通知の発行元、対象、完全性、有効性を検証し、対応する session を共有 store で失効させる。
+session と保持する token の状態、外部 logout の対応、失効記録はプロセス外の共有 store に置く。
+保持する token の更新は単一の更新に制御し、logout では cookie の破棄に加えて共有 store の session を失効させる。
+back-channel logout の受信先を identity provider に client として登録した場合は、通知の発行元、対象、完全性、有効性を検証し、対応する session を共有 store で失効させる。
+受信先を登録できるのは identity provider が back-channel logout を提供する場合だけであり、登録しない場合は受信先を公開しない。
+受信先を登録しない場合は、identity provider での logout 後も session が使える上限を absolute expiry とし、[concerns/secrets](../../../concerns/secrets/sealed-secret-type.md) の「secret を分けて専用の型に封じる」が求める期限の契約として明示する。
 
 session cookie は Secure、HttpOnly、SameSite=Strict、Path=/ とし、Domain 属性を設定せず、名前を `__Host-` で始める。
 認証の成功時と権限の変更時に session ID を再生成する。

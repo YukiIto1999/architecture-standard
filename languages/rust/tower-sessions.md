@@ -22,23 +22,27 @@
 session は tower-sessions で扱い、store は bff の session の adapter として実装した SessionStore から redis で Valkey に保持する。
 OIDC の code・PKCE・token の交換と更新は、openidconnect を使う。
 CSRF の検査は、session に保持した token と専用 header の一致を検査する CSRF middleware で行う([structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) に従う)。
-access token と refresh token は server 側の session に保持し、ブラウザへは session を指す cookie だけを渡す。
+ブラウザへは session を指す cookie だけを渡し、token を渡さない。
+[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) が定める利用者の代理で API を呼ぶ BFF は、access token と refresh token を server 側の session に保持する。
+利用者の代理で API を呼ばない BFF は、ID Token の検証と at_hash がある場合の照合を終えた access token と refresh token を破棄し、session に保持しない。
 session cookie の名前は、`__Host-` で始める。
 session cookie は、Secure=true、HttpOnly=true、SameSite=Strict、Path=/ を明示する。
 session cookie の Domain 属性は、設定しない。
 認証の成功時と権限の変更時に、session ID を再生成する。
 session には、idle expiry と absolute expiry の両方を設定する。
 logout では、共有 store から session を削除する。
-back-channel logout token の検証は、[jsonwebtoken](./jsonwebtoken.md) が受け持つ。
+back-channel logout の受信先を identity provider に client として登録した場合は、back-channel logout token の検証を [jsonwebtoken](./jsonwebtoken.md) が受け持つ。
 back-channel logout token の token ID は、一度だけ受理して replay を拒否する。
 back-channel logout token に sid があれば `(issuer, sid)` で、なければ `(issuer, subject)` で共有 store の session を特定して失効させる。
 token ID の replay 防止記録と session の失効は、共有 store の同じ原子的な操作で確定する。
-token の更新は、単一の更新に制御し、競合による上書きを防ぐ。
+受信先を登録しない場合は、受信先を公開せず、identity provider での logout 後も session が使える上限を absolute expiry で明示する。
+token を保持して更新する場合は、単一の更新に制御し、競合による上書きを防ぐ。
 検証済みの principal は、[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) が定める authentication の境界で認証主体へ確定し、BFF に別の認証主体の確定を置かない。
 BFF の route は、境界で検証した入力と認証主体を、[structure/contracts/adapters](../../structure/contracts/adapters.md) の宣言された保護を適用する入口へ渡し、その入口が認証主体から対応づけた業務入力だけを埋め込んだ core の公開 API へ渡す。
 
 ### 根拠
 BFF が token を server 側で保持し、ブラウザへ session を指す cookie だけを渡せば、token がブラウザに出ず、持ち出しの面が消える。
+利用者の代理で API を呼ばない BFF が access token と refresh token を保持しても使い道がなく、持ち出された場合に使える資格情報と、更新と失効の管理だけが増える。
 `__Host-` で始まる cookie を Secure、Path=/、Domain 未設定にすれば、host 全体に限定した session cookie を別の domain や狭い path から上書きできない。
 HttpOnly は script からの cookie の読み取りを防ぎ、SameSite=Strict は cross-site の要求へ cookie を送らない。
 session の store を bff の session の adapter から redis で Valkey に保持すれば、複数のプロセスの間で session の状態が一致し、[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) が定めるプロセス外の共有ストアへの保持を満たす。
@@ -51,6 +55,7 @@ back-channel logout token の署名と claim を検証すれば、偽造した�
 issuer を sid または subject と組にすれば、異なる identity provider の同じ値を取り違えない。
 token ID を一度だけ受理すれば、同じ logout token の replay を拒否できる。
 replay 防止記録と session 失効を一つの確定点にすれば、停止後の再配送を拒否しながら session だけが残る状態を作らない。
+受信先を登録しなければ identity provider からの通知は届かないため、受信先を公開しても session を失効できず、identity provider での logout 後の session の残存は absolute expiry が上限になる。
 token の更新を単一の更新に制御すれば、競合した更新が互いを上書きせず、有効な token を失わない。
 principal を認証境界で認証主体へ確定して境界内に保てば、core は token と認証方式を知らず、主体を必要とする operation だけが adapter の対応づけた業務入力として主体を受け取る。
 route が契約 adapter の保護された公開入口を呼べば、認証境界と埋め込んだ core の業務処理を同じ process の型付き呼出で接続できる。
@@ -58,24 +63,28 @@ route が契約 adapter の保護された公開入口を呼べば、認証境�
 ### 完了条件
 session が tower-sessions で扱われ、bff の session の adapter として実装した SessionStore から redis で Valkey に保持されている。
 OIDC の code・PKCE・token の交換と更新が openidconnect で行われ、ID Token の nonce と、at_hash がある場合の access token との対応が検証されている。
-access token・refresh token が server 側の session に保持され、ブラウザへ token が出ていない。
+利用者の代理で API を呼ぶ BFF では access token・refresh token が server 側の session に保持され、呼ばない BFF では検証後に破棄されて session に残っていない。
+どちらの BFF でも、ブラウザへ token が出ていない。
 session cookie の名前が、`__Host-` で始まっている。
 session cookie が、Secure=true、HttpOnly=true、SameSite=Strict、Path=/ になっている。
 session cookie に、Domain 属性がない。
 認証の成功時と権限の変更時に、session ID が再生成されている。
 session に、idle expiry と absolute expiry が設定されている。
 logout した session が、共有 store から削除されている。
-back-channel logout token が、[jsonwebtoken](./jsonwebtoken.md) の完了条件を満たして検証されている。
+受信先を登録した場合に、back-channel logout token が [jsonwebtoken](./jsonwebtoken.md) の完了条件を満たして検証されている。
 back-channel logout token の token ID が、一度だけ受理されている。
 sid がある logout token は `(issuer, sid)` で、sid がない token は `(issuer, subject)` で共有 store の session を失効させている。
 token ID の replay 防止記録と session の失効が、共有 store の同じ原子的な操作で確定している。
-token の更新が、単一の更新に制御されている。
+受信先を登録しない場合に、受信先が公開されず、identity provider での logout 後も session が使える上限が absolute expiry で明示されている。
+token を保持して更新する場合に、token の更新が単一の更新に制御されている。
 検証済みの principal が、server の authentication の境界で認証主体へ確定され、BFF が認証主体を再確定していない。
 BFF の route が、検証済みの入力と認証主体を adapter の宣言された保護を適用する入口へ渡し、core の公開 API が認証主体を受け取っていない。
 CSRF の検査が、[structure/surfaces/server/layout](../../structure/surfaces/server/layout.md) の方式で行われている。
 
 ### 禁止事項
 access token・refresh token を、ブラウザへ渡すこと。
+利用者の代理で API を呼ばない BFF で、access token または refresh token を session に保持すること。
+identity provider に登録していない back-channel logout の受信先を公開すること。
 `__Host-` で始まらない名前を、session cookie に使うこと。
 session cookie の Secure、HttpOnly、SameSite=Strict、Path=/ のいずれかを、省くこと。
 session cookie に、Domain 属性を設定すること。
@@ -91,18 +100,20 @@ BFF の route から、契約 adapter の保護された公開入口を迂回し
 token、未検証の principal、認証主体を、core へ渡すこと。
 
 ### 行動
-openidconnect で OIDC の code と PKCE を server で終端し、token を交換・更新して、ID Token の nonce と、at_hash がある場合の access token との対応を検証する。
-token を server 側の session に保持し、ブラウザへは session を指す cookie だけを渡す。
+openidconnect で OIDC の code と PKCE を server で終端して token を交換し、ID Token の nonce と、at_hash がある場合の access token との対応を検証する。
+利用者の代理で API を呼ぶ場合は access token と refresh token を server 側の session に保持して openidconnect で更新し、呼ばない場合は検証後にそれらを破棄する。
+ブラウザへは session を指す cookie だけを渡す。
 session の store を bff の session の adapter に実装した SessionStore に差し、redis で Valkey に保持する。
 SessionManagerLayer の builder で、cookie の名前、Secure、HttpOnly、SameSite、Path を明示する。
 SessionManagerLayer の builder では、Domain を設定しない。
 認証の成功時と権限の変更時に、session ID を再生成する。
 idle expiry と absolute expiry を設定する。
 logout では共有 store から session を削除する。
-back-channel logout token を、[jsonwebtoken](./jsonwebtoken.md) で検証する。
+identity provider の discovery が back-channel logout の提供を示し、受信先を登録した場合は、back-channel logout token を [jsonwebtoken](./jsonwebtoken.md) で検証する。
 sid があれば `(issuer, sid)` を使い、なければ `(issuer, subject)` を使って共有 store の session を失効させる。
 検証した token ID の期限付き replay 防止記録と session の失効を、共有 store の同じ原子的な操作で確定する。
-token の更新経路に、単一の更新に絞る制御を入れる。
+受信先を登録しない場合は受信先を公開せず、absolute expiry を identity provider での logout 後に残る session の上限として定める。
+token を保持して更新する場合は、更新経路に単一の更新に絞る制御を入れる。
 検証済みの principal を認証境界で認証主体へ確定する。
 BFF の route から、検証済みの入力と認証主体を adapter の宣言された保護を適用する入口へ渡す。
 CSRF の検査は、session の token と専用 header の一致を CSRF middleware で検査する。
