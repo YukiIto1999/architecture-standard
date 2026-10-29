@@ -22,6 +22,11 @@ inbox processing completion と処理 item の削除は、処理結果と処理�
 外部効果には、配備上の consumer 名に依存しない安定した effect operation の識別子と event ID から作る冪等キーを渡す。
 外部効果が成功した後に処理済み記録を commit し、その後に inbox processing completion を行う。
 durable inbox が満杯なら nack または再試行可能な失敗を返し、使用量、上限、backlog、nack を監視へ出す。
+queue と予約の message の payload は、[translation](./translation.md) に従い、公開入力と同じ decode と検証を、Wolverine が durable な store から message を受けて handler を起動する実際の受信経路で、業務処理を始める前に通す。
+必須項目の欠落、契約が許さない null、既知項目の値の不正、判別子と payload の不一致の message は、既定値を補わず、handler の業務処理を始めず、回復しない失敗として [resilience](../../concerns/resilience/dead-letter-exit.md) の「再試行の出口を持つ」に従い行き止まりへ送る。
+既知の契約を満たす message に未知の追加フィールドだけを加えた場合は、translation に従って受容し、既知項目の検証を保つ。
+一時的な旧版対応の撤去は、[messaging](../../concerns/messaging/event-contract-versioning.md) の「イベント契約を版で進化させ、寛容に読む」が定める発行と再投入の停止と未完了の旧版の不在の確認に従う。
+その確認は、予約した message を含め、messaging が挙げる各経路の未完了の旧版を Wolverine が保持する実際の状態に対して行い、queue が空に見えることを旧版の不在の根拠にしない。
 
 ### 根拠
 queue と予約を PostgreSQL に閉じれば、外部の broker や message bus を開かず、攻撃面が増えない。
@@ -38,6 +43,9 @@ payload commit 後だけ upstream delivery ack を返せば、前段の停止で
 処理結果と処理済み記録の commit 後だけ inbox processing completion を行えば、後段の停止で item を再処理できる。
 外部効果の境界へ安定した冪等キーを渡せば、効果成功後から処理済み記録前の停止でも再配送の結果を一度分にできる。
 容量を予約できない event を nack すれば、必要な入力を受領済みとして失わない。
+payload の検証を durable な store から受ける実際の受信経路に置けば、再配送や予約の実行で取り出された message も、公開入力と同じ保証を満たす。
+handler を直接呼ぶ検査は受信経路の decode と拒否を通らないので、既定値で補われた入力が業務処理へ届く欠陥を見逃す。
+予約した message は実行時刻まで store に残るので、queue が空に見えても、予約や再投入の経路に旧版が残りうる。
 
 ### 完了条件
 worker が、Wolverine を PostgreSQL の queue と、業務のデータが決める時刻の予約に限って使っている。
@@ -54,6 +62,9 @@ inbox processing completion と処理 item の削除が、処理結果と処理�
 外部効果に安定した effect operation の識別子と event ID から作った冪等キーが渡され、効果成功後に処理済み記録が確定している。
 payload commit と、外部効果成功と、処理済み記録 commit の各前後で停止して再配送しても、結果が一度分になることが実行テストで検証されている。
 durable inbox の容量上限で nack または再試行可能な失敗が返され、使用量、上限、backlog、nack が監視されている。
+必須項目の欠落、契約が許さない null、既知項目の不正、判別子と payload の不一致の message を実際の受信経路へ渡すと、既定値で補われず、handler の業務処理が始まらず、業務の状態と outbox が変わらず、行き止まりへ送られることが、実行テストで検証されている。
+既知の契約を満たす message に未知の追加フィールドだけを加えても同じ経路で受容され、既知項目の欠落や不正の拒否が失われていないことが、実行テストで検証されている。
+一時的な旧版対応を撤去した場合は、messaging が挙げる各経路について、Wolverine が保持する実際の状態に未完了の旧版が残らないことの検査結果が対応している。
 
 ### 禁止事項
 worker を、broker・durable workflow・外部の message bus として使うこと。
@@ -66,6 +77,9 @@ payload の durable inbox への commit 前に、upstream delivery ack を返す
 外部効果の成功前に、処理済みを記録すること。
 配備上の consumer 名を、外部効果の冪等キーに使うこと。
 durable inbox が満杯の event を受領済みとして捨てること。
+必須項目の欠落や契約が許さない null を持つ message に既定値を補い、handler の業務処理を始めること。
+queue が空に見えることだけを根拠に、予約や再投入の経路に旧版の message が残らないとみなすこと。
+handler を直接呼ぶ検査だけで、実際の受信経路の拒否と業務処理の非開始を検証済みとみなすこと。
 
 ### 行動
 永続化を PostgreSQL に限り、`IMessageBus` を含む handler の依存を constructor で受ける。
@@ -78,6 +92,9 @@ handler の CancellationToken を、token を受ける全ての非同期 API へ
 外部効果へ安定した effect operation の識別子と event ID の組を冪等キーとして渡し、成功後に処理済み記録を commit する。
 payload commit、外部効果成功、処理済み記録 commit の各直前と直後へ停止を注入し、再配送後の結果が一度分であることをテストする。
 容量を予約できない場合は nack または再試行可能な失敗を返し、inbox の使用量、上限、backlog、nack を観測する。
+payload の decode と検証を handler の業務処理より前に置き、拒否した message は既定値で補わず行き止まりへ送る。
+必須項目の欠落、契約が許さない null、既知項目の不正、判別子の不一致の message と、未知の追加フィールドだけを加えた message を、store から受けて handler を起動する実際の受信経路へ別々に渡し、前者の拒否と業務処理の非開始、後者の受容を観測する。
+一時的な旧版対応を撤去する前に、旧版の発行と再投入を止め、予約を含む各経路の実際の状態を messaging の確認に従って検査する。
 
 ### 例
 出荷確定から三日後の確認を予約するとき、受信時刻から三日を足さず、出荷が確定した業務事実の時刻から予約時刻を決める。

@@ -12,13 +12,14 @@
    新しい違反は基線台帳に加えない。
 3. 変える前に安全網を張る([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」に従い、回帰テスト・本番の観測・新旧の整合検査を備える)。
 4. 変更を小さく可逆な段に分け、各段に達成条件・撤退条件・不可逆点を定める([principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」に従う)。
+   保存済みの事実を含む場合は、[concerns/persistence](../concerns/persistence/read-time-upcasting.md) の「追記した事実の版を読み出しで現在へ変換する」に従い、保持する版の解釈と移行対象の旧い経路を分ける。
 5. 新旧が同じ datastore にある場合は、[concerns/transaction](../concerns/transaction/single-commit-point.md) の「一つの確定点を持つ」と、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」を適用する。
    schema migration の artifact は [concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」が定める forward-only に従い、service の配備とは独立して適用する。
 6. 新旧が別の datastore にある場合は、[concerns/transaction](../concerns/transaction/state-event-atomicity.md) の「状態とイベントを同一パスで記録する」を適用する。
 7. 別 datastore の既存 data の移送から cutover までは、[concerns/migration](../concerns/migration/datastore-cutover.md) の「別 datastore の移行を同じ時点で検証して切り替える」の行動を記載順に実行する。
 8. outbox の再配送と失敗の回復は、[concerns/resilience](../concerns/resilience/README.md) と [concerns/observability](../concerns/observability/README.md) の規律を適用する。
 9. 各段で安全網の緑を確かめてから次へ進み、不可逆点の手前では観測の期間を置く。
-10. 新しい正本への昇格を確認してから、旧い正本への write と旧い経路を落とす。
+10. 新しい正本への昇格を確認してから、移行対象の旧い正本への write と旧い経路を落とす。
 11. 標準へ揃える移行は、[structure/skeleton](../structure/skeleton.md) の境界から内側の core へ向かって進める。
 12. 揃えられない箇所は、root の [README](../README.md) の標準の単一性に従い、現在の逸脱の根拠と撤回条件を、判断を所有するコード、契約、設定と読者向けの文書から辿れるようにする。
 
@@ -34,7 +35,8 @@ schema migration の artifact は、[concerns/migration](../concerns/migration/e
 別 datastore の data 移送と cutover は、[concerns/migration](../concerns/migration/datastore-cutover.md) の「別 datastore の移行を同じ時点で検証して切り替える」の完了条件と禁止事項に照合する。
 outbox の再配送と失敗後の回復は、[concerns/resilience](../concerns/resilience/README.md) と [concerns/observability](../concerns/observability/README.md) の完了条件に照合する。
 標準へ揃える移行の完了は、[audit](./audit.md) の順序の再実行で判定し、残る差分の全てについて、現在の逸脱とその根拠を root の [README](../README.md) の標準の単一性に照合する。
-基盤と契約の移行の完了は、適用した concerns の完了条件、旧い経路の削除、安全網の緑で判定する。
+基盤と契約の移行の完了は、適用した concerns の完了条件、移行対象の旧い経路の削除、安全網の緑で判定する。
+保存事実の版の解釈と配送中の旧版対応の存続・撤去は、それぞれ [concerns/persistence](../concerns/persistence/read-time-upcasting.md) と [concerns/messaging](../concerns/messaging/event-contract-versioning.md) の完了条件に照合する。
 
 ## 範囲外
 

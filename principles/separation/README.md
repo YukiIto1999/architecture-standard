@@ -13,4 +13,4 @@ separation は、分割と依存に関する原則を置く。
 - [結合を距離に見合う強さにする](./coupling-by-distance.md) — 機械+レビュー(記録有無は機械/内容レビュー)
 - [依存を安定と抽象へ向ける](./stable-abstract-dependencies.md) — 機械(依存方向の構造検査)
 - [副作用を境界に集める](./effects-at-boundaries.md) — 機械+レビュー(純粋性検査+核のレビュー)
-- [正本を互換から独立させる](./compatibility-isolation.md) — レビュー(review の境界照合)
+- [正本を互換から独立させる](./compatibility-isolation.md) — 機械+レビュー(互換構造の参照境界と内側の型の検査+項目の業務的必要性と存続根拠の照合)

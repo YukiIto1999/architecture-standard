@@ -13,7 +13,7 @@ store の採用では、persistence は datastore と一時データの store �
 - [事実・状態・時間を別の関係に落とす](./fact-state-time-relations.md) — レビュー(schema設計の分類と遷移表の照合+状態の列と関係の不在のレビュー)
 - [期間の判定を一か所のビューに定義する](./period-state-views.md) — 機械+レビュー(実datastoreで期間の閉じ方と開いた回が複数ある組の判定を検査+判定の書き写しと認可の置き場のレビュー)
 - [業務事実を保持期間の間は追記で残す](./append-only-facts.md) — 機械+レビュー(関係名の denylist 検査+保持期間内の更新削除と消せる行のビュー外の削除の拒否を実datastoreで検査+schema 設計のレビュー)
-- [追記した事実の版を読み出しで現在へ変換する](./read-time-upcasting.md) — レビュー(review規律照合のみ)
+- [追記した事実の版を読み出しで現在へ変換する](./read-time-upcasting.md) — 機械+レビュー(保持対象版の変換と保存行不変の実行検査+保持範囲と撤去条件の照合)
 - [正規化して一つの事実を一箇所に置く](./normalization.md) — レビュー(属性の単位と正本のschema設計はreview)
 - [関係の意図を制約で表す](./relational-constraints.md) — 機械+レビュー(実datastore制約テストと外部キーの循環の検査+参照先と削除規則のレビュー)
 - [一つの操作の問い合わせ数を件数から独立させる](./bounded-query-count.md) — 機械(問い合わせ数不変テスト)
