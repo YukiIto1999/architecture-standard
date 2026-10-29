@@ -7,7 +7,7 @@ authentication は資格情報の検証、認証主体の確定、業務が主�
 
 ## 規律
 
-- [資格情報を検証して認証主体を確定する](./credential-to-subject.md) — 機械(認証境界の検査とtest)
+- [資格情報を検証して認証主体を確定する](./credential-to-subject.md) — 機械+レビュー(認証境界の拒否・主体と許可範囲の検査+資格情報の種類ごとの検証根拠の照合)
 
 ## 参照
 「関心を境界の内に隠す」は [separation](../../principles/separation/information-hiding.md)、業務のモデリングで使う役割と変更要求者は [separation](../../principles/separation/split-by-change-reason.md)、認証主体に対するアクセス制御は [authorization](../authorization/README.md)、安全の姿勢は [security](../security/README.md) に従う。
