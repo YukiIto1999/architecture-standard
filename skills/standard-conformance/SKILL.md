@@ -20,7 +20,8 @@ description: architecture-standard に対する対象プロジェクトの適合
   領域の欠落や空、本文の読取失敗は不足する前提として報告する。
   旧い本文、この Skill の配備先の近くにある本文、別の root へ切り替えて監査を続けない。
 - 対象 project の directory を `<project-root>` とする。
-- 基線台帳は対象 project の `docs/conformance-baseline.json` とし、`baseline.file` もこの project 相対 path と完全に一致させる。
+- 基線台帳は `<standard-root>/process/audit.md` が定める対象 project の基線台帳とし、その path は project の検証設定と、台帳を読む root check から特定する。
+  `baseline.file` には、特定した project 相対 path をそのまま記録する。
 - JSON 報告は応答で返す。file として保存する場合の `<report-path>` は、対象 project を含む Git repository の外に置く。
   この外部報告以外は、標準と対象 project のどちらも編集しない。
 
@@ -79,7 +80,7 @@ principles と concerns は概念 README の規律台帳、languages は `langua
     }
   ],
   "baseline": {
-    "file": "docs/conformance-baseline.json",
+    "file": "<project が検証設定で定めた基線台帳の相対 path>",
     "status": "new-violations-found",
     "newCount": 1,
     "baselineCount": 0,
@@ -145,15 +146,20 @@ principles と concerns は概念 README の規律台帳、languages は `langua
 
 基線台帳は対象 project が所有する実ファイルであり、標準や配備を所有する別の repository へ移さない。
 台帳の path を別の空ファイルへ切り替えて、既存違反との比較を回避しない。
-内容は `{ "violations": [...] }` とし、各違反は報告と同じ `rule`、`file`、`line`、`evidence`、`mechanizable` の五つの field を持つ。
-既存違反と認めるのは、実基線台帳の項目と五つすべてが一致した違反だけである。
-実基線台帳を読み、報告の違反と台帳の項目を五つの field で比較して件数を数える。
+台帳の形式は project が定め、各項目は `<standard-root>/process/audit.md` が定める規律の条文名指し、該当箇所、所有者、解消条件、検出する root check を持つ。
+台帳の path は検証設定が定める一つの file とし、台帳を読む root check がその file を読むことを確かめる。
+root check が別の file を読む場合は、その不一致を `<standard-root>/process/audit.md` の確認点への違反として報告し、照合できない台帳として扱う。
+既存違反と認めるのは、台帳の項目の規律が報告の違反の `rule` と一致し、項目の該当箇所が報告の違反と同じ対象を指す場合だけである。
+現在の source の範囲を指す該当箇所は、現在の source で解決した範囲が報告の違反の `file` と `line` を含むかで照合する。
+必須の構成や file の欠落、確認点の未照合のように範囲を持たない違反の該当箇所は、欠けている対象を名指す記述が報告の違反の `file` と同じ対象を指すかで照合し、実在する親の範囲へ広げて一致させない。
+実基線台帳を読み、各項目の該当箇所を照合してから件数を数える。
+該当箇所を照合できない項目と、必須の内容を欠く項目は、推測で一致させず、その項目と不足を報告する。
 
 - `newCount` は、台帳に一致しない報告の違反の数である。
 - `baselineCount` は、台帳の項目と一致した報告の違反の数である。
 - `resolvedCount` は、現在の報告に一致しない台帳の項目の数である。
 
-`baseline.status` は、台帳があり新規違反がなければ `matched`、新規違反があれば `new-violations-found`、台帳がなければ `baseline-not-found` とする。
+`baseline.status` は、検証設定が台帳を定めていないか定めた file がなければ `baseline-not-found`、照合できない台帳か項目が残れば新規違反の有無にかかわらず `baseline-unresolved`、全項目を照合でき新規違反があれば `new-violations-found`、なければ `matched` とする。
 削除や移動された規律の旧項目も比較元とし、現在の報告に一致しない項目は `resolvedCount` に含める。
 現在の報告の違反は現在の標準本文の規律を指し、旧項目を現在の規範の代わりにしたり、path を読み替えて一致した既存違反にしたりしない。
 報告の `baseline.status` や `newCount: 0` で実ファイルとの比較を代替しない。
@@ -175,7 +181,7 @@ principles と concerns は概念 README の規律台帳、languages は `langua
 
 | 結論 | 条件 |
 |---|---|
-| 未完了 | 規律の列挙を終えていない、適用判断だけで実照合が一件もない、または `unresolved` か `not-run` が残る |
+| 未完了 | 規律の列挙を終えていない、適用判断だけで実照合が一件もない、`unresolved` か `not-run` が残る、または `baseline.status` が `baseline-unresolved` である |
 | 新規違反あり | 全規律の照合を終え、基線台帳に一致しない違反がある |
 | 既存違反のみ | 全規律の照合を終え、違反がすべて実基線台帳と一致する |
 | 違反なし | 全規律の照合を終え、違反がない |
