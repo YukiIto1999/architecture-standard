@@ -65,6 +65,8 @@ core の公開 API へ資格情報、principal、token、claim、認証方式の
 Web BFF は、Web frontend に代わる confidential OAuth client として OIDC の authorization code flow と PKCE を終端する。
 OIDC の callback は ID Token の署名、issuer、audience、期限、nonce を検証し、`at_hash` がある場合は access token との対応も検証してから、認証済み session を確立する。
 session の資格情報の検証と認証主体の確定は共通の認証境界で一度だけ行い、callback と route に別の主体確定を置かない。
+認証 flow の開始と callback のうち業務の operation を公開しない入口は、server が所有する認証 protocol の入口として対応を宣言する。
+公開入口の区分、対応の網羅、成功と拒否の scenario は、[tests/methods](../../tests/methods.md) の「規範から検証への対応」に従い、認証主体の確定と業務の入口の保護を迂回させない。
 implicit grant と resource owner password credentials grant を使わない。
 同一 domain の frontend と API が認証済み session で接続することだけを理由に、自分の API 向けの access token 発行を追加しない。
 
