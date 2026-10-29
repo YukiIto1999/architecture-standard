@@ -9,6 +9,7 @@
 ## 順序
 
 1. 一つの目的と取り消し理由を持つ作業単位の名前と範囲を宣言する([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」と [principles/documentation](../principles/documentation/commit-purpose.md) の「commit の件名に対象と変化を書く」に従う)。
+   [design](./design.md) で定めた全体要件との対応から、その単位が満たす受入条件と未達の範囲を確認する。
 2. 変更がどのアクターのどのuse-caseに属するかを答え、答えられなければ [design](./design.md) へ戻る([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
 3. 着手時点で分かっている、検証すべき振る舞いを、テストリストに列挙する。
 4. 初回は、公開 interface を越して確かめられる最小の振る舞いをリストから選ぶ。
@@ -30,6 +31,7 @@
 18. 変更が触れた規律の完了条件・禁止事項と、[structure/tests](../structure/tests/layout.md) の機械検証に照合する。
 19. 現在の作業単位に属する差分だけを選別し、変更の対象と、その対象で何がどう変わったかを短い件名へ記録して commit する([principles/documentation](../principles/documentation/commit-purpose.md) に従う)。
     別の目的の変更と構造改善をまとめてから分割せず、単位ごとの検証と commit を積み上げる。
+    確定した単位の受入証拠を全体要件へ戻し、未達項目の依存と停止理由を確認して、独立に進められる次の単位を選ぶ。
 
 ## 確認点
 
@@ -52,6 +54,7 @@
 テストの技法と有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
 公開 interface から観測できる振る舞いを変えた作業単位では、手順17で記録を取り除く前に、探索の記録が charter、触れた範囲、見つけた事象を持ち、見つけた欠陥がテストリストを経て自動の検証へ、仕様の漏れが [design](./design.md) へ移されていることを確かめる([structure/tests/methods](../structure/tests/methods.md) に照合する)。
 作業単位の終わりに、読み手がその作業単位の中だけにいた文書が残っていないことを、[principles/documentation](../principles/documentation/separate-document-types.md) の「文書の種別を分け、読み手を定める」の完了条件に照合する。
+作業単位の検証成功と commit の完了だけで全体の成果を完了とせず、全体要件と受入証拠の対応に未達や未確認が残るかを確かめる。
 
 ## 範囲外
 
