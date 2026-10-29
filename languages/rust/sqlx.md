@@ -11,7 +11,7 @@
 ### 要求
 永続化は sqlx で書き、`query!`・`query_as!` のコンパイル時検証を使う。
 sqlx の `macros` feature を有効化し、`cargo sqlx prepare` が生成する `.sqlx` を追跡する。
-通常のコンパイルでは DB 接続先を設定せず、追跡した `.sqlx` の検証データを使う。
+通常のコンパイルは、環境に既にある値を上書きしない repository の build 設定で `SQLX_OFFLINE=true` を与え、追跡した `.sqlx` の検証データだけで検証する。
 現在の schema との同期は、対象の DB を使う `cargo sqlx prepare --check` をリポジトリの検証入口で実行して確かめる。
 `sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化する。
 
@@ -19,13 +19,16 @@ sqlx の `macros` feature を有効化し、`cargo sqlx prepare` が生成する
 `cargo sqlx prepare` では、対象の DB に SQL を検証させた結果を `.sqlx` へ保存できる。
 SQL を隠す抽象を入れないので、事実の形がそのまま型に写る。
 `macros` feature と追跡した `.sqlx` を使えば、通常のコンパイルを DB へ接続せずに行える。
+環境に `DATABASE_URL` があると `.sqlx` より DB への接続が優先されるため、`SQLX_OFFLINE=true` で偶然の接続先に左右されない検証にする。
+`cargo sqlx prepare` は、子の `cargo check` へ `SQLX_OFFLINE=false` を渡して対象の DB へ接続させ、検証データを作る。
+Cargo の `[env]` は既定で環境に既にある値を上書きしないが、`force = true` を付けた値は prepare が渡す `false` を上書きし、query の macro は DB へ接続せずに追跡済みの `.sqlx` から展開するため、`--check` は schema とのずれを検出せずに成功する。
 保存済みの検証データだけでは現在の schema との同期を保証しないため、`cargo sqlx prepare --check` で照合する。
 schema migration の適用と履歴の分離は [sqlx-cli](./sqlx-cli.md) の「migration の適用」に従う。
 
 ### 完了条件
 永続化が sqlx で書かれ、`query!`・`query_as!` のコンパイル時検証が効いている。
 `macros` feature が有効で、生成した `.sqlx` が追跡されている。
-通常のコンパイルが DB 接続先を持たず、`.sqlx` の検証データで検証されている。
+repository の build 設定が、環境に既にある値を上書きしない形で `SQLX_OFFLINE=true` を与え、通常のコンパイルが `.sqlx` の検証データだけで検証されている。
 `cargo sqlx prepare --check` が、検証データと現在の query と schema の同期を確かめている。
 `sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature が有効になっている。
 フル ORM を使っていない。
@@ -33,11 +36,13 @@ schema migration の適用と履歴の分離は [sqlx-cli](./sqlx-cli.md) の「
 ### 禁止事項
 フル ORM で、SQL を隠すこと。
 SQL の値を、文字列の連結で組み立てること。
+通常のコンパイルの query の検証を、環境にある `DATABASE_URL` の DB へ接続して行うこと。
+`SQLX_OFFLINE=true` を、Cargo の `[env]` の `force = true` のように環境に既にある値を上書きする形で与えること。
 
 ### 行動
 SQL を `query!`・`query_as!` で書き、`macros` feature を有効化する。
 対象の DB に接続した `cargo sqlx prepare` で `.sqlx` を生成し、追跡する。
-通常のコンパイルでは DB 接続先を設定せず、検証入口で `cargo sqlx prepare --check` も実行して現在の schema との同期を確かめる。
+`.cargo/config.toml` の `[env]` に `force` を付けずに `SQLX_OFFLINE = "true"` を置き、検証入口で `cargo sqlx prepare --check` も実行して現在の schema との同期を確かめる。
 `sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化する。
 schema の変更は [sqlx-cli](./sqlx-cli.md) の「migration の適用」に従って適用する。
 
