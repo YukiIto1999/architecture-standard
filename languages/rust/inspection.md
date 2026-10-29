@@ -247,7 +247,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | typify | 契約から decode と未知項目の捕捉を生成する | 実行テスト(全 variant と入れ子・配列内 object の未知キー受容と位置捕捉、必須項目欠落・制約違反・判別子と payload の不一致の拒否、捕捉値の非流入、再生成の一致) |
 | connection | 効果を言語の効果型で表す | 型(Future・Result)+レビュー(domain の同期性の判断) |
 | connection | 失敗を Result に、欠陥を panic にする | analyzer/lint(clippy unwrap_used・expect_used deny)+型(Result) |
-| connection | 要求する依存を能力の trait bound で型に出す | 型(trait bound) |
+| connection | 要求する依存を能力の trait bound で型に出す | 型(trait bound)+構造検査(use-case と workflow が port を field に保持する struct の method でないこと) |
 | connection | port を trait で宣言する | 型(trait)+構造検査(依存方向) |
 | connection | 配線を組立点に置き、境界で実行する | 構造検査(composition root 外の具象生成の検出)+レビュー(組立点に置く依存の粒度の判断) |
 | sqlx | 型付き SQL | 型/実行テスト(sqlx の `query!` コンパイル時検証・検証入口の offline 照合) |

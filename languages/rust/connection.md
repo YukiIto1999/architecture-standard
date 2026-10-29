@@ -55,7 +55,7 @@ where Env: HasClock + HasOrders { /* ... */ }
 ### 要求
 効果が要求する依存は、能力の trait として宣言し、計算の型引数の環境への trait bound で、必要な分だけ要求する。
 本番とテストで、環境の実装を差し替える。
-効果を記述する計算は環境への trait bound で依存を宣言し、効果を持たない構成要素(adapter どうしの組み立てなど)の配線は、port を保持する struct のフィールドと構成子注入で行う。
+use-case と workflow を含む効果を記述する計算は環境への trait bound で依存を宣言し、port を保持する struct のフィールドと構成子注入は、adapter どうしの組み立てや環境の実装のような効果を持たない構成要素の配線に限る。
 
 ### 根拠
 能力の trait bound を環境に課すと、計算が何を要求するかが型に出て、不足が型検査に出る。
@@ -68,11 +68,12 @@ Rust では前者を関数の環境への trait bound が、後者を struct が
 効果が要求する依存が、環境への能力の trait bound で型に出ている。
 各計算が、必要な能力だけを bound にしている。
 本番とテストで、環境の実装を差し替えられる。
-効果を記述する計算と、効果を持たない構成要素の配線が、環境の trait bound と構成子注入で住み分けられている。
+use-case と workflow の依存が環境の trait bound で宣言され、port を保持する struct のフィールドが効果を持たない構成要素の配線に限られている。
 
 ### 禁止事項
 全部入りの単一の環境を、全ての計算に要求させること。
 依存を、グローバルな static から引くこと。
+use-case や workflow を、port を field に保持する struct の method として書き、依存を環境の trait bound の外に置くこと。
 
 ### 行動
 能力を trait で宣言し、計算の環境に必要な分だけ trait bound を課す。
@@ -92,7 +93,7 @@ where Env: HasClock + HasOrders { /* ... */ }
 ## 配線を組立点に置き、境界で実行する
 
 ### 要求
-依存は constructor の引数で受け取り、配線は composition root に置く。
+環境の実装と効果を持たない構成要素は依存を constructor の引数で受け取り、配線は composition root に置く。
 本番の環境を composition root で組み、Future の実行を runtime の境界に集める。
 グローバルな static や lazy な初期化で依存を解決せず、業務の核で具象を生成しない。
 
@@ -103,7 +104,7 @@ constructor の引数で受ければ、依存がシグネチャに現れ、組�
 グローバルな static や lazy な初期化は、依存を隠して実行時にその場で引く service locator になる。
 
 ### 完了条件
-依存が、constructor の引数で受け取られている。
+環境の実装と効果を持たない構成要素の依存が、constructor の引数で受け取られている。
 配線が composition root に置かれ、Future の実行が runtime の境界に集まっている。
 グローバルな static や lazy な初期化で、依存を解決していない。
 
@@ -112,7 +113,7 @@ constructor の引数で受ければ、依存がシグネチャに現れ、組�
 グローバルな static や lazy な初期化で、依存を解決すること。
 
 ### 行動
-依存を constructor の引数で受け、配線を composition root に集める。
+環境の実装と効果を持たない構成要素の依存を constructor の引数で受け、配線を composition root に集める。
 本番の環境を組立点で組み、Future の実行を境界に置く。
 
 ### 例
@@ -165,18 +166,21 @@ domain と application で、型消去したエラーを返すこと。
 不変条件の違反は panic にし、型消去は最上位の報告に限る。
 
 ### 例
-要求の経路で `unwrap` すると、想定された失敗がクラッシュになり、依存もシグネチャに現れない。
+要求の経路で `unwrap` すると、想定された失敗がクラッシュになり、失敗がシグネチャに現れない。
 
 ```rust
-fn handle(repository: &impl OrderRepository, id: OrderId) -> Order { repository.find(id).unwrap() }
+async fn find_order<Env: HasOrders>(env: &Env, id: OrderId) -> Order { env.orders().find(id).await.unwrap() }
 ```
 
-thiserror の enum を `?` で伝播すれば、想定内の失敗は Result、欠陥は panic に分かれ、依存は引数に現れる。
+thiserror の enum を `?` で伝播すれば、想定内の失敗は Result、欠陥は panic に分かれ、依存は環境の trait bound に現れる。
 
 ```rust
 #[derive(thiserror::Error, Debug)]
 pub enum OrderError { #[error("not found")] NotFound }
-fn handle(repository: &impl OrderRepository, id: OrderId) -> Result<Order, OrderError> { repository.find(id) }
+async fn find_order<Env: HasOrders>(env: &Env, id: OrderId) -> Result<Order, OrderError> {
+    let order = env.orders().find(id).await?;
+    Ok(order)
+}
 ```
 
 ## port を trait で宣言する
@@ -210,14 +214,16 @@ port を trait で宣言し、差し替えは `Arc<dyn>`、単一の実装は ge
 struct OrderService { repository: PostgresOrderRepository }
 ```
 
-port の trait だけに依存させる。
-単一実装は generics で渡し、実行時に差し替える非同期 port は `async-trait` と `Arc<dyn>` で渡す。
+use-case は環境の trait bound で port を要求し、port の trait だけに依存させる。
+単一実装の組み立ては generics で、実行時に差し替える非同期 port は `async-trait` と `Arc<dyn>` で環境の実装に持たせる。
 
 ```rust
 #[async_trait]
 pub trait OrderRepository { async fn save(&self, order: &Order) -> Result<(), RepositoryError>; }
-struct OrderService<R: OrderRepository> { repository: R }
-struct Router { repository: Arc<dyn OrderRepository> }
+async fn place_order<Env: HasOrders>(env: &Env, command: PlaceOrderCommand) -> Result<OrderId, PlaceOrderError> { /* ... */ }
+struct CachedOrders<R: OrderRepository> { inner: R }
+struct AppEnv { orders: Arc<dyn OrderRepository> }
+impl HasOrders for AppEnv { fn orders(&self) -> &dyn OrderRepository { self.orders.as_ref() } }
 ```
 
 
