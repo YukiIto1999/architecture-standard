@@ -13,6 +13,8 @@ broker・durable workflow・外部の message bus としての利用は標準外
 予約は、実行時刻を持つ task として PostgreSQL へ積み、同じ業務事実から導いた冪等の鍵で二重に積まない。
 固定の時刻と間隔による定期実行は、apalis-cron を含む cron 式の scheduler で組まず、OS の定時起動から [worker](../../structure/surfaces/worker/layout.md) の「定時起動」の入口が受ける。
 handler の依存は `Data` extractor で受け取り、handler の中で直接生成しない。
+queue の migration は、apalis-postgres が公開する集合と設定を原本のまま使い、適用先と手順は [sqlx-cli](./sqlx-cli.md) の「migration の適用」に従う。
+`PostgresStorage::<()>::migrations()` などの適用入口は、worker の起動から呼ばず、配備の task から呼ぶ。
 job の payload は、worker が実際に取り出す経路で、payload が宣言する版の契約に従う [serde](./serde.md) の decode と検証を通してから、handler の業務処理へ渡す。
 選択した版の必須項目の欠落、契約が許さない null、既知項目の不正、判別子の不整合を持つ payload は、既定値で補わず、業務処理を始めずに拒否し、既知の契約を満たす payload に未知の追加項目だけを加えた場合は受容する。
 拒否は再試行しても回復しない失敗であり、[resilience](../../concerns/resilience/dead-letter-exit.md) の「再試行の出口を持つ」に従って行き止まりへ送る。
@@ -49,6 +51,8 @@ broker・durable workflow・外部の message bus として、使われていな
 Cargo 依存に、apalis-cron を含む cron 式の scheduler の crate がない。
 固定の時刻と間隔の起動が、OS の定時起動と worker の定時起動の入口で行われている。
 handler の依存が、`Data` extractor で受け取られ、handler の中で直接生成されていない。
+queue とアプリケーションの集合を同じ DB に適用する場合に、両者の履歴が混ざらず、同じ版の集合と設定の再適用で既存の schema と data が変わらないことを実行テストで確かめている。
+queue の migration を適用する配備の task があり、worker の起動経路から適用が始まらない。
 upstream delivery ack が、payload の durable inbox への commit 後だけ返されている。
 inbox processing completion と処理 item の削除が、処理結果と処理済み記録の commit 後だけ行われている。
 外部効果に安定した effect operation の識別子と event ID から作った冪等キーが渡され、効果成功後に処理済み記録が確定している。
@@ -62,6 +66,7 @@ payload が宣言する版ごとに、未知の追加項目を加えた入力の
 worker を、broker・durable workflow・外部の message bus として使うこと。
 固定の時刻と間隔の起動のために、apalis-cron などの cron 式の scheduler を worker の中へ追加すること。
 handler の中で、依存を直接生成すること。
+worker の起動処理で queue の migration を適用すること。
 payload の durable inbox への commit 前に、upstream delivery ack を返すこと。
 処理結果と処理済み記録の commit 前に、inbox processing completion または処理 item の削除を行うこと。
 外部効果の成功前に、処理済みを記録すること。
@@ -76,6 +81,7 @@ queue を PostgreSQL の backend に限り、apalis で enqueue と worker を�
 固定の時刻と間隔の起動は OS の宣言へ置き、worker には cron 式の scheduler を追加しない。
 業務のデータが決める時刻の予約は、実行時刻を持つ task として積み、同じ業務事実から導いた冪等の鍵を付ける。
 worker の起動は WorkerBuilder で組み、apalis の Monitor で走らせる。
+queue の migration は元の artifact と設定を使って配備の task で適用し、worker の起動経路には適用を埋め込まない。
 handler の依存は `Data` extractor で渡す。
 受領時に durable inbox の容量を予約し、payload を commit してから upstream delivery ack を返す。
 処理結果と処理済み記録を retention の同じ Transaction で確定してから、inbox processing completion を行う。

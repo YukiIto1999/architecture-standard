@@ -52,6 +52,7 @@ hardware、機の利用者、接続経路、共有する listener、機の鍵、
 deploy は、surface と runtime が作る成果物を配備対象として受け取る。
 他の領域は、deploy を参照しない。
 deploy は core の業務型や operation を参照せず、成果物とその起動・設定の公開契約を配備の入力として使う。
+schema migration は、所有元が公開する artifact と適用時の設定を入力にし、core の内部の型や operation を適用の入口にしない。
 プログラムの起動、動作に必要な初期化、接続と終了は、surface と runtime および [concerns/lifecycle](../../concerns/lifecycle/README.md) が定める。
 配備の処理を、プログラムや test の起動部品として共用しない。
 deploy の規律は、特定の配備先に縛られない。
@@ -87,6 +88,8 @@ running な配備先を、手続きで直接書き換えない。
 反映は、準備の面が処理可能を宣言してから振り分け、全インスタンスの同時離脱を避ける。
 回帰は、新しい版を切らず、前の不変な版の desired state へ宣言を戻して反映する。
 反映と回帰と migration を行う時点の順序は、[process/release](../../process/release.md) が定める。
+独立した migration の集合の適用計画は delivery の反映定義に含め、各所有者の artifact を入力にして順に適用する。
+集合をまとめて適用するために、コンテキストや採用依存の migration SQL を delivery へ写して一つの原本にしない。
 反映時の生存と準備の規律は [concerns/lifecycle](../../concerns/lifecycle/README.md) に従う。
 delivery の内部は、反映する配備先の単位に対応させて分ける。
 一つの配備先への反映定義を一つの単位にまとめる。

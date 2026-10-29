@@ -37,6 +37,9 @@ server・console・worker・viewer・extension の surface は、surfaces の直
 runtimes・deploy は、対応する関心があるときに置く。
 libs は、対応する機構があるときに置く。
 
+schema migration の artifact の所有と置き場は [core/infrastructure](./core/infrastructure.md) の「永続化」に従い、全コンテキストの DDL をまとめる root の `migrations/` は置かない。
+集合を適用する配備の計画は [deploy](./deploy/layout.md) の delivery に置き、artifact の所有と分ける。
+
 | 境界 | 役割 |
 |---|---|
 | core | 業務と外部依存の adapter を内包する。媒体を知らない。 |
@@ -134,7 +137,7 @@ HTTP を持たず core を埋め込む構成には、routes を要求せず、�
 
 | 成果物の消費元 | 消費してよい成果物 |
 |---|---|
-| deploy | 配備対象の surface・runtime の成果物 |
+| deploy | 配備対象の surface・runtime の成果物、core・libs・採用依存が公開する schema migration の artifact と適用時の設定 |
 | 埋め込み surface を同梱する runtime | 対応する埋め込み surface の成果物 |
 | root tests | 検証対象の成果物 |
 

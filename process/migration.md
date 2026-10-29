@@ -15,6 +15,9 @@
    保存済みの事実を含む場合は、[concerns/persistence](../concerns/persistence/read-time-upcasting.md) の「追記した事実の版を読み出しで現在へ変換する」に従い、保持する版の解釈と移行対象の旧い経路を分ける。
 5. 新旧が同じ datastore にある場合は、[concerns/transaction](../concerns/transaction/single-commit-point.md) の「一つの確定点を持つ」と、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」を適用する。
    schema migration の artifact は [concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」が定める forward-only に従い、service の配備とは独立して適用する。
+   独立した集合ごとに source、対象 DB、適用履歴、設定を対応づけ、同じ DB への適用を所有する配備の task を一つに定め、各段の順序に従って直列に適用する。
+   履歴表の名前や集合の所属だけを変える場合も DB の移行として扱い、適用済みの版と checksum を所有元へ対応づけて引き継ぎ、既存の schema と data が保たれ、適用済みの SQL が再実行されないことを確かめる。
+   新旧の適用入口が別々の履歴へ書き続けないように切り替え、旧い入口が停止し、新しい履歴と実際の schema の対応が確認できるまで、旧い履歴を落とさない。
 6. 新旧が別の datastore にある場合は、[concerns/transaction](../concerns/transaction/state-event-atomicity.md) の「状態とイベントを同一パスで記録する」を適用する。
 7. 別 datastore の既存 data の移送から cutover までは、[concerns/migration](../concerns/migration/datastore-cutover.md) の「別 datastore の移行を同じ時点で検証して切り替える」の行動を記載順に実行する。
 8. outbox の再配送と失敗の回復は、[concerns/resilience](../concerns/resilience/README.md) と [concerns/observability](../concerns/observability/README.md) の規律を適用する。
@@ -31,6 +34,7 @@
 この確認は、[principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」が要求する検証対象の保証の違反と判定結果に照合し、runner だけの赤と区別して、条件が同じ既存の mutation の証跡を再利用する。
 同じ datastore の移行は、[concerns/transaction](../concerns/transaction/README.md) の一つの確定点と、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」の完了条件に照合する。
 schema migration の artifact は、[concerns/migration](../concerns/migration/expand-migrate-contract.md) の「稼働中のスキーマを拡張・移行・収縮の段で進化させる」の完了条件と禁止事項に照合する。
+独立した migration の集合ごとの source、対象 DB、履歴、設定、適用順序と実行所有者を照合し、履歴の移設では元の適用済み記録と既存の schema、data の保存、適用済みの SQL の再実行の不在、旧い適用入口の停止を確かめる。
 別 datastore の確定は、[concerns/transaction](../concerns/transaction/state-event-atomicity.md) の「状態とイベントを同一パスで記録する」の完了条件と禁止事項に照合する。
 別 datastore の data 移送と cutover は、[concerns/migration](../concerns/migration/datastore-cutover.md) の「別 datastore の移行を同じ時点で検証して切り替える」の完了条件と禁止事項に照合する。
 outbox の再配送と失敗後の回復は、[concerns/resilience](../concerns/resilience/README.md) と [concerns/observability](../concerns/observability/README.md) の完了条件に照合する。

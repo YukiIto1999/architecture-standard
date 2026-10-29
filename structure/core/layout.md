@@ -22,6 +22,7 @@ core/
 │  │  └─ ports/<port>
 │  └─ infrastructure/
 │     ├─ persistence/<aggregate>-store
+│     ├─ migrations/
 │     └─ <external-system>
 ├─ shared/
 │  └─ <shared-kernel>

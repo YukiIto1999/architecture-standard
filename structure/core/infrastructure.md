@@ -32,7 +32,11 @@ infrastructure は、application が要求する具体的な接続、取得、�
 個々の store が独立して確定したり、use-case 全体を受け取って transaction で包んだりしない。
 派生読みモデルの再構築は、正本の現在情報または業務イベントを port から読み出す application workflow として、読みモデルを所有するコンテキストに置く。
 起動は workflow を呼べる surface の layout に従う。
-schema migration の実装は infrastructure に置き、適用の順序は [process/migration](../../process/migration.md) が定める。
+コンテキストが所有する schema の migration artifact は、そのコンテキストの `infrastructure/migrations/` に置く。
+同じ DB を共有しても、コンテキストごとの artifact の所有を root へまとめない。
+採用した依存が所有する migration の集合は、その依存の原本を使い、アプリケーションの集合へ写して改番しない。
+独立して適用する集合ごとに source、対象 DB、適用履歴、設定を対応づけ、別の集合の適用履歴を混ぜない。
+artifact を適用する順序は [process/migration](../../process/migration.md) が定める。
 個人データの消去や鍵の入れ替えなど、コンテキストの状態を扱う管理操作は application の use-case または workflow が制御し、この層には port の I/O 実装を置く。
 消去する情報と期限は [concerns/privacy](../../concerns/privacy/README.md) に従う。
 管理操作と消去の証跡は [concerns/audit-trail](../../concerns/audit-trail/README.md) に従う。

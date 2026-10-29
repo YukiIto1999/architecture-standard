@@ -13,25 +13,22 @@
 sqlx の `macros` feature を有効化し、`cargo sqlx prepare` が生成する `.sqlx` を追跡する。
 通常のコンパイルでは DB 接続先を設定せず、追跡した `.sqlx` の検証データを使う。
 現在の schema との同期は、対象の DB を使う `cargo sqlx prepare --check` をリポジトリの検証入口で実行して確かめる。
-`sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化し、migration table 名と migration hash の無視文字は既定から変更しない。
+`sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化する。
 
 ### 根拠
 `cargo sqlx prepare` では、対象の DB に SQL を検証させた結果を `.sqlx` へ保存できる。
 SQL を隠す抽象を入れないので、事実の形がそのまま型に写る。
 `macros` feature と追跡した `.sqlx` を使えば、通常のコンパイルを DB へ接続せずに行える。
 保存済みの検証データだけでは現在の schema との同期を保証しないため、`cargo sqlx prepare --check` で照合する。
-sqlx-cli の `sqlx migrate add` は既定で forward-only の migration ファイルを生成し、`sqlx migrate run` が適用済みの履歴を DB 側で追跡する。
-`sqlx.toml` の migration table 名と migration hash の無視文字を既定から変えなければ、sqlx と sqlx-cli の設定差で検証対象と適用履歴がずれない。
-forward-only の規律そのものは [structure/core/infrastructure](../../structure/core/infrastructure.md) に従う。
+schema migration の適用と履歴の分離は [sqlx-cli](./sqlx-cli.md) の「migration の適用」に従う。
 
 ### 完了条件
 永続化が sqlx で書かれ、`query!`・`query_as!` のコンパイル時検証が効いている。
 `macros` feature が有効で、生成した `.sqlx` が追跡されている。
 通常のコンパイルが DB 接続先を持たず、`.sqlx` の検証データで検証されている。
 `cargo sqlx prepare --check` が、検証データと現在の query と schema の同期を確かめている。
-`sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature が有効で、migration table 名と migration hash の無視文字が既定から変更されていない。
+`sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature が有効になっている。
 フル ORM を使っていない。
-schema の変更が、sqlx-cli の `sqlx migrate` で forward-only の migration として適用されている。
 
 ### 禁止事項
 フル ORM で、SQL を隠すこと。
@@ -41,8 +38,8 @@ SQL の値を、文字列の連結で組み立てること。
 SQL を `query!`・`query_as!` で書き、`macros` feature を有効化する。
 対象の DB に接続した `cargo sqlx prepare` で `.sqlx` を生成し、追跡する。
 通常のコンパイルでは DB 接続先を設定せず、検証入口で `cargo sqlx prepare --check` も実行して現在の schema との同期を確かめる。
-`sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化し、migration table 名と migration hash の無視文字を既定から変更しない。
-schema の変更は `sqlx migrate add` で migration ファイルを作り、`sqlx migrate run` で適用する。
+`sqlx.toml` を使う場合は sqlx 側で `sqlx-toml` feature を明示的に有効化する。
+schema の変更は [sqlx-cli](./sqlx-cli.md) の「migration の適用」に従って適用する。
 
 ### 例
 SQL を文字列で組み立てると型と schema が検査されず、値の連結は injection を招く。
