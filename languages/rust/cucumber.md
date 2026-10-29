@@ -8,7 +8,8 @@
 ## 仕様
 
 ### 要求
-業務語彙の executable spec は、[verification](../../principles/verification/README.md) が定める同じ検査経路で、cucumber の Rust 実装として実行する。
+Rust の実装単位が所有する公開 interface を検証する業務語彙の executable spec は、[verification](../../principles/verification/README.md) が定める同じ検査経路で、cucumber の Rust 実装として実行する。
+実行する言語の選び方は [structure/tests/layout](../../structure/tests/layout.md) の「実行可能な仕様」に従い、他の言語の実行系で実行する scenario を重ねて実行しない。
 feature の各 step は、一つの step binding と、その binding が呼ぶ公開 interface の operation に対応させる。
 feature、step binding、公開 interface の対応は、各一覧を実体から導く drift 検査と executable spec の実行で検証する。
 
@@ -17,7 +18,7 @@ feature、step binding、公開 interface の対応は、各一覧を実体か�
 feature、step binding、公開 interface は別の成果物なので、対応の drift 検査がなければ一方だけ古くなりうる。
 
 ### 完了条件
-業務語彙の executable spec が、cucumber の Rust 実装で書かれ、実行されている。
+Rust の実装単位が所有する公開 interface を検証する業務語彙の executable spec が、cucumber の Rust 実装で書かれ、実行されている。
 feature の全 step が、一つの step binding と公開 interface の operation に対応している。
 feature、step binding、公開 interface の対応に欠落と余剰がなく、drift 検査と executable spec の実行が同じ検証入口で通っている。
 

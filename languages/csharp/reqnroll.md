@@ -8,7 +8,8 @@
 ## 仕様
 
 ### 要求
-業務語彙の executable spec は、[verification](../../principles/verification/README.md) が定める同じ検査経路で、Reqnroll として実行する。
+C# の実装単位が所有する公開 interface を検証する業務語彙の executable spec は、[verification](../../principles/verification/README.md) が定める同じ検査経路で、Reqnroll として実行する。
+実行する言語の選び方は [structure/tests/layout](../../structure/tests/layout.md) の「実行可能な仕様」に従い、他の言語の実行系で実行する scenario を重ねて実行しない。
 feature の各 step は、一つの step binding と、その binding が呼ぶ公開 interface の operation に対応させる。
 feature、step binding、公開 interface の対応は、各一覧を実体から導く drift 検査と executable spec の実行で検証する。
 Reqnroll の実行基盤は Reqnroll.TUnit を使い、単体・性質と同じ TUnit に一本化する。
@@ -20,7 +21,7 @@ Reqnroll は自前のテスト実行系を持たず、xUnit・NUnit・MSTest・T
 Reqnroll.TUnit を使えば、仕様の実行基盤が単体・性質と同じ TUnit に揃い、実行基盤を二つに割らずに済む。
 
 ### 完了条件
-業務語彙の executable spec が、Reqnroll で書かれ、実行されている。
+C# の実装単位が所有する公開 interface を検証する業務語彙の executable spec が、Reqnroll で書かれ、実行されている。
 feature の全 step が、一つの step binding と公開 interface の operation に対応している。
 feature、step binding、公開 interface の対応に欠落と余剰がなく、drift 検査と executable spec の実行が同じ検証入口で通っている。
 Reqnroll の実行基盤が、Reqnroll.TUnit で TUnit に揃っている。

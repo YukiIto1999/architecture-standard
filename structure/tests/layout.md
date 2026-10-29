@@ -44,7 +44,8 @@ integration は、複数の実装単位または境界を組み合わせて検�
 成功だけでなく、業務上の拒否と、結果を変える境界条件を scenario へ含める。
 実装前に scenario の期待結果を確定し、仕様の変更と実装の追随を同じ変更理由で扱う。
 scenario は言語固有の step binding から公開 interface を検証し、記法を揃えることと、実行や保証を実現する機構を同じにすることを混同しない。
-実行系と feature、step binding、公開 interface の対応検査は [languages](../../languages/) に従い、仕様の実行を repository の検証入口へ含める。
+業務語彙の scenario は、検証する公開 interface を所有する実装単位の言語の実行系で一度だけ実行し、同じ scenario を別の言語の実行系で重ねて実行しない。
+実行系と feature、step binding、公開 interface の対応検査は [languages](../../languages/) が定め、仕様の実行を repository の検証入口へ含める。
 UI の smoke と visual は、業務の仕様の代替にしない。
 
 ## サイズによる配置

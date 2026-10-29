@@ -10,7 +10,7 @@
 ### 要求
 UI の E2E smoke は Gherkin の feature で書き、playwright-bdd で Playwright Test のテストファイルへ変換する。
 変換した test は、[playwright](./playwright.md) の runner で、実装と同じ検証入口から実行する。
-UI の E2E smoke と visual を、[cucumber-js](./cucumber-js.md) が実行する業務語彙の executable spec の代替として並べない。
+UI の E2E smoke と visual を、業務語彙の executable spec の代替として並べない。
 
 ### 根拠
 UI の E2E smoke と visual は、ブラウザ越しの見た目と疎通を確かめる。
@@ -28,4 +28,4 @@ executable spec と UI の E2E smoke・visual を、代替として並べるこ�
 
 ### 行動
 UI の E2E smoke の Gherkin を playwright-bdd で変換し、Playwright の runner で実装と同じ検証入口から実行する。
-業務語彙の executable spec は [cucumber-js](./cucumber-js.md) で別に書く。
+業務語彙の executable spec は、検証する公開 interface を所有する実装単位の言語の実行系で別に書き、TypeScript が所有する場合は [cucumber-js](./cucumber-js.md) を使う。

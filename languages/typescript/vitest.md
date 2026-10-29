@@ -19,16 +19,17 @@
 ### 要求
 単体・性質のテストの実行は、build の設定を共有し変換の前提がずれないようにして速く行う。
 これを `vp test` が駆動する Vitest で満たす。
-仕様は cucumber-js、UI の E2E smoke と visual は Playwright で別に実行する。
+TypeScript の実装単位が所有する公開 interface の業務語彙の仕様は cucumber-js、UI の E2E smoke と visual は Playwright で別に実行する。
 
 ### 根拠
 Vitest は build の設定をテストと共有し、変換の前提がテストと本体でずれない。
 `vp test` は watch に入らない一度きりの実行を既定とするので、テストを速く回し、検証入口で使える。
 仕様と UI の E2E smoke・visual は目的が異なる別の実行系(cucumber-js・Playwright)を持つので、単体・性質の実行を Vitest に限ってもテスト全体の実行手段は欠けない。
+業務語彙の仕様は、検証する公開 interface を所有する実装単位の言語の実行系で実行するため、Vitest の単体・性質の実行と別に、TypeScript が所有する interface の仕様だけを cucumber-js が受け持つ。
 
 ### 完了条件
 単体・性質のテストの実行が、`vp test` が駆動する Vitest で行われている。
-仕様の実行が cucumber-js、UI の E2E smoke と visual の実行が Playwright で行われている。
+TypeScript の実装単位が所有する公開 interface の業務語彙の仕様の実行が cucumber-js、UI の E2E smoke と visual の実行が Playwright で行われている。
 
 ### 禁止事項
 build とテストで、変換の設定を食い違わせること。
