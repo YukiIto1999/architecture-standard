@@ -9,6 +9,8 @@ canonical は [layout](./layout.md) の依存に従う。
 canonical は、公開する操作の入出力、型の field、直和の variant、値の制約、エラーを定義する。
 公開契約に必要な共有の field、variant、制約を、利用側の手書き DTO にだけ持たせない。
 canonical は HTTP や protocol の詳細を含まず、媒体固有の表現は binding が所有する。
+emitter の注釈は、名前空間や import の名前だけで媒体依存と判定せず、定める内容と変更理由で配置する。
+型の制約や直和の意味を各出力へ保つ注釈は canonical に置き、HTTP の path、method、header、status などを定める注釈は binding に置く。
 core の業務モデルは canonical の写しではなく、各コンテキストが所有する責務と保証で定める。
 業務の区分を公開する契約は、選択肢の意味と公開する値域を定め、内側の区分との対応を明示する。
 同じ意味と保証を持つ公開区分の定義は共有し、operation ごとに独立した一覧を保守しない。
