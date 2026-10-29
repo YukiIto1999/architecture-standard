@@ -16,7 +16,7 @@ contracts/generated の TypeScript の client と型は、契約から `@typespe
 client の既定の transport と既定の再試行・redirect・logging の設定に、依存しない。
 生成した client の利用は、[connection](./connection.md) の「生成型を型としてのみ使い、通信を port に通す」に従い、viewer の ui port または extension の host port を実装する host の adapters に限る。
 viewer と extension は、生成物の型だけを型として import する。
-生成器は、製品の型検査 toolchain と別の package で動かす。
+生成器は製品の型検査 toolchain と別の package で動かし、置き場と生成入口は [structure/contracts](../../structure/contracts/layout.md) の「生成の toolchain」に従う。
 生成物は、製品が採用する TypeScript の型検査へ通す。
 
 ### 根拠

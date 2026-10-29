@@ -16,7 +16,7 @@ generated は、canonical と、ある場合は http・protocol の binding か�
 
 generated を、手で編集しない。
 generated を、正本にしない。
-生成器の設定、template、schema 駆動の出力処理も、単一の生成入口から再現できる入力として管理する。
+生成器の設定、template、schema 駆動の出力処理の置き場と再現可能な生成入口は [layout](./layout.md) の「生成の toolchain」に従う。
 生成 DTO の field、variant、制約、deserialize の処理に不足がある場合は、[canonical](./canonical.md) と binding と生成器の該当する入力を直し、利用側の手書き同義 DTO や生成後の手修正で補わない。
 
 ## 生成能力

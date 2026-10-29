@@ -107,6 +107,7 @@ core は composition を含め、contracts・surface・runtime・deploy・tests 
 libs は libs 以外の root を参照せず、機構間の公開面と循環の禁止は [libs](./libs/layout.md) に従う。
 deploy と tests は、他の root のソースコードの依存先にしない。
 contracts/canonical・http・protocol は、生成と契約検査の入力であり、実行時に import するコードの依存先ではない。
+contracts/toolchain は生成を実行する build-only package 群であり、製品の runtime と型検査の依存先にしない。
 データ型と通信 client・stub の依存単位の分離は [contracts/generated](./contracts/generated.md) に従う。
 公開契約と core の application 入出力の写像は [contracts/adapters](./contracts/adapters.md) が所有する。
 
