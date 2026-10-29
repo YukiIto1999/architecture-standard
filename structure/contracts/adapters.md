@@ -10,7 +10,7 @@ contracts/adapters/
 └─ <operation>    一つの公開 operation と application の接続。
 ```
 
-adapter は、canonical の operation ごとに置く。
+adapter は、core の業務操作へ接続する canonical の operation ごとに置く。
 同じ公開契約を使う surface と host は、同じ adapter の公開入口を使う。
 core を埋め込まない client は generated のデータ型と通信実装を使い、この層へ依存しない。
 

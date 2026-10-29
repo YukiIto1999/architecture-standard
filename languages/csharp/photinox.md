@@ -11,8 +11,10 @@
 C# の core を持つ desktop の host は PhotinoX とし、core の言語と host の言語を割らない。
 UI は viewer に閉じ、native の widget を別に作らない。
 desktop の bridge は、host の認証 adapter が保持する資格情報を認証境界で検証して認証主体を確定する。
-bridge は認証主体と資格情報を viewer から受け取らず、host が確定した認証主体と検証済み入力を [structure/contracts/adapters](../../structure/contracts/adapters.md) の宣言された保護を適用する入口へ渡す。
+bridge は認証主体と資格情報を viewer から受け取らず、業務操作を呼ぶ場合は、host が確定した認証主体と検証済み入力を [structure/contracts/adapters](../../structure/contracts/adapters.md) の宣言された保護を適用する入口へ渡す。
 core の公開 API が受け取るのは、検証済み入力と、主体を必要とする operation の認証主体から対応づけた業務入力だけにする。
+bridge の公開契約と生成物は [structure/contracts/protocol](../../structure/contracts/protocol.md) と [generated](../../structure/contracts/generated.md) に従い、両端で同じ正本から生成した入出力の型と codec を使う。
+host が所有する技術操作は host の公開 Interface へ接続し、core の operation を経由させない。
 
 ### 根拠
 PhotinoX は OS 内蔵の webview に viewer を載せ、C# の core を back-end にする。
@@ -28,6 +30,7 @@ desktop の bridge の認証境界が、host の認証 adapter の資格情報�
 bridge の引数に認証主体と資格情報の型が現れないことが、構造検査で確かめられている。
 資格情報から認証主体への確定と、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core の公開 API の呼出が、実行テストで確かめられている。
 core の公開 API が、認証主体と資格情報を受け取らず、必要な業務入力と検証済み入力だけを受け取っている。
+bridge の実際の受信経路で、契約どおりの結果と状態変化、契約違反の拒否と状態不変、技術入口による業務操作の保護の迂回の拒否が確かめられている。
 
 ### 禁止事項
 native の widget を、viewer と別に作ること。
@@ -38,7 +41,7 @@ core を別の言語の host の sidecar として載せること。
 ### 行動
 window を PhotinoX の shell にし、UI を viewer で載せる。
 bridge の入口で host の認証 adapter の資格情報を検証し、認証主体を確定する。
-確定した認証主体と検証済み入力を adapter の宣言された保護を適用する入口へ渡し、その入口が対応づけた業務入力と検証済み入力だけを core の公開 API へ渡す。
+業務操作を呼ぶ bridge は、確定した認証主体と検証済み入力を adapter の宣言された保護を適用する入口へ渡し、その入口が対応づけた業務入力と検証済み入力だけを core の公開 API へ渡す。
 業務の判断は C# の core に置く。
 
 ### 例

@@ -12,6 +12,7 @@ ide の host は VSCode とし、adapters が extension の host port を VSCode
 UI は webview で viewer をホストし ui port を注入する。
 acquireVsCodeApi は1回だけ呼び1つの instance を保持し、webview との通信は判別子つきの union で型付けた postMessage で行う。
 postMessage の受信は translation の parse を通し、型アサーションで信じない。
+postMessage の公開契約と生成物は [structure/contracts/protocol](../../structure/contracts/protocol.md) と [generated](../../structure/contracts/generated.md) に従い、両端で同じ正本から生成した判別子つき union の型と schema を使う。
 
 ### 根拠
 adapters が host port を VSCode の API で実装すれば、surface は VSCode に縛られない。
@@ -24,8 +25,8 @@ postMessage を判別子つきの union で型付ければ、境界の外の値�
 ide の host が VSCode で、adapters が host port を VSCode の API で実装している。
 UI が webview で viewer をホストし、ui port が注入されている。
 acquireVsCodeApi が1回だけ呼ばれ、1つの instance が保持されている。
-webview の通信が、判別子つきの union で型付けられている。
-postMessage の受信が、型アサーションでなく safeParse を通している。
+webview の通信が、同じ正本から生成した判別子つき union の型と schema を使っている。
+postMessage の実際の受信経路が、型アサーションでなく生成した schema の safeParse を通し、契約どおりの結果と状態変化、契約違反の拒否と状態不変が確かめられている。
 
 ### 禁止事項
 acquireVsCodeApi を、複数回呼ぶこと。
@@ -34,18 +35,15 @@ postMessage の受信を、型アサーションで型付けること。
 
 ### 行動
 adapters で host port を VSCode の API で実装し、webview で viewer をホストする。
-acquireVsCodeApi を1回だけ呼び instance を保持し、postMessage を判別子つきの union の schema で safeParse する。
+acquireVsCodeApi を1回だけ呼び instance を保持し、postMessage を契約から生成した判別子つき union の schema で safeParse する。
 
 ### 例
-判別子つき union の schema で `safeParse` し、`acquireVsCodeApi` が返す instance を一つ保持する。
+canonical と protocol から生成した `hostToViewSchema` を使い、受信の実装では `safeParse` を通し、`acquireVsCodeApi` が返す instance を一つ保持する。
 
 ```typescript
-const HostToViewSchema = v.variant("type", [v.object({ type: v.literal("render"), lines: v.number() })]);
-type HostToView = v.InferOutput<typeof HostToViewSchema>;
-type ViewToHost = { type: "alert"; text: string };
 const vscode = acquireVsCodeApi();
 window.addEventListener("message", (event: MessageEvent<unknown>) => {
-  const result = v.safeParse(HostToViewSchema, event.data);
+  const result = v.safeParse(hostToViewSchema, event.data);
   if (result.success && result.output.type === "render") render(result.output.lines);
 });
 ```

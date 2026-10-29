@@ -1,7 +1,7 @@
 # protocol 層
 
 protocol 層は、canonical を非 HTTP のローカル protocol へ束ねる binding を定める層である。
-protocol は、埋め込み surface とのプロセスをまたぐ通信の媒体にだけ置く。
+protocol は、プロセスをまたぐ非 HTTP のローカル通信に置き、埋め込み surface との通信と、webview と host の IPC の両方を含める。
 protocol は [layout](./layout.md) の依存に従い、canonical を参照する。
 
 ## wire への射影
@@ -9,7 +9,9 @@ protocol は [layout](./layout.md) の依存に従い、canonical を参照す�
 protocol は、canonical の操作を、選んだ protocol の要求と応答へ写像する。
 protocol は固有の意味を持たず、canonical の意味を wire へ表すだけである。
 この binding から生成したデータ型を、提供側と利用側の要求と応答に使う。
-通信 stub はその通信を所有する境界に置き、生成したデータ型は契約 adapter の公開入口へ渡し、core の composition へ流さない。
+通信 stub はその通信を所有する境界に置く。
+core の業務操作へ接続する受信口は、生成したデータ型を契約 adapter の保護された公開入口へ渡す。
+host の設定や要求の中継と取消など、host が所有する技術操作は host の公開 Interface へ接続し、そのための core の operation を新設しない。
 データ型と stub の分離と生成能力は [generated](./generated.md) に従う。
 
 ## スタイル

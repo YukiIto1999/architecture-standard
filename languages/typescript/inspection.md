@@ -247,9 +247,9 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | vite-plus | 実行入口を一つに集約する | analyzer/lint(`vp check` を検証入口でエラー化)+実行テスト(`vp test` を検証入口で実行)+構造検査(manifest と lockfile の `vite-plus` の版、`vite` と `vitest` の override と同梱版の一致、採用している Vite plugin の peer 宣言と alias した `vite` の整合、部品ごとの設定 file と `vite.config.ts` の `run` block の不在、Nx の target の command が `vp` の built-in command であること)+artifact 検査(`vp build` が採用している Vite plugin を登録して生成する成果物) |
 | vite | viewer を載せる host の entry と build | artifact 検査(`vp build` が @solidjs/vite-plugin を登録した設定で生成する viewer の成果物)+レビュー(tsconfig の `jsx` が `preserve`、`jsxImportSource` が `@solidjs/web`、composition の ui port 注入と @solidjs/web の render による mount) |
 | publication | extension | 型(port の interface) |
-| vscode | ide の host | 型(判別子つき union の schema・safeParse)+実行テスト(postMessage 受信の単体テスト) |
+| vscode | ide の host | 型(契約から生成した判別子つき union の型と schema・safeParse)+実行テスト(postMessage の実受信経路での契約どおりの結果と状態変化、契約違反の拒否と状態不変) |
 | chromium | 実行 context ごとに組み立てる | 構造検査(manifest の宣言と動的な登録・注入の build 出力への対応、Chrome の API・型の参照を runtime へ限定、listener が非同期準備より先に同期登録されること)+実行テスト(worker 停止・再開、依存準備の失敗、tab 切替と document 変更時の操作拒否) |
-| chromium | 権限と message の操作を限定する | 構造検査(manifest の権限・host・message 操作集合の照合)+analyzer/lint(surface から Chrome global API を呼ぶ形の禁止)+実行テスト(sender・操作・対象・通信先の拒否、権限拒否・撤回、注入禁止ページ、secret を返さない応答) |
+| chromium | 権限と message の操作を限定する | 型(契約から生成した message の入出力と schema)+構造検査(manifest の権限・host・message 操作集合の照合)+analyzer/lint(surface から Chrome global API を呼ぶ形の禁止)+実行テスト(sender・操作・対象・通信先の拒否、権限拒否・撤回、注入禁止ページ、secret を返さない応答、message の実受信経路での契約どおりの結果と状態変化、契約違反の拒否と状態不変) |
 | chromium | 資格情報を host の通信 adapter に閉じる | 型(非秘密状態と資格情報の分離)+レビュー(保管 backend と鍵の実際の保証)+実行テスト(session のアクセス制限、worker 停止後の復元、browser 再起動・拡張 reload・update・disable 後の欠落、期限・失効・logout、通信先変更時の旧資格情報の不送信) |
 | chromium | 認証の取得経路と API の権限を照合する | レビュー(単一の取得方式と認証基盤・API の契約)+実行テスト(採用経路の実行、public OAuth client 採用時の配布 channel ごとの callback・code 再利用と PKCE 不一致の拒否、許可操作を越える要求と owner cookie による迂回の拒否、cookie 経路の CSRF・browser 設定) |
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |

@@ -17,7 +17,7 @@ contracts/
 
 `canonical` は常に置く。
 `http` と `protocol` は、canonical を wire へ束ねる binding であり、プロセスをまたぐ通信があるときに、その通信形式に応じて置く。
-`http` は HTTP の通信に、`protocol` は埋め込み surface との非 HTTP のローカル通信に置く。
+`http` は HTTP の通信に、`protocol` は webview と host の IPC や埋め込み surface との通信を含む非 HTTP のローカル通信に置く。
 `generated` は、canonical の契約を code から使うすべての場合に置く。
 `adapters` は、公開契約を core の公開 application 入口へ接続するときに置く。
 公開契約を表す DTO は generated の型を使い、同じ意味の field、variant、制約を手書きで写した型を代わりに置かない。

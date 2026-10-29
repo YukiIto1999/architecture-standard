@@ -46,7 +46,8 @@ worker の停止と再開、拡張ページの閉鎖、ページ遷移を別々�
 manifest の API 権限と host permission は、実装する操作と通信先に必要なものだけを宣言する。
 利用者が選んだ tab への一時的な操作には activeTab と必要な scripting の権限を使い、全サイトへの常時アクセスを既定にしない。
 権限の拒否、撤回、注入を許されないページでは操作を拒否し、権限を追加して黙って再実行しない。
-context 間の通信は runtime.sendMessage または runtime.connect の adapter で行い、JSON で表す判別子つき union の schema を [valibot](./valibot.md) で検証する。
+context 間の通信は runtime.sendMessage または runtime.connect の adapter で行い、JSON で表す判別子つき union の生成 schema を [valibot](./valibot.md) で検証する。
+message の公開契約と生成物は [structure/contracts/protocol](../../structure/contracts/protocol.md) と [generated](../../structure/contracts/generated.md) に従い、両端で同じ正本から生成した入出力の型と schema を使う。
 受信側は sender の拡張 ID、origin、tab、frame と document のうち操作の許可に必要な属性を検証し、message の操作、対象と入力の検証を通った要求だけを実行する。
 content script と外部ページからの message は低信頼の入力として扱い、許可する操作と通信先を host 側で固定する。
 資格情報や他の origin の秘密を content script と外部ページへ返さず、client オブジェクトや関数を message で送らない。
@@ -61,6 +62,7 @@ client と関数は message の JSON 表現にならないため、各 context �
 manifest が必要な API と host に限定され、権限の拒否と撤回が操作の失敗になる。
 sender と message をそれぞれ検証し、未許可の操作、対象、通信先が実行されない。
 content script とページが、資格情報を取得したり、任意 URL への資格情報付き通信を要求したりできない。
+message の実際の受信経路で、生成した schema による契約違反の拒否と状態不変、契約どおりの結果と状態変化が確かめられている。
 
 ### 禁止事項
 host permission の path 指定を、server の操作認可と扱うこと。

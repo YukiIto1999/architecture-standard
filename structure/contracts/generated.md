@@ -34,7 +34,8 @@ drift があるときは、ビルドを失敗させる。
 ## 利用
 
 公開契約を code で扱う提供側と利用側は、その契約から生成したデータ型を使う。
-core を埋め込む提供側と host は、公開契約の入出力に generated のデータ型を使い、[adapters](./adapters.md) で core の application 型へ写像する。
+core の業務操作へ接続する提供側と host は、公開契約の入出力に generated のデータ型を使い、[adapters](./adapters.md) で core の application 型へ写像する。
+host が所有する技術操作も同じ正本から生成したデータ型と codec を両端で使い、core 向けの adapter を経由させず host の公開 Interface へ接続する。
 HTTP または protocol の提供側に、利用側の通信 client を要求しない。
 通信する利用側は、その通信を所有する adapter に generated の client または stub を置き、接続設定と transport の instance を引数で与え、generated 内に固定しない。
 viewer と extension はデータ型の import にとどめ、通信の実装は host から port として受け取る。

@@ -46,6 +46,8 @@ composition は、viewer が公開する起動の入口に依存する。
 desktop は、viewer の内部へ踏み込まない。
 desktop 固有の処理は、adapters と composition に置く。
 viewer の中に、native や desktop の分岐を置かない。
+webview と host のプロセスをまたぐ IPC は [contracts/protocol](../../contracts/protocol.md) に従い、両端の入出力に同じ正本から生成したデータ型と codec を使う。
+host の接続設定、要求の中継と取消などの技術操作は desktop の adapters が所有する公開 Interface へ接続し、core の operation に押し込めない。
 具体の API の機構は [languages](../../../languages/) が定める。
 
 ## 組み立てと起動

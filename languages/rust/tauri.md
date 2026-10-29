@@ -11,9 +11,11 @@
 Rust の core を持つ desktop と mobile の host は Tauri とし、同じ viewer と同じ core を desktop と mobile の shell で共有する。
 webview の runtime は、host の組立点で一つだけ選ぶ。
 desktop と mobile の各 shell は、host の認証 adapter が保持する資格情報を IPC の認証境界で検証して認証主体を確定する。
-IPC の command は認証主体と資格情報を frontend から受け取らず、host が確定した認証主体と検証済み入力を [structure/contracts/adapters](../../structure/contracts/adapters.md) の宣言された保護を適用する入口へ渡す。
+IPC の command は認証主体と資格情報を frontend から受け取らず、業務操作を呼ぶ場合は、host が確定した認証主体と検証済み入力を [structure/contracts/adapters](../../structure/contracts/adapters.md) の宣言された保護を適用する入口へ渡す。
 core の公開 API が受け取るのは、検証済み入力と、主体を必要とする operation の認証主体から対応づけた業務入力だけにする。
 認証の資格情報は host の認証 adapter に置き、業務の secret と判断は core に置いて frontend に出さない。
+IPC の公開契約と生成物は [structure/contracts/protocol](../../structure/contracts/protocol.md) と [generated](../../structure/contracts/generated.md) に従い、両端で同じ正本から生成した入出力の型と codec を使う。
+host が所有する技術操作は host の公開 Interface へ接続し、core の operation を経由させない。
 
 ### 根拠
 Tauri は core のプロセスが唯一の入口として IPC を一元に統べ、webview は viewer を動かす。
@@ -30,6 +32,7 @@ IPC の command の引数に認証主体と資格情報の型が現れないこ�
 資格情報から認証主体への確定と、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core の公開 API の呼出が、実行テストで確かめられている。
 core の公開 API が、認証主体と資格情報を受け取らず、必要な業務入力と検証済み入力だけを受け取っている。
 認証の資格情報が host の認証 adapter に、業務の secret と判断が core に置かれ、frontend に出ていない。
+IPC の実際の受信経路で、契約どおりの結果と状態変化、契約違反の拒否と状態不変、技術入口による業務操作の保護の迂回の拒否が確かめられている。
 
 ### 禁止事項
 secret や業務の判断を、frontend に置くこと。
@@ -37,10 +40,10 @@ secret や業務の判断を、frontend に置くこと。
 資格情報と認証主体を、core の公開 API へ渡すこと。
 
 ### 行動
-host を Tauri にし、IPC を型付きの command で一元化する。
+host を Tauri にし、IPC の command を契約から生成した入出力で型付け、codec を実際の受信経路に適用する。
 host の組立点で webview の runtime を一つ選び、その runtime crate を依存に置く。
 desktop と mobile の各 IPC の入口で host の認証 adapter の資格情報を検証し、認証主体を確定する。
-確定した認証主体と検証済み入力を adapter の宣言された保護を適用する入口へ渡し、その入口が対応づけた業務入力と検証済み入力だけを core の公開 API へ渡す。
+業務操作を呼ぶ command は、確定した認証主体と検証済み入力を adapter の宣言された保護を適用する入口へ渡し、その入口が対応づけた業務入力と検証済み入力だけを core の公開 API へ渡す。
 認証の資格情報を host の認証 adapter に、業務の secret と判断を core に置く。
 
 ### 例
