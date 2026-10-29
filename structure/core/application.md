@@ -19,7 +19,7 @@ effect の規律は [concerns/effect](../../concerns/effect/README.md) に従う
 use-case は、単一の業務動作である。
 use-case は、port と domain、shared、および libs の公開技術 API のみに依存する。
 use-case は、別の use-case を参照しない。
-use-case の強整合な書き込みは、一つの集約に閉じる。
+use-case の強整合な書き込みの範囲は [aggregate-integrity](../../principles/data/aggregate-integrity.md) の「整合性を集約境界に閉じる」に従う。
 use-case は、一つの use-case を一つのフォルダに置く。
 port への到達に共有の wrapper 層(capability accessor)を挟まず、use-case は port の抽象を直接受ける。
 use-case の名前は、単一の動作を表す動詞と名詞の組とする。
