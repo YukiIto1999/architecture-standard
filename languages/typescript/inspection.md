@@ -255,7 +255,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | vscode-jsonrpc | core への接続 | 型(RequestType・NotificationType の型宣言) |
 | publication | 可視性 | 構造検査(package.json の exports フィールドの検査と、exports に無い path への import の拒否) |
 | oxlint | 汎用名と裸ループと自由文出力を lint で止める | analyzer/lint(id-denylist・typescript/prefer-for-of・no-console をエラー化) |
-| playwright | 表示までの時間を E2E で測る | 実行テスト(Playwright の E2E で入力時刻・状態または feedback の表示時刻・progress の表示時刻・完了時刻を測定し、experience の閾値と継続条件へ照合) |
+| playwright | 表示までの時間を browser で測る | 構造検査(操作ごとの表示時刻の計測が integration に置かれ、e2e の smoke に加わっていないこと)+実行テスト(Playwright が browser を駆動する integration の test で、利用者面の各操作の入力時刻・状態または feedback の表示時刻・progress の表示時刻・完了時刻を測定し、experience の閾値と継続条件へ照合) |
 | playwright | baseline 画像と環境指紋を一つの更新単位で版管理する | 構造検査(baseline metadata と実行環境の environment fingerprint を screenshot の比較前に照合)+実行テスト(fingerprint 一致時だけ `toHaveScreenshot` で screenshot 差分を実行し、画像と metadata の生成が片方だけ確定しないこと)+レビュー(画像と metadata の一組更新の明示承認) |
 
 ## 参照

@@ -8,10 +8,10 @@ T0、T1、T2 の時間予算は、project が検査の範囲と実行環境の�
 
 | 段 | 完了する時点 | 入口の task 名 | 実行する検査 |
 |---|---|---|---|
-| T0 | 編集時の局所フィードバック | なし | 変更した file の型・analyzer・lint・formatter・構造の静的検査 |
-| T1 | agent が作業を止める前と commit の前 | `verify` | 影響範囲の静的検査、Small test、契約の検証 |
-| T2 | push の前の作業機 | `verify-push` | 影響範囲の実 datastore を使う test、変更した箇所と影響する箇所の mutation、影響する scenario |
-| T3 | project が定める全量確認の契機 | `verify-full` | 全量の mutation、Large test と e2e、SLO 計測 |
+| T0 | 編集時の局所フィードバック | なし | 変更した file の型・analyzer・lint・formatter・file 単位の構造の静的検査 |
+| T1 | agent が作業を止める前と commit の前 | `verify` | 影響範囲の静的検査、root の arch の検査、Small test、契約の検証 |
+| T2 | push の前の作業機 | `verify-push` | 影響範囲の Medium test、変更した箇所と影響する箇所の mutation、影響する scenario |
+| T3 | project が定める全量確認の契機 | `verify-full` | 全量の mutation、Large test、performance の SLO 計測 |
 
 ## 順序
 
@@ -27,6 +27,9 @@ T0、T1、T2 の時間予算は、project が検査の範囲と実行環境の�
    同じ承認対象内の修正、分割、再起動では累積をリセットせず、予算の見直しでも消費済み時間を残す。
 6. T0 は変更した file の局所フィードバックとして実行し、編集のたびに全量入口を起動しない。
 7. T1 は `verify` で実行し、必要な検査の完了を確認してから commit または作業終了へ進む。
+   root の arch の検査は、repository を読むために Medium の資源を使う場合も T1 で実行し、依存と境界の違反を commit の前に止める。
+   e2e と conformance と integration の test は、技法の名前でなく実依存の size に対応する段で実行する。
+   performance の区画の SLO 計測は、size によらず T3 で実行し、T1 と T2 の size 別の test に含めない。
 8. T2 は git の pre-push hook から起動し、push する変更と同じ source に対し、変更した箇所と未変更の影響する箇所の mutation を含む必要な検査の完了を確認してから push を許可する。
 9. 各段は、静的検査から資源を要する検査へ進め、検査が失敗または未完了なら後続の承認を止める。
 10. 契約、migration、認証・認可、供給網、検証入口の変更は、それぞれの保証を共有する境界へ影響を広げる。

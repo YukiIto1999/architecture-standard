@@ -10,22 +10,25 @@ Playwright の操作対象は、利用者向けの role、label、text の locat
 受入画像の取得には、業務結果を assertion した同じ page の screenshot を使い、対応する scenario と表示条件を test の出力へ添える。
 継続的な visual の差分の検査は、この file の「baseline 画像と環境指紋を一つの更新単位で版管理する」に従う。
 
-## 表示までの時間を E2E で測る
+## 表示までの時間を browser で測る
 
 ### 要求
-[experience](../../concerns/experience/README.md) が定める状態または feedback の100ms、1秒を超える operation の progress 開始までの1秒と完了までの継続は、Playwright の E2E で表示時刻を測定する。
+[experience](../../concerns/experience/README.md) が定める状態または feedback の100ms、1秒を超える operation の progress 開始までの1秒と完了までの継続は、Playwright が browser を駆動する test で、利用者面の操作ごとに表示時刻を測定する。
+この test は [structure/tests/layout](../../structure/tests/layout.md) の integration に置き、e2e の smoke に操作ごとの計測を加えない。
 
 ### 根拠
-操作の入力と表示結果を同じ E2E で測れば、handler の起動や server の完了でなく、利用者が状態、feedback、progress を見られるまでの時間を判定できる。
+操作の入力と表示結果を同じ browser で測れば、handler の起動や server の完了でなく、利用者が状態、feedback、progress を見られるまでの時間を判定できる。
+操作ごとの計測を e2e に置くと、critical path の最小の smoke に収まらず、smoke を絞ると計測しない操作が残る。
 
 ### 完了条件
-各操作の入力時刻、状態または feedback の表示時刻、1秒を超える operation の progress 表示時刻と完了時刻が Playwright で測定され、experience の閾値と継続条件を満たしている。
+利用者面の各操作の入力時刻、状態または feedback の表示時刻、1秒を超える operation の progress 表示時刻と完了時刻が、integration に置いた Playwright の test で測定され、experience の閾値と継続条件を満たしている。
 
 ### 禁止事項
 handler の起動時刻または server の完了時刻を、状態、feedback、progress が利用者へ表示された時刻として扱うこと。
+操作ごとの表示時刻の計測を、e2e の smoke に加えること。
 
 ### 行動
-Playwright で操作を入力し、入力時刻、状態または feedback の表示時刻、progress の表示時刻、完了時刻を記録して、experience の閾値と継続条件を検査する。
+Playwright が browser を駆動する integration の test で操作を入力し、入力時刻、状態または feedback の表示時刻、progress の表示時刻、完了時刻を記録して、experience の閾値と継続条件を検査する。
 
 ## baseline 画像と環境指紋を一つの更新単位で版管理する
 

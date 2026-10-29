@@ -19,7 +19,9 @@ tests/
 │  └─ <small|medium|large>/
 ├─ arch/
 │  └─ <small|medium|large>/
-└─ e2e/
+├─ e2e/
+│  └─ <small|medium|large>/
+└─ performance/
    └─ <small|medium|large>/
 ```
 
@@ -31,11 +33,16 @@ contract は、[contracts/canonical](../contracts/canonical.md) の契約定義�
 generated が canonical と binding(http・protocol)から外れていないことを、drift の検査で確かめる。
 生成物の契約の表現と未知項目の扱いの検査は [methods](./methods.md) の「性質別の技法」に従い、drift の一致だけで生成能力の充足とみなさない。
 arch は、[skeleton](../skeleton.md) と各部の layout、[concerns/dependency](../../concerns/dependency/README.md) が定める依存と境界の禁止を、機械で検証する。
+arch の検査は repository の source と manifest を読むため、hermetic でなければ Medium に置き、実行する段は [process/verification](../../process/verification.md) が定める。
 viewer と extension が特定 host の API や型を参照しないことも、arch で検証する。
 e2e は、critical path の最小の smoke と visual だけに絞る。
+利用者面の操作ごとに状態、feedback、progress が表示されるまでの時間を browser を駆動して測る検証は、e2e に置かず integration に置く。
 smoke の到達点と visual の受入判定は、[methods](./methods.md) の「利用者面の受入」に従う。
 integration は、複数の実装単位または境界を組み合わせて検証する。
 検証の重みは、公開 interface 越しのuse-caseの検証に置き、内側の個別のテストは型と契約の保証で減らす([principles/verification](../../principles/verification/README.md) に従う)。
+performance は、固定した workload と環境で SLO を計測し、変更前後の比較から退行を判定する。
+SLO の計測は、機能の合否を判定する test と同じ区画に混ぜない。
+performance の区画の test は size 別 runner の機能の test の集合から除き、計測の入口が実依存の size の資源で実行する。
 
 ## 実行可能な仕様
 
@@ -55,7 +62,7 @@ Small は、同一プロセス内で完結し、filesystem・socket・network・
 Medium は、filesystem、Unix socket、localhost、local の既存プロセス・container・browser・service のいずれかへ依存するテストとする。
 Large は、local host の外にある資源または本番相当の外部環境へ依存するテストとする。
 複数の依存を持つテストは、最も大きい依存のサイズへ分類する。
-integration、contract、conformance、arch、e2e という技法の名前から、サイズを決めない。
+integration、contract、conformance、arch、e2e、performance という技法の名前から、サイズを決めない。
 conformance は、hermetic に同一プロセスで完結すれば Small、local host の資源を使えば Medium、local host の外または本番相当の外部環境を使えば Large に置く。
 e2e も、hermetic に同一プロセスで完結すれば Small、local host の資源に閉じれば Medium、local host の外または本番相当の外部環境を使えば Large に置く。
 root の tests に置く検証は、技法の区画の下に実依存と一致する `<small|medium|large>/` を置く。
@@ -78,7 +85,7 @@ Small の test は、実行開始後に filesystem、socket、network、別 proc
 Small の fixture は、test binary または test process の値として読み込み前に組み込み、test 本体から repository や一時領域を読まない。
 Medium の実行環境は task が用意した local host の資源だけを提供し、外部 network への経路を持たない。
 Large の実行環境は、対象として記録した外部資源だけを接続許可に加える。
-全 size の discovery 集合の和は、filter をかけない全域 discovery の native test ID 集合と一致させる。
+全 size の機能の test の discovery 集合と performance の区画の discovery 集合の和は、filter をかけない全域 discovery の native test ID 集合と一致させる。
 未分類の ID、複数 size に属する ID、配置より大きい資源を必要とした test、対象に記録していない外部資源へ接続した test は失敗する。
 サイズを分けても、各段が個別に肥大すれば配分は崩れる。
 厚みは Small に置き、上の段は絞る([principles/verification](../../principles/verification/README.md) に従う)。
