@@ -45,6 +45,13 @@ artifact を適用する順序は [process/migration](../../process/migration.md
 
 外部システムへの接続は、client と adapter を持つ。
 外部システムの wire 型と、domain との写像は、外部システムのファイル内に置く。
+製品の要件が名指す連携先と、利用者が複数の提供元から選ぶ機能の提供元は、業務の連携先として扱う。
+利用者が sign-in に選ぶ identity provider は業務の連携先に含めず、[concerns/authentication](../../concerns/authentication/README.md) に従って認証の境界で扱う。
+業務の連携先の集合は製品の要件が定め、同じ能力を提供する連携先は application が宣言した同じ port の adapter として置く。
+利用者が提供元を選ぶ場合は、選択を業務の入力または業務の状態として扱い、選ばれた提供元の adapter を同じ port の背後で使う。
+連携先ごとの wire 型、認証の方式、上限と障害の差は、その adapter の中の要求と応答の組み立てと設定に閉じる。
+連携先への通信と認証には、[tools](../../tools/README.md) と [languages](../../languages/) が定める採用の機構を連携先によらず使う。
+採用の機構でその連携先の protocol を実現できないことを実証した場合に限り、連携先専用の client をその adapter の内側で使い、root の [README](../../README.md) の「標準の単一性と例外の管理」に従って逸脱として記録する。
 
 ## 論理と物理の分離
 
