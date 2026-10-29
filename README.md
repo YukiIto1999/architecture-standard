@@ -143,7 +143,7 @@ root の構成は skeleton が、各部の内部は各 layout が、概念の規
 
 | 緩和対象 | 緩和内容 |
 |---|---|
-| contracts | 外部との契約を持たないなら contracts/ を置かない。HTTP を持たない契約は JSON Schema 経路の型生成だけに縮小できる |
+| contracts | 外部との契約を持たないなら contracts/ を置かない。HTTP も protocol も持たない契約は JSON Schema 経路の型生成だけに縮小できる |
 | task graph | 単一言語・単一 package なら、タスク名の契約を保ったまま言語の native な task 実行で代替できる |
 
 上記以外の緩和はすべて個別の逸脱として扱い、決定の記録へ個別に残すことを必要とします。
