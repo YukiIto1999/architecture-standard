@@ -12,11 +12,11 @@ principles の [legibility](../../principles/legibility/README.md) が定める�
 
 ## 規律
 
-- [判断の易しさを最適化する](./decision-simplicity.md) — レビュー(判断の単一性と説明文の要否の判断)
+- [判断の易しさを最適化する](./decision-simplicity.md) — 機械+レビュー(空状態の正常完了の事実または次に行う操作の表示の UI test+公開観測面から列挙した画面見出し直下の文と副見出し、空状態の文の判断と、判断の単一性と説明文の要否の判断)
 - [主操作と既定値を先に示し、頻用操作に近道を備える](./primary-action-defaults.md) — レビュー(主操作・既定値の判断)
-- [状態と結果を即時に返す](./immediate-feedback.md) — 機械(表示時間の E2E 計測)
+- [状態と結果を即時に返す](./immediate-feedback.md) — 機械(browser を駆動する integration の表示時間の計測)
 - [誤りを防ぎ、起きたら回復を助け、取り返せるようにする](./error-prevention-recovery.md) — 機械+レビュー(回復経路test+文言判断)
-- [利用者の語彙と現実に合わせ、操作できることを見える形で示す](./user-vocabulary-affordance.md) — レビュー(語彙・形の判断のみ)
+- [利用者の語彙と現実に合わせ、操作できることを見える形で示す](./user-vocabulary-affordance.md) — 機械+レビュー(公開観測面から列挙した日本語の操作ラベルの末尾の品詞の構造検査+語彙と操作できる形の判断)
 - [情報を局面と依存でまとめ、余白と階層で導く](./information-grouping.md) — レビュー(配置・余白の判断のみ)
 - [同じ目的に同じ画面のパターンを使う](./consistent-patterns.md) — レビュー(pattern統一と画面横断の照合の判断)
 - [情報構造を作業の流れに沿わせ、現在地を示す](./workflow-aligned-navigation.md) — レビュー(流れ整合の判断のみ)
