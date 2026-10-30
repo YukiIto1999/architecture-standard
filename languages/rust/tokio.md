@@ -31,6 +31,9 @@ runtime が混在すると、future の実行と待ち合わせの前提が食�
 spawn する子は所有者の JoinSet に登録し、join_next で全ての出力と JoinError を回収する。
 業務の Err、子の取消、JoinError、外部取消のどの終了経路でも、所有者の CancellationToken で兄弟へ協調取消を伝えてから、join_next が None を返すまで drain する。
 子の出力では業務の Result と取消による終了を区別し、JoinError では is_panic と is_cancelled を区別して、最初の失敗と追加の失敗を保持する。
+全ての終了を回収した後の組の終了は、panic した子があれば欠陥、なければ判定の時点で所有者が受け取った CancellationToken が取り消し済みで取消で終えた子があれば取り消し、なければ組が自ら取消させた子を除く業務の結果から決める。
+全ての子が業務の結果を返して終えた場合は、受け取った CancellationToken の取消を後から観測しても結果を書き換えない。
+async の後始末の失敗は、子を欠陥にせず、子の終了と別に観測する。
 async の後始末を要する子は、取消後に後始末を await してから終了を返す。
 abort は、Future を drop しても必要な後始末と外部効果の整合性を失わない子に限り、abort_all の後も join_next で全ての終了を回収する。
 同じ task 内の固定数の分岐は共有する CancellationToken へ各分岐の失敗を通知し、join! で全ての終了を待つ。
@@ -41,7 +44,8 @@ abort は、Future を drop しても必要な後始末と外部効果の整合�
 並行して需要を処理する job task の数は tokio::sync::Semaphore で上限を定める。
 共有状態を単一所有する owner task は需要を並行処理する job task ではないため、Semaphore の permit の対象外とする。
 apalis の worker が自身の中で並行に走らせる job の handler の寿命の所有、上限、停止での合流、panic の観測は、[apalis](./apalis.md) の「handler の並行と停止」に従い、handler の内側に上限のための JoinSet と Semaphore を重ねない。
-job task の permit 待ちは、期限付きの permit 取得と CancellationToken の取消を select! で競わせる。
+job task の permit 待ちは、permit 取得と CancellationToken の取消を select! で競わせる。
+境界の期限は取り消しとして届く token で扱い、permit 待ちに `Deadline` から別の timeout を作らない。
 取消と permit 取得が同時に成立した場合は、取消を先に選び permit を取得しない。
 
 ### 根拠
@@ -54,12 +58,15 @@ try_join! は最初の Err で未完了の分岐を drop し、分岐が持つ J
 Drop は await できないので、所有者を drop してから async の後始末を回収することはできない。
 job task の並行度を無制限にすると資源が枯渇し外部依存を圧迫するので、tokio::sync::Semaphore で上限を固定する。
 単一の owner task に permit を要求すると、job の需要枠を常時一つ消費し、共有状態の直列化という別の役割を並行度制御と混同する。
-permit 取得だけを期限で囲うと、CancellationToken が取り消されても permit が空くか期限を迎えるまで待ち続ける。
+permit 取得だけを待つと、CancellationToken が取り消されても permit が空くまで待ち続ける。
+期限は境界の timeout が token の取消として伝えるので、permit 待ちに別の期限を作らない。
 
 ### 完了条件
 spawn した全ての子が、要求または host の長寿命の所有者の JoinSet に所属している。
 業務の Err、子の取消、JoinError、外部取消で兄弟へ協調取消が伝わり、join_next が None を返すまで全ての終了を回収している。
 回収した業務結果、取消、panic、追加の後始末の失敗がそれぞれ観測され、最初の失敗だけへ潰されていない。
+async の後始末の失敗が、子を欠陥にされず、子の終了と別に観測されている。
+回収後の組の終了が欠陥、取り消し、業務の結果の順で決まり、全ての子が業務の結果を返して終えた組が、受け取った token の後からの取消で書き換えられていない。
 協調取消の子の async の後始末が終了通知より先に完了し、panic した子の後始末も存続する資源の所有者が回収している。
 所有者の Future が drain 中に drop または abort されていない。
 abort を使う子が drop による取消の安全性を満たし、abort_all の後も全ての終了を join_next で観測している。
@@ -73,15 +80,19 @@ task の完了ハンドルを保持する寿命の所有者を定めずに、spa
 JoinSet の drop、abort_all、CancellationToken の cancel を、drain の完了とみなすこと。
 JoinSet::shutdown または最初の Err で戻る try_join! を、全失敗の観測と非同期の後始末を要する終了経路へ使うこと。
 業務の Err または JoinError の一方だけを終了経路へ接続し、他方で兄弟の回収を飛ばすこと。
+panic した子がある組を、同時に成り立つ取消や業務の Err で終えること。
+async の後始末の失敗だけで、子または組を欠陥にすること。
+全ての子が業務の結果を返して終えた組を、後から観測した受け取った token の取消で書き換えること。
 async の後始末が必要な子を、安全性を確かめず abort すること。
 所有者の Future を drop または abort し、JoinSet の destructor だけへ終了を委ねること。
 Semaphore の permit を取得せず、JoinSet の並行 job task に需要を実行させること。
 単一の owner task に job 用 Semaphore の permit を要求すること。
-job task の permit 待ちを期限だけで囲い、CancellationToken の取消と競わせないこと。
+job task の permit 待ちを CancellationToken の取消と競わせないこと、または `Deadline` から別の timeout で囲うこと。
 
 ### 行動
 spawn する子は寿命の所有者の JoinSet に登録し、所有者自身は上位の host の停止経路から完了まで待つ。
 失敗と取消を検知したら兄弟の token を cancel し、join_next が None を返すまで回収を続け、子の業務結果と JoinError をそれぞれ仕分ける。
+回収後の組の終了は、panic による欠陥、取り消し、業務の結果の順で決め、後始末の失敗は終了と別に観測する。
 固定数の分岐も失敗で共有 token を cancel して join! で待ち、未完了の分岐を捨てない。
 abort が許される子にも abort_all の後に同じ回収経路を使い、shutdown による結果の破棄を避ける。
 並行 job task の上限は tokio::sync::Semaphore で固定する。
@@ -95,9 +106,10 @@ job task の permit 待ちは select! で CancellationToken の取消と競わ�
 spawn_blocking に委ねるのは、実行時間が短く、同時実行数に上限を置ける処理に限る。
 project は、spawn_blocking に渡す処理の最大実行時間と permit 数を決定の記録に残す。
 spawn_blocking は、Semaphore の permit を先に取得する共通 wrapper からだけ呼ぶ。
-共通 wrapper の permit 待ちは、CancellationToken の取消を先頭に置いた biased な select! で、期限付きの permit 取得と競わせる。
+共通 wrapper の permit 待ちは、CancellationToken の取消を先頭に置いた biased な select! で、permit 取得と競わせる。
+境界の期限は取り消しとして届く token で扱い、共通 wrapper の permit 待ちに `Deadline` から別の timeout を作らない。
 permit 取得後にも CancellationToken を再確認し、取り消されていれば spawn_blocking を開始せず permit を解放する。
-共通 wrapper の外から spawn_blocking を直接呼ぶことは、clippy の disallowed_methods と構造検査で拒否する。
+共通 wrapper の外から spawn_blocking を直接呼ぶことは、[connection](./connection.md) の「効果を言語の効果型で表す」の `--force-warn` の照合と構造検査で拒否する。
 長く走るブロッキング処理は、専用の process へ分離するか、取り消しを確認できる短い chunk に分ける。
 開始済みのブロッキング処理は abort で停止できると扱わない。
 開始済みの spawn_blocking の JoinHandle は、wrapper を含む所有者が完了まで保持して await し、wrapper の取消や drop で detach しない。
@@ -108,7 +120,7 @@ runtime の shutdown_timeout は待機を打ち切るだけで開始済みの bl
 非同期のタスクの中で同期の I/O を直接呼ぶと、実行のスレッドが塞がり、同じスレッドの他のタスクが進まない。
 spawn_blocking に委ねれば、ブロッキングが専用のスレッドで走り、非同期の実行を塞がない。
 共通 wrapper が permit を取得してから起動すれば、blocking pool の大きさとは独立に application が開始する処理数を制限できる。
-permit 待ちを CancellationToken と競わせれば、親取消後に permit が空くか期限を迎えるまで待ち続けない。
+permit 待ちを CancellationToken と競わせれば、期限の成立や親の取消が token の取消として届いた後に、permit が空くまで待ち続けない。
 permit 取得後に取消を再確認すれば、select! の完了直後に成立した取消で新しいブロッキング処理を始めない。
 直接呼び出しを検査で拒否すれば、permit を経由しない経路を作れない。
 開始済みの spawn_blocking は abort しても処理が続くため、停止の手段として使えない。
@@ -119,7 +131,7 @@ wrapper の Future を drop すると内部の JoinHandle も drop されるた�
 spawn_blocking の処理が、短く、同時実行数に上限を持っている。
 最大実行時間と permit 数が、project の決定の記録に残されている。
 全ての spawn_blocking が、permit を取得する共通 wrapper から呼ばれている。
-共通 wrapper の permit 待ちが、CancellationToken の取消を先頭に置いた biased な select! で期限付き permit 取得と競わされている。
+共通 wrapper の permit 待ちが、CancellationToken の取消を先頭に置いた biased な select! で permit 取得と競わされ、`Deadline` から別の timeout を作っていない。
 permit 取得後に CancellationToken が再確認され、取り消されていれば spawn_blocking が開始されず permit が解放されている。
 共通 wrapper が開始する同時実行数が、記録した permit 数を超えないことを実行テストで確かめている。
 処理が最大実行時間を超えないことを、計測テストとレビューで確かめている。
@@ -132,7 +144,7 @@ permit 取得後に CancellationToken が再確認され、取り消されてい
 非同期のタスクの中で、同期の I/O を直接呼ぶこと。
 共通 wrapper の外から、spawn_blocking を直接呼ぶこと。
 決定の記録に残した permit 数を経由せず、ブロッキング処理を起動すること。
-共通 wrapper の permit 待ちを期限だけで囲い、CancellationToken の取消と競わせないこと。
+共通 wrapper の permit 待ちを CancellationToken の取消と競わせないこと、または `Deadline` から別の timeout で囲うこと。
 permit 取得後に CancellationToken を再確認せず、spawn_blocking を開始すること。
 長く走る処理や同時実行数を制限できない処理を、spawn_blocking に渡すこと。
 開始済みのブロッキング処理を、abort で停止できると扱うこと。
@@ -141,9 +153,9 @@ wrapper の取消、drop、runtime の shutdown_timeout を、開始済みの bl
 ### 行動
 spawn_blocking に渡す処理の最大実行時間と permit 数を、project の決定の記録に残す。
 Semaphore の permit を取得してから spawn_blocking を呼ぶ共通 wrapper を一つ作る。
-共通 wrapper の permit 待ちは、CancellationToken の取消を先頭に置いた biased な select! で期限付き permit 取得と競わせる。
+共通 wrapper の permit 待ちは、CancellationToken の取消を先頭に置いた biased な select! で permit 取得と競わせ、`Deadline` から別の timeout を作らない。
 permit 取得後に CancellationToken を再確認し、取り消されていれば permit を解放して終了する。
-共通 wrapper 内の呼び出しだけを局所的に許可し、それ以外は clippy の disallowed_methods と構造検査で拒否する。
+共通 wrapper の file の外の spawn_blocking の呼び出しは、[connection](./connection.md) の「効果を言語の効果型で表す」の `--force-warn` の照合と構造検査で拒否する。
 共通 wrapper の同時実行数を実行テストで測り、記録した permit 数を超えないことを確かめる。
 各処理の実行時間を計測テストで測り、記録した最大実行時間を超えないことを確かめる。
 長く走る処理は専用の process へ分けるか、各 chunk の間で CancellationToken を確認する形へ分割する。

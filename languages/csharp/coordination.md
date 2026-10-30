@@ -52,8 +52,23 @@ CancellationToken を省略可能にして渡さない形にせず、時間切�
 `AcquireRelease` の release は同じ `Deadline` を引数で受け、`IAsyncDisposable.DisposeAsync` の呼出側は同じ `Deadline` を後始末の scope に保持するが、どちらにも CancellationToken を渡さない。
 この `Deadline` と CancellationToken は、[context-propagation](../../concerns/context-propagation/unified-request-context.md) の「実行文脈の由来と寿命を保って伝える」に従う実行 metadata を個別の引数へ取り出した値とし、認証主体や業務入力と一つの context の型にまとめない。
 同期の純粋な domain の関数には、`Deadline` と CancellationToken の引数を要求しない。
-各 hop は TimeProvider の現在時刻から `Deadline` までの remaining を計算し、その remaining から局所の CancellationTokenSource を作る。
-局所の token は親の CancellationToken と linked token に合流させ、同じ絶対期限とともに下流へ渡す。
+`Deadline` ごとに期限用の CancellationTokenSource を一つだけ作り、作るのは `Deadline` の処理を始める境界とし、Effect を実行する場合は EffectRuntime.Run とする。
+Effect を実行する host は、`Deadline` を生成して Run へ渡すだけで、期限用の CancellationTokenSource を作らない。
+境界は、TimeProvider の現在時刻から `Deadline` までの remaining で期限用の CancellationTokenSource を作り、その token と親の CancellationToken を linked token に合流させ、同じ `Deadline` とともに下流へ渡す。
+remaining が 0 以下なら、期限用の CancellationTokenSource を遅延 0 で作り、期限切れの処理を始めずに取り消し済みの token を渡す。
+境界の内側の hop は、受け取った token を下流へ渡し、`Deadline` から別の timeout を作らない。
+境界の内側の hop は、外部効果を始める前に ThrowIfCancellationRequested で取り消しを確認する。
+期限用の CancellationTokenSource を作る境界は、自身の `Deadline` の超過を想定内の失敗として受け取り、親の CancellationToken の取り消しは取り消しのまま通す。
+境界は、取り消しで終えた処理の原因を、判定の時点の親の CancellationToken の状態と、自身が所有する期限用の token の状態で判定する。
+親の CancellationToken が取り消し済みなら、期限の超過が併存していても取り消しのまま返す。
+親の token が取り消されておらず期限用の token が取り消し済みなら、期限超過の想定内の失敗へ写す。
+親の token も期限用の token も取り消されていない取り消しは、adapter を経ずに境界へ届いた写し損ねなので、取り消しにも期限超過にもせず、専用の欠陥 `UnattributedCancellationException` として返す。
+境界の内側の hop は、期限用の token の取り消しを、受け取った token の取り消しとして受け、OperationCanceledException で取り消しとして終える。
+呼び出しごとの時間上限は、adapter が `Deadline` から導かない自身の CancellationTokenSource で設け、受け取った token と linked token に合流させて短い方を採る。
+`HttpClient.Timeout` を、呼び出しごとの時間上限の手段にしない。
+上限を設けた adapter は、OperationCanceledException を受けたとき、受け取った token が取り消し済みなら取り消しのまま通し、そうでなく自身の上限の token が取り消し済みなら自身の想定内の失敗として受け取る。
+どちらの token も取り消されていない OperationCanceledException は、下位の層(`HttpClient` の timeout と内部の取り消しなど)が起こした中断として、adapter が通信の失敗の Failed へ写す。
+処理が終了を確定した後に観測した取り消しや `Deadline` の超過は、その終了を書き換えず、`Deadline` の超過を診断として記録する。
 CancellationTokenSource.Cancel は停止要求であり、子の Task の完了待ちとは別に扱う。
 CancellationTokenSource.Dispose は取り消し要求も子の完了待ちも行わないため、所有者が子へ合流した後に実行する。
 
@@ -63,12 +78,27 @@ CancellationToken を境界から末端まで引数で渡せば、取り消し�
 省略可能にして渡さないと、合図が途中で切れ、処理が止まらない。
 時間切れを linked token に合流させれば、時間切れも取り消しとして同じ経路で伝わる。
 `Deadline` を境界で一度だけ作って値のまま渡せば、hop が増えても時間枠の起点は動かない。
-各 hop が同じ絶対時刻から remaining を計算すれば、通常処理の待機期限を引き直さずに済むが、取消後の drain がその期限内に終わる保証にはならない。
+境界が期限用の timeout を一度だけ作り、内側がその token を引き継げば、通常処理の待機期限を引き直さずに済むが、取消後の drain がその期限内に終わる保証にはならない。
+adapter が依存先の呼び出しに設ける上限は、[resilience](../../concerns/resilience/dependency-call-control.md) の「外部依存の呼び出しを制御する層に置く」が定める port 層の上限であり、`Deadline` から導かないので、境界の時間枠を引き直さない。
 `Deadline` と CancellationToken を個別の引数で渡せば、.NET の協調取消と remaining の計算をそのまま使いながら、期限の起点と取消の系統を保てる。
 同期の純粋な domain の関数は期限も取消も観測しないので、引数を要求しても使われない値が核へ入るだけである。
 取り消し後の release または `DisposeAsync` へ CancellationToken を渡すと、後始末自体が中断され、資源を漏らす。
 元の `Deadline` を保持すれば期限超過の診断情報を失わず、期限を理由に後始末を取り消さずに済む。
 Cancel から戻ることや IsCancellationRequested が示すのは要求の状態であり、Task の終了やその finally の完了ではない。
+CancellationToken と CancellationTokenSource は取り消しの原因を保持しないので、取り消しの原因は、上限を設けた側が所有する token の状態で判定する。
+各 hop が `Deadline` から別の timeout を作ると、hop の timeout が先に成立した取り消しが境界へ届いたとき、境界の期限用の token がまだ取り消されておらず、期限の超過を自身の token の状態で判定できない。
+期限用の timeout を境界の一つにすれば、期限の超過は境界が所有する token の状態で判定でき、内側の取り消しは親の取り消しか期限かのどちらかとして届く。
+境界は、親の token と自身の期限用の token のどちらの状態からも説明できない取り消しを、期限の超過と推測しない。
+HttpClient は、呼び出し側の token、CancelPendingRequests と Dispose が使う内部の source、Timeout を一つの linked CancellationTokenSource にまとめ、内部の source の取り消しを、呼び出し側の token が取り消されていない OperationCanceledException として送出する。
+そのため、親の token が取り消されていないことだけから、取り消しや期限の超過を推測できない。
+`HttpClient` の既定の `Timeout` は 100 秒で、その超過は呼び出し側の token が取り消されていない OperationCanceledException として届く。
+下位の層の timeout と内部の取り消しは、全ての経路で外せないので、状態による帰属に任せ、adapter が通信の失敗へ写す。
+`HttpClient.Timeout` を上限の手段にすると、超過が通信の失敗になり時間上限の超過にならないので、上限は自身の CancellationTokenSource で設け、自身の token の状態で判定する。
+親の token が取り消されていれば結果を要らなくなった側が居るので、期限も超過していても取り消しとして通す。
+`Deadline` の超過は、境界にとって応答や再試行を決める必要のある結果であり、結果を要らなくなった親の取り消しとは扱いが異なる。
+境界の内側の処理に伝わるのは、結果を待たなくなったことだけなので、内側は取り消しで終える。
+.NET の協調取消では、取り消しの合図の後に処理が値を返して正常に完了でき、その Task は Canceled でなく RanToCompletion になる。
+返った Succeeded・Failed・Defected は外部効果が確定した結果であり、返却後に取り消しや `Deadline` の超過を観測して別の終了へ置き換えると、成功した書き込みが失敗として報告され、呼び出し側が重複した再実行を始める。
 
 ### 完了条件
 CancellationToken が、非取消の後始末を除く全ての非同期 API に渡されている。
@@ -77,26 +107,45 @@ CancellationToken が、省略されずに渡されている。
 絶対時刻の `Deadline` が、request、message、job の境界で TimeProvider から一度だけ生成されている。
 境界より内側の非同期 API が、`AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` を除いて、同じ `Deadline` と CancellationToken を必須の引数として受け取り下流へ渡している。
 非取消の後始末が元の `Deadline` を保持し、release と `DisposeAsync` のどちらにも CancellationToken が渡されていない。
-各 hop の局所 timeout が、TimeProvider の現在時刻から同じ `Deadline` までの remaining から作られている。
-局所 timeout の token と親の CancellationToken が linked token に合流し、下流へ伝播している。
+`Deadline` ごとの期限用の CancellationTokenSource が一つだけで、Effect を実行する場合は EffectRuntime.Run が作り、Run を呼ぶ host が作っていない。
+境界の期限用の token と親の CancellationToken が linked token に合流し、同じ `Deadline` とともに下流へ伝播している。
+境界の内側の hop が、受け取った token を下流へ渡し、`Deadline` から別の timeout を作っておらず、外部効果を始める前に取り消しを確認している。
+境界が、親の CancellationToken が取り消し済みの取り消しを、期限の超過が併存していても取り消しのまま返している。
+境界が、親の token が取り消されておらず自身の期限用の token が取り消し済みの取り消しだけを、期限超過の想定内の失敗へ写している。
+境界が、親の token も期限用の token も取り消されていない取り消しを、adapter を経ずに届いた写し損ねとして、`UnattributedCancellationException` の欠陥で返している。
+呼び出しごとの時間上限が、`Deadline` から導かない adapter 自身の CancellationTokenSource で設けられ、`HttpClient.Timeout` が上限の手段にされておらず、adapter が受け取った token、自身の上限の token の順に状態を判定している。
+上限を設けた adapter が、どちらの token も取り消されていない取り消しを、取り消しにも時間上限の超過にもせず通信の失敗の Failed として返している。
+確定した終了が、後から観測した取り消しや `Deadline` の超過で書き換えられず、`Deadline` の超過が診断として記録されている。
 同期の純粋な domain の関数が `Deadline` と CancellationToken を引数に持たず、`Deadline` と CancellationToken が認証主体や業務入力と同じ context の型にまとめられていない。
 
 ### 禁止事項
 CancellationToken を省略可能にして、渡さずに済ませること。
-hop ごとに相対 timeout を引き直し、新しい時間枠を始めること。
+境界の `Deadline` から、hop ごとに相対 timeout を引き直し、新しい時間枠を始めること。
 絶対期限を remaining に置き換え、下流へ相対値だけを渡すこと。
 非取消の後始末でないのに、`Deadline` または CancellationToken を受け取らない非同期 API を境界より内側に作ること。
 同期の純粋な domain の関数へ、`Deadline` または CancellationToken を要求すること。
 `Deadline` と CancellationToken を、認証主体や業務入力を含む一つの context の型へまとめること。
 `AcquireRelease` の release または `IAsyncDisposable.DisposeAsync` へ CancellationToken を足し、取り消し可能にすること。
+期限用の CancellationTokenSource を作る境界で、自身の `Deadline` の超過を取り消しのまま返すこと。
+親の CancellationToken が取り消し済みの取り消しを、期限超過の失敗へ写すこと。
+境界の内側の hop で、`Deadline` から別の timeout の CancellationTokenSource を作ること。
+親の token が取り消されていないことだけから、取り消しを期限超過と推測すること。
+親の token も自身の期限用の token も取り消されていない取り消しを、境界で取り消しまたは期限超過として返すこと。
+上限を設けた adapter で、どちらの token も取り消されていない取り消しを、取り消しまたは時間上限の超過として返すこと。
+`HttpClient.Timeout` を、呼び出しごとの時間上限の手段にすること。
+返却後の ThrowIfCancellationRequested や `Deadline` の再確認で、確定した Succeeded・Failed・Defected を取り消しや期限超過へ書き換えること。
 
 ### 行動
 CancellationToken を非取消の後始末を除いて末端まで渡し、ThrowIfCancellationRequested で止める。
 境界で TimeProvider から `Deadline` を一度だけ生成し、全ての内側の非同期 API に同じ値を渡す。
-各 hop で `deadline.Remaining(timeProvider)` を計算し、その値だけを局所の CancellationTokenSource に使う。
-時間切れは linked token で親の token に合流させ、下流へは remaining でなく元の `Deadline` を渡す。
+境界で `deadline.Remaining(timeProvider)` を計算し、その値だけを期限用の CancellationTokenSource に使って、親の token と linked token に合流させる。
+下流へは remaining でなく元の `Deadline` と linked token を渡し、内側の hop は受け取った token を下流へ渡す。
 同期の純粋な domain の関数からは `Deadline` と CancellationToken を除き、効果を実行する非同期 API だけが個別の引数で受ける。
 `AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` は非取消の後始末として実行し、元の `Deadline` を保持したまま CancellationToken を渡さない。
+境界で、取り消しで終えた処理を、親の CancellationToken が取り消し済みなら取り消しのまま、親の token が取り消されておらず期限用の token が取り消し済みなら期限超過の想定内の失敗として返し、どちらでもなければ `UnattributedCancellationException` の欠陥として返す。
+内側の hop は、期限用の token の取り消しを OperationCanceledException のまま通し、外部効果を始める前に ThrowIfCancellationRequested で取り消しを確認する。
+呼び出しごとの時間上限は、adapter が自身の CancellationTokenSource で設け、`HttpClient.Timeout` は使わず、受け取った token、自身の上限の token の順に判定し、どちらでもなければ通信の失敗へ写す。
+処理が終了を確定した後は、取り消しと `Deadline` の再確認の結果で終了を変えず、`Deadline` を越えていれば診断へ記録する。
 
 ### 例
 取り消し token を渡さないと、合図が下流まで届かない。
@@ -107,6 +156,7 @@ public async Task Process(Order order) { await _client.SendAsync(order); }
 
 絶対期限は host の request 境界で一度だけ生成する。
 非取消の後始末を除き、下流の非同期 API は同じ期限と token を受け取る。
+境界は、期限用の CancellationTokenSource を一つだけ作り、親の token が取り消されておらず期限用の token が取り消し済みの取り消しだけを、自身の `Deadline` の超過として想定内の失敗へ写す。
 
 ```csharp
 public readonly record struct Deadline(DateTimeOffset At)
@@ -117,10 +167,30 @@ public readonly record struct Deadline(DateTimeOffset At)
     public TimeSpan Remaining(TimeProvider timeProvider) => At - timeProvider.GetUtcNow();
 }
 
-public Task<Receipt> Process(Order order, CancellationToken cancellationToken)
+public async Task<Result<Receipt, ProcessFailure>> Process(Order order, CancellationToken cancellationToken)
 {
     var deadline = Deadline.FromBudget(_timeProvider, RequestBudget);
-    return ProcessCore(order, deadline, cancellationToken);
+    var remaining = deadline.Remaining(_timeProvider);
+    using var deadlineCts = new CancellationTokenSource(
+        remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero,
+        _timeProvider);
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+        cancellationToken,
+        deadlineCts.Token);
+    try
+    {
+        var receipt = await ProcessCore(order, deadline, linkedCts.Token);
+        return Result.Success<Receipt, ProcessFailure>(receipt);
+    }
+    catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+    {
+        if (deadlineCts.IsCancellationRequested)
+        {
+            return Result.Failure<Receipt, ProcessFailure>(new ProcessFailure.DeadlineExceeded(deadline));
+        }
+
+        throw new UnattributedCancellationException(exception);
+    }
 }
 
 private async Task<Receipt> ProcessCore(
@@ -129,17 +199,35 @@ private async Task<Receipt> ProcessCore(
     CancellationToken cancellationToken)
 {
     cancellationToken.ThrowIfCancellationRequested();
-    var remaining = deadline.Remaining(_timeProvider);
-    if (remaining <= TimeSpan.Zero) throw new OperationCanceledException("deadline exceeded");
+    return await _client.SendAsync(order, deadline, cancellationToken);
+}
+```
 
-    using var timeoutCts = new CancellationTokenSource(remaining, _timeProvider);
+呼び出しごとの時間上限は、adapter が `Deadline` から導かない自身の CancellationTokenSource で設け、受け取った token と linked token に合流させて短い方を採る。
+adapter は、受け取った token、自身の上限の token の順に状態を判定し、どちらでもない取り消しを通信の失敗にする。
+
+```csharp
+public async Task<Result<Receipt, SendFailure>> Send(
+    Order order,
+    Deadline deadline,
+    CancellationToken cancellationToken)
+{
+    using var limitCts = new CancellationTokenSource(CallLimit, _timeProvider);
     using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
         cancellationToken,
-        timeoutCts.Token);
-    return await _client.SendAsync(
-        order,
-        deadline,
-        linkedCts.Token);
+        limitCts.Token);
+    try
+    {
+        var receipt = await _client.SendAsync(order, deadline, linkedCts.Token);
+        return Result.Success<Receipt, SendFailure>(receipt);
+    }
+    catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+    {
+        return Result.Failure<Receipt, SendFailure>(
+            limitCts.IsCancellationRequested
+                ? new SendFailure.TimeLimitExceeded(CallLimit)
+                : new SendFailure.CommunicationFailed(exception));
+    }
 }
 ```
 
@@ -191,7 +279,9 @@ SemaphoreSlim の permit を取得する前に、job の `RunAsync` を開始す
 子の失敗、取消、外部取消で Cancel(false) を呼び、callback の AggregateException を収集する。
 Task.WhenAll を取消済みの token による待機の打ち切りで包まず、全ての開始済みの子の drain を完了する。
 全 Task の業務結果と Task.Exception を回収し、最初の失敗と追加の失敗を区別して境界へ渡す。
-外部取消だけなら OperationCanceledException を送出し、例外と同時なら集約へ OperationCanceledException を含める。
+判定の時点で外部の CancellationToken が取り消し済みで、取消に応じて終えた子があるなら OperationCanceledException を送出し、例外と同時なら集約へ OperationCanceledException を含める。
+外部の token が取り消されていなければ、組が自ら Cancel(false) して取消に応じて終えた子を除く子の業務結果から決める。
+全ての子が業務結果を返して終えたなら、外部取消を後から観測しても結果を書き換えない。
 長寿命の所有者は停止時にも同じ回収を実行し、完了を確認してから CTS と依存資源を解放する。
 個別の並行は SemaphoreSlim で、一括処理は Parallel.ForEachAsync の MaxDegreeOfParallelism で並行度の上限を定める。
 SemaphoreSlim の permit を取得した後に job の `RunAsync` を開始し、`finally` で permit を解放する。

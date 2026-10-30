@@ -378,14 +378,21 @@ public sealed class ProductionRequirements(IClock clock, IOrderRepository orders
 ### 要求
 Effect の実行は `EffectRuntime<TRequirements>` の境界に限り、内側の層では実行しない。
 EffectRuntime は requirements を保持し、Effect を解釈して `EffectExit` を返す。
-EffectRuntime とその Run は internal に閉じ、Run は同じ Deadline と CancellationToken を Effect へ渡して ValueTask を返す。
+EffectRuntime とその Run は internal に閉じ、Run は同じ Deadline と、期限用の token を合流させた CancellationToken を Effect へ渡して ValueTask を返す。
 実行中に送出された OperationCanceledException を Canceled に、その他の例外を Defected に写し、想定内失敗は throw せず Fail で返す。
+Run は `Deadline` の処理を始める境界として、[coordination](./coordination.md) の「取り消し」に従い、期限用の CancellationTokenSource を作り、その token と受け取った CancellationToken を linked token に合流させる。
+Run は、Canceled で終えた Effect を、受け取った CancellationToken が取り消し済みなら Canceled のまま返し、取り消されておらず期限用の token が取り消し済みなら、呼び出し側が渡す関数で作った期限超過の TFailure の値を持つ Failed へ写す。
+Run は、どちらの token も取り消されていない Canceled を、adapter を経ずに届いた写し損ねとして、専用の欠陥 `UnattributedCancellationException` を持つ Defected で返す。
+Run は、Succeeded・Failed・Defected で終えた Effect を、返却の後に観測した取り消しや Deadline の超過で書き換えず、Deadline を越えていれば診断へ記録する。
 Effect.Run の未初期化 guard が送出する `UninitializedEffectException` は、EffectRuntime が専用の Defected として返す。
 型で縛れない規則は、analyzer と source generator が次の4責務で強制する: R の合成環境の生成、Bind 連鎖での要求包含の検査、原始効果の閉じ込め、`NoRequirements` への迂回の禁止。
 
 ### 根拠
 実行を境界に集めると、どこで副作用が起きるかが一箇所で読める。
 host の async と取り消しで Effect を駆動し、送出された取り消しと欠陥を終了状態に写すので、内側は throw でなく Fail で想定内失敗を返せる。
+Canceled は結果を要らなくなった側の取り消しであり、Deadline の超過は期限用の CancellationTokenSource を作る境界である Run が想定内の失敗として受け取るので、Run は Canceled の原因を、受け取った CancellationToken と自身が所有する期限用の token の状態で判定してから返す。
+どちらの token でも説明できない Canceled を、期限超過や取り消しと推測して返すと、他の機構による中断が期限の超過として報告されるので、専用の欠陥にする。
+期限超過の TFailure の値を呼び出し側から受ければ、境界の失敗の型に期限超過の case が無いと Run を呼べず、応答を決める分岐が網羅の switch に現れる。
 EffectRuntime を internal の ValueTask 経路に閉じれば、公開 host API の Task と awaitable の役割が混ざらない。
 Deadline を Run から Effect へ値のまま渡せば、Effect の合成中に時間枠を引き直さない。
 C# は型推論が弱く、実行境界の限定と要求の充足と原始効果の直呼びの禁止を、型だけでは縛れない。
@@ -397,6 +404,10 @@ Bind の連鎖は C# の型推論だけでは呼び元の R が呼び先の R �
 ### 完了条件
 Effect の実行が、composition root の境界に限られている。
 OperationCanceledException が Canceled に、その他の例外が Defected に写されている。
+Run が、期限用の CancellationTokenSource を作り、受け取った CancellationToken と linked token に合流させて Effect.Run へ渡している。
+Run が、受け取った CancellationToken が取り消し済みの Canceled を Canceled のまま返し、取り消されておらず期限用の token が取り消し済みの Canceled を期限超過の Failed へ写している。
+Run が、どちらの token も取り消されていない Canceled を、`UnattributedCancellationException` の Defected として返している。
+Run が、Succeeded・Failed・Defected を返却後の取り消しや Deadline の超過で書き換えず、Deadline を越えていれば診断へ記録している。
 EffectRuntime と Run が internal で、Run が Deadline、CancellationToken を受け取って ValueTask を返している。
 `UninitializedEffectException` が、EffectRuntime から Defected として返されている。
 実行境界の限定と要求の充足が、analyzer で検査されている。
@@ -411,42 +422,81 @@ Bind の連鎖の要求包含が、analyzer の検査を通っている。
 analyzer と source generator の4責務のいずれかを、実装せず素通りさせること。
 EffectRuntime または Run を公開 host API にし、ValueTask を外へ公開すること。
 Effect を実行するときに Deadline を渡さず、相対 timeout を引き直すこと。
+Run で、受け取った CancellationToken が取り消し済みの Canceled を、期限超過の Failed へ写すこと。
+Run で、受け取った token が取り消されていないことだけから、Canceled を期限超過の Failed へ写すこと。
+Run で、どちらの token も取り消されていない Canceled を、Canceled のまま、または期限超過の Failed として返すこと。
+Run で、Succeeded・Failed・Defected を、返却後に観測した取り消しや Deadline の超過で別の終了へ書き換えること。
 
 ### 行動
 Effect の実行を composition root の `EffectRuntime.Run` に集める。
-EffectRuntime.Run を internal の ValueTask 経路にし、境界で一度だけ生成した Deadline と CancellationToken を Effect.Run へ渡す。
+EffectRuntime.Run を internal の ValueTask 経路にし、境界で一度だけ生成した Deadline と、期限用の token を合流させた CancellationToken を Effect.Run へ渡す。
+Effect が Canceled で終えたら、受け取った CancellationToken が取り消し済みなら Canceled のまま、取り消されておらず期限用の token が取り消し済みなら期限超過の Failed へ、どちらでもなければ UnattributedCancellationException の Defected へ写す。
+Succeeded・Failed・Defected は返却後の再確認で変えず、Deadline を越えていれば診断へ記録する。
 `UninitializedEffectException` を、他の欠陥と同じく Defected へ写す。
 source generator に R の合成を、analyzer に Bind 連鎖の検査・原始効果の閉じ込め・`NoRequirements` への迂回の検出を実装する。
 
 ### 例
-依存を保持する runtime が効果を解釈し、例外を `Canceled` または `Defected` へ写す。
+依存を保持する runtime が効果を解釈し、例外を `Canceled` または `Defected` へ写し、受け取った CancellationToken が取り消されていない `Canceled` のうち、期限用の token が取り消し済みのものだけを期限超過の `Failed` へ写す。
 実行は境界に限る。
 analyzer が追えない経路から生じた `default` は、専用の defect になることを実行テストで確かめる。
 
 ```csharp
-internal sealed class EffectRuntime<TRequirements>(TRequirements requirements)
+internal sealed class EffectRuntime<TRequirements>(
+    TRequirements requirements,
+    TimeProvider timeProvider,
+    IDeadlineDiagnostics diagnostics)
     where TRequirements : IEffectRequirements
 {
     internal async ValueTask<EffectExit<TFailure, TValue>> Run<TFailure, TValue>(
         Effect<TRequirements, TFailure, TValue> effect,
         Deadline deadline,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<Deadline, TFailure> deadlineExceeded)
     {
-        try { return await effect.Run(requirements, deadline, cancellationToken); }
-        catch (OperationCanceledException) { return new EffectExit<TFailure, TValue>.Canceled(); }
-        catch (Exception exception) { return new EffectExit<TFailure, TValue>.Defected(exception); }
+        var remaining = deadline.Remaining(timeProvider);
+        using var deadlineCts = new CancellationTokenSource(
+            remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero,
+            timeProvider);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            deadlineCts.Token);
+
+        EffectExit<TFailure, TValue> exit;
+        OperationCanceledException? canceled = null;
+        try { exit = await effect.Run(requirements, deadline, linkedCts.Token); }
+        catch (OperationCanceledException exception)
+        {
+            canceled = exception;
+            exit = new EffectExit<TFailure, TValue>.Canceled();
+        }
+        catch (Exception exception) { exit = new EffectExit<TFailure, TValue>.Defected(exception); }
+
+        if (exit is EffectExit<TFailure, TValue>.Canceled && !cancellationToken.IsCancellationRequested)
+        {
+            return deadlineCts.IsCancellationRequested
+                ? new EffectExit<TFailure, TValue>.Failed(deadlineExceeded(deadline))
+                : new EffectExit<TFailure, TValue>.Defected(new UnattributedCancellationException(canceled));
+        }
+
+        if (deadline.Remaining(timeProvider) <= TimeSpan.Zero)
+        {
+            diagnostics.RecordOverrun(deadline, exit);
+        }
+
+        return exit;
     }
 }
 ```
 
-runtime は、境界で生成した期限と取り消しを受けて効果を一度だけ解釈する。
+runtime は、境界で生成した期限と取り消しを受けて、期限用の token を合流させ、効果を一度だけ解釈する。
 
 ```csharp
-var runtime = new EffectRuntime<ProductionRequirements>(requirements);
+var runtime = new EffectRuntime<ProductionRequirements>(requirements, timeProvider, diagnostics);
 EffectExit<PlaceOrderFailure, OrderId> exit = await runtime.Run(
     PlaceOrder<ProductionRequirements>(command),
     deadline,
-    cancellationToken);
+    cancellationToken,
+    PlaceOrderFailure.FromDeadline);
 ```
 
 analyzer が型を確定できない経路から未初期化値を作り、runtime が専用の欠陥へ写すことを確かめる。
@@ -461,7 +511,7 @@ var defaultEffects = new Effect<ProductionRequirements, PlaceOrderFailure, Order
 };
 foreach (var defaultEffect in defaultEffects)
 {
-    var defaultExit = await runtime.Run(defaultEffect, deadline, cancellationToken);
+    var defaultExit = await runtime.Run(defaultEffect, deadline, cancellationToken, PlaceOrderFailure.FromDeadline);
     if (defaultExit is not EffectExit<PlaceOrderFailure, OrderId>.Defected
         { Exception: UninitializedEffectException })
         throw new InvalidOperationException("未初期化の Effect が専用 defect になっていない");
@@ -553,7 +603,7 @@ composition root で requirements を組み、runtime に与える。
 
 ```csharp
 var requirements = new ProductionRequirements(new SystemClock(), orderRepository);
-var runtime = new EffectRuntime<ProductionRequirements>(requirements);
+var runtime = new EffectRuntime<ProductionRequirements>(requirements, TimeProvider.System, deadlineDiagnostics);
 ```
 
 ## 参照

@@ -18,8 +18,24 @@ Promise を返す前に同期で throw し得る境界 API の symbol と、thro
 前者の呼出式は `Result.wrapAsync` に渡す関数リテラルの内側だけに、後者の呼出式は `Result.wrap` に渡す関数リテラルの内側だけに許す。
 `Result.wrap` と `Result.wrapAsync` に `unknown` 以外の error の型引数を与える形、および結果に `mapErr` を繋がない形は拒否する。
 下流 Effect は、callee expression の型が Effect の nominal brand を持つか、branded Effect へ代入可能かで識別する。
-外部 I/O、待機、下流 Effect は、`withDeadlineEffect` の operation からだけ呼ぶ。
+Effect の内側は、`deferEffect` に渡す関数リテラルの本体であり、入れ子の関数を含む。
+外部 I/O と待機の symbol の呼出式と、下流 Effect の呼出式は、製品の code では、Effect の内側と `withDeadlineEffect` の実装の内側にだけ許す。
+製品の code の外部 I/O を要する helper は、`deferEffect` で Effect を返す形にし、実行境界の関数と helper の本体では外部 I/O の symbol を呼ばない。
 `withDeadlineEffect` は host ごとの `ResumeSource` capability を受け、`window` と `document` を直接参照しない。
+`withDeadlineEffect` の呼出式は、製品の code では、設定に列挙した実行境界の関数の内側だけに許し、Effect の内側には許さない。
+test の file は、test runner が発見する file と、project が構造検査の設定に列挙した test の支援の file である。
+製品の code は、test の file でない code である。
+この節の呼出位置、入れ子、helper の規則は、製品の code にだけ課し、他の規律が test の file を除くときもこの集合を使う。
+実行境界の関数は、host や runtime が呼び出す入口の関数として、project が構造検査の設定に列挙する。
+列挙する形は、関数を渡す登録 API の呼出しの symbol と引数の位置、object を渡す登録 API の呼出しの symbol と引数の位置と method 名、JSX の属性名、host が名前で呼ぶ export 関数の名前と entry の file である。
+登録 API の引数と JSX の属性の値が識別子なら宣言へ解決した関数を、object の引数が識別子か class の instance なら宣言へ解決した object literal か class の列挙した名前の method を、境界の関数として扱う。
+createMemo の compute が `withDeadlineEffect` を呼ぶときは、compute を `async` でも `await` を持つ関数でもない形にする。
+その compute は、accessor の呼出しと `AbortController` の生成と、その abort を呼ぶ `onCleanup` の呼出しを、`withDeadlineEffect` の呼出式より前に置く。
+その compute は、`AsyncResult` の method へ渡す関数の中に accessor の呼出しを置かない。
+その compute は、`withDeadlineEffect` の親の signal を、自身の `AbortController` の signal だけにし、その abort を `onCleanup` から呼ぶ。
+`AsyncResult` の method へ渡す関数は、callee の受け手の型が `AsyncResult` である呼出しの引数の関数であり、引数が識別子なら宣言へ解決した関数である。
+accessor は、callee expression の型の alias が `Accessor` または `SourceAccessor` である呼出しで識別する。
+`onCleanup` の呼出しが自身の同期の本体にあることと `AsyncResult` の method へ渡す関数の中に無いことは、[coordination](./coordination.md) の「後始末」の検査に従う。
 全ての公開 Effect factory は、TypeScript compiler API による AST 構造検査で検査する。
 Effect の callable な型は `unique symbol` の nominal brand を持ち、`deferEffect` だけが branded value を構築する形を許す。
 公開 Effect factory の parameter は、default parameter と destructuring の binding initializer を持たない形だけを許す。
@@ -39,8 +55,20 @@ TypeScript compiler API は call expression の symbol と callee expression の
 Promise を返す境界と同期 DOM と postMessage の symbol を別々に列挙すれば、各呼出式を同期と非同期に対応する `Result.wrap` と `Result.wrapAsync` の関数リテラルへ限定できる。
 `Result.wrap` と `Result.wrapAsync` の型引数と後続の `mapErr` は構文木から取得できるため、error の型を偽る形と変換を欠く形を拒否できる。
 callee expression の型に Effect の `unique symbol` brand があるか、branded Effect へ代入可能かを調べれば、呼出結果が AsyncResult でも下流 Effect の呼出を識別できる。
-設定に列挙した外部 I/O と待機、および callee expression で識別した下流 Effect の呼出を、`withDeadlineEffect` の operation 内に限定できる。
+TypeScript compiler API は call expression の祖先の関数を辿れ、`deferEffect` の呼出しの引数の関数リテラルと `withDeadlineEffect` の宣言を特定できるので、外部 I/O の symbol と下流 Effect の呼出しを、Effect の内側と期限 wrapper の実装の内側へ字句で限定できる。
+実行境界の関数から呼ぶ別の helper の中の呼出しは字句の外なので、外部 I/O を要する helper を Effect を返す形に限れば、呼出し経路の推論なしに判定できる。
 TypeScript compiler API は wrapper 内の global symbol を解決できるため、`withDeadlineEffect` から `window` と `document` の直接参照を拒否できる。
+TypeScript compiler API は call expression の祖先の関数を辿れ、登録 API の symbol と宣言元の file、関数や object を渡す引数、識別子が指す宣言、class の method、JSX の属性名と属性値の式、export 宣言の名前と file を取得できるので、`withDeadlineEffect` の呼出位置を実行境界の関数へ限定できる。
+Effect の内側の呼出しは `deferEffect` の関数リテラルの祖先で判定できるので、`withDeadlineEffect` の入れ子を検出できる。
+compute の本体と入れ子の関数の区別、`async` と `await`、`AbortController` の変数、`onCleanup` と abort の呼出し、`withDeadlineEffect` の呼出式との前後は構文木から取得でき、callee の受け手の型の名前と callee expression の型の alias から、`AsyncResult` の method への引数と accessor の呼出しを識別できる。
+そのため、compute の形と、読取りと登録の時点を、構造で検査できる。
+props の getter、store の property、型が accessor でない関数による派生の読取りは、accessor の型で識別できないので、構造検査だけでは `AsyncResult` の method へ渡す関数の中の読取りを見つけられない。
+その関数から呼ぶ別の関数の中の読取りも、構造検査だけでは見つけられない。
+production build は `AsyncResult` の method へ渡す関数の中の読取りと登録の取りこぼしを診断しないので、入力の変更に対する再実行と置き換えと破棄による通信の abort を、実 browser の実行テストで別に確かめる。
+列挙した登録 API が本当に host や runtime の入口かは、構文から判定できないので、レビューで確かめる。
+test の file の判定を一つの集合にすれば、呼出位置の検査と host API の lint と `unwrap` の検査が、同じ file を test として扱う。
+runner が発見しない test の支援の file は、発見対象に入らないので、project が列挙して同じ集合に加える。
+test は `withDeadlineEffect` の契約を境界の外から直接実行して確かめるので、呼出位置の限定は製品の code に課し、test の file には課さない。
 TypeScript compiler API は parameter の initializer と destructuring の binding element を取得できるため、factory 本体へ入る前の副作用経路を検出できる。
 公開 Effect factory の本体を `deferEffect` の直接呼出だけにし、その引数を関数リテラルだけにすれば、factory の評価中に副作用を起動する式を構造で排除できる。
 `deferEffect` 自体の実行テストは constructor の遅延を確認するが、全ての公開 factory の形は確認しない。
@@ -51,11 +79,20 @@ TypeScript compiler API は parameter の initializer と destructuring の bind
 規則が、層の参照禁止と exports の外への到達の禁止を持っている。
 root の構造検査が、skeleton の production のソース依存表と build・test-only 依存表から phase ごとの許可 edge を生成し、成果物の消費表を別の照合対象にしている。
 build または test のソース依存が production の成果物へ混入した場合に、構造検査が失敗している。
-外部 I/O、待機、下流 Effect が、`withDeadlineEffect` の operation からだけ呼ばれている。
+外部 I/O と待機の symbol の呼出式と下流 Effect の呼出式が、製品の code で、Effect の内側と `withDeadlineEffect` の実装の内側にだけある。
+製品の code の外部 I/O を要する helper が、`deferEffect` で Effect を返している。
 Promise を返す前に同期で throw し得る境界 API が、`Result.wrapAsync` に渡す関数リテラルの内側からだけ呼ばれている。
 throw し得る同期 DOM API と postMessage が、`Result.wrap` に渡す関数リテラルの内側からだけ呼ばれている。
 `Result.wrap` と `Result.wrapAsync` の error の型引数が `unknown` であり、結果に `mapErr` が繋がっている。
 `withDeadlineEffect` が host ごとの `ResumeSource` を受け、`window` と `document` を直接参照していない。
+製品の code の `withDeadlineEffect` の呼出式が、列挙した実行境界の関数の内側からだけ呼ばれ、Effect の内側に無い。
+test の file が、この節の呼出位置と入れ子と helper の検査の対象に含まれていない。
+実行境界の形が、関数を渡す登録 API の呼出しの symbol と引数の位置、object を渡す登録 API の呼出しの symbol と引数の位置と method 名、JSX の属性名、host が名前で呼ぶ export 関数の名前と entry の file として、構造検査の設定に列挙されている。
+列挙した実行境界の形が、host や runtime の入口であることが、レビューで確認されている。
+createMemo の compute が、`async` でも `await` を持つ関数でもなく、accessor の呼出しと `AbortController` の生成と、abort を呼ぶ `onCleanup` の呼出しを、`withDeadlineEffect` の呼出式より前に置いている。
+createMemo の compute が、`AsyncResult` の method へ渡す関数の中に accessor の呼出しを置いていない。
+createMemo の compute 内の `withDeadlineEffect` が、自身の `AbortController` の signal だけを親の signal としている。
+accessor が、callee expression の型の alias で識別されている。
 外部 I/O と待機の symbol が、構造検査の設定に列挙されている。
 下流 Effect の呼出が、callee expression の nominal brand と branded Effect への代入可能性で識別されている。
 Effect の callable な型が `unique symbol` の nominal brand を持ち、`deferEffect` だけが branded value を構築している。
@@ -65,11 +102,21 @@ Effect の callable な型が `unique symbol` の nominal brand を持ち、`def
 
 ### 禁止事項
 構造の規則を、コメントや約束だけで守らせること。
-外部 I/O、待機、下流 Effect を、`withDeadlineEffect` の operation の外から直接呼ぶこと。
+製品の code で、外部 I/O の symbol と下流 Effect を、Effect の内側と `withDeadlineEffect` の実装の内側の外から呼ぶこと。
+製品の code で、外部 I/O を要する helper を、Effect を返さない関数にすること。
 Promise を返す前に同期で throw し得る境界 API を、`Result.wrapAsync` の関数リテラルの外から呼ぶこと。
 throw し得る同期 DOM API または postMessage を、`Result.wrap` の関数リテラルの外から呼ぶこと。
 `Result.wrap` または `Result.wrapAsync` に `unknown` 以外の error の型引数を与えること。
 `withDeadlineEffect` から `window` または `document` を直接参照すること。
+製品の code で、`withDeadlineEffect` を、列挙した実行境界の関数の外から呼ぶこと。
+製品の code で、`deferEffect` に渡す関数リテラルの内側から `withDeadlineEffect` を呼ぶこと。
+test の file に呼出位置の検査を課して、`withDeadlineEffect` の契約の実行テストを書けなくすること。
+host や runtime の入口でない関数を、実行境界として列挙すること。
+createMemo の compute を、`async` 関数にしたり `await` を置いたりすること。
+createMemo の compute で、`withDeadlineEffect` の呼出式の中または後で、accessor を呼ぶこと。
+createMemo の compute で、`AsyncResult` の method へ渡す関数の中で、accessor を呼ぶこと。
+createMemo の compute で、自身の `AbortController` の signal 以外を `withDeadlineEffect` の親の signal にすること。
+構造検査だけで、入力の読取りの漏れと、置き換えと破棄による通信の abort を保証したとみなすこと。
 `deferEffect` の外で、Effect の brand を構築または型変換で偽装すること。
 公開 Effect factory を一部だけ抽出して、遅延を全件保証したとみなすこと。
 公開 Effect factory の default parameter または destructuring の binding initializer を、検査対象から外すこと。
@@ -80,11 +127,16 @@ TypeScript compiler API で解決した依存 edge に層の参照禁止と expo
 skeleton の production のソース依存表と build・test-only 依存表を TypeScript compiler API で読み、runtime・build・test phase の許可 edge を生成して、同じ構造検査が列挙した依存 graph と照合する。
 成果物の消費表は import の依存 edge と別に照合する。
 production の成果物を構成する依存 closure に build または test のソース依存があれば失敗させる。
-TypeScript compiler API で外部 I/O、待機、下流 Effect の call expression を列挙し、`withDeadlineEffect` の operation 内にあることを検証入口で検査する。
+TypeScript compiler API で外部 I/O の symbol と下流 Effect の call expression を列挙し、祖先が `deferEffect` の関数リテラルか `withDeadlineEffect` の宣言であることを、製品の code について検証入口で検査する。
 Promise を返す前に同期で throw し得る境界 API と、throw し得る同期 DOM API と postMessage の symbol を別々に設定へ列挙する。
 前者が `Result.wrapAsync` に渡す関数リテラルの内側に、後者が `Result.wrap` に渡す関数リテラルの内側にあることを検証入口で検査する。
 `Result.wrap` と `Result.wrapAsync` の error の型引数が `unknown` であり、結果に `mapErr` が繋がっていることを検証入口で検査する。
 TypeScript compiler API で `withDeadlineEffect` の global symbol 参照を列挙し、`window` と `document` の直接参照を検証入口で拒否する。
+TypeScript compiler API で `withDeadlineEffect` の call expression を列挙し、祖先の関数が実行境界の関数のいずれかであり、`deferEffect` の関数リテラルでないことを、製品の code について検証入口で検査する。
+登録 API の引数と JSX の属性の値が識別子なら宣言へ解決した関数を、object の引数が識別子か class の instance なら宣言へ解決した object literal か class の列挙した名前の method を、実行境界の関数として扱い、export 関数は entry の file と名前で扱う。
+この検査から、test の file を除く。
+createMemo の compute について、`async` と `await` の不在、accessor と `AbortController` と `onCleanup` の位置、`AsyncResult` の method へ渡す関数の中の accessor、親の signal と abort の呼出しを、型情報で accessor を識別して検証入口で検査する。
+列挙した実行境界の形が host や runtime の入口であることを、レビューで確かめる。
 外部 I/O と待機は、設定に列挙した symbol で識別する。
 下流 Effect は、callee expression の型に nominal brand があるか、branded Effect へ代入可能かで識別する。
 TypeScript compiler API で export され、戻り値が Effect に代入可能な function と変数を全て列挙する。
@@ -215,7 +267,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | eslint-plugin-sonarjs | 関数の複雑さを lint で止める | analyzer/lint(oxlint の JS plugin として読み込んだ sonarjs/cognitive-complexity の error 化と、reportUnusedDisableDirectives による残った抑止の error 化) |
 | tsdoc | ドキュメントコメントの検査 | 構造検査(TypeScript compiler API と `@microsoft/tsdoc`)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
 | valibot | 業務の値を型に封じる | 型(valibot の brand・safeParse)+実行テスト(factory の単体テスト) |
-| formation | 不正な状態を構築できなくする | 型(判別子つき union・never 網羅) |
+| formation | 不正な状態を構築できなくする | 型(判別子つき union・switch で書かない分岐の never 網羅)+analyzer/lint(`vite.config.ts` の `lint` block で oxlint-tsgolint の typescript/switch-exhaustiveness-check を error とし、`considerDefaultExhaustiveForUnions` を有効にせず、判別子の union に対する switch の未処理の種別を default のアームの有無によらず拒否)+レビュー(switch で書かない判別子の分岐が、末尾で残りを never へ代入していること) |
 | formation | 不変を既定にする | 型(readonly・as const) |
 | formation | 意味と単位を型で区別する | 型(branded type) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(oxfmt チェック・oxlint の unicorn/filename-case)+構造検査(TypeScript compiler API による型・値の PascalCase・camelCase の命名照合) |
@@ -226,21 +278,21 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | valibot | 受け取ったエラーを parse し、想定された失敗と欠陥を分ける | 実行テスト(契約宣言済み failure、契約外の status/body、problem+json parse 失敗、実装の throw の分岐) |
 | http-client-js | 生成した契約を使い、drift を検査の gate にする | 構造検査(生成用 package と入力の contracts/toolchain への配置、製品の runtime と型検査の依存 closure への生成器の非流入、データ型の公開入口の runtime 依存 closure の通信 client と transport からの分離)+実行テスト(契約からの生成、再生成の差分、判別付き直和の判別子つき union と網羅の型検査、生成 client への transport の注入、生成物の製品が採用する TypeScript での型検査、drift 検査の検証入口の判定) |
 | connection | 生成型を型としてのみ使い、通信を port に通す | 構造検査(TypeScript compiler API。viewer と extension からの生成 client の import と runtime の import の検出、生成 client の import を viewer の ui port または extension の host port を実装する host の adapters へ限定)+型(import type) |
-| ts-results-es | 効果を遅延した関数で表す | 構造検査(TypeScript compiler API。Effect が unique symbol の nominal brand を持ち、deferEffect だけが branded value を構築し、全ての公開 Effect factory に parameter initializer がなく、本体が実行用の関数リテラルを deferEffect へ直接渡すこと)+実行テスト(deferEffect の構築時は副作用0件で、返した Effect の呼出後にだけ開始すること)+型(Effect の nominal brand・環境・AbortSignal・wall-clock の絶対期限・AsyncResult のシグネチャ) |
-| ts-results-es | 想定内失敗を Result で返す | 型(ts-results-es の Result・判別子つき union) |
-| ts-results-es | 非同期 API の送出を AsyncResult へ変換する | 構造検査(TypeScript compiler API。設定した Promise を返す境界 API の呼出しを `Result.wrapAsync` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(関数呼出時の同期 throw と返した Promise の rejection を同じ mapper が Err にし、欠陥と AbortError は元の error のまま rejection になること) |
+| ts-results-es | 効果を遅延した関数で表す | 構造検査(TypeScript compiler API。Effect が unique symbol の nominal brand を持ち、deferEffect だけが branded value を構築し、全ての公開 Effect factory に parameter initializer がなく、本体が実行用の関数リテラルを deferEffect へ直接渡すこと、製品の code の withDeadlineEffect の呼出式が、設定に列挙した実行境界の関数(登録 API の symbol と関数を渡す引数の位置、object を渡す登録 API の symbol と引数の位置と method 名、JSX の属性名、host が名前で呼ぶ export 関数の名前と entry の file)の内側にあり deferEffect の関数リテラルの内側に無いこと、外部 I/O の symbol と下流 Effect の呼出式が deferEffect の関数リテラルの内側と withDeadlineEffect の実装の内側にだけあること、test の file を対象に含めないこと)+実行テスト(deferEffect の構築時は副作用0件で、返した Effect の呼出後にだけ開始すること)+型(Effect の nominal brand・環境・AbortSignal・wall-clock の絶対期限・AsyncResult のシグネチャ)+レビュー(列挙した登録 API・method 名・属性名・export 関数が host や runtime の入口であること) |
+| ts-results-es | 想定内失敗を Result で返す | 型(ts-results-es の Result・判別子つき union。error の判別子による分岐の網羅は「不正な状態を構築できなくする」の行で判定する)+構造検査(TypeScript compiler API。callee の宣言元が ts-results-es の Result である `unwrap`・`expect`・`unwrapErr`・`expectErr` の呼出しを test の file の外で拒否) |
+| ts-results-es | 非同期 API の送出を AsyncResult へ変換する | 構造検査(TypeScript compiler API。設定した Promise を返す境界 API の呼出しを `Result.wrapAsync` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(関数呼出時の同期 throw と返した Promise の rejection を同じ mapper が Err にし、欠陥は元の error のまま rejection になること、上限を設けない層の mapper が、operation に渡した signal が aborted で name が AbortError か TimeoutError の rejection を、failure へ写さずそのまま再 throw すること、その signal が aborted でも中断でない rejection が中断と分類されず、応答を持つ error も含めて分類へ進むこと) |
 | ts-results-es | 同期 API の送出を Result へ変換する | 構造検査(TypeScript compiler API。設定した同期 DOM API と postMessage の呼出しを `Result.wrap` の関数リテラル内へ限定し、error の型引数が `unknown` であることと結果に `mapErr` が繋がることを照合)+実行テスト(同期の戻り値と throw、想定外の欠陥の再送出) |
-| connection | 依存を環境で受け、host の能力を port で宣言する | 型(環境の型・viewer の ui port または extension の host port の型)+レビュー(singleton を作らないことの判断) |
+| connection | 依存を環境で受け、host の能力を port で宣言する | 型(環境の型・viewer の ui port または extension の host port の型)+analyzer/lint(製品の code の時刻・乱数・ネットワーク通信の host API を oxlint の no-restricted-properties と no-restricted-globals で拒否し、host の adapters・`withDeadlineEffect` の実装・test の file は、host API の項目だけを除いて残りの禁止項目を再掲した override で通す)+構造検査(TypeScript compiler API。構造検査が扱う外部 I/O と待機の symbol の集合と lint の host API の項目が、共通の symbol を持たないこと)+実行テスト(oxlint を host API と Web storage を呼ぶ fixture に実行して、製品の code では両方が拒否され、host の adapters の file・`withDeadlineEffect` の実装の file・test の file では、host API だけが通り Web storage が拒否されること)+レビュー(singleton を作らないことの判断、引数なしの `new Date()` と列挙に無い host API による迂回) |
 | inspection | 型消去の cast allowlist | 構造検査(TypeScript compiler API。reporting boundary の型消去 symbol と検証を完結する converter または factory の型構築 symbol を別の allowlist として照合し、集合外と種類不一致の assertion/cast を拒否)+実行テスト(converter または factory が検証後だけ型を構築) |
 | solidjs | 状態の機構 | レビュー(structure の分類に対応する remote/URL/横断/一時 の機構の選択) |
-| solidjs | remote の規律 | レビュー(local の横断 store への複製禁止の判断) |
+| solidjs | remote の規律 | 構造検査(TypeScript compiler API。createMemo の compute が async でも await を持つ関数でもなく、callee expression の型の alias で識別した accessor の呼出しと AbortController の生成と abort を呼ぶ onCleanup の呼出しを withDeadlineEffect の呼出式より前に置き、AsyncResult の method へ渡す関数の中に accessor の呼出しが無く、親の signal が自身の AbortController の signal だけであること)+実行テスト(Playwright が実 browser で viewer を駆動する integration の test で、compute が読む入力のそれぞれの変更に対する再実行と変更後の入力での通信の開始、置き換えと owner の破棄に対する通信の abort、捨てた結果が表示されないこと、abort が Errored の fallback にも unhandled rejection にも現れないことを、通信先の server の観測と DOM の観測を分けて確認する)+レビュー(local の横断 store への複製禁止の判断、props の getter・store の property・型が accessor でない関数による派生と、AsyncResult の method へ渡す関数から呼ぶ別の関数の中の読取りの位置、結果を捨てることを abort や後始末の完了とみなさない判断) |
 | connection | Web BFF frontend に認証 token を公開しない | analyzer/lint(Web BFF frontend の localStorage・sessionStorage・IndexedDB の直呼びを oxlint の no-restricted-properties で禁止)+レビュー(frontend の JavaScript 可読 store と応答に認証 token が無いこと、host の資格情報契約の適用範囲)+実行テスト(cookie と CSRF header の送信、不一致の拒否、session 再生成・失効後の古い CSRF 値の破棄) |
 | vscode | extension の保持状態 | 型(秘密を含まない state port)+レビュー(Memento と secret storage の使い分け、資格情報の取得と認証付き通信を host の adapter に閉じること、surface に資格情報を返す port が無いこと)+実行テスト(利用する host の backend と鍵の保護が永続保管の契約を満たすこと) |
 | coordination | 非同期 | 構造検査(TypeScript compiler API。公開非同期 API の戻り型と、domain の関数に非同期が現れないことの照合)+レビュー(domain の純粋性の判断) |
-| coordination | 取り消し | 型(Effect 専用 withDeadlineEffect が AsyncResult<T, E &#124; DeadlineExceeded> を返すこと)+構造検査(TypeScript compiler API。設定に列挙した外部 I/O と待機の symbol と、callee expression の nominal brand または branded Effect への代入可能性で識別した下流 Effect を withDeadlineEffect の operation からだけ呼び、wrapper 内の window と document の直接参照を拒否すること)+実行テスト(host ごとの ResumeSource、wall-clock の絶対期限の伝播、非同期境界の前後と再開時の期限確認、購読解除後の判定、解決済み Err の保持と overrun 診断、期限 reason と同一または cause chain に持つ rejection の DeadlineExceeded Err 変換、wrapper 開始前から親取消と期限超過が同時に成立した場合に AbortSignal.any が選んだ親 reason の保持、別 defect の保持と期限超過診断、Ok 後の期限超過を DeadlineExceeded Err にすること、AbortSignal.timeout が active time の局所補助であること、親 signal と期限用 controller の AbortSignal.any 合成) |
-| coordination | 並行の組 | 構造検査(TypeScript compiler API。Promise.all または Promise.allSettled に渡す並行 task collection を生成する箇所では、branded Effect を開始する withDeadlineEffect の呼出しを、project の決定の記録で固定した単一 limiter の需要枠 callback 内へ限定)+実行テスト(最初の Err と最初の rejection の各経路で abort、controller 由来の sibling cancellation rejection の除外、allSettled で全兄弟へ合流、defect が無い場合は最初の失敗を primary とする Result の err を返すこと、独立した defect があれば drain 後に最初の defect を cause とする AggregateError を送出すること、元の Err と追加の独立した失敗の task 識別・種類・値の全保持、実行中の Effect が決定の記録の上限を越えない最大同時実行数) |
+| coordination | 取り消し | 型(Effect 専用 withDeadlineEffect が AsyncResult<T, E &#124; DeadlineExceeded> を返すこと)+構造検査(TypeScript compiler API。製品の code で、設定に列挙した外部 I/O と待機の symbol と、callee expression の nominal brand または branded Effect への代入可能性で識別した下流 Effect の呼出しを、Effect の内側と withDeadlineEffect の実装の内側に限り、Effect の内側の withDeadlineEffect の呼出しと、wrapper 内の window と document の直接参照を拒否すること。test の file は対象に含めない)+実行テスト(host ごとの ResumeSource、wall-clock の絶対期限の伝播、直前に期限を越えた operation を開始しないこと、再開通知の時点で期限を越えていれば実行中の operation の signal が abort され DeadlineExceeded Err になること、購読解除後の判定、完了と期限の競合で終了が一意であること(解決済み Err の保持と overrun 診断、解決済み Ok が期限を越えても値のまま返り overrun だけが診断に記録されること、解決の後に観測した親の取消で解決済みの終了が変わらないこと)、期限を設けた側での想定内の失敗への写像(期限用の signal の abort で中断として終えた operation が DeadlineExceeded Err になり、Effect の内側が failure や DeadlineExceeded へ写さず rejection で終えること)、親の取消との区別(親 signal の abort で終えた operation が DeadlineExceeded へ写されず中断の rejection のまま拒否されること、wrapper 開始前から親取消と期限超過が同時に成立した場合に operation を開始せず中断の rejection が送出されること、期限用の abort の後 operation が終える前に親が取り消した場合に DeadlineExceeded にならず中断の rejection が送出されること。operation が合成した signal を入れ子の AbortSignal.any に包み、listener を入れ子の signal にだけ持つ場合と、listener を持たない合成 signal の場合を含み、いずれも中断が識別されること)、中断の識別が operation に渡した signal の状態と rejection の name(AbortError・TimeoutError)で行われ、ts-http-runtime の AbortError が中断と識別されること、中断の原因が name や reason の値でなく判定の時点の signal の状態で決まること、signal を abort するときの reason が AbortError か TimeoutError の DOMException であり、wrapper の期限の abort が TimeoutError であること、中断でない rejection が期限超過や親の取消と同時に成り立っても DeadlineExceeded にも取り消しにも置き換えられず元の error のまま再送出され、期限超過診断が記録されること、AbortSignal.timeout が active time の局所補助であること、親 signal と期限用 controller の AbortSignal.any 合成、adapter が依存先の呼び出しに設ける上限が Deadline から導かれず受け取った signal と合成されて短い方が採られ、`DeadlineExceeded` にならないこと、上限を設ける adapter の mapper が、中断と識別した rejection を、受け取った signal が aborted ならそのまま送出し、そうでなく上限の signal が aborted なら自身の想定内の失敗にすること、host の transport が自身の timeout と取り消しで終えた要求を AbortError と TimeoutError 以外の name を持つ自身の error 型で reject すること) |
+| coordination | 並行の組 | 構造検査(TypeScript compiler API。Promise.all または Promise.allSettled に渡す並行 task collection を生成する箇所では、branded Effect の呼出しを、project の決定の記録で固定した単一 limiter の需要枠 callback 内へ限定し、製品の code で並行の組の内側の withDeadlineEffect の呼出しを拒否)+実行テスト(最初の Err と最初の rejection の各経路で abort、子へ渡した signal が aborted で name が AbortError か TimeoutError の兄弟の rejection が aborted として残り defect に数えられず、それ以外の rejection が defect として残ること、allSettled で全兄弟へ合流、defect があれば受け取った signal が aborted でも全ての失敗を伴う AggregateError を送出すること、defect が無く判定の時点で受け取った signal が aborted で中断で終えた子があれば取り消しで終え、子の失敗が診断に残り、成功値に穴を持つ Ok にならないこと(listener を持たない合成 signal と入れ子の並行の組を含む)、全ての子が結果を返して終えた場合に受け取った signal が aborted でも結果が書き換えられないこと、受け取った signal が aborted でなく最初の Err が兄弟を中断させた場合に、中断した兄弟を除く子の結果から決まり、最初の Err を primary とする全ての失敗を伴う Result の err を返すこと、実行中の Effect が決定の記録の上限を越えない最大同時実行数) |
 | coordination | メインスレッドを塞がない | レビュー(重い同期計算の特定と退避の判断) |
-| coordination | 後始末 | レビュー(onCleanup 登録漏れの判断) |
+| coordination | 後始末 | 構造検査(TypeScript compiler API。createMemo の compute の onCleanup 呼出しが自身の同期の本体にあり、AsyncResult の method へ渡す関数の中と await の後に無いこと)+実行テスト(置き換えと owner の破棄で onCleanup が走る時点と、通信先の abort の観測)+レビュー(onCleanup 登録漏れの判断) |
 | solidjs | viewer | レビュー(props の分割代入の禁止) |
 | opentelemetry-js | viewer の telemetry | 型(ui port の型)+レビュー(SDK の adapter への隔離の判断) |
 | tailwind | styling | 構造検査(design token の定義が `@theme` に限られることの照合)+レビュー(token の粒度と命名の判断) |

@@ -12,6 +12,10 @@ Web BFF frontend の token 非公開はこの軸で扱い、Chromium host の資
 
 ### 要求
 効果が要求する依存は環境で受け取り、module の最上位に可変な singleton を作らない。
+現在時刻・乱数・ネットワーク通信の host API(`Date.now()`、`Math.random()`、`crypto.getRandomValues()`、`fetch` など)は、製品の code では、port を実装する host の adapters と `withDeadlineEffect` の実装の中だけで呼ぶ。
+test の file は、[inspection](./inspection.md) の「構造」が定める集合であり、この制限の対象にしない。
+host API の集合は、時刻・乱数・ネットワーク通信の global API だけを持ち、[coordination](./coordination.md) の「取り消し」が定める外部 I/O と待機の symbol の集合と、同じ symbol を重ねて持たない。
+Effect の本体と業務の核は、時刻・乱数・ネットワーク通信を環境の port から受ける。
 host に求める能力は viewer の ui port または extension の host port の型で宣言し、実装は host の composition が注入する。
 本番とテストで、環境の実装を差し替える。
 
@@ -20,18 +24,35 @@ host に求める能力は viewer の ui port または extension の host port 
 module の最上位の可変な singleton は、隠れた共有状態になり、差し替えとテストを阻む。
 host の能力を viewer の ui port または extension の host port の型で宣言すれば、実装に縛られず host の composition が差し込める。
 本番とテストで環境を差し替えると、host の能力をテストで制御できる。
+環境の型は宣言した能力しか示さないので、本体が時刻・乱数・ネットワーク通信の host API を直接呼んでも型検査は通り、環境を差し替えてもその呼出しをテストで制御できない。
+呼出位置を host の adapters と期限 wrapper に限れば、本体が使う時刻・乱数・通信が環境の port の型に現れる。
+global の `fetch` は host API の集合だけに入るので adapters の中でだけ呼べる。
+Effect の本体が呼ぶ外部 I/O は port の method であり外部 I/O の symbol の集合だけに入り、その呼出しは、[inspection](./inspection.md) の「構造」が定める Effect の内側と期限 wrapper の実装の内側に限られる。
+そのため、一つの symbol を呼べる位置は一つに決まる。
+test の file は時刻の計測や乱数の固定のように host API を直接呼ぶ検証を持つので、製品の code の制限から外す。
+oxlint の override は規則の option を併合せず置き換えるので、adapters・期限 wrapper・test の file の override が host API の項目だけを除いて残りの禁止項目を再掲しなければ、Web storage などの他の禁止項目が外れる。
+lint は設定に列挙した property と global の参照だけを拒否するので、引数なしの `new Date()` と列挙に無い host API による迂回はレビューで確かめる。
 
 ### 完了条件
 効果が要求する依存が、環境で受け取られている。
 module の最上位に、可変な singleton がない。
 host に求める能力が viewer の ui port または extension の host port の型で宣言され、host の composition が注入している。
+製品の code の時刻・乱数・ネットワーク通信の host API の呼出しが、host の adapters と `withDeadlineEffect` の実装に限られている。
+host API の集合と外部 I/O と待機の symbol の集合が、共通の symbol を持たない。
+adapters・期限 wrapper・test の file の override が、host API の項目を除いた全ての禁止項目を再掲している。
 
 ### 禁止事項
 module の最上位に、可変な singleton を作ること。
 業務の核で、依存を直接生成すること。
+製品の code で、時刻・乱数・ネットワーク通信の host API を、host の adapters と `withDeadlineEffect` の実装の外で呼ぶこと。
+host API の symbol を、外部 I/O と待機の symbol の集合にも入れること。
+override で、host API の項目と一緒に他の禁止項目を外すこと。
 
 ### 行動
 依存を環境で受け、host の能力を viewer の ui port または extension の host port の型で宣言し、host の composition が注入する。
+時刻・乱数・ネットワーク通信を環境の port で宣言し、host の adapters がその実装で host API を呼ぶ。
+時刻・乱数・ネットワーク通信の host API を oxlint の no-restricted-properties と no-restricted-globals に列挙する。
+host の adapters・`withDeadlineEffect` の実装・test の file の override には、host API の項目を除いた全ての禁止項目を再掲する。
 本番とテストで、環境の実装を差し替える。
 
 ### 例
@@ -46,6 +67,29 @@ viewer の例では、依存を環境で受け、host の能力を ui port で�
 ```typescript
 interface HasUsers { users: UserGateway }
 interface UiPort { notify(message: Message): void }
+```
+
+Effect の本体が時刻を直接取得すると、環境の型に現れない依存になる。
+
+```typescript
+export const isExpired = (tokenId: TokenId): Effect<HasTokens, LoadError, boolean> =>
+  deferEffect((env, signal, deadlineAt) =>
+    env.tokens.find(tokenId, signal, deadlineAt).map((token) => token.expiresAt < Date.now()));
+```
+
+時刻を環境の port から受ければ、要求が型に現れ、テストで時刻を固定できる。
+
+```typescript
+interface HasClock { clock: Clock }
+export const isExpired = (tokenId: TokenId): Effect<HasTokens & HasClock, LoadError, boolean> =>
+  deferEffect((env, signal, deadlineAt) =>
+    env.tokens.find(tokenId, signal, deadlineAt).map((token) => token.expiresAt < env.clock.now()));
+```
+
+時刻の host API は、port を実装する adapter だけが呼ぶ。
+
+```typescript
+export const systemClock: Clock = { now: () => Date.now() };
 ```
 
 ## Web BFF frontend に認証 token を公開しない
@@ -93,28 +137,42 @@ const submitLogin = (body: LoginBody): Effect<HasBff, LoginError, Session> =>
     new AsyncResult(
       Result.wrapAsync<LoginResponse, unknown>(
         () => env.bff.login(body, signal, deadlineAt),
-      ).then((received) => received.mapErr(toLoginError)),
+      ).then((received) => received.mapErr((error) => toLoginError(signal, error))),
     ));
-const loginResult = await withDeadlineEffect(
-  env,
-  submitLogin(body),
-  deadlinePolicy.createAt(),
-  parentSignal,
-  resumeSource,
-);
 ```
 
-以後の remote 読み出しも Effect を期限 wrapper から実行する。
+期限 wrapper は、UI の event handler として JSX の `on` 属性に渡す関数の内側で実行する。
+
+```tsx
+<form
+  onSubmit={async () => {
+    const loginResult = await withDeadlineEffect(
+      env,
+      submitLogin(body),
+      deadlinePolicy.createAt(),
+      parentSignal,
+      resumeSource,
+    );
+    if (loginResult.isErr()) showLoginError(loginResult.error);
+  }}
+/>;
+```
+
+以後の remote 読み出しは、await を持たない同期の compute で run ごとの signal を作り、Effect を期限 wrapper から実行する。
+入力の読取りと取消の結び方は、[solidjs](./solidjs.md) の「remote の規律」に従う。
 
 ```typescript
-const session = createMemo(() =>
-  withDeadlineEffect(
+const session = createMemo(() => {
+  const controller = new AbortController();
+  onCleanup(() => controller.abort());
+  return withDeadlineEffect(
     env,
     loadSession(),
     deadlinePolicy.createAt(),
-    parentSignal,
+    controller.signal,
     resumeSource,
-  ));
+  );
+});
 ```
 
 ## 生成型を型としてのみ使い、通信を port に通す

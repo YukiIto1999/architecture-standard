@@ -8,27 +8,36 @@ principles の [modeling](../../principles/modeling/README.md) が定める業�
 ## 不正な状態を構築できなくする
 
 ### 要求
-場合分けのある概念は判別子つきの union で表し、分岐は switch の網羅で書いて漏れを型検査に検出させる。
+場合分けのある概念は判別子つきの union で表し、分岐は switch で書いて、switch の網羅を oxlint-tsgolint の `typescript/switch-exhaustiveness-check` に検査させる。
+switch で書かない判別子の分岐は、末尾で残りを never に代入し、形の追加を型検査に検出させる。
 不在は undefined の union で表し、strict の型検査で扱いを強制する。
 
 ### 根拠
 判別子つきの union は、リテラルの判別子で取りうる形を枚挙し、文字列の綴り間違いを型で弾く。
-すべての分岐を消すと残りが never になるので、never への代入で網羅を確かめれば、形の追加が型エラーで気づける。
+`typescript/switch-exhaustiveness-check` は、switch の未処理の種別を、default のアームがあっても報告するので、default が新しい種別を黙って受けない。
+この規則は pedantic 区分で既定では無効であり、型情報を要するので、`vite.config.ts` の `lint` block で error にして `typeAware` で実行する。
+`considerDefaultExhaustiveForUnions` を有効にすると default のアームが網羅とみなされるので、有効にしない。
+この規則は switch 文だけを見るので、switch で書かない分岐は、すべての分岐を消すと残りが never になる性質を使い、never への代入で網羅を確かめれば、形の追加が型エラーで気づける。
+switch に never への代入を重ねると、同じ性質を lint と型検査の二つで判定するので、switch には置かない。
 省略可能なプロパティで状態を表すと、不在を実行時に踏む。
 undefined の union と strict の型検査は、不在の扱いを呼び出し側に強制する。
 
 ### 完了条件
 場合分けが、判別子つきの union で表されている。
-分岐が switch の網羅で書かれ、形の追加が never への代入で型エラーになる。
+switch の分岐が、`typescript/switch-exhaustiveness-check` を error にした lint で、全ての種別を処理していると判定されている。
+switch で書かない判別子の分岐が、末尾で残りを never に代入し、形の追加が型エラーになる。
 不在が、undefined の union で表され strict で扱いが強制されている。
 
 ### 禁止事項
 場合分けを、省略可能なプロパティの組み合わせで表すこと。
 網羅でない分岐で、形の追加を見逃すこと。
+`considerDefaultExhaustiveForUnions` を有効にして、default のアームを網羅とみなすこと。
+switch に、never への代入の default を重ねること。
 
 ### 行動
-場合分けは class の階層でなく判別子つきの union と関数で表し、switch の網羅で扱う。
-default のアームで残りを never に代入し、形の追加を型エラーにする。
+場合分けは class の階層でなく判別子つきの union と関数で表し、switch で扱う。
+`vite.config.ts` の `lint` block で `typescript/switch-exhaustiveness-check` を error に設定し、`considerDefaultExhaustiveForUnions` を有効にしない。
+switch で書かない判別子の分岐は、末尾で残りを never に代入する。
 
 ### 例
 省略可能な property の組み合わせでは、`circle` に `radius` が無い状態も表せてしまう。
@@ -37,7 +46,7 @@ default のアームで残りを never に代入し、形の追加を型エラ�
 interface Shape { kind: string; radius?: number; side?: number }
 ```
 
-判別子つき union と `never` で場合分けを閉じれば、形の追加が型エラーになる。
+判別子つき union と switch で場合分けを閉じれば、形の追加を lint が検出する。
 
 ```typescript
 type Shape =
@@ -47,8 +56,18 @@ function area(shape: Shape): number {
   switch (shape.kind) {
     case "circle": return Math.PI * shape.radius ** 2;
     case "square": return shape.side ** 2;
-    default: { const _exhaustive: never = shape; return _exhaustive; }
   }
+}
+```
+
+switch で書かない分岐は、末尾で残りを `never` に代入すれば、形の追加が型エラーになる。
+
+```typescript
+function areaOf(shape: Shape): number {
+  if (shape.kind === "circle") return Math.PI * shape.radius ** 2;
+  if (shape.kind === "square") return shape.side ** 2;
+  const exhaustive: never = shape;
+  return exhaustive;
 }
 ```
 

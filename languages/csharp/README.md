@@ -58,7 +58,7 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 |---|---|---|
 | 非同期の runtime | 言語・実行環境に組み込みの非同期基盤を使い、外部の runtime を別に選ばない | [coordination](./coordination.md) |
 | 取り消しの伝達 | 組み込みの機構(CancellationToken)で表し、外部ライブラリを採らない | [coordination](./coordination.md) |
-| viewer・extension・host の効果の表現 | libs の Effect 型と Result 型で表し、外部ライブラリを採らない | [connection](./connection.md) |
+| 副作用と想定内失敗の表現 | libs の Effect 型と Result 型で表し、外部ライブラリを採らない | [connection](./connection.md) |
 | エラー型の定義 | sealed record の階層という言語機構で表し、外部ライブラリを採らない | [formation](./formation.md) |
 | 直列化 | 言語標準の source generation(JsonSerializerContext)を使い、外部の直列化ライブラリを別に選ばない | [translation](./translation.md) |
 | 未使用コードの検出 | コンパイラと lint の到達可能性に基づく検出で満たし、専用の道具を置かない | [inspection](./inspection.md) |

@@ -70,12 +70,13 @@ Roslyn analyzer は、request、message、job の境界より内側の非同期 
 Roslyn analyzer は、release が同じ Deadline を受けて CancellationToken を受け取らず、`DisposeAsync` が引数なしで非取消の後始末を行うことを検査する。
 `IAsyncDisposable.DisposeAsync` の呼出側が、同じ Deadline を後始末の scope に保持することを検査する。
 Deadline の生成が request、message、job の境界に限られることを検査する。
-Roslyn analyzer は、各 hop の CancellationTokenSource が `deadline.Remaining(timeProvider)` から作られ、下流へ remaining でなく同じ Deadline が渡ることを検査する。
+Roslyn analyzer は、`Deadline` の `Remaining` と `At` から導いた遅延を timeout に使う全ての形(CancellationTokenSource の生成と `CancelAfter`、`WaitAsync`、`Task.Delay`、`TimeProvider.CreateTimer`)が、EffectRuntime.Run と Run を呼ばない境界だけにあり、Run を呼ぶ host と境界の内側の hop に無いことを検査する。
+Roslyn analyzer は、下流へ remaining でなく同じ Deadline が渡ることを検査する。
 Roslyn analyzer は、同期の純粋な domain の関数が Deadline と CancellationToken を引数に持たないことと、これらを認証主体や業務入力と同じ context の型へまとめないことを検査する。
 
 ### 根拠
 Roslyn semantic model なら、method の accessibility、戻り値、引数、呼出式の symbol を結び付け、公開 host API と Effect 内部の awaitable の役割を区別できる。
-同じ model で Deadline の生成と伝播、remaining の使用先を追えば、hop ごとに新しい相対 timeout を始める経路を拒否できる。
+同じ model で、`Deadline` の `Remaining` と `At` から遅延へ至る式の流れと、timeout を作る API の呼出式を追えば、`Deadline` から別の timeout を作る全ての形を拒否でき、adapter が自身の値で設ける上限は遅延が `Deadline` に由来しないので拒否されない。
 純粋な domain の関数は期限も取消も観測しないので、引数の有無を型の宣言から検査すれば、核への実行 metadata の侵入を拒否できる。
 release と `DisposeAsync` を CancellationToken の必須規則から明示的に分ければ、通常の非同期 API の伝播漏れと、非取消でなければならない後始末を混同しない。
 
@@ -83,18 +84,18 @@ release と `DisposeAsync` を CancellationToken の必須規則から明示的�
 公開する surface と host の非同期 API が Task または Task<T>、Effect 内部の Run、Try body、AcquireRelease release が ValueTask または ValueTask<T> に分かれている。
 境界より内側の非同期 API が、release と `DisposeAsync` を除いて Deadline と CancellationToken を必須引数に持ち、Deadline が request、message、job の境界だけで生成されている。
 release が同じ Deadline を受けて CancellationToken を受け取らず、`DisposeAsync` が引数なしで非取消の後始末を完了している。
-各 hop の局所 timeout が `deadline.Remaining(timeProvider)` から作られ、同じ Deadline が下流へ渡されている。
+`Deadline` から導いた遅延を timeout に使う全ての形が、EffectRuntime.Run と Run を呼ばない境界だけにあり、同じ Deadline が下流へ渡されている。
 同期の純粋な domain の関数が Deadline と CancellationToken を引数に持たず、これらが認証主体や業務入力と同じ context の型へまとめられていない。
 
 ### 禁止事項
 公開 host API と Effect 内部の awaitable の役割分担を、レビューだけで検査すること。
-hop ごとに相対 timeout を引き直す経路を、構造検査から外すこと。
+hop ごとの相対 timeout を含む、`Deadline` から別の timeout を作る経路を、構造検査から外すこと。
 release と `DisposeAsync` へ CancellationToken を要求し、非取消の後始末を通常の非同期 API と同じ規則で検査すること。
 純粋な domain の関数が持つ Deadline と CancellationToken の引数を、検査せずに許すこと。
 
 ### 行動
 Roslyn analyzer で、公開 host API の Task と Effect 内部の ValueTask の戻り値を検査する。
-Roslyn analyzer で、境界より内側の非同期 API の Deadline と CancellationToken、境界だけでの Deadline 生成、remaining からの局所 timeout 生成、同じ Deadline の下流伝播を検査する。
+Roslyn analyzer で、境界より内側の非同期 API の Deadline と CancellationToken、境界だけでの Deadline 生成、`Deadline` から導いた遅延を使う全ての timeout の生成が EffectRuntime.Run と Run を呼ばない境界だけにあること、同じ Deadline の下流伝播を検査する。
 Roslyn analyzer で、同期の純粋な domain の関数の Deadline と CancellationToken の引数の不在と、認証主体や業務入力を含む context の型への同梱の不在を検査する。
 release と `DisposeAsync` は CancellationToken の必須規則から除き、元の Deadline を保持する非取消の後始末として検査する。
 
@@ -197,11 +198,11 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | translation | 境界で一度だけ parse してドメイン型へ移す | 型(生成 DTO・JsonSerializerContext・required・生成 converter・JsonExtensionData)+構造検査(contracts/adapters の Mapper とコンテキストの検証付き入力構築の配置、旧版を受ける互換の生成 DTO と変換の参照が contracts/adapters の写像に閉じ、内側が現在の検証済みの型だけを受けること)+実行テスト(公開入力の endpoint が実際に受ける経路と内部の durable queue の実際の受信経路へ渡した、契約が定める必須性と null 許容に応じた未指定・null の受容と拒否、未指定時だけの既定値適用、既知項目の不正・判別子と payload の不一致の拒否と業務処理の非開始、未知の追加項目だけを加えた入力の受容、全 variant と入れ子 object の未知キーの位置捕捉とログ到達、捕捉値の domain と応答への非流入、保持する旧版の事実の変換が各版を独立した期待値へ照合して現在の検証済みの型だけを内側へ渡し保存行を変えないこと)+レビュー(保持の契約が旧版の事実を必要とする範囲、真の業務上の不明と互換のための任意化の区別、変換の意味、保存や送信で存在しなかった事実を作っていないこと) |
 | aspnet-core | 公開するエラーを境界で problem+json へ写す | 実行テスト(ProblemDetails の単体テスト) |
 | nswag | 生成した契約を使い、drift を検査の gate にする | 構造検査(データ型の assembly の runtime 依存 closure の通信 client と実行機構からの分離)+実行テスト(drift 検査・conformance と生成 serializer の能力の検証入口の判定) |
-| connection | 効果を Effect 型で組む | 型(readonly struct、Deadline と CancellationToken を受けて ValueTask を返す delegate の内包)+analyzer(Roslyn analyzer。明示的 `default(Effect<...>)`、Effect への `default` literal の代入、型解決で Effect と判定できる `default(T)` の検出)+実行テスト(配列、field、未解決の generic 由来の default を EffectRuntime.Run で実行すると Defected の `UninitializedEffectException` になること) |
+| connection | 効果を Effect 型で組む | 型(readonly struct、Deadline と CancellationToken を受けて ValueTask を返す delegate の内包)+analyzer(Roslyn analyzer。明示的 `default(Effect<...>)`、Effect への `default` literal の代入、型解決で Effect と判定できる `default(T)` の検出)+実行テスト(配列、field、未解決の generic 由来の default を EffectRuntime.Run で実行すると Defected の `UninitializedEffectException` になること、`Try` の body と `AcquireRelease` の release を含む Effect を生成し Map・Bind で合成しただけでは body と release が一度も呼ばれず、EffectRuntime.Run のときにだけ開始すること) |
 | connection | 効果の生成と combinator と資源を備える | 型(EffectContext の Success/Try は引数から TValue を推論し、Fail<TValue>/Defect<TValue> は値型を明示する生成関数、Try body は Deadline、CancellationToken、ValueTask の delegate、AcquireRelease release は Deadline を受けるが CancellationToken を受け取らない ValueTask の delegate、拡張 method の combinator のシグネチャ)+analyzer(Roslyn analyzer。全 combinator が Run から受けた同じ Deadline を下流の Effect と release へ渡し、release を非取消の後始末にすること)+実行テスト(AcquireRelease の単体テスト、取消済み token の下でも release が同じ Deadline を受けて一度完了すること、複数の Bind を通っても期限が引き直されないこと) |
 | connection | 終了を成功と失敗と欠陥と取り消しに分ける | 型(sealed record 階層の EffectExit、Result の tag 0 は未初期化)+analyzer(Roslyn analyzer。明示的 default(Result)、Result への default literal の代入、型解決できる default(T) の検出)+実行テスト(配列・field・generic 由来の default が全 observer・Match・unwrap 相当で欠陥になること)+構造検査(formation の階層外派生の検出に従う) |
 | connection | 要求する依存を型に出す | 型(IEffectRequirements・generic constraints)+analyzer(Roslyn analyzer。NoRequirements への迂回の検出) |
-| connection | 効果を境界で実行し analyzer と generator で縛る | analyzer と source generator(internal の EffectRuntime.Run に実行境界を限定し、Deadline と CancellationToken の伝播、ValueTask の戻り値、R の合成環境の生成、Bind 連鎖の要求包含、原始効果の閉じ込め、NoRequirements への迂回を検査)+実行テスト(`UninitializedEffectException` を Defected へ写すこと) |
+| connection | 効果を境界で実行し analyzer と generator で縛る | analyzer と source generator(internal の EffectRuntime.Run に実行境界を限定し、Deadline と CancellationToken の伝播、ValueTask の戻り値、R の合成環境の生成、Bind 連鎖の要求包含、原始効果の閉じ込め、NoRequirements への迂回を検査)+実行テスト(`UninitializedEffectException` を Defected へ写すこと、Run が受け取った CancellationToken が取り消し済みの Canceled を Canceled のまま返し、取り消されておらず期限用の token が取り消し済みの Canceled を期限超過の Failed へ写すこと、期限用の token の取り消しの後に Effect が解決する前に親が取り消した場合と、親の取り消しと Deadline の超過が同時に成立した場合に Canceled になること、どちらの token も取り消されていない Canceled(adapter を経ずに届いた別の CancellationTokenSource の取り消し)が UnattributedCancellationException の Defected になること、Succeeded・Failed・Defected を返した Effect が返却後の取り消しや Deadline の超過で書き換えられず Deadline の超過だけが診断に記録されること。時刻はテスト用の TimeProvider で進める) |
 | connection | port を interface で宣言する | 型(interface) |
 | connection | 配線を composition root に限る | 構造検査(Program.cs の DI 登録 factory 外の IServiceProvider・RequestServices による直接解決と、provider の注入・保存の検出)+レビュー(登録 factory が配線だけを行い、解決 scope と lifetime が一致すること、組立点に置く依存の粒度の判断) |
 | dapper | 型付き SQL | 構造検査(DapperAOT の生成した写像の適用箇所と通常の Dapper 呼出しの区別)+analyzer(DapperAOT の採用 dialect に適用される診断だけをエラー化)+実行テスト(SQL の placeholder と parameter member の名前対応、schema・SQL・DTO の型と nullable の照合)+計測(性能を比較する場合の写像の実行時間と割当量) |
@@ -211,8 +212,8 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | npgsql | durable inbox | 構造検査(scope・event ID の複合一意制約)+実行テスト(payload commit 前後の停止と upstream delivery ack、処理結果・処理済み記録 commit 前後の停止と inbox processing completion、前段の source 再配送、後段の item 再処理、結果一度分、容量上限の nack、使用量・上限・backlog・nack の監視出力) |
 | stackexchange-redis | 一時データ | 構造検査(DB と Valkey の project 分離)+レビュー(一時データとして扱える範囲の判断) |
 | coordination | 非同期 | analyzer/lint(SonarAnalyzer.CSharp の async void 検出規則)+analyzer(Roslyn analyzer。surface と host の公開非同期 API は Task または Task<T>、Effect 内部の Run、Try body、AcquireRelease release は ValueTask または ValueTask<T> に限定)+レビュー(domain の純粋性の判断) |
-| coordination | 取り消し | analyzer(Roslyn analyzer。request、message、job の境界より内側の非同期 API が、非取消の後始末である AcquireRelease release と IAsyncDisposable.DisposeAsync を除いて Deadline と CancellationToken を必須引数に持ち、Deadline の生成を境界へ限定し、各 hop の局所 timeout が `deadline.Remaining(timeProvider)` から作られ、下流へ remaining でなく同じ Deadline が渡ることを検査。release は同じ Deadline を受けて CancellationToken を受け取らず、DisposeAsync は引数を持たないことを検査。同期の純粋な domain の関数が Deadline と CancellationToken を引数に持たないことと、Deadline と CancellationToken を認証主体や業務入力と同じ context の型へまとめないことを検査)+実行テスト(複数 hop で時間枠が引き直されず、局所 timeout が linked token で下流へ伝播すること、取消後も release と DisposeAsync が非取消で完了すること) |
-| coordination | 並行の組 | 構造検査(Roslyn analyzer。個別 job の RunAsync 呼出しを SemaphoreSlim の permit 保持区間へ限定)+実行テスト(最大同時実行数、子の例外と業務結果の失敗の各経路で兄弟取消と全 Task の drain、開始途中の同期例外または列挙失敗でも開始済みの子の回収、Cancel callback の例外と兄弟の追加失敗の回収、実行中の外部取消 callback の完了より前に CTS を解放しないこと、取消要求後も子が未完了の間は所有者が終了しないこと)+レビュー(全 Task の所有者と長寿命の処理の停止経路、開始と停止の競合、Task.Exception と外部取消の回収) |
+| coordination | 取り消し | analyzer(Roslyn analyzer。request、message、job の境界より内側の非同期 API が、非取消の後始末である AcquireRelease release と IAsyncDisposable.DisposeAsync を除いて Deadline と CancellationToken を必須引数に持ち、Deadline の生成を境界へ限定し、Deadline から導いた遅延を使う全ての timeout の生成(CancellationTokenSource の生成と CancelAfter、WaitAsync、Task.Delay、TimeProvider.CreateTimer)を EffectRuntime.Run と Run を呼ばない境界だけに限り、下流へ remaining でなく同じ Deadline が渡ることを検査。release は同じ Deadline を受けて CancellationToken を受け取らず、DisposeAsync は引数を持たないことを検査。同期の純粋な domain の関数が Deadline と CancellationToken を引数に持たないことと、Deadline と CancellationToken を認証主体や業務入力と同じ context の型へまとめないことを検査)+実行テスト(Deadline ごとの期限用の token が一度だけ作られ(Run を呼ぶ host が別に作らない)linked token で下流へ伝播して複数 hop で時間枠が引き直されないこと、取消後も release と DisposeAsync が非取消で完了すること、Effect を使わない境界が親の token が取り消し済みの取り消しを取り消しのまま通し、親の token が取り消されておらず期限用の token が取り消し済みの取り消しだけを期限超過の想定内の失敗へ写し、どちらでもない取り消しを UnattributedCancellationException にすること、親の取り消しと Deadline の超過が重なると取り消しになること、内側の hop が受け取った token を下流へ渡し外部効果を始める前に取り消しを確認して、取り消し済みの token では外部効果を始めないこと、確定した結果が返却後の取り消しや Deadline の超過で書き換えられず Deadline の超過が診断に記録されること、呼び出しごとの時間上限を設ける adapter が Deadline から導かない自身の CancellationTokenSource を受け取った token と linked token に合流させ、受け取った token、自身の上限の token の順に判定し、時間上限の超過だけを自身の失敗にし、どちらでもない取り消しと中断(HttpClient の内部の取り消しと下位の層の timeout を含む)を通信の失敗の Failed にし、上限が Deadline より短ければ上限の超過、長ければ Deadline の超過が先になること。時刻はテスト用の TimeProvider で進める) |
+| coordination | 並行の組 | 構造検査(Roslyn analyzer。個別 job の RunAsync 呼出しを SemaphoreSlim の permit 保持区間へ限定)+実行テスト(最大同時実行数、子の例外と業務結果の失敗の各経路で兄弟取消と全 Task の drain、開始途中の同期例外または列挙失敗でも開始済みの子の回収、Cancel callback の例外と兄弟の追加失敗の回収、実行中の外部取消 callback の完了より前に CTS を解放しないこと、取消要求後も子が未完了の間は所有者が終了しないこと、子の例外と判定の時点で取り消し済みの外部 token と業務結果の失敗が重なる組が OperationCanceledException を含む集約、OperationCanceledException、業務結果の順で終わること、外部 token が取り消されておらず組が自ら取消した兄弟を除いて最初の業務結果の失敗で終わること、全ての子が業務結果を返した組が外部取消で書き換えられないこと)+レビュー(全 Task の所有者と長寿命の処理の停止経路、開始と停止の競合、Task.Exception と外部取消の回収) |
 | coordination | blocking 禁止 | analyzer/lint(Microsoft.CodeAnalysis.BannedApiAnalyzers)+実行テスト(開始済みの Task.Run の同期処理が取消要求だけでは終了せず、所有者が完了まで保持すること)+レビュー(同期処理の協調停止点または process 分離) |
 | coordination | 共有状態 | 構造検査(Roslyn analyzer。可変な静的状態と共有 instance の検出)+レビュー(共有が必要な範囲の判断) |
 | coordination | ライブラリの作法 | analyzer/lint(SonarAnalyzer.CSharp の ConfigureAwait 関連規則) |

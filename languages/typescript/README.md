@@ -67,4 +67,4 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 | エラー型の定義 | 判別子つきの union という言語機構で表し、外部ライブラリを採らない | [formation](./formation.md) |
 | 直列化 | 境界の値検証に使う schema から導出し、外部の直列化ライブラリを別に選ばない | [translation](./translation.md) |
 | schema migration | server 側の永続化の役割を持たないため採用を持たない | — |
-| API の禁止 | oxlint の no-restricted-imports・no-restricted-properties で満たし、専用の道具を置かない | [oxlint](./oxlint.md) |
+| API の禁止 | import を介さない参照を oxlint の no-restricted-properties・no-restricted-globals で満たし、専用の道具を置かない | [inspection](./inspection.md) |
