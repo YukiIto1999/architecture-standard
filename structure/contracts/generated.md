@@ -22,6 +22,12 @@ generated を、正本にしない。
 ## 生成能力
 
 生成した型と encoder・decoder は、項目の必須・任意と null の許容、未指定時の意味、値の制約、判別子と variant の対応を契約どおりに扱う。
+値の制約は、型が表す形式、数値の値域と精度、日時の精度と offset、文字列長の単位を含む。
+契約が受理する値を、生成先の言語の既定の型や数え方で拒否も丸めもせず、契約が拒否する値を受理しない。
+JSON の数値は、実装が値域と精度を制限でき、整数の正確な一致を実装間で期待できる範囲は ±(2^53-1) である([RFC 8259](https://www.rfc-editor.org/rfc/rfc8259#section-6))ので、binary64 を既定の数値型にする生成先は、その範囲を越える整数や binary64 で表せない十進数を、そのままでは保てない。
+`date-time` は小数秒の桁数に上限がなく、offset を `Z` か `±hh:mm` で持つ([RFC 3339](https://www.rfc-editor.org/rfc/rfc3339#section-5.6))ので、契約が受理する日時を、生成先の既定の日時型が持てる精度や offset へ丸めず、拒否もしない。
+JSON Schema の `minLength` と `maxLength` は、UTF-16 の code unit や UTF-8 の byte でなく、Unicode の文字(code point)の数を数える([JSON Schema Validation](https://json-schema.org/draft/2020-12/json-schema-validation#section-6.3.1))ので、長さは契約が数える単位で数える。
+`format` は、JSON Schema では既定で検証されず([JSON Schema Validation](https://json-schema.org/draft/2020-12/json-schema-validation#section-7.2.1))、OpenAPI 3.0 では認識しない format を型だけへ戻してよい([OpenAPI Specification 3.0.3](https://spec.openapis.org/oas/v3.0.3.html#data-types))ので、出力 schema に `format` を書いたことだけを、decoder が形式を強制する保証にしない。
 未知の項目の扱いは [canonical](./canonical.md) の「進化」に従い、受容と検知を実現する言語別の機構は [languages](../../languages/) が定める。
 未知の項目を検知する生成処理は、全 variant と入れ子の object を対象にし、既知の項目の検証や variant の識別を省略しない。
 採用した生成器の既定の出力がこれらを満たさない場合は、契約から導く生成処理で能力を補い、満たさない生成物を検証入口で拒否する。
