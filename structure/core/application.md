@@ -6,8 +6,8 @@ application は [layout](./layout.md) の単位と依存に従う。
 
 ## port
 
-port は、業務能力を宣言する interface である。
-port は業務能力の単位で分割し、技術名で分割しない。
+port は、use-case や workflow が要求する能力を宣言する interface である。
+port は、業務上の操作や進行の記録といった能力の単位で分割し、技術名で分割しない。
 port の名前は、能力を表す語で付ける。
 port のメソッドは、副作用を effect 型で返す。
 port の実装は infrastructure が持つ。
@@ -31,11 +31,14 @@ use-case は、モデリング上のアクターの目的と変更理由、開�
 
 ## workflow
 
-workflow は、同じコンテキストの複数の use-case を一つの業務の流れとして束ねる。
+workflow は、同じコンテキストの use-case を、一つの業務の流れの順序・分岐、または停止を越える進行の調整として束ねる。
+一つの use-case で停止を越える進行の調整まで完結する場合は、その use-case を使い、転送するためだけの workflow を置かない。
 workflow は、use-case の公開入口を呼び、順序、結果に基づく分岐、再開点、打ち消しの開始を担う。
 workflow の順序・分岐・再開・補償の規律は [concerns/workflow](../../concerns/workflow/README.md) に従う。
-個々の不変条件と状態遷移は domain に、単一の業務動作は use-case に置き、workflow に重複させない。
+業務の不変条件と業務状態の遷移は domain に、単一の業務動作は use-case に置き、workflow に重複させない。
 分岐の意味を決める業務規則は domain の policy に置き、workflow は型付きの outcome に従って次の入口を選ぶ。
+業務の状態は use-case を通して変更し、実行上の進行の記録は、進行を調整する use-case または workflow が宣言する port を通して保存する。
+停止を越えることや記録を保存することだけを理由に、新たな domain の集約や業務規則を作らない。
 workflow は、adapter の実装型を参照せず、直接 I/O を行わない。
 workflow は、別のコンテキストの use-case または workflow を参照しない。
 workflow は、別の workflow を呼ばない。
@@ -65,7 +68,8 @@ domain event はコンテキストの内部に閉じる。
 外部へ公開する事実は、その event を公開する application の入口が domain event から integration event へ写像し、公開 outcome に含める。
 外部副作用は、port または libs の公開技術能力の抽象を通じてのみ行う。
 use-case は、直接の I/O、現在時刻の取得、乱数生成、ログを行わない。
-use-case は、判断を domain の純粋関数に閉じる。
+use-case は、業務の判断を domain の純粋関数に閉じる。
+試行回数、待ち時間、次の実行時刻のように業務の意味を持たない再実行の判断は、use-case と workflow の本体にも domain にも書かず、進行を記録する port の実装か [libs](../libs/layout.md) の公開技術能力に委ねる。
 読む・判断する・書くの順と純粋核と効果の殻の分離は [concerns/effect](../../concerns/effect/README.md) に従う。
 
 ## トランザクション

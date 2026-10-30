@@ -199,11 +199,11 @@ transaction の検証は、application が開始から確定または中止ま�
 | 対象 | 必須の検証 |
 |---|---|
 | ドメイン型・操作・不変条件と状態遷移 | 型による入力・操作・構築の拒否、constructor の拒否、値の計算と比較、区分判断と分類条件、集合の結果と集合としての拒否、状態遷移の property、網羅する outcome |
-| use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、冪等な再実行、補償開始、中間状態の面ごとの通過集合、未検出 mutant |
+| use-case と workflow | port を制御した振る舞い、workflow の各 step の確定と再開、停止を越える進行の試行回数・次の実行時刻・期限・完了記録・操作の識別と冪等の鍵の停止前後の保持、停止・再開・自動再投入での上限のリセットの不在、冪等な再実行、補償開始、中間状態の面ごとの通過集合、未検出 mutant |
 | canonical と binding | operation・型・error の欠落と余剰、公開区分と業務区分の意味の対応、generated drift、項目の必須性・null 許容・既定値、集合の総数の選択と条件の評価文脈、全 variant の serialize round-trip、未知項目の受容・捕捉・報告と既知項目の不正の拒否、generated のデータ型と通信の依存単位の分離、POST・PUT・status・cache・405 を含む HTTP method semantics、ファイルの media type・本文・multipart の対応、protocol conformance |
 | 認証と認可 | 各認証境界の credential 拒否と認証主体の確定、資格情報の種類ごとの検証根拠と拒否条件の対応、自己申告の OS 主体と file の可読性だけによる昇格の拒否、認証に関する値の core 非流入、必要な業務主体との対応や代理・委任の検証、主体・操作・資源・条件の許可と拒否、宣言のない入口と保護の迂回の拒否、匿名公開の宣言、対象依存の認可と確定時の状態の整合 |
 | 永続化、transaction、messaging | 実 datastore の制約、業務区分と定義の識別子の対応、廃止した定義の参照と新規選択の分離、外部キーの循環の不在、参照先の存続と削除規則、期間の判定、事実の行の更新と削除の拒否、消せる行のビューの外の削除の拒否、業務事実の時刻の列への書き込み権限と利用者定義の手続きの不在、期間の重なりと件数の不変条件の全書込経路の競合制御、version conflict、単一の確定点、現在情報と必要な業務事実の同時確定、状態と outbox の同時確定、停止位置ごとの再開、重複配送、順序、行き止まり、派生読みモデルの再構築の決定性と外部効果の不在、cache の失効と対象別の無効化と期限の分散と不在の記録、読み取り要求と一つの確定の件数によらない問い合わせ数の上限、複数確定の対象列挙と各確定の和で表す全体の上限 |
-| effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test |
+| effect、concurrency、resilience | 四つの終了、取消と deadline、子処理の drain、並行上限、過負荷、再試行と遮断を決定的に起こす test、進行の再実行と併用した場合の呼び出しの試行の全体の試行上限への算入 |
 | structure と dependency | root と単位の列挙、ソース参照の phase と成果物の消費の区別、依存方向、libs の package 内外の公開面、配置、循環、複雑さの閾値と統合・削除での変更前後の比較、禁止 import、deploy と tests への流入依存の不在、tests の配備 script 非利用、サブドメイン分類の記録と構造の対応 |
 | lifecycle と configuration | 不正設定での起動拒否、設定層の競合と未指定の解決、生存と準備、受付停止、期限内 drain、突然死後の回復 |
 | security と privacy | default deny と最小権限、信頼境界ごとの abuse case、標準暗号の設定、ネットワークを通る伝送または信頼境界を越える伝送での平文と意図しない受信者の拒否、secret と個人情報の非流出、保持期限後の消去、供給物と依存の検査 |

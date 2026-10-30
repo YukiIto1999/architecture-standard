@@ -9,7 +9,7 @@ principles の [data](../../principles/data/README.md) が定める現在情報�
 
 - [信頼性を観測可能な目標として定める](./reliability-targets.md) — レビュー(目標設定はreview)
 - [再実行のある操作を冪等にする](./idempotent-operations.md) — 機械(冪等再実行テスト)
-- [外部依存の呼び出しを制御する層に置く](./dependency-call-control.md) — 機械+レビュー(再試行遮断・期限検査)
+- [外部依存の呼び出しを制御する層に置く](./dependency-call-control.md) — 機械+レビュー(呼び出し単位の再試行遮断・期限と、併用時の全体の試行上限への算入のテスト+再試行を担う層の選定のレビュー)
 - [失敗を区画に閉じる](./bulkhead-isolation.md) — レビュー(区画検査の名指しなし)
 - [障害を別経路で覆い隠さない](./no-untested-fallback.md) — レビュー(review規律照合のみ)
 - [過負荷を抑える](./overload-mitigation.md) — 機械(再試行・遮断テスト)
