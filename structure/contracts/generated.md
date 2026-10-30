@@ -46,3 +46,27 @@ HTTP または protocol の提供側に、利用側の通信 client を要求し
 通信する利用側は、その通信を所有する adapter に generated の client または stub を置き、接続設定と transport の instance を引数で与え、generated 内に固定しない。
 viewer と extension はデータ型の import にとどめ、通信の実装は host から port として受け取る。
 root をまたぐ依存の許可は [skeleton](../skeleton.md) に従い、core は composition を含め generated の型にも client・stub にも依存しない。
+
+## 応答の分類
+
+[http](./http.md) の binding から生成した client の呼び出し結果は、契約が宣言した応答、契約に無い応答と decode の失敗、要求の組立の失敗、通信の失敗、時間上限の超過、取り消しに区別し、混ぜない。
+契約が宣言した応答は、宣言した status と body の型に一致した応答であり、宣言した成功は成功に、宣言した失敗は operation の想定内の失敗に割り当てる。
+宣言する status は、[http](./http.md) の「応答の status」に従い、成功の 2xx と失敗の 4xx・5xx に限る。
+契約に無い応答と decode の失敗は、宣言していない status の応答と、宣言した status で body を契約の型へ decode できない応答であり、成功の応答の body を含め、欠陥に割り当てる。
+ただし 502・503・504 は、gateway・proxy が上流から有効な応答を得られない場合や、server が一時的に処理できない場合の status であり([RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.6.3) の 15.6.3 から 15.6.5)、body を中継者が作りうる。
+この三つの status で body が契約の宣言した型に一致しない応答は、宣言していない場合を含め、同じ出所の応答として通信の失敗に割り当て、一致する応答は宣言した失敗に割り当てる。
+要求の組立の失敗は、自ら直列化する処理の不一致であり、欠陥に割り当てる。
+通信の失敗は、応答の status と body を受け取れなかった失敗と、受け取った応答を読み切れなかった失敗であり、想定内の失敗に割り当てる。
+呼び出しごとの時間上限は、HTTP client の timeout でなく、言語の取り消しと期限の機構で設け、[concerns/resilience](../../concerns/resilience/dependency-call-control.md) の「外部依存の呼び出しを制御する層に置く」に従い、受け取った期限と合成して短い方を採る。
+時間上限の超過は、通信の失敗に含めず、上限を設けた側の想定内の失敗に割り当て、取り消しは取り消しに割り当てる。
+受け取り終えた応答は確定した終了であり、その後に観測した取り消しや期限の超過で、割り当てを書き換えない。
+応答を受け取れずに中断した呼び出しのうち、取り消しにも時間上限の超過にもならないもの(HTTP client や OS が自ら設けた timeout と HTTP client の内部の取り消しを含む)は、通信の失敗に割り当てる。
+契約に無い応答と decode の失敗を欠陥とするのは、client の相手が同じ canonical を実装する提供側であり、その不一致が自ら直列化し自ら復元する処理の不一致にあたるためである。
+分類は、契約が宣言した応答の集合との照合で決める。
+照合は status を先に、次に body の型で行い、status の範囲や生成器の例外の型と variant だけで決めない。
+生成器が宣言した成功の応答を例外や契約に無い応答として返す場合は、宣言した status との照合で成功へ戻す。
+生成器が宣言した status の body を decode せずに返す場合は、利用側が契約から生成した型で decode し、一致しなければ decode の失敗として扱う。
+利用側は、宣言した失敗を operation の想定内の失敗の型へ写し、他の種類と同じ型や例外へ畳まない。
+想定内の失敗の型は [concerns/effect](../../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に従う。
+欠陥と想定内の失敗の別は [concerns/effect](../../concerns/effect/value-origin-classification.md) の「失敗と欠陥を値の出所で判別する」に従う。
+時間上限の超過と取り消しの別は [concerns/effect](../../concerns/effect/failure-defect-cancellation.md) の「失敗と欠陥と取り消しを分ける」に従う。

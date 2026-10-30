@@ -3,7 +3,7 @@
 ## 概要
 translation は、C# で外部表現とドメイン型の変換を扱う実現軸である。
 principles の [separation](../../principles/separation/README.md) が定める境界での変換と、concerns の [types](../../concerns/types/README.md) が定める境界での parse・[security](../../concerns/security/README.md) が定める境界の不信を、C# の機構で満たす。
-problem+json への写しの規律は [aspnet-core](./aspnet-core.md) が、契約生成と drift 検査の規律は [nswag](./nswag.md) が持つ。
+problem+json への写しの規律は [aspnet-core](./aspnet-core.md) が、契約生成と drift 検査と、生成 client の応答の分類の規律は [nswag](./nswag.md) が持つ。
 
 ## 境界で一度だけ parse してドメイン型へ移す
 

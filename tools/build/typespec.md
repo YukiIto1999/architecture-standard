@@ -4,6 +4,8 @@
 採用は、記述に TypeSpec を使い、判別付き直和の各 variant に単一の固定値を持つ判別子の property を必須で宣言する。
 直和は `@discriminated` で envelope を `none` にし、判別子の property 名と variant の名前・固定値を各 variant の宣言と一致させる。
 canonical の同じ直和へ、OpenAPI 用の [@TypeSpec.OpenAPI.oneOf](https://typespec.io/docs/emitters/openapi3/reference/decorators/#@TypeSpec.OpenAPI.oneOf) と JSON Schema 用の [@TypeSpec.JsonSchema.oneOf](https://typespec.io/docs/emitters/json-schema/reference/decorators/#@TypeSpec.JsonSchema.oneOf) を適用し、同名の注釈を混同しない。
+成功の応答は 2xx の status を持つ `@error` でないモデルで表し、失敗の応答は `@statusCode` で 4xx か 5xx の具体の status を宣言した `@error` のモデルで表す。
+status を持たない `@error` のモデルは、OpenAPI の出力で `default` の応答になるので置かない。
 OpenAPI の出力には `@typespec/openapi3` を使い、`openapi-versions` は 3.0 系に固定する。
 HTTP を持たない契約の型生成には `@typespec/json-schema` で JSON Schema を出力する。
 出力から各言語の client と型を作る generator は、言語 ecosystem の採用が定める。

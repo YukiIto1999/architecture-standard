@@ -15,6 +15,13 @@ path の階層に、リソースの親子関係を深く刻まない。
 この binding から生成したデータ型を、提供側の要求と応答にも使う。
 提供側の handler と core の接続は [surfaces/server](../surfaces/server/layout.md) が、DTO の生成能力と通信 client との分離は [generated](./generated.md) が定める。
 
+## 応答の status
+
+操作の応答は、全ての status を具体の status code で宣言する。
+status を持たない既定の応答は宣言しない。
+宣言する status は、成功を 2xx、失敗を 4xx と 5xx に限る。
+宣言していない status の応答は契約に無い応答であり、その扱いは [generated](./generated.md) の「応答の分類」に従う。
+
 ## method の選択
 
 POST は、target resource 固有の意味に従って request content を処理する操作に使う。

@@ -6,7 +6,7 @@ principles の [separation](../../principles/separation/README.md) が定める�
 失敗の型そのものの宣言は [thiserror](./thiserror.md) が持つ。
 server が外へ出す表現の形式は [axum](./axum.md) が持つ。
 境界での parse の実現は [serde](./serde.md) が持つ。
-契約生成と drift 検査の規律は [progenitor](./progenitor.md) が持つ。
+契約生成と drift 検査と、生成 client の応答の分類の規律は [progenitor](./progenitor.md) が持つ。
 
 ## 境界表現の型を surface の crate に置き、From で写す
 

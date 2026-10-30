@@ -53,3 +53,62 @@ viewer と extension から、生成した client を import すること。
 host の transport を client の引数へ渡し、TLS・proxy・timeout・再試行の判断を host 側に置く。
 host の adapters が viewer の ui port または extension の host port の実装から生成 client を呼び、viewer と extension は対応する port を通して通信する。
 viewer と extension では、生成物の型だけを `import type` で取り込む。
+
+## 生成 client の応答を失敗の種類で分類する
+
+### 要求
+生成した client は、status と content-type が契約の宣言した成功に一致した応答の body を、契約の型と照合せずに返す。
+宣言した失敗を含む他の応答は、status と body を持つ生成した `RestError` で throw する。
+media type が厳密に `application/json` の body を JSON として読めない応答は、生成した client に届く前に、ts-http-runtime が `code` が `PARSE_ERROR` で `statusCode` を持つ `RestError` で throw する。
+生成した client の operation は signal を引数に持たないので、呼び出しごとの signal は、transport が request の `abortSignal` に載せる形で与える。
+adapter は、client が返した成功の body と、throw された `RestError` と `PARSE_ERROR` の error を、[valibot](./valibot.md) の「受け取ったエラーを parse し、想定された失敗と欠陥を分ける」に従い、status を先に、次に body の順に契約の schema と照合する。
+生成した `RestError` の `status` は文字列なので、数値へ変換して契約の schema と照合する。
+宣言した成功の status で body が契約の型に一致した応答は、`RestError` として届いても成功として返し、その変換は `Result.wrapAsync` に渡す関数リテラルの内側で行って、一致しない `RestError` は再 throw して `mapErr` の mapper へ回す。
+宣言した失敗の status で body が契約の型に一致した応答は、宣言した失敗の Result で返す。
+502・503・504 で body が契約の型に一致しない応答は、宣言の有無に関わらず、通信の不成立と同じ想定された失敗にする。
+それ以外の status で、宣言していない応答と、宣言した status で body が契約の型に一致しない応答(`PARSE_ERROR` の error を含む)は、欠陥として投げる。
+応答を伴わない通信の不成立は、host の transport が自身の error 型で reject したものだけとし、transport の error 型は [coordination](./coordination.md) の「取り消し」に従い、生成した `RestError` と混ぜず、[ts-results-es](./ts-results-es.md) の「非同期 API の送出を AsyncResult へ変換する」の error mapper で想定された失敗へ写す。
+要求の組立で throw された error は、通信の不成立にせず、欠陥として投げる。
+`RestError` と `PARSE_ERROR` の error は受け取り終えた応答なので、中断の判定より先に分類し、中断の識別と扱いは、coordination の「取り消し」に従う。
+`RestError` の分類は、status の範囲で行わない。
+
+### 根拠
+生成した client は、宣言した成功のうち status と content-type が一致する応答の body を、property を写すだけで返す。
+生成器は、`@error` のモデルの応答を `RestError` で throw し、`@error` でないモデルの応答を成功の値として返す。
+content-type は大文字と小文字を区別して `application/json` を含むかで調べるので、`Application/JSON` のように表記の違う宣言した成功の応答も `RestError` になる。
+必須項目を欠く body や型の違う body も、そのまま返る。
+ts-http-runtime が `PARSE_ERROR` を throw するのは、media type が厳密に `application/json` の body を読めない場合だけで、他の media type の読めない body は文字列のまま届く。
+宣言した失敗と宣言していない応答は、同じ `RestError` で届くので、throw された `RestError` の status と body を契約の schema と照合しなければ、区別できない。
+生成した `RestError` は応答を持つ失敗だけを表すので、応答を伴わない通信の不成立は、transport の reject として届く。
+通信の不成立と時間上限の超過と取り消しは、応答を持たない別の事態なので、`RestError` の分類へ混ぜると、想定された失敗と欠陥と取り消しが取り違えられる。
+生成した client の operation は、request の options に `onResponse` しか持たず、signal を受け取らない。
+ts-http-runtime の既定の pipeline の retry policy は、request の `abortSignal` が abort 済みなら、transport が応答を返した後でも再試行の待機中でも、signal の reason も cause も持たない `AbortError` で reject し、`maxRetries` を 0 にしても変わらない。
+この rejection は応答を adapter へ届けないので、`name` と signal の状態による中断の識別で中断になる。
+`mapErr` は Err のときだけ mapper を呼んで Err へ写すので、`RestError` を成功の値へ戻す変換は、`Result.wrapAsync` に渡す関数リテラルの内側で行う。
+
+### 完了条件
+生成した client が返した成功の body が、生成した schema で検証され、契約と一致しない場合に欠陥として投げられている。
+throw された `RestError` と `PARSE_ERROR` の error が、status を先に、次に body の順に契約の schema と照合され、成功、宣言した失敗の Result、通信の不成立、欠陥のいずれかに分類されている。
+宣言した成功の status で body が契約の型に一致する `RestError` が、`Result.wrapAsync` に渡す関数リテラルの内側で成功の値に戻され、成功として返されている。
+502・503・504 で body が契約の型に一致しない応答が、宣言の有無に関わらず、通信の不成立と同じ想定された失敗の Result になっている。
+それ以外の status の宣言していない応答、宣言した status で body が契約の型に一致しない応答、`PARSE_ERROR` の error が、欠陥として投げられている。
+host の transport が自身の error 型で reject した通信の不成立だけが、`RestError` の分類と混ざらず、想定された失敗として Result で返されている。
+要求の組立で throw された error が、欠陥として投げられている。
+呼び出しごとの signal が、transport が request の `abortSignal` に載せる形で与えられている。
+`RestError` と `PARSE_ERROR` の error が中断の判定より先に分類され、中断が coordination の「取り消し」に従って扱われている。
+宣言した各 status、宣言していない 502・503・504 とそれ以外の status、502・503・504 と宣言した成功・失敗の status のそれぞれで契約の型に合わない body、表記の違う content-type の宣言した成功の応答、body が JSON として読めない応答、本文の途中での切断、接続の失敗、要求の組立の失敗、自身の上限の超過、取り消し、応答を受け取り終えた後の取り消し、既定の pipeline の再試行の待機中の abort と応答の受領直後の abort、上流の期限の伝播として受け取った signal の abort、その transport が持つ場合の transport 自身の timeout と取り消しによる中断の各場合が、実際の HTTP 応答で意図した分類になることが検証されている。
+
+### 禁止事項
+成功の body を、検証せずに契約の型として信頼すること。
+throw された `RestError` を、status と body を契約の schema と照合せずに、宣言した失敗または欠陥へ振り分けること。
+`RestError` の status の範囲で、宣言した失敗と欠陥を分類すること。
+502・503・504 で body が契約の型に一致しない応答を、欠陥にすること。
+通信の不成立と時間上限の超過を、`RestError` の分類へ混ぜること。
+中断の判定を、`RestError` の分類より先に行うこと。
+
+### 行動
+client の呼出しを `Result.wrapAsync` に渡す関数リテラルへ入れ、error mapper で、`RestError` を契約の schema と照合して宣言した失敗へ写す。
+成功の body も生成した schema で検証し、宣言した成功に一致する `RestError` は関数リテラルの内側で成功の値に戻し、502・503・504 以外で契約と一致しない body、宣言していない応答、`PARSE_ERROR` の error を欠陥として再 throw する。
+502・503・504 で body が契約の型に一致しない応答と通信の不成立を想定された失敗へ写す。
+`RestError` と `PARSE_ERROR` の error を中断の判定より先に分類し、中断を coordination の「取り消し」に従って扱う。
+実際の HTTP 応答で、宣言した各 status、宣言していない 502・503・504 とそれ以外の status、契約の型に合わない body、表記の違う content-type、JSON として読めない body、本文の途中での切断、接続の失敗、要求の組立の失敗、自身の上限の超過、取り消し、応答を受け取り終えた後の取り消し、既定の pipeline の再試行の待機中の abort と応答の受領直後の abort、上流の期限の伝播として受け取った signal の abort、その transport が持つ場合の transport 自身の timeout と取り消しによる中断を起こし、分類を検証する。
