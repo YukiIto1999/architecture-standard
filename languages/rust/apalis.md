@@ -20,7 +20,7 @@ job の payload は、worker が実際に取り出す経路で、payload が宣�
 拒否は再試行しても回復しない失敗であり、[resilience](../../concerns/resilience/dead-letter-exit.md) の「再試行の出口を持つ」に従って行き止まりへ送る。
 一時的な旧版対応の撤去は、[messaging](../../concerns/messaging/event-contract-versioning.md) の「イベント契約を版で進化させ、寛容に読む」に従い、発行と再投入の停止後に、outbox を含む全配送先に未完了の旧版が残らないことを確かめて行う。
 処理も契約上の終了も経ていない job を削除して、旧版の残存をなくさない。
-履歴の読み出し変換は、この撤去の対象に含めず、[persistence](../../concerns/persistence/read-time-upcasting.md) の「追記した事実の版を読み出しで現在へ変換する」に従い、保持・監査・回復の契約が旧版の解釈を必要とする間は存続させる。
+履歴の読み出し変換は、この撤去の対象に含めず、[persistence](../../concerns/persistence/fact-preserving-migrations.md) の「保存済みの事実を意味と値を保って移行する」に従い、保持・監査・回復の契約が旧版の解釈を必要とする間は存続させる。
 再配送契約を持つ source の event は durable inbox の容量を予約し、payload の commit 後だけ upstream delivery ack を返す。
 inbox processing completion と処理 item の削除は、処理結果と処理済み記録の commit 後だけ行う。
 外部効果には、配備上の consumer 名に依存しない安定した effect operation の識別子と event ID から作る冪等キーを渡す。

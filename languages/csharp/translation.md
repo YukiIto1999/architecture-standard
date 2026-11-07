@@ -94,4 +94,4 @@ internal static class CreateUserMapper
 ## 参照
 境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect/README.md)、契約の置き場は [structure/contracts](../../structure/contracts/layout.md) に従う。
 互換の隔離と業務上の不明の扱いは [separation](../../principles/separation/compatibility-isolation.md) の「正本を互換から独立させる」に従う。
-一時的な旧版対応の撤去は [messaging](../../concerns/messaging/event-contract-versioning.md) の「イベント契約を版で進化させ、寛容に読む」、保持する旧版の事実の解釈は [persistence](../../concerns/persistence/read-time-upcasting.md) の「追記した事実の版を読み出しで現在へ変換する」に従う。
+一時的な旧版対応の撤去は [messaging](../../concerns/messaging/event-contract-versioning.md) の「イベント契約を版で進化させ、寛容に読む」、保持する旧版の事実の解釈と意味を保つ保存形式の移行は [persistence](../../concerns/persistence/fact-preserving-migrations.md) の「保存済みの事実を意味と値を保って移行する」に従う。

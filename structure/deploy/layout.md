@@ -85,7 +85,7 @@ server と worker の成果物は、OS の宣言が起動し、OS が持つ起�
 成果物の semantic versioning による版づけと不変性は [concerns/security](../../concerns/security/README.md) に、generated の drift 検査は [contracts/generated](../contracts/generated.md) に従う。
 配備先の desired state を、宣言として版で管理する。
 running な配備先を、手続きで直接書き換えない。
-反映は、準備の面が処理可能を宣言してから振り分け、全インスタンスの同時離脱を避ける。
+無停止を要件とする反映では、準備の面が処理可能を宣言してから振り分け、全インスタンスの同時離脱を避ける。
 回帰は、新しい版を切らず、前の不変な版の desired state へ宣言を戻して反映する。
 反映と回帰と migration を行う時点の順序は、[process/release](../../process/release.md) が定める。
 独立した migration の集合の適用計画は delivery の反映定義に含め、各所有者の artifact を入力にして順に適用する。
@@ -96,7 +96,7 @@ delivery の内部は、反映する配備先の単位に対応させて分け�
 delivery には、その project の配備への反映定義だけを置く。
 配備先の種別に共通する反映は、採用した tool の標準機構を再利用し、配備先ごとに同じ機構の実装を複製しない。
 不足を補う技術機構の成立条件と正本の管理は [libs](../libs/layout.md) に従い、独立した repository や公開を成立条件にしない。
-migration が満たす拡張・移行・収縮の段の区切りは [concerns/migration](../../concerns/migration/README.md) に従う。
+停止を伴う切替と新旧が併存する切替の条件、および併存時の拡張・移行・収縮の段の区切りは [concerns/migration](../../concerns/migration/README.md) に従う。
 
 ## provenance
 

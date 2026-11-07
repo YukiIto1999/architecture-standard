@@ -8,7 +8,7 @@ concerns の [persistence](../../concerns/persistence/README.md) が永続デー
 ## 規律
 
 - [整合性を集約境界に閉じる](./aggregate-integrity.md) — 機械+レビュー(同時確定の失敗注入テスト+境界と確定範囲のレビュー)
-- [データを事実・状態・時間で分類する](./fact-state-time.md) — レビュー(分類のモデリングレビュー)
+- [データを事実・状態・時間で分類する](./fact-state-time.md) — レビュー(業務上の確定の境界と分類のモデリングレビュー)
 - [業務事実と現在情報を分けて保持する](./preserve-facts-and-current-state.md) — 機械+レビュー(実 datastore の消去・競合・原子性・保持期限削除の検証と派生値の再構築検証+保持契約のレビュー)
 - [今の状態を事実の行から導く](./derive-state-from-facts.md) — 機械+レビュー(実 datastore の期間の判定と閉じ方の検証+状態の記録の不在のレビュー)
 - [整合性をデータ層の制約で守る](./database-integrity.md) — 機械+レビュー(実 datastore 制約テストと手続きの不在の検査+守らない条件の記録のレビュー)

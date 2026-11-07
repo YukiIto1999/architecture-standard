@@ -85,9 +85,10 @@ HTTP の request・response の語彙を、canonical に持ち込まない。
 恒久的な互換ラッパーや互換専用の層を作らない。
 版を、URL の path へ刻まない。
 互換は、契約の進化と移行の期限で扱う。
-破壊的な変化の切り替えは、受け入れの拡張、既定の切り替え、旧の収縮の順に進める([principles/evolution](../../principles/evolution/README.md) に従う)。
+破壊的な変化の切り替えでは、新旧の契約を使う consumer の併存の有無を確定し、併存する間は受け入れの拡張、既定の切り替え、旧の収縮の順に進める([principles/evolution](../../principles/evolution/README.md) に従う)。
+併存しない切り替えでは、切り替えに関係する全 consumer の停止と再開条件を確定する。
 この移行の期限は現行の公開契約を切り替えるために定め、保存事実の保持・回復に必要な旧版の解釈の撤去期限にはしない。
-保存事実の版の解釈は [concerns/persistence](../../concerns/persistence/read-time-upcasting.md) の「追記した事実の版を読み出しで現在へ変換する」に従う。
+保存事実の版の解釈と、意味を保つ保存形式の移行は [concerns/persistence](../../concerns/persistence/fact-preserving-migrations.md) の「保存済みの事実を意味と値を保って移行する」に従う。
 制約の変更の互換性は、リクエストとレスポンスで向きが逆になる。
 リクエストの受け入れを広げる変更と、レスポンスの確定を強める変更は互換である。
 リクエストを狭める変更と、レスポンスを広げる変更は破壊的であり、版を分ける。

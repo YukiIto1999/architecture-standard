@@ -21,7 +21,7 @@ deserialize は契約の形式と制約を検証し、生成 DTO からコンテ
 `Option` による不在は契約が定める意味と範囲で使い、旧版との互換のためだけに必須項目を任意にしない。
 未指定と null は [canonical](../../structure/contracts/canonical.md) の「値の不在」に対応させ、契約上必要な区別を生成 DTO と deserialize の過程で失わない。
 旧版の payload を受ける互換構造は境界に閉じ、旧版の契約から導けない事実を既定値で作らず、現在の構造へ写してから、内側へ現在の検証済みの型だけを渡す。
-保持する履歴の旧版の読み出し変換は、[persistence](../../concerns/persistence/read-time-upcasting.md) の「追記した事実の版を読み出しで現在へ変換する」に従い、保持・監査・回復の契約が旧版の解釈を必要とする間は存続する。
+保持する履歴の旧版の読み出し変換は、[persistence](../../concerns/persistence/fact-preserving-migrations.md) の「保存済みの事実を意味と値を保って移行する」に従い、保持・監査・回復の契約が旧版の解釈を必要とする間は存続する。
 配送の一時的な互換対応の撤去は、[messaging](../../concerns/messaging/event-contract-versioning.md) の「イベント契約を版で進化させ、寛容に読む」に従い、履歴の読み出し変換の存続とは別に判断する。
 ドメイン型には直列化の derive を直接付けず、外部表現の命名や形式は生成 DTO と binding 側に置く。
 
