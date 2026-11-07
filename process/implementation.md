@@ -12,6 +12,8 @@
    [design](./design.md) で定めた全体要件との対応から、その単位が満たす受入条件と未達の範囲を確認する。
 2. 変更がどのアクターのどのuse-caseに属するかを答え、答えられなければ [design](./design.md) へ戻る([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
 3. 着手時点で分かっている、検証すべき振る舞いを、テストリストに列挙する。
+   各項目に仕様上の根拠、入力、期待結果、観測する公開境界と既存の検査を対応付け、新しい検査が区別する誤実装を定める。
+   意味が異なる空入力、境界、拒否、操作列と途中失敗後の結果・状態を含め、未決の期待値は実装から逆算せず [design](./design.md) へ戻す。
 4. 初回は、公開 interface を越して確かめられる最小の振る舞いをリストから選ぶ。
 5. 選んだ振る舞いについて、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の段を記載順に適用し、要求を満たす最初の段で止める。
 6. 選んだ振る舞いに、新しい依存を表す型か想定内の失敗を表す型が必要かを判断する([concerns/effect](../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に従う)。
@@ -19,7 +21,8 @@
 8. 手順7では、既存の implementation か caller が新しい型と不整合になった型検査の失敗だけを最初の赤として扱う。
 9. 既存の型で足りる場合か手順7で対象の不整合が起きない場合は、振る舞いのテストを書き、そのテストを最初の赤にする([principles/verification](../principles/verification/tests-as-design.md) の「テストを設計の道具にする」に従う)。
 10. 手順8の型検査を最初の赤にした場合は、振る舞いのテストを書き、振る舞いを満たさない最小の変更で既存の implementation と caller を新しい型へ適合させ、型検査を通してから振る舞いのテストが赤になることを確かめる。
-11. 振る舞いのテストが赤にならなければ、テストの検証力を疑って書き直す。
+11. 振る舞いのテストが赤にならなければ、既に仕様を満たしている場合と検証が不足する場合を分ける。
+    検証の不足は直し、既に成立する振る舞いへ人工的な赤を作ることを進行条件にしない。
 12. テストを通す最小の実装を書いて緑にし、形を整える判断は次の段へ譲る。
 13. 緑の間に感じた痛みと臭いを手がかりに、現在の目的に必要な構造改善を [refactoring](./refactoring.md) に従って進める。
     異なる取り消し理由を持つ改善は別の作業単位へ分け、現在の単位を 15 から 19 で検証して確定した後に着手する。
@@ -52,6 +55,7 @@
 変更したコードを、[principles/legibility](../principles/legibility/code-as-documentation.md) の「コードを第一級の文書として明瞭に書く」の完了条件と禁止事項に照合する。
 コメントを、[principles/comment](../principles/comment/README.md) の各規律の完了条件と禁止事項に照合する。
 テストの技法と有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
+局所の反復、作業単位の受入と検出力の分析は [verification](./verification.md) に従って分け、分析の全件完了を作業単位の確定条件にしない。
 公開 interface から観測できる振る舞いを変えた作業単位では、手順17で記録を取り除く前に、探索の記録が charter、触れた範囲、見つけた事象を持ち、見つけた欠陥がテストリストを経て自動の検証へ、仕様の漏れが [design](./design.md) へ移されていることを確かめる([structure/tests/methods](../structure/tests/methods.md) に照合する)。
 作業単位の終わりに、読み手がその作業単位の中だけにいた文書が残っていないことを、[principles/documentation](../principles/documentation/separate-document-types.md) の「文書の種別を分け、読み手を定める」の完了条件に照合する。
 作業単位の検証成功と commit の完了だけで全体の成果を完了とせず、全体要件と受入証拠の対応に未達や未確認が残るかを確かめる。

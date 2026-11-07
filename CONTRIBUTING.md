@@ -76,7 +76,8 @@ docs: Git の公開済み履歴を書き換える手順の追記
 コミットを作成する前に、staged な差分が一つの目的に閉じていること、および自動検査を通過することを確認します。
 
 検証入口は root の `package.json` の `verify` です。
-標準本文の形式検査、検査器の回帰検査、Skill の frontmatter と script 構文の検査を順に実行します。
+標準本文の形式検査と、Skill の frontmatter と script 構文の検査を順に実行します。
+検査器の回帰検査は、[standard-update](./skills/standard-update/SKILL.md) が定める変更条件に該当する場合に別途実行します。
 実行には Node.js、Bash、Git、fd、ripgrep と、各 script が確認する基本 command が必要です。
 
 ```bash

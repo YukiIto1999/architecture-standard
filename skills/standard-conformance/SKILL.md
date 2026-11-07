@@ -58,6 +58,8 @@ principles と concerns は概念 README の規律台帳、languages は `langua
    標準本文や source を読んだ記録は `evidence` に残し、それだけで実行や独立レビューを済ませた `checks` にしない。
    意味を伴う判断は root README の適用判断に従い、規律の条件と対象の事実から結論を導いた根拠を、`reason`、`evidence`、review の locator の参照先へ残す。
    見出しの名指しや形式検査の成功だけで適合とせず、読取、適用判断、実検証を区別する。
+   mutation 分析は、規律が定める設定、選択範囲と未分析の範囲の記録、report と status の保存、結果の取込先を照合し、分析の完了、未検出 0 件、score を適合の条件にしない。
+   未実行・中断・未分類と生の status は分析の状態として `evidence` へ残し、それだけで `not-run` や `failed` にも、製品の違反や適合にもしない。
 5. 違反を root README と process/audit の引用規則に従って記録し、project の実基線台帳と照合する。
    実行できなかった検査は `not-run`、判断できなかった規律は `unresolved` のまま残す。
 6. JSON 報告を作り、末尾の完了の判定を実際に確かめる。
@@ -192,7 +194,7 @@ root check が別の file を読む場合は、その不一致を `<standard-roo
 
 この監査が示すのは、確認した規律ごとの観測と判断である。
 引用の意味、適用判断の妥当性、証拠の真偽、列挙に現れない規範命題への実検査は保証しない。
-project の analyzer や実行テスト、独立レビューの代わりではなく、すべての設計思想を機械検証したことにもならない。
+project の analyzer や実行テスト、独立レビュー、mutation 分析の代わりではなく、すべての設計思想を機械検証したことにもならない。
 
 ## Non-goals
 

@@ -35,7 +35,8 @@ generated が canonical と binding(http・protocol)から外れていないこ�
 arch は、[skeleton](../skeleton.md) と各部の layout、[concerns/dependency](../../concerns/dependency/README.md) が定める依存と境界の禁止を、機械で検証する。
 arch の検査は repository の source と manifest を読むため、hermetic でなければ Medium に置き、実行する段は [process/verification](../../process/verification.md) が定める。
 viewer と extension が特定 host の API や型を参照しないことも、arch で検証する。
-e2e は、critical path の最小の smoke と visual だけに絞る。
+e2e は、公開入口から実際の構成を通した結果のうち、他の検査で保証していない性質を検証し、critical path の smoke と visual だけに限定しない。
+同じ計算の組合せを重ねず、他の検査へ移す性質と入力領域について、移管先が対象の不具合を実際に検出する証拠を [methods](./methods.md) の「テストの有効性」に従って確認する。
 利用者面の操作ごとに状態、feedback、progress が表示されるまでの時間を browser を駆動して測る検証は、e2e に置かず integration に置く。
 smoke の到達点と visual の受入判定は、[methods](./methods.md) の「利用者面の受入」に従う。
 integration は、複数の実装単位または境界を組み合わせて検証する。
@@ -49,7 +50,9 @@ performance の区画の test は size 別 runner の機能の test の集合か
 業務の受入条件は、Gherkin の feature と scenario に、前提、操作、外から観測できる結果を業務の語彙で表す。
 実装の class、DB の列、UI のクリック手順を、業務の仕様の語彙にしない。
 成功だけでなく、業務上の拒否と、結果を変える境界条件を scenario へ含める。
-実装前に scenario の期待結果を確定し、仕様の変更と実装の追随を同じ変更理由で扱う。
+テストを作る前に scenario の期待結果を確定し、仕様の変更と実装の追随を同じ変更理由で扱う。
+既存機能の修正では該当する feature と scenario を更新し、修正専用の仕様を別ファイルへ重複させない。
+通信失敗時の入力保持など、業務仕様ではない基本品質は対応するテストで保証し、その確認だけを目的として業務の feature や scenario を増やさない。
 scenario は言語固有の step binding から公開 interface を検証し、記法を揃えることと、実行や保証を実現する機構を同じにすることを混同しない。
 業務語彙の scenario は、検証する公開 interface を所有する実装単位の言語の実行系で一度だけ実行し、同じ scenario を別の言語の実行系で重ねて実行しない。
 実行系と feature、step binding、公開 interface の対応検査は [languages](../../languages/) が定め、仕様の実行を repository の検証入口へ含める。
@@ -78,7 +81,8 @@ Large runner は、local host の資源と、対象として明示した外部�
 size 別 runner の対象は、各言語の test runner が discovery で返す native test ID の集合で定義する。
 同じ native test ID を複数の size へ含めない。
 parameterized case、doctest、生成した executable spec は、runner が個別に返す ID をそのまま用いる。
-各 size の実行結果が返す native test ID の集合を、その size の discovery 集合と一致させる。
+各走行で実行する native test ID を影響範囲から選び、実行結果の集合を選択した集合と一致させる。
+未選択の ID を実行済みとせず、選択結果をその size の全域 discovery の完了と同一視しない。
 その size の区画を置いた場合に、発見件数が0件なら失敗する。
 size 別 runner は、許可していない filesystem・socket・network・process を実行環境で到達不能にし、接続を試みた test を失敗させる。
 Small の test は、実行開始後に filesystem、socket、network、別 process へ到達できない環境で動かす。
@@ -87,16 +91,17 @@ Medium の実行環境は task が用意した local host の資源だけを提�
 Large の実行環境は、対象として記録した外部資源だけを接続許可に加える。
 全 size の機能の test の discovery 集合と performance の区画の discovery 集合の和は、filter をかけない全域 discovery の native test ID 集合と一致させる。
 未分類の ID、複数 size に属する ID、配置より大きい資源を必要とした test、対象に記録していない外部資源へ接続した test は失敗する。
-サイズを分けても、各段が個別に肥大すれば配分は崩れる。
-厚みは Small に置き、上の段は絞る([principles/verification](../../principles/verification/README.md) に従う)。
+サイズは資源の分類であり、所要時間や承認する段を決めるものではない。
+公開振る舞いの Small test を厚くし、実依存でしか観測できない性質は必要なサイズで検証する。
+遅い検査の件数を減らすために、必要な実観測を省いたり fake へ替えたりしない。
 
 test が存在しない category・size の区画のフォルダは、作らない。
 
 ## 段階実行
 
 実行の順序と失敗時の停止は、[process/verification](../../process/verification.md) が定める。
-各段は、runner が許可する資源と配置が一致した test を選ぶ。
-conformance と e2e も、実依存に対応する段で実行する。
+選択した test は、実依存と配置に対応した資源を許可する runner で実行する。
+conformance と e2e の実行時点も、サイズだけでなく必要な保証と有効な証跡から決める。
 
 
 ## タスク実行の正本

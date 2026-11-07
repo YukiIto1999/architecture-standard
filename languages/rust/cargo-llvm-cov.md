@@ -21,7 +21,7 @@ region は stable で数えられる統計のうち最も細かく、一行の�
 短絡する論理式の右辺のように、実行された行の中にある未実行の区間も、region なら数に入る。
 branch は unstable で nightly toolchain を要するため、最新の stable toolchain に追随する言語の採用と両立しない。
 branch は、match の腕と or-pattern、`?`、`.await`、macro 展開が作る分岐を今も数えないため、Rust で多く現れる分岐が母数から抜けた比率になる。
-条件の真偽の片側しか実行されていない状態は region では見えないが、比較演算子と match arm guard と match の腕を変異させる cargo-mutants の検査が、同じ穴をテストの有効性の側から突く。
+条件の真偽の片側しか実行されていない状態は region では見えないが、比較演算子と match arm guard と match の腕を変異させる cargo-mutants の分析が、同じ穴をテストの有効性の側から突く。
 下限の判定を cargo-llvm-cov 自身の終了値に任せれば、report を読み直す仕組みを別に持たずに済む。
 
 ### 完了条件

@@ -18,7 +18,7 @@ Playwright の操作対象は、利用者向けの role、label、text の locat
 
 ### 根拠
 操作の入力と表示結果を同じ browser で測れば、handler の起動や server の完了でなく、利用者が状態、feedback、progress を見られるまでの時間を判定できる。
-操作ごとの計測を e2e に置くと、critical path の最小の smoke に収まらず、smoke を絞ると計測しない操作が残る。
+操作ごとの表示時刻の計測と、公開入口から業務結果までの実際の結合の検証は、観測と失敗条件が異なるため、それぞれを integration と e2e の役割に割り当てる。
 
 ### 完了条件
 利用者面の各操作の入力時刻、状態または feedback の表示時刻、1秒を超える operation の progress 表示時刻と完了時刻が、integration に置いた Playwright の test で測定され、experience の閾値と継続条件を満たしている。

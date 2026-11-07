@@ -9,7 +9,7 @@
    既存システムの意味が確立していなければ [recovery](./recovery.md) へ戻る。
 2. 候補の手段から上位の目的へ遡り、目的から例を挙げて要件へ降りる([principles/requirements](../principles/requirements/purpose-driven-requirements.md) の「目的から要件を導く」に従う)。
 3. 要件と完了条件を定める([principles/requirements](../principles/requirements/verifiable-requirements.md) の「検証できる形で要件と制約を定める」に従う)。
-   業務の受入条件は、[structure/tests](../structure/tests/layout.md) の「実行可能な仕様」に従い、実装前に具体的な前提、操作、期待結果へ落とす。
+   業務の受入条件は、[structure/tests](../structure/tests/layout.md) の「実行可能な仕様」に従い、テストを作る前に既存仕様との対応と具体的な前提、操作、期待結果を定める。
    依頼の各必須成果を出典と結び、受入条件、実現する変更単位、検証する経路へ対応させる。
    分割または再計画ではこの対応を更新し、計画から抜けた必須成果を未達として戻してから次へ進む。
 4. 対象コンテキストの語彙を確かめる([principles/naming](../principles/naming/unified-vocabulary.md) の「語彙を統一する」の行動に従う)。

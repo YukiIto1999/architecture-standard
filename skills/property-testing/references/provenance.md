@@ -13,7 +13,7 @@ Skill 本文と標準本文は独自に記述し、外部 package の本文、re
 取得した方法は採否の材料として扱い、framework の具体的な仕様や経験的な改善量は採用していない。
 契約から入力領域と oracle、操作列、縮小、分類へ進む方法の規範は `structure/tests/methods.md` に置き、Skill は実作業への適用を所有する。
 強制的な assertion の赤と検証対象の保証の違反を検出した赤を区別するため、`principles/verification/test-reliability.md` の要求と完了条件も更新した。
-検証の反復と証跡の再利用は `process/verification.md` の現行規律を使い、変更行の未検出 0 件、全量の生成 0 件の床を維持した。
+検証の反復と証跡の再利用は `process/verification.md` の現行規律を使い、検出の証拠は特定の性質と故障の対応に置き、変更全体や全量の mutation 分析の完了は求めない。
 
 往復する二つの変換が同じずれを持つ場合、定数 0 でも成り立つ比例関係、後続の clear が途中の欠落を消す操作列、全入力を棄却する生成器は、方法の限界を分ける論理的な反例である。
 これらは repository の製品欠陥や framework benchmark の報告ではない。

@@ -195,13 +195,17 @@ bash "<skill-package-root>/scripts/verify.sh" --standard-root "<standard-root>"
 ```
 
 失敗した場合は原因を直し、同じ検査を再実行して PASS になるまで完了としない。
+この PASS は標準本文の決定的な機械検査の結果であり、mutation 分析の完了や score を指さない。
+変更が製品の検証や mutation 分析の手順へ及ぶ場合も、決定的な検査の成否と分析の状態(未実行・未分類・生の status)を分けて報告し、分析の未完了を失敗または PASS と書かない。
 
-本 skill、`references/*.md`、`scripts/*` を変更した場合は、次も実行する。
+Skill、reference、script の変更では、変更の影響から追加検査を選ぶ。
 
-```bash
-bash "<skill-package-root>/scripts/verify-test.sh" --standard-root "<standard-root>"
-bash "<skill-package-root>/scripts/skill-package-check.sh" --standard-root "<standard-root>"
-```
+- Skill の手順を変えた場合は、代表例と近接する非対象例へ適用し、判断と返却結果を確認する。文章の変更だけを理由に、変更していない検証器の全回帰を繰り返さない。
+- 検証器、その回帰 fixture、または検証器が判定する形式・schema・台帳の契約を変えた場合は、`bash "<skill-package-root>/scripts/verify-test.sh" --standard-root "<standard-root>"` で回帰を確認する。本文や reference だけの差分でも判定契約への影響があれば対象に含める。
+- package の file を変えた場合は、`bash "<skill-package-root>/scripts/skill-package-check.sh" --standard-root "<standard-root>"` で frontmatter、配置と script 構文を確認する。
+
+検査の選択理由と既存証跡の再利用を記録し、中断した回帰は完了した case と未実行の範囲を区別する。
+上限の延長や成功済み範囲の再走行で待機を繰り返さず、必要な保証を覆う計画へ戻る。
 
 最後に変更 file を standard-audit の scoped audit で照合する。
 subagent が利用できれば変更の経緯を持たない reviewer に依頼し、利用できなければ独立 session、どちらも利用できなければ自己監査へ代替する。

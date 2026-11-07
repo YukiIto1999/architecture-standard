@@ -17,7 +17,8 @@ release は、成果物の検証から配備先への反映まで、戻せる状
 
 ## 確認点
 
-release する commit が、[verification](./verification.md) の「順序」の T1 と T2 に合格していることを確かめる。
+release する commit と成果物について、[verification](./verification.md) に従う製品受入の証拠を照合し、配備先で必要な確認を行う。
+有効な証跡を再利用し、release の直前に全量検証を走り直すことや mutation 分析の完了待ちを共通条件にしない。
 反映時の生存と準備は、[concerns/lifecycle](../concerns/lifecycle/README.md) の完了条件と禁止事項に照合する。
 既知の脆弱性の検査は、[concerns/security](../concerns/security/README.md) の完了条件と禁止事項に照合する。
 migration の段の区切りは、[concerns/migration](../concerns/migration/README.md) に照合する。

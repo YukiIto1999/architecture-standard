@@ -41,7 +41,7 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 | [playwright-bdd](./playwright-bdd.md) | Gherkin の feature を Playwright Test のテストファイルへ変換し、UI smoke を Gherkin で書けるようにする変換器である | TypeScript は playwright-bdd である |
 | [playwright](./playwright.md) | UI をブラウザ越しに操作し見た目と疎通を確かめる実行系である | TypeScript は Playwright である |
 | [solidjs](./solidjs.md) | GUI の surface を組む骨格である | SolidJS 2.0 系、@solidjs/web、@solidjs/vite-plugin である |
-| [stryker-js](./stryker-js.md) | テストが振る舞いを固定しているかを測る mutation 検査である | TypeScript は StrykerJS である |
+| [stryker-js](./stryker-js.md) | テストの検出力を評価し改善する mutation 分析である | TypeScript は StrykerJS である |
 | [tailwind](./tailwind.md) | styling を組む機構である | TypeScript は Tailwind CSS の Vite plugin である |
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | TypeScript は testcontainers の node 実装である |
 | [ts-results-es](./ts-results-es.md) | viewer・extension・host の軽い役割に見合う、副作用と想定内失敗を型で表す機構である | TypeScript は ts-results-es である |
