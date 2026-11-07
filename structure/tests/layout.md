@@ -35,6 +35,8 @@ generated が canonical と binding(http・protocol)から外れていないこ�
 arch は、[skeleton](../skeleton.md) と各部の layout、[concerns/dependency](../../concerns/dependency/README.md) が定める依存と境界の禁止を、機械で検証する。
 arch の検査は repository の source と manifest を読むため、hermetic でなければ Medium に置き、実行する段は [process/verification](../../process/verification.md) が定める。
 viewer と extension が特定 host の API や型を参照しないことも、arch で検証する。
+コンテキスト間の参加操作への接続は、[core/application](../core/application.md) と [core/layout](../core/layout.md) に照らし、組立点以外のコンテキスト間参照と内部の型への到達を arch で拒む。
+shared-kernel の型に要求する意味と変更理由の同一性は、記録と型の対応を機械で照合し、共有する意味の適否をレビューで判定する。
 e2e は、公開入口から実際の構成を通した結果のうち、他の検査で保証していない性質を検証し、critical path の smoke と visual だけに限定しない。
 同じ計算の組合せを重ねず、他の検査へ移す性質と入力領域について、移管先が対象の不具合を実際に検出する証拠を [methods](./methods.md) の「テストの有効性」に従って確認する。
 利用者面の操作ごとに状態、feedback、progress が表示されるまでの時間を browser を駆動して測る検証は、e2e に置かず integration に置く。

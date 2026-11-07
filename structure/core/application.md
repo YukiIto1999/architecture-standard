@@ -10,7 +10,7 @@ port は、use-case や workflow が要求する能力を宣言する interface 
 port は、業務上の操作や進行の記録といった能力の単位で分割し、技術名で分割しない。
 port の名前は、能力を表す語で付ける。
 port のメソッドは、副作用を effect 型で返す。
-port の実装は infrastructure が持つ。
+外部の I/O を実装する adapter は infrastructure に置き、公開 application 契約どうしを結ぶ adapter は [composition](./composition.md) に置く。
 application は port の抽象のみに依存し、adapter の実装型を参照しない。
 effect の規律は [concerns/effect](../../concerns/effect/README.md) に従う。
 
@@ -19,12 +19,15 @@ effect の規律は [concerns/effect](../../concerns/effect/README.md) に従う
 use-case は、単一の業務動作である。
 use-case は、port と domain、shared、および libs の公開技術 API のみに依存する。
 use-case は、別の use-case を参照しない。
-use-case の強整合な書き込みの範囲は [aggregate-integrity](../../principles/data/aggregate-integrity.md) の「整合性を集約境界に閉じる」に従う。
+use-case は、業務動作の要求から同時に確定する範囲を決め、複数のモデルの判断を呼んで一度に確定してよい。
+他のコンテキストの状態変更を同時に確定する必要があるときは、他のコンテキストの参加操作を、自分の port を通して同じ確定に含める。
+確定の範囲の判断は [aggregate-integrity](../../principles/data/aggregate-integrity.md) の「整合性を集約境界に閉じる」に、競合制御は [concerns/transaction](../../concerns/transaction/single-write-path.md) の「整合性を一つの書き込みパスに閉じる」に従う。
 use-case は、一つの use-case を一つのフォルダに置く。
 port への到達に共有の wrapper 層(capability accessor)を挟まず、use-case は port の抽象を直接受ける。
 use-case の名前は、単一の動作を表す動詞と名詞の組とする。
 use-case は、モデリング上のアクターの目的と変更理由、開始の契機、成功と拒否、確定する業務事実から分ける。
 アクターの人数、認証 role、table、entity の数だけで use-case を分割しない。
+複数の domain モデルの判断を要することだけを理由に、use-case の分割も、モデルの統合も、集約の追加も決めない。
 分割の判断は [principles/separation](../../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う。
 命名は [principles/naming](../../principles/naming/README.md) に従う。
 表記の規約は [languages](../../languages/) が定める。
@@ -44,7 +47,29 @@ workflow は、別のコンテキストの use-case または workflow を参照
 workflow は、別の workflow を呼ばない。
 workflow は、application 自身がトランザクションを制御する use-case の公開入口を受け取り、その実装や driver を構築しない。
 一つの workflow は、一つの業務目的と一つの再実行単位に閉じる。
-コンテキストをまたぐ状態変更は、integration event を outbox に確定し、受信側の application から新しい処理として開始する。
+コンテキストをまたぐ状態変更のうち同時の確定を要さないものは、integration event を outbox に確定し、受信側の application から新しい処理として開始する。
+同時の確定を要するものは、確定を所有する use-case が、参加操作として同じ確定に含める。
+
+## 参加操作
+
+参加操作は、確定を所有する別のコンテキストの use-case の確定に、自身のコンテキストの状態変更を含めるための、公開面の入口である。
+参加操作は、自身のコンテキストの domain の純粋な関数で判断し、自身の port を通して書き込む遅延した効果の記述を返す。
+参加操作は、確定を所有する use-case と同じ確定の抽象を、要求する依存として型に出す。
+同じ確定の抽象は、特定のコンテキストが宣言する port でなく、業務を知らない libs の公開技術能力とし、参加する全てのコンテキストが同じものを使う。
+libs に該当する機構がなければ、[libs](../libs/layout.md) の規則に従って、業務を知らない機構として置く。
+参加操作は、transaction の開始・確定・中止を行わず、自分で実行しない。
+参加操作は use-case でなく、単独の確定を持たず、単独の公開入口にも外部へ公開する operation にも置かない。
+参加操作は、自身のコンテキストが所有する公開契約として入力・outcome・型付き拒否を持ち、自身の内部のドメイン型と driver の型を公開しない。
+確定を所有する use-case は、参加の能力を、自分のコンテキストの語彙の port 契約として宣言する。
+port 契約と参加操作の契約が異なるときは、[composition](./composition.md) 単位のコンテキスト間の境界 adapter が、確定を所有する側の意味を守る向きで型・値・型付き拒否を写し、同じ確定の抽象を参加操作へ接続する。
+二つの契約が同一なら、変換や wrapper を足さず、port へ参加操作を直接結ぶ。
+shared-kernel は、意味と変更理由の同一を記録した値を実際に共有する場合にだけ使い、参加の前提にしない。
+コンテキストは、他のコンテキストの型・use-case・参加操作を参照せず、依存は循環しない。
+参加が拒否または失敗したときは、確定を所有する use-case が確定せずに全体を中止する。
+独立して確定する別の use-case や workflow を外側から包んで、一つの確定に見せない。
+同時の確定を要さない連携は、参加操作でなく integration event と workflow に従う。
+参加操作を使う関係は、上流と下流、参加する理由、写像する契約、共有する型を、[principles/separation](../../principles/separation/context-relationships.md) の「コンテキスト間の関係を明示して選ぶ」に従って project の決定の記録に残す。
+参加を含む確定の競合制御と中止は [concerns/transaction](../../concerns/transaction/application-owned-transactions.md) の「トランザクションの制御を application に置く」に従う。
 
 ## 入力構築と保護の適用点
 
@@ -75,6 +100,8 @@ use-case は、業務の判断を domain の純粋関数に閉じる。
 ## トランザクション
 
 use-case は、同時に確定する変更と事実、判断に必要な読み取り、確定条件を所有し、開始から確定または中止までを制御する。
+同時に確定する範囲は、業務動作の要求から決め、一つの集約、一つの table、一つのコンテキストの単位に機械的に合わせない。
+複数のモデルの判断を要する use-case は、各モデルの domain の純粋な関数を呼んで結果を組み、必要な変更を同じ確定に含める。
 制御は、port または libs の公開技術能力の抽象を通して、言語が定める遅延した効果として組む。
 domain の純粋な判断は、状態と入力から新しい状態、事実、拒否を返し、transaction の境界を受け取らない。
 application が定める開始と transaction scope の抽象と、具体的な DB driver の transaction handle を区別し、後者を application の Interface へ流さない。
@@ -84,6 +111,8 @@ workflow の step の確定は、workflow と step の組の一意性、状態�
 競合、確定前の拒否、失敗、取消では中止を制御し、確定の結果が不明なときは成功や確実な未確定へ丸めない。
 制御の所有は [concerns/transaction](../../concerns/transaction/application-owned-transactions.md) の「トランザクションの制御を application に置く」に従う。
 workflow は複数の use-case を一つのトランザクションで包まず、各 use-case の確定点と公開 outcome を用いて進行する。
+同時に確定する必要がある複数のモデルは、workflow が複数の use-case を包んで確定するのでなく、一つの use-case が確定の範囲に含める。
+他のコンテキストの状態変更を同じ確定に含める use-case は、[参加操作](#参加操作)を使う。
 途中からの再開が必要な流れは、integration event までを永続する区切りとし、受信側の新しい workflow として再開する。
 同じ workflow を再実行する場合は、workflow の識別子と進行済みの確定点を永続し、完了した use-case を重ねて実行しない。
 workflow は、子 use-case の呼び出しに workflow の識別子と step の識別子を渡す。

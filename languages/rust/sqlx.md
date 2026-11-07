@@ -70,12 +70,17 @@ let profile = sqlx::query_as!(
 ### 要求
 transaction の制御の所有は、[transaction](../../concerns/transaction/application-owned-transactions.md) の「トランザクションの制御を application に置く」に従う。
 application が宣言した scope の port を、infrastructure が sqlx の Transaction を内側に持つ型で実装し、use-case が begin、読み、書き込み、commit、abort をその port を通して制御する。
+use-case はこれらを `async fn` の Future として組み、呼んだだけでは begin も I/O も起きず、runtime が poll したときだけ始まる。
+複数のモデルの判断を要する use-case も、同じ scope の中で各モデルの書き込みを行い、一度の `commit` に含める。
+他のコンテキストの参加操作が使う store は、確定を所有する use-case の scope と同じ sqlx の Transaction の中で書き、begin・commit・rollback を呼ばない。
+同じ Transaction の共有は、libs の公開技術能力が表す同じ確定の抽象を通し、application の型とドメイン型に sqlx の型を現さない。
 sqlx の Transaction と `sqlx::Error` は、application・domain・composition の型とシグネチャに現さず、scope の実装の内側に閉じる。
 scope の操作の失敗は、use-case が分岐に使う分類の閉じた型で表し、`sqlx::Error` の値と文字列を載せない。
 sqlx の生の診断情報は、infrastructure が [observability](../../concerns/observability/README.md) の境界の殻で扱う。
 store は、scope が持つ Transaction の中で書き、begin・commit・rollback を呼ばない。
 scope の `commit` と `abort` は `self` を消費し、確定または中止の後に scope を使えない形にする。
-`Connection::transaction` のような closure を受ける API へ use-case の本体を渡し、外側に begin と commit を持たせない。
+`Connection::transaction` のように、closure の `Ok` か `Err` から commit か rollback かを既定で決める API へ use-case の本体を渡さない。
+closure を受けることだけを理由にせず、確定の条件と `commit` の結果の分類と `abort` の失敗の別観測を use-case が持ち続けられるかで判断する。
 commit は、`Ok` を返したときだけ確定とする。
 commit の失敗は、実装が確定していないと確認できる場合だけ `NotCommitted` に、確認できない場合は `OutcomeUnknown` に写す。
 `sqlx::Error::Database` であることだけでは、確定していないと判断しない。
@@ -89,7 +94,8 @@ begin から commit または abort までを use-case が書けば、読み、d
 Transaction を scope の実装の内側に閉じれば、application と domain が sqlx の型に依存しない。
 `sqlx::Error` を業務の失敗へ文字列化すると、分類に必要な型情報が失われ、接続情報などの機微な値が漏れる恐れがある。
 `commit` と `rollback` は `self` を消費するので、確定または中止の後の scope の再利用が型検査で止まり、commit が `Ok` を返した後に scope を使う後始末が残らない。
-closure を受ける API に use-case の本体を渡すと、外側の呼び出しが全体を包み、読み、判断、書き込み、確定の順と確定しない終わり方が use-case から見えなくなる。
+closure の結果から commit か rollback かを既定で決める API に use-case の本体を渡すと、確定の条件と確定しない終わり方が use-case から見えなくなり、`commit` の結果の分類と `abort` の失敗の別観測も持てない。
+closure を受けること自体ではなく、確定条件の所有で判断する。
 commit も rollback もされずに drop された Transaction は、sqlx が rollback する。
 drop は非同期の rollback の完了を待てないので、取り消された後に rollback を済ませる経路では、`abort` を await する。
 開始済みの commit を drop すると、確定したかが分からない状態を自ら作る。
@@ -105,7 +111,9 @@ use-case が、scope の port を通して begin、読み、domain の判断、�
 domain・application・composition の型とシグネチャに、sqlx の型が現れていない。
 scope の操作の失敗が、分類の閉じた型で返り、`sqlx::Error` の値と文字列を含んでいない。
 store が、begin・commit・rollback を呼んでいない。
-`Connection::transaction` のような closure に use-case の本体を渡す controller が、どの層にもない。
+closure の結果から commit か rollback かを既定で決める API(`Connection::transaction` など)へ use-case の本体を渡す機構が、どの層にもない。
+複数のモデルの書き込みを含む use-case が、同じ scope の Transaction で一度だけ commit している。
+参加操作が使う store が、確定を所有する scope と同じ sqlx の Transaction で書き、begin・commit・rollback を呼んでいない。
 確定点が、一つである。
 commit を始める前に終わる拒否、競合、失敗、欠陥、取り消しで、現在情報の更新も業務事実の追記も outbox の記録も確定していない。
 `abort` に失敗を注入すると、元の終わりが保たれ、`abort` の失敗が別に返されている。
@@ -118,7 +126,7 @@ commit が `Ok` を返した後に使う scope の後始末がなく、確定済
 store が、Transaction の begin・commit・rollback を呼ぶこと。
 domain と application が、sqlx の Transaction と `sqlx::Error` を受け取ること、または名指しすること。
 composition が、Transaction を begin または commit すること。
-closure を受ける API で use-case の本体を包み、外側に begin と commit を持たせること。
+closure の結果から commit か rollback かを既定で決める API で use-case の本体を包み、確定の条件と commit・abort の結果の分類を use-case から外すこと。
 `sqlx::Error` の値や文字列を、業務の失敗に載せること。
 `sqlx::Error::Database` であることだけを根拠に、commit の失敗を確定していないと判断すること。
 commit の応答を受け取れない失敗を、成功、`NotCommitted`、取り消しのいずれかに写すこと。
@@ -129,6 +137,7 @@ commit の応答を受け取れない失敗を、成功、`NotCommitted`、取�
 use-case ごとに、必要な操作と commit と abort を持つ scope の port と、scope を begin する port を application に宣言する。
 scope の操作の失敗は、use-case が分岐に使う分類の enum にし、commit の失敗と abort の失敗は別の型にする。
 use-case で、scope を begin し、読み、domain の同期の関数へ値を渡し、判断の結果を書いて commit する。
+複数のモデルの判断を要する use-case は、同じ scope の port に各モデルの操作を宣言し、全ての書き込みを済ませてから一度だけ commit する。
 commit を始める前に終わるときは、`abort` を await して、元の終わりと `abort` の失敗を一緒に返す。
 infrastructure で、scope の port を Transaction を持つ型で実装し、store の関数へ scope の Transaction を渡す。
 `commit` は `Ok` だけを確定とし、失敗は未確定を確認できる根拠があるときだけ `NotCommitted`、それ以外は `OutcomeUnknown` へ写す。
@@ -360,6 +369,7 @@ payload commit と処理結果 commit の各直前・直後の停止、および
 同じ集約への同時の更新は [transaction](../../concerns/transaction/single-write-path.md) の「整合性を一つの書き込みパスに閉じる」に従って制御し、版で衝突を検出する集約、共有の鍵か鍵なしで更新する可変属性の行、一回だけ起きる業務事実を追記する集約では競合の Result に写す。
 集約の鍵は、scope の sqlx の Transaction の中で、検証より前に、排他なら `pg_advisory_xact_lock(bigint)`、共有なら `pg_advisory_xact_lock_shared(bigint)` で取る。
 集約の鍵の bigint は、集約の種類と集約の識別子から、種類の違う集約の鍵が衝突しないように一意に導き、その導出をコードの一か所に定義する。
+複数のコンテキストの集約の鍵を同じ確定で取る場合は、鍵の導出を、コンテキストを区別する種類を含めて、参加する全てのコンテキストが参照できる libs の公開技術能力に一か所で定義する。
 一つの書き込みが複数の鍵を取る場合は、全ての書き込み経路で bigint の値の昇順に取る。
 多数の鍵は、昇順に並べた bigint の配列を `unnest` で展開する一つの `SELECT` で取り、その文の中で並べ替えない。
 鍵を取った後の検証の読み取りは、READ COMMITTED の Transaction で行う。
@@ -374,7 +384,7 @@ datastore が付ける活動の時刻から規則で決まる業務事実の値(
 版で競合を検出する集約へ書く全ての書き込み経路は、正本に応じた同じ検出を通す。
 必要な業務事実は、現在情報の書き込みと同じ sqlx の Transaction で追記する。
 業務事実を必要としない現在情報の更新は、集約に定めた競合制御を通し、業務事実を追記せず `UPDATE` で書いてよい。
-競合または失敗のとき、use-case は commit せず scope を abort し、現在情報の更新、業務事実の追記、outbox の記録のどれも残さない。
+競合または失敗のとき、use-case は commit せず scope を abort し、現在情報の更新、業務事実の追記、outbox の記録のどれも残さず、複数の集約を含む確定ではどの集約の書き込みも残さない。
 公開する integration event は、業務事実の追記と別に、現在情報の書き込みと同じ Transaction で outbox へ記録する。
 
 ### 根拠
@@ -422,6 +432,7 @@ version の制約と一回だけであることを守る主キー以外の制約
 集約の鍵を取る全ての書き込みが、scope の sqlx の Transaction の中で、use-case が検証より前に呼ぶ操作により、排他は `pg_advisory_xact_lock(bigint)`、共有は `pg_advisory_xact_lock_shared(bigint)` で鍵を取っている。
 複数の鍵を取る書き込みが、全ての書き込み経路で bigint の値の昇順に鍵を取っている。
 集約の鍵の bigint が、集約の種類と識別子から一意に導かれ、種類の違う集約の鍵が衝突せず、識別子が下位の bit の範囲に収まらないとき導出が鍵を作らず、導出がコードの一か所にだけ定義されている。
+複数のコンテキストの集約の鍵を同じ確定で取る書き込みが、参加する全てのコンテキストで共通の導出を使い、一つの値の空間の昇順で鍵を取っている。
 鍵を取った後の検証が READ COMMITTED で行われ、鍵を待つ間に確定した書き込みを読んでいる。
 書き込み経路の role が、事実の行への `UPDATE` と `DELETE` の権限を持たないまま集約の鍵を取り、事実の行に `SELECT ... FOR UPDATE` を使っていない。
 datastore が付ける業務事実の時刻の列の既定値が `clock_timestamp()` であり、鍵を待った書き込みが付けた時刻が、待つ間に確定した業務事実の時刻以後である。
@@ -429,6 +440,7 @@ datastore が付ける業務事実の時刻の列の既定値が `clock_timestam
 識別子を datastore が採番する列だけを持つ関係への追記が、識別子を指定していない。
 必要な業務事実を伴う更新で、現在情報の更新と業務事実の追記が、同じ sqlx の Transaction で確定している。
 競合または失敗した更新が、現在情報の更新も業務事実の追記も outbox の記録も残していない。
+複数の集約を含む確定で、一つの集約の競合または失敗を注入すると、含めた全ての集約の書き込みが確定していない。
 業務事実を必要としない現在情報の更新が、集約に定めた競合制御を通し、業務事実の追記なしで `UPDATE` により書かれている。
 公開する integration event の outbox への記録が、業務事実の追記と別に、現在情報の書き込みと同じ Transaction で行われている。
 
@@ -447,6 +459,7 @@ outbox への integration event の記録を、必要な業務事実の追記の
 複数の鍵を、bigint の値の昇順以外の順序で取ること。
 集約の鍵の bigint を、集約の種類を含めずに識別子だけから導くこと。
 集約の鍵の導出を、書き込み経路ごとに書き写すこと。
+複数のコンテキストの集約の鍵の導出を、コンテキストごとに別々に定義すること。
 集約の鍵で競合制御する集約で、鍵を取る前に読んだ状態や、REPEATABLE READ 以上の snapshot を根拠に、検証して確定すること。
 datastore が付ける業務事実の時刻の列の既定値に、`CURRENT_TIMESTAMP`、`now()`、`statement_timestamp()` を使うこと。
 
@@ -467,6 +480,7 @@ datastore が付ける業務事実の時刻の列は `DEFAULT clock_timestamp()`
 集約の鍵を排他で取る集約では、全経路での直列化と鍵の後の検証、書き込み経路の role が事実の行へ `UPDATE` も `DELETE` もできないこと、複数の鍵を一つの順序で取ること、種類の違う集約の鍵が衝突しないこと、一回だけ起きる業務事実の二度目の追記で名前付きの主キーの違反だけが競合に写ることを結合テストで確認し、排他の鍵の下で更新する判定の対象の行への version の追加は要求しない。
 共有の鍵か鍵なしで更新する可変属性の行では、同じ行への同時の更新を結合テストで再現し、片方だけが確定して他方が競合になることを確認する。
 現在情報の更新と業務事実の追記の間の失敗は、どちらの集約でも再現する。
+複数の集約を含む確定では、含めた集約ごとの競合と失敗を注入し、全ての書き込みが残らないことを再現する。
 
 ### 例
 競合と失敗は、infrastructure の store が返す閉じた型付きの失敗で表す。

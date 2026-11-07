@@ -56,6 +56,7 @@ generic と分類したコンテキストには、業務の不変条件を持つ
 shared-kernel は、値オブジェクトの constructor・不変条件・基本演算を持つ。
 shared-kernel は、use-case と policy を持たない。
 shared-kernel へ型を置けるのは、共有する全てのコンテキストで意味と変更理由が同一だと記録した場合に限る。
+同時の確定への参加でも、shared-kernel に型を置けるのはこの条件を満たす値に限り、参加の前提にしない。
 domain event はコンテキストの内部に閉じ、integration event は公開する application が所有するため、イベントの型は shared-kernel に置かない。
 コンテキスト間の関係と型の共有の判定は [principles/separation](../../principles/separation/README.md) に従う。
 
@@ -67,10 +68,12 @@ core 直下の単位の役割を示す。
 |---|---|
 | `<context>/` | 境界付けられたコンテキストを境界ごとに置く。コンテキストは互いに参照しない |
 | `shared/` | 複数のコンテキストが共有する値・エラーの型を置く |
-| `composition/` | コンテキストと adapter の公開された構築用 API を使い、core の公開 application 入口を配線する |
+| `composition/` | コンテキストと adapter の公開された構築用 API を使い、core の公開 application 入口を配線し、同時の確定に参加するコンテキスト間の境界 adapter を持つ |
 
 同じコンテキストの複数の use-case にまたがる流れは、そのコンテキストの application workflow が担う。
-コンテキストをまたぐ状態変更は、integration event で非同期に連携する。
+コンテキストをまたぐ状態変更のうち同時の確定を要さないものは、integration event で非同期に連携する。
+同時の確定を要するものは、確定を所有する一つのコンテキストの use-case が、他のコンテキストの公開面の参加操作を、自分の port を通して同じ確定に含める。
+この連携でも、コンテキストは互いを参照せず、port と参加操作を結ぶのは composition 単位の境界 adapter であり、両方のコンテキストの公開面だけを参照する。
 
 コンテキストの境界は、言語の可視性の単位(assembly・crate・package)と一致させ、境界の遵守を可視性の機械検査に載せる。
 コンテキストに属する単体の test は、そのコンテキストの内に置き、コンテキストを跨いだ平置きにしない。
@@ -90,7 +93,7 @@ core 直下の単位の役割を示す。
 | コンテキスト | shared | 他のコンテキスト、composition |
 | shared | なし | コンテキスト、composition |
 
-コンテキストの公開面は、use-case と workflow の公開入口、公開の command・result・outcome 型、ports である。
+コンテキストの公開面は、use-case と workflow の公開入口、同時の確定に参加する参加操作、公開の command・result・outcome 型、ports である。
 コンテキストの domain は公開面に含まれず、domain event はコンテキストの内部に閉じる。
 外部へ公開する event は、application が integration event へ写像し、公開 outcome に含める。
 shared の公開面は shared-kernel である。

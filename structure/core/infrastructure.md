@@ -29,7 +29,8 @@ store は record 型を定義し、domain と record の写像を持つ。
 store は、型付きの SQL を発行する薄い adapter として書く。
 現在情報の変更、必要な業務イベント、projection、outbox を束ねる書き込みパスの制御は [application](./application.md) が所有する。
 infrastructure は、application が要求する具体的な接続、取得、保存、確定と中止の操作を実装し、driver の型と資源を内部に閉じる。
-個々の store が独立して確定したり、use-case 全体を受け取って transaction で包んだりしない。
+個々の store が独立して確定したり、use-case 全体を受け取って成否から確定か中止かを既定で決める形で transaction を包んだりしない。
+参加操作が使う store も、確定を所有する use-case と同じ transaction の中で書き、独立して確定しない。
 派生読みモデルの再構築は、正本の現在情報または業務イベントを port から読み出す application workflow として、読みモデルを所有するコンテキストに置く。
 起動は workflow を呼べる surface の layout に従う。
 コンテキストが所有する schema の migration artifact は、そのコンテキストの `infrastructure/migrations/` に置く。

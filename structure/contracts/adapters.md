@@ -55,7 +55,9 @@ adapter が use-case 全体を transaction で包んだり、業務本体へ認�
 
 adapter は、一つのコンテキストの公開 use-case または workflow へ接続する。
 use-case の順序、結果による分岐、再開、補償は [core/application](../core/application.md) が定める。
-コンテキストをまたぐ状態変更を同期の呼び出しで束ねない。
+独立した確定を持つ複数の use-case や複数のコンテキストの公開入口を、同期の呼び出しで束ねて一つの確定に見せない。
+adapter は、参加操作へ接続しない。
+同時の確定は、確定を所有する use-case と参加操作が core の内側で行い、二つの契約の写像は [core/composition](../core/composition.md) の境界 adapter が持つ。
 公開 event から受信側の application 入力への翻訳は、受信側の公開契約の adapter が所有する。
 上流の公開 event の意味と下流の入力の対応を明示し、上流の型を受信側の domain へ流さない。
 冪等キーと実行する主体の範囲を外部の契約から取り出す処理も、この層の写像として application の公開入力へ接続する。
