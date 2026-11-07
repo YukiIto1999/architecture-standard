@@ -12,7 +12,7 @@ linter は SonarAnalyzer.CSharp を使い、その警告を検証入口でエラ
 規則の重大度は .editorconfig を正本とし、SonarAnalyzer の規則のしきい値 parameter だけを SonarLint.xml に置く。
 同じ関心を両方のファイルへ書かない。
 ファイル・関数の大きさとネストの深さのしきい値は SonarAnalyzer.CSharp の S104(ファイル)・S138(関数)・S134(ネスト)の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
-集合の添字による裸ループは、S3267 で検出し、LINQ の名前のある操作へ直す。
+S3267 は、集合の型の内部で判定と集計を一つの foreach にまとめる実装にも LINQ への書き換えを求めるので、.editorconfig で重大度を none にして使わない。
 未使用の要素と未使用の参照は、コンパイラと analyzer の到達可能性の診断を検証入口でエラーとして扱い検出する。
 関数の複雑さは、[structure/tests の methods](../../structure/tests/methods.md) の「構造の検証」に従い、SonarAnalyzer.CSharp の S3776 で測る。
 S3776 は既定で無効なので、.editorconfig で重大度を error にし、しきい値は SonarLint.xml の threshold parameter に置く。
@@ -20,7 +20,7 @@ S3776 は既定で無効なので、.editorconfig で重大度を error にし�
 
 ### 根拠
 S104・S138・S134 は、ファイル・関数の大きさとネストの深さを早く気づかせる。
-S3267 は [named-collection-operations](../../principles/construction/named-collection-operations.md) の「集合処理を名前のある操作で表す」を裸ループの検出として機械化する。
+S3267 の[判定](https://github.com/SonarSource/sonar-dotnet/blob/2a03d58617d300bbb6852d3c0735534e70d47188/analyzers/src/SonarAnalyzer.CSharp/Rules/LoopsAndLinq.cs)は、Where・Select などへ移す反復の書き方を調べるもので、集合の規則の置き場を判定しないので、[named-collection-operations](../../principles/construction/named-collection-operations.md) の「集合処理を名前のある操作で表す」の機械化には使わない。
 S3776 は switch を case の数によらず一度だけ加点するので、閉じた直和の網羅を罰さない。
 S3776 をビルド時の analyzer で測れば、違反が検証入口の出力として変更の場で返る。
 不要になった抑止を報告する IDE0079 はビルドで有効にできないため、直した後に残った抑止は基線台帳の照合で取り除く。
@@ -29,7 +29,7 @@ S3776 をビルド時の analyzer で測れば、違反が検証入口の出力�
 ### 完了条件
 SonarAnalyzer.CSharp が、linter として使われている。
 ファイル・関数の大きさとネストの深さのしきい値が、S104・S138・S134 の規則として定められている。
-S3267 が有効で、違反が検証入口でエラーとして扱われている。
+S3267 の重大度が、.editorconfig で none になっている。
 未使用の要素と未使用の参照の診断が、検証入口でエラーとして扱われている。
 緩和が、project の決定の記録に明記されている。
 S3776 が .editorconfig で error になり、しきい値が [structure/tests の methods](../../structure/tests/methods.md) の値である。

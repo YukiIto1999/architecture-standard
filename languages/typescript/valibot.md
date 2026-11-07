@@ -8,7 +8,9 @@
 ## 業務の値を型に封じる
 
 ### 要求
-業務の値は valibot の schema を `v.brand` で名指しした branded type で表す。
+独立した意味と操作を持つ値と、複数のモデルや境界を越えて同じ意味・単位・区別を維持すべき値は valibot の schema を `v.brand` で名指しした branded type で表す。
+複数の要素にまたがる不変条件を持つ値は、要素を持つ object の schema に不変条件の検証を置いて brand を付け、要素ごとの brand は要求で定めた値型の保証を担う場合に限って足す。
+一つの業務モデルが private に持つ値の制約と正規化は、そのモデルの構築の検証で守り、値ごとの brand を必須にしない。
 schema は業務概念ごとに一度だけ定義し、型は `v.InferOutput` で導出する。
 構築は schema の `safeParse` を通す factory に一点化し、検証を経ない値に brand を与えない。
 factory は不変条件の違反を throw でなく Result の err で返す。
@@ -19,10 +21,12 @@ TypeScript は構造的な型付けなので、同じ構造の値は別の意味
 valibot の `v.brand` は schema の出力型に名前を持たせ、構造が同じでも別の名前を持つ型にして取り違えを型検査で防ぐ。
 schema を業務概念ごとに一つだけ定義すれば、同じ brand 名を複数箇所で手作業で宣言して機構が割れることがない。
 factory を schema の `safeParse` に一本化すれば、検証を経ない値が brand を名乗れない。
+要素の組にまたがる不変条件は、要素を持つ object の schema の検証だけが守り、要素ごとの brand では組の検査が残る。
+独立した値型を要しない値は、そのモデルの構築が検証と正規化を守れるので、brand を足しても型と変換が増えるだけになる。
 想定された失敗を throw で表すと呼び出し側が捕捉を強制されないので、Result で返して失敗を型に現す。
 
 ### 完了条件
-業務の値が、valibot の `v.brand` で名指しされた branded type で表されている。
+独立した意味と操作を持つ値と、複数のモデルや境界を越えて同じ意味・単位・区別を維持すべき値が、valibot の `v.brand` で名指しされた branded type で表されている。
 型が、schema から `v.InferOutput` で導出されている。
 構築が schema の `safeParse` を通す factory に限られ、検証を経ない値に brand が与えられていない。
 factory の失敗が、throw でなく Result の err で返されている。
@@ -32,10 +36,13 @@ factory の失敗が、throw でなく Result の err で返されている。
 brand の付与を、schema の `safeParse` を経ずに行うこと。
 直列化の境界を越えて入った値を、検証を経ずに branded type として扱うこと。
 factory の失敗を、throw で表すこと。
+検証・区別・操作のいずれの保証も増やさない brand を、フィールドごとに足すこと。
+値に制約や正規化があることだけを理由に、brand を必須にすること。
 
 ### 行動
-業務概念ごとに `v.brand` で名指しした schema を一度だけ定義し、型は schema から `v.InferOutput` で導出する。
+独立した意味と操作を持つ業務概念と、複数のモデルや境界を越えて維持すべき意味・単位・区別を持つ業務概念ごとに `v.brand` で名指しした schema を一度だけ定義し、型は schema から `v.InferOutput` で導出する。
 factory は schema の `safeParse` を呼び、失敗を Result の err、成功を Result の ok で返す。
+一つのモデルが private に持つ値は、モデルの構築に制約と正規化を置き、値ごとの brand を足さない。
 
 ### 例
 検証しない裸の cast では、任意の文字列が `Email` を名乗れる。

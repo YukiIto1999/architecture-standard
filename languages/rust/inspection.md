@@ -231,10 +231,10 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | syn | 構造検査 | 構造検査(syn の `parse_file` による use 宣言の module path・item の可視性と配置・関数の signature・属性とドキュメントコメント・macro 呼び出しの取得と規則照合) |
 | inspection | 予防 | analyzer/lint(rustc・clippy の設定と診断、cognitive_complexity による関数の複雑さのしきい値、未使用の要素と crate 依存の検出を検証入口でエラー化)+構造検査(許可と禁止の設定逸脱) |
 | inspection | ドキュメントコメントの存在 | analyzer/lint(missing_docs 系)+構造検査(先頭行の体裁、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味、統一した語彙) |
-| formation | 業務の値を型に封じる | 型(newtype・非公開フィールド・Rust の可視性機構) |
+| formation | 業務の値を型に封じる | 型(非公開フィールドの struct・newtype・Rust の可視性機構)+レビュー(値型を要する独立性と、業務モデルが private に持つ field の区別、保証を増やさない newtype と field ごとの必須化の不在、複数の要素にまたがる不変条件が要素を持つ一つの型の構築で守られていること、モデルの private な field が検証前の形で公開されていないこと) |
 | formation | 不正な状態を構築できなくする | 型(enum・網羅 match・コンパイラの網羅性検査) |
 | formation | 不変の束縛と共有参照を既定にする | 型(所有権・不変束縛・共有参照・排他借用)+レビュー(所有権と借用だけでは強制できない不変性を状態遷移の実装・構築関数・局所更新の箇所で照合し、既存の domain の集約・値・イベントと境界を越えて共有する値を変更せず、遷移が不変条件を保つ新しい値とイベントを返すこと、`&mut T` の局所更新が共有も外部観測もされない infrastructure の所有状態または構築途中の値に限られること、構築途中の局所 accumulator の更新と既存の domain 値の変更の区別、完成した値の公開前の不変条件の充足) |
-| formation | 意味と単位を型で区別する | 型(newtype) |
+| formation | 意味と単位を型で区別する | 型(別の型による区別。一つの値は newtype) |
 | formation | 生成と検証の macro を libs の proc-macro crate に分ける | 構造検査(proc-macro crate 境界)+型(proc-macro crate type の compiler 制約) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(rustfmt --check、rustc の non_snake_case 系 lint) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(missing_docs deny・clippy::missing_docs_in_private_items で存在、clippy::missing_errors_doc・clippy::missing_panics_doc・clippy::missing_safety_doc で公開要素の節の網羅)+構造検査(最初の一行の体言止め・句読点なし、非公開要素の節の有無)+レビュー(可視境界に応じた外部契約または内部契約、引数・型引数・戻り値の記述、伝播する欠陥、再述でない意味、統一した語彙) |

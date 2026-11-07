@@ -185,7 +185,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | archunit-net | 構造 | 構造検査(ArchUnitNET が skeleton の production のソース依存表と build・test-only 依存表から runtime・build・test edge を生成し、成果物の消費表を assembly のソース依存と区別して照合し、production の成果物への build・test edge 混入を失敗にする) |
 | sonaranalyzer-csharp | 予防 | analyzer/lint(SonarAnalyzer.CSharp・BannedApiAnalyzers・Roslyn analyzer の設定と診断、S3776 による関数の複雑さのしきい値、未使用の要素と参照の検出を検証入口でエラー化) |
 | inspection | ドキュメントコメントの検査 | analyzer/lint(CS1591 と Roslyn analyzer)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
-| formation | 業務の値を型に封じる | 型(record・非公開 constructor・static factory) |
+| formation | 業務の値を型に封じる | 型(record・非公開 constructor・static factory)+レビュー(値型を要する独立性と、業務モデルが private に持つ値の区別、保証を増やさない値オブジェクトと値ごとの必須化の不在、複数の要素にまたがる不変条件が要素を持つ一つの record の factory で守られていること、モデルの private な値が検証前の形で公開されていないこと) |
 | formation | 不正な状態を構築できなくする | 型(sealed record 階層)+analyzer(Roslyn suppressor・網羅の警告のエラー化)+構造検査(ArchUnitNET。階層外派生の検出) |
 | formation | 継承を閉じた型階層と境界の契約に限る | 型(判別共用体の基底以外の自作 class と record class の sealed)+レビュー(継承が閉じた型階層の宣言か境界で必須の基底型契約への適合であること、後者の言語仕様または採用済み framework の API による根拠、業務の振る舞いの再利用と Template Method 拡張の不在) |
 | formation | 不変を既定にする | 型(init 専用プロパティ)+レビュー(値とイベントの更新が元を変えず新しい値を返すこと、値オブジェクトの全構築・更新経路が検証付き factory を通り、公開 init と with が不変条件を迂回しないこと、浅い複製で共有する参照先の不変性) |
