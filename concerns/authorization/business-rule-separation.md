@@ -46,7 +46,7 @@ function cancel(order, user) { if (user.role !== "admin") throw; if (order.shipp
 function cancel(order: Order): Result<Order, E> { ... }
 ```
 
-申請者と承認者が別であることを認可の policy だけに置くと、方針を緩めた操作や管理操作で、申請者が自分の申請を承認した事実が記録される。
+業務仕様で申請者と承認者を別の主体と定める場合に、その成立条件を認可の policy だけに置くと、方針を緩めた操作や管理操作で、申請者が自分の申請を承認した事実が記録される。
 
 ```
 policy approveRequest: deny if subject.id == request.requesterId
