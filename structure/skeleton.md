@@ -77,7 +77,7 @@ viewer と extension は、それぞれ surfaces に surface を置き、具体 
 一つの surface は、複数の host から共有される。
 host の中で走る surface は、その host を runtimes に置く。
 埋め込みの surface は、core を埋め込み、言語非依存の protocol を公開し、自身の runtimes エントリを持たず、同梱する host の runtime が起動する。
-埋め込みの surface は、server を持たないローカル優先の構成で、被ホストの surface が core をローカルに使うときに置く。
+埋め込みの surface は、server の有無によらず、被ホストの surface が core をローカルの別プロセスで使うときに置く。
 被ホストの surface が core をローカルに使うとき、その置き方は host が core を抱けるかで決まる。
 host がプロセス内に core を抱けるなら、host の runtime が core を埋め込み、port の実装として直接渡す。
 別プロセスや別言語で抱けないなら、埋め込みの surface を同梱起動し、protocol で繋ぐ。

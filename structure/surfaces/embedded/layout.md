@@ -2,7 +2,7 @@
 
 埋め込み surface は、core を埋め込み、言語非依存の protocol を公開する surface である。
 自身では起動せず、被ホストの surface を抱える host が同梱して起動する。
-server を持たないローカル優先の構成で、被ホストの surface が core をローカルに使うときに置く。
+server の有無によらず、被ホストの surface が core をローカルの別プロセスで使うときに置く。
 埋め込み surface は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成

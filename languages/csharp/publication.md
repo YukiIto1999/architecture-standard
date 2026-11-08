@@ -3,7 +3,9 @@
 ## 概要
 publication は、C# で外部公開面と host を扱う実現軸である。
 principles の [separation](../../principles/separation/README.md) が定める境界と依存の向きと、concerns の [authorization](../../concerns/authorization/README.md) が定める認可の宣言と公開入口での強制・[security](../../concerns/security/README.md) が定める攻撃面の最小化・[authentication](../../concerns/authentication/README.md) が定める資格情報の検証と認証主体の確定を、C# の機構で満たす。
-surface ごとの規律は、[aspnet-core](./aspnet-core.md)・[consoleappframework](./consoleappframework.md)・[wolverine](./wolverine.md)・[photinox](./photinox.md)・[maui-hybridwebview](./maui-hybridwebview.md)・[streamjsonrpc](./streamjsonrpc.md) が持つ。
+surface ごとの規律は、[aspnet-core](./aspnet-core.md)・[consoleappframework](./consoleappframework.md)・[wolverine](./wolverine.md)・[maui-hybridwebview](./maui-hybridwebview.md)・[streamjsonrpc](./streamjsonrpc.md) が持つ。
+desktop の shell と同梱するバックエンドの接続機構は [tauri](../rust/tauri.md) が定める。
+同梱する C# のバックエンドの配置と公開入口は [structure/surfaces/embedded](../../structure/surfaces/embedded/layout.md) に従う。
 
 ## 可視性
 

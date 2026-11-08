@@ -41,8 +41,8 @@ languages は、上位の設計原則である [principles](../principles/)、�
 
 | 言語 | 役割 |
 |---|---|
-| [rust](./rust/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセスと言語サービス |
-| [csharp](./csharp/) | server・console・worker・desktop と mobile の host・extension が接続する core のプロセス |
+| [rust](./rust/) | server・console・worker・desktop と mobile の host・埋め込み surface・extension が接続する core のプロセスと言語サービス |
+| [csharp](./csharp/) | server・console・worker・mobile の host・埋め込み surface・extension が接続する core のプロセス |
 | [typescript](./typescript/) | viewer・extension・web、ide と browser-extension の host |
 
 言語の間で揃えるのは保証、すなわち満たす性質とその検証であり、実装の形の双子性ではありません。
@@ -51,7 +51,9 @@ Rust と C# が共通に担う実行面では、言語の選択だけで業務�
 採用物の不足は機能差として黙認せず、必要な保証、既存機構で満たせない根拠、補う実現と検証を対応付けます。
 同等にする価値がない用途や一方の言語が担わない実行面は、対象と理由を区別し、共通に担う機能の欠落と混同しません。
 実装単位と言語の対応を適用時の入力とし、各 ecosystem の README が定める言語の採用のうち使用する各言語の規律を適用する。
-自己ホストの surface と、desktop・mobile の host は、core の言語に従う。
+自己ホストの surface、埋め込み surface と mobile の host は、core の言語に従う。
+desktop を持つ場合、その host は core の言語によらず Rust が担い、shell と自動更新の機構は [tauri](./rust/tauri.md) が定める。
+desktop の追加のために、既存の core と server の言語を変えない。
 web の host の platform は browser であり、言語を持たない。
 その bundler と entry は typescript が担う。
 言語と基盤の版は各 ecosystem の README が定め、改訂は standard-update で行う。

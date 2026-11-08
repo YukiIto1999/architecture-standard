@@ -45,7 +45,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [sqlx](./sqlx.md) | SQL を型で扱いながら書く永続化アクセス層である | Rust は sqlx である |
 | [sqlx-cli](./sqlx-cli.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | Rust は sqlx-cli である |
 | [syn](./syn.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | Rust は syn(`parsing` と `full` の feature)である |
-| [tauri](./tauri.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が Rust のときは desktop・mobile ともに Tauri であり、webview の runtime は wry の runtime crate を選ぶ |
+| [tauri](./tauri.md) | 被ホストの viewer を利用者の端末で動かす native の shell である | core の言語によらない desktop と core が Rust の mobile の host として Tauri を使い、webview の runtime は wry の runtime crate を選ぶ |
 | [testcontainers](./testcontainers.md) | 実依存のコンテナを起動し、本物に近い依存で検証する道具である | Rust は testcontainers である |
 | [thiserror](./thiserror.md) | 責務の単位でエラー型を宣言し表示と変換を導出する機構である | Rust は thiserror である |
 | [tokio](./tokio.md) | 非同期の実行を担う runtime である | Rust は Tokio である |

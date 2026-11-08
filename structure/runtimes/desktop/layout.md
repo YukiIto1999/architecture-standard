@@ -59,6 +59,11 @@ offline で動かす project は、host がプロセス内に core を抱ける�
 host がプロセス内に core を抱けるなら、composition が core を組み立て、contracts/adapters の保護された公開入口を ui port の実装へ接続する。
 その構成に HTTP がなければ、server の routes や生成した HTTP client を要求しない。
 別プロセスや別言語で抱けないなら、embedded surface を同梱起動し、protocol で繋ぐ。
+同梱する embedded surface の起動・準備確認・停止と異常終了後の回収は、desktop の composition が所有する。
+準備前と停止開始後は要求を渡さず、起動失敗と通信断を成功として扱わない。
+同梱したプロセスを host の正常終了後や異常終了後に残さない。
+生存と準備の公開、進行中の仕事の停止と突然死後の回復は、[embedded](../../surfaces/embedded/layout.md) と [concerns/lifecycle](../../../concerns/lifecycle/README.md) に従う。
+shell と同梱するバックエンドは一組の配布・更新単位にし、片方だけを独立に更新しない。
 core の組立は [structure/core/composition](../../core/composition.md) に従う。
 desktop の公開と配布は、[deploy](../../deploy/layout.md) の「公開と配布の選択」に従う。
 配布 channel が更新を提供しない場合は署名を検証する自動更新を使い、検証を無効化しない。

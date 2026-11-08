@@ -1,53 +1,63 @@
 # Tauri
 
-用途は、被ホストの viewer と core を利用者の端末で動かす host である。
-採用は、core が Rust のときは desktop・mobile ともに Tauri であり、webview の runtime は wry の runtime crate を選ぶ。
-判断基準は、[desktop](../../structure/runtimes/desktop/layout.md) が定める対象の OS すべてと mobile で内蔵 webview に同じ viewer を載せ、core を host の back-end に置け、host と runtime と updater plugin の版を同時に成立する一組へ固定できることである。
+用途は、被ホストの viewer を利用者の端末で動かす native の shell である。
+採用は、core の言語によらない desktop と core が Rust の mobile の host として Tauri を使い、webview の runtime は wry の runtime crate を選ぶ。
+判断基準は、[desktop](../../structure/runtimes/desktop/layout.md) が定める対象の OS すべてと mobile で内蔵 webview に同じ viewer を載せ、desktop では core の直接組込・別言語のバックエンドの同梱起動・remote への接続を公開契約で使い分けられ、host と runtime と updater plugin の版を同時に成立する一組へ固定できることである。
 撤回条件は、判断基準を満たさなくなることであり、webview と OS の対応状況の変化、保守の停止、採用する系の安定版の到達を再評価のトリガーとする。
 
 ## desktop と mobile の host
 
 ### 要求
-Rust の core を持つ desktop と mobile の host は Tauri とし、同じ viewer と同じ core を desktop と mobile の shell で共有する。
+desktop を持つ project は core の言語によらず Tauri を使い、Rust の core を持つ mobile の host も Tauri とする。
+UI は viewer に閉じ、native の widget を別に作らない。
+core の接続と組立は [desktop](../../structure/runtimes/desktop/layout.md) と [mobile](../../structure/runtimes/mobile/layout.md) に従う。
+remote の core だけを利用する desktop は生成した通信 client で接続し、ローカルの core を同梱しない。
 webview の runtime は、host の組立点で一つだけ選ぶ。
-desktop と mobile の各 shell は、host の認証 adapter が保持する資格情報を IPC の認証境界で検証して認証主体を確定する。
-IPC の command は認証主体と資格情報を frontend から受け取らず、業務操作を呼ぶ場合は、host が確定した認証主体と検証済み入力を [structure/contracts/adapters](../../structure/contracts/adapters.md) の宣言された保護を適用する入口へ渡す。
+core をプロセス内に組み込む経路では、host の認証 adapter が保持する資格情報を IPC の認証境界で検証して認証主体を確定する。
+IPC の command は認証主体と資格情報を frontend から受け取らない。
+core をプロセス内に組み込む経路で業務操作を呼ぶ場合は、host が確定した認証主体と検証済み入力を [structure/contracts/adapters](../../structure/contracts/adapters.md) の宣言された保護を適用する入口へ渡す。
+別プロセスへ接続する経路では、受信側の認証境界で資格情報を検証し、その側の契約 adapter の保護された入口へ接続する。
 core の公開 API が受け取るのは、検証済み入力と、主体を必要とする operation の認証主体から対応づけた業務入力だけにする。
-認証の資格情報は host の認証 adapter に置き、業務の secret と判断は core に置いて frontend に出さない。
+認証の資格情報は frontend 外の認証 adapter に置き、業務の secret と判断は core に置いて frontend に出さない。
 IPC の公開契約と生成物は [structure/contracts/protocol](../../structure/contracts/protocol.md) と [generated](../../structure/contracts/generated.md) に従い、両端で同じ正本から生成した入出力の型と codec を使う。
 host が所有する技術操作は host の公開 Interface へ接続し、core の operation を経由させない。
 
 ### 根拠
-Tauri は core のプロセスが唯一の入口として IPC を一元に統べ、webview は viewer を動かす。
-host が保持する資格情報から IPC の認証境界で認証主体を確定すれば、frontend が主体を指定できず、core は認証方式を知らずに済む。
-認証の資格情報を host の認証 adapter に置き、業務の secret と判断を core に置けば、frontend へ秘密が出ない。
-同じ viewer と core を両方の shell で共有すれば、面の重複が避けられる。
+Tauri の host プロセスは webview との IPC を受け、webview は viewer を動かす。
+core の言語と shell の選定を分ければ、業務の実装を移植せず同じ desktop の機構を使える。
+core の直接組込と別プロセスへの通信を分け、実際に core を呼ぶ側で入口を保護すれば、shell に業務判断や認可を複製せずに済む。
+認証の資格情報を frontend 外の認証 adapter に置き、業務の secret と判断を core に置けば、frontend へ秘密が出ない。
 
 ### 完了条件
-desktop と mobile の host が、Tauri である。
+desktop と、Rust の core を持つ mobile の host が、Tauri である。
+UI が viewer に閉じ、native の widget が別に作られていない。
 webview の runtime が、host の組立点で一つだけ選ばれ、その単一性が Cargo 依存の検査で確かめられている。
-同じ viewer と core が、両方の shell で共有されている。
-desktop と mobile の各 IPC の認証境界が、host の認証 adapter の資格情報を検証して認証主体を確定している。
+同じ viewer と core を使う各 host が、既存の成果物と公開契約を共有している。
+remote の core だけを利用する desktop が、ローカルの core を同梱していない。
+core をプロセス内に組み込む経路の IPC の認証境界が、host の認証 adapter の資格情報を検証して認証主体を確定している。
 IPC の command の引数に認証主体と資格情報の型が現れないことが、構造検査で確かめられている。
-資格情報から認証主体への確定と、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core の公開 API の呼出が、実行テストで確かめられている。
+core の実際の呼出側での資格情報から認証主体への確定と、adapter の入口が認証主体から対応づけた業務入力と検証済み入力による core の公開 API の呼出が、実行テストで確かめられている。
 core の公開 API が、認証主体と資格情報を受け取らず、必要な業務入力と検証済み入力だけを受け取っている。
-認証の資格情報が host の認証 adapter に、業務の secret と判断が core に置かれ、frontend に出ていない。
+認証の資格情報が frontend 外の認証 adapter に、業務の secret と判断が core に置かれ、frontend に出ていない。
 IPC の実際の受信経路で、契約どおりの結果と状態変化、契約違反の拒否と状態不変、技術入口による業務操作の保護の迂回の拒否が確かめられている。
 
 ### 禁止事項
 secret や業務の判断を、frontend に置くこと。
 認証主体または資格情報を、frontend から IPC の command へ渡すこと。
 資格情報と認証主体を、core の公開 API へ渡すこと。
+native の widget を、viewer と別に作ること。
+別プロセスの core にある業務判断や契約 adapter の写像を、shell に複製すること。
 
 ### 行動
 host を Tauri にし、IPC の command を契約から生成した入出力で型付け、codec を実際の受信経路に適用する。
 host の組立点で webview の runtime を一つ選び、その runtime crate を依存に置く。
-desktop と mobile の各 IPC の入口で host の認証 adapter の資格情報を検証し、認証主体を確定する。
-業務操作を呼ぶ command は、確定した認証主体と検証済み入力を adapter の宣言された保護を適用する入口へ渡し、その入口が対応づけた業務入力と検証済み入力だけを core の公開 API へ渡す。
-認証の資格情報を host の認証 adapter に、業務の secret と判断を core に置く。
+core をプロセス内に組み込む経路では、IPC の入口で host の認証 adapter の資格情報を検証し、認証主体を確定する。
+core をプロセス内に組み込む経路で業務操作を呼ぶ command は、確定した認証主体と検証済み入力を adapter の宣言された保護を適用する入口へ渡し、その入口が対応づけた業務入力と検証済み入力だけを core の公開 API へ渡す。
+別プロセスへ接続する command は生成した通信 client を使い、受信側の認証と保護された入口を通す。
+認証の資格情報を frontend 外の認証 adapter に、業務の secret と判断を core に置く。
 
 ### 例
-資格情報は host 側で検証して認証主体を確定し、frontend の入力と認証主体を adapter の入口へ渡す。
+Rust の core をプロセス内に組み込む経路では、資格情報を host 側で検証して認証主体を確定し、frontend の入力と認証主体を adapter の入口へ渡す。
 
 ```rust
 #[tauri::command]
@@ -57,10 +67,46 @@ fn place_order(state: State<AppState>, request: OrderRequest) -> Result<OrderId,
 }
 ```
 
+## desktop の外部バックエンド
+
+### 要求
+C# の core をローカルで使う desktop は、core を組み込んだ [embedded surface](../../structure/surfaces/embedded/layout.md) の成果物を Tauri の sidecar として同梱起動する。
+sidecar の実行ファイルを `bundle.externalBin` に登録し、配布対象の OS と CPU に対応する target triple をファイル名へ付ける。
+実行に必要な runtime と補助ファイルも配布成果物へ含め、利用者の開発環境に依存させない。
+sidecar の起動と入出力は Rust の `tauri_plugin_shell::ShellExt` から扱い、frontend に任意のプロセスを起動する権限を与えない。
+host と sidecar の通信は [structure/contracts/protocol](../../structure/contracts/protocol.md) に従い、両端で同じ正本から生成したデータ型と codec を使う。
+sidecar の認証境界と契約 adapter の保護は [embedded surface](../../structure/surfaces/embedded/layout.md) に従い、host が送る認証主体の値だけを信頼しない。
+sidecar の準備確認・停止・異常終了後の回収と、shell と一組の配布・更新は [desktop](../../structure/runtimes/desktop/layout.md) に従う。
+
+### 根拠
+Tauri の [sidecar](https://v2.tauri.app/develop/sidecar/) は外部の実行ファイルを同梱起動でき、C# は [.NET の publish](https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview) で対象の OS と CPU 向けの実行ファイルを作れる。
+core と契約 adapter をバックエンドに残せば、shell の言語に合わせた業務の移植を要しない。
+生成した通信経路と受信側の保護された入口を使えば、同梱によって契約や認可の検査を迂回しない。
+
+### 完了条件
+C# のローカル core が embedded surface に組み込まれ、Tauri の配布成果物に含まれている。
+対象の OS と CPU ごとの実行ファイルと依存物が同梱され、開発環境のない端末で起動できることが確かめられている。
+host と sidecar の実受信経路で、契約どおりの結果と状態変化、契約違反と偽造した認証主体の拒否、拒否後の業務状態不変が確かめられている。
+sidecar の起動失敗・準備前・通信断・host の正常終了と異常終了で、要求の受付、失敗の通知、子プロセスの回収が desktop の規律どおりであることが確かめられている。
+要求の期限・取消・相関が sidecar へ伝わり、取消要求と処理の完了を区別できることが確かめられている。
+frontend に任意のプロセス起動の権限がなく、shell に業務判断と契約 adapter の写像が複製されていない。
+
+### 禁止事項
+desktop の追加のために、C# の core を Rust へ移植すること。
+sidecar の保護された入口を迂回して、業務操作を実行すること。
+sidecar の runtime や補助ファイルを、開発端末にだけ存在するものへ依存させること。
+sidecar の起動成功を、要求を処理できる準備完了とみなすこと。
+
+### 行動
+C# の core と契約 adapter を embedded surface の組立点で組み立て、対象の OS と CPU ごとの成果物を作る。
+成果物を `bundle.externalBin` と必要な同梱資源へ登録し、Rust 側から起動して準備を確認する。
+生成した通信 client と提供側 stub を接続し、実受信経路の成功・拒否と lifecycle の失敗経路を検証する。
+shell と sidecar を一組で配布・更新し、更新後の成果物から準備確認と業務操作まで通す。
+
 ## desktop の自動更新
 
 ### 要求
-自動更新を使う desktop に、この節を適用する。
+自動更新を使う desktop に、core の言語によらずこの節を適用する。
 desktop の自動更新は Tauri の updater plugin で行い、Tauri CLI で生成した公開鍵を設定に置いて updater bundle の signature を検証する。
 Tauri CLI で生成した秘密鍵を `TAURI_SIGNING_PRIVATE_KEY` から読み、`bundle.createUpdaterArtifacts` を有効にして updater bundle と signature を生成する。
 生成した updater bundle と signature を、TLS の endpoint から配布する。
@@ -81,12 +127,14 @@ updater bundle と signature が、TLS の endpoint から配布され、設定�
 更新の endpoint が、TLS である。
 非 HTTPS の endpoint を許す設定が、置かれていない。
 release 成果物の署名と provenance だけが、Cosign の定める検証を満たしている。
+sidecar を同梱する場合、更新後も shell とバックエンドが一組で切り替わり、配布成果物からの起動・準備確認・業務操作が成立することが確かめられている。
 
 ### 禁止事項
 署名を生成せず、または Tauri updater の signature 検証を伴わない経路で、更新を配布すること。
 非 HTTPS の endpoint を許す設定を、置くこと。
 updater signature の秘密鍵を、成果物や設定へ同梱すること。
 Cosign の release 成果物の署名または provenance を、updater bundle の signature の代わりに使うこと。
+同梱するバックエンドへ、shell とは独立した自動更新の機構を置くこと。
 
 ### 行動
 updater plugin を導入し、Tauri CLI で生成した公開鍵を設定に置く。
