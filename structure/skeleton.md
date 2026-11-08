@@ -51,7 +51,7 @@ schema migration の artifact の所有と置き場は [core/infrastructure](./c
 | worker | 背景処理・定期実行の surface。core を埋め込む。 |
 | viewer | GUI の surface。被ホストで、host は runtimes に置く。 |
 | extension | 拡張の surface。被ホストで、host は runtimes に置く。core は埋め込まない。 |
-| 埋め込み surface | core を埋め込み protocol を公開する surface。host が同梱起動する。 |
+| 埋め込み surface | core を埋め込み protocol を公開する surface。host が同梱して起動または初期化する。 |
 | runtimes | 被ホストの surface の具体 host。 |
 | deploy | 配備。IaC・GitOps・provenance。 |
 | tests | root の規模のテスト。境界・依存方向・契約の drift・conformance。 |
@@ -76,11 +76,11 @@ server・console・worker は core を埋め込み、root で自己完結する�
 viewer と extension は、それぞれ surfaces に surface を置き、具体 host を runtimes に置く。
 一つの surface は、複数の host から共有される。
 host の中で走る surface は、その host を runtimes に置く。
-埋め込みの surface は、core を埋め込み、言語非依存の protocol を公開し、自身の runtimes エントリを持たず、同梱する host の runtime が起動する。
-埋め込みの surface は、server の有無によらず、被ホストの surface が core をローカルの別プロセスで使うときに置く。
-被ホストの surface が core をローカルに使うとき、その置き方は host が core を抱けるかで決まる。
-host がプロセス内に core を抱けるなら、host の runtime が core を埋め込み、port の実装として直接渡す。
-別プロセスや別言語で抱けないなら、埋め込みの surface を同梱起動し、protocol で繋ぐ。
+埋め込みの surface は、core を埋め込み、言語非依存の protocol を公開し、自身の runtimes エントリを持たず、同梱する host の runtime が起動または初期化する。
+埋め込みの surface は、server の有無によらず、被ホストの surface が core をローカルの別プロセスまたは別言語の native library として使うときに置く。
+被ホストの surface が core をローカルに使うとき、その置き方は host が core の公開 API を直接呼べるかで決まる。
+直接呼べるなら、host の runtime が core を組み立て、契約 adapter を port の実装へ接続する。
+直接呼べないなら、埋め込みの surface を同梱し、対象 OS で成立するプロセスの起動または native library の初期化で protocol へ接続する。
 surfaces に surface として置き、protocol の対話様式を表す名で命名し、protocol の契約は contracts の protocol 層に置く。
 
 ## 依存方向
@@ -141,7 +141,7 @@ HTTP を持たず core を埋め込む構成には、routes を要求せず、�
 | 埋め込み surface を同梱する runtime | 対応する埋め込み surface の成果物 |
 | root tests | 検証対象の成果物 |
 
-成果物の消費はソースコードへの import と区別し、配備や同梱起動の入力として明示する。
+成果物の消費はソースコードへの import と区別し、配備、同梱起動または native library の link と組込の入力として明示する。
 localhost の service、filesystem、container への接続もソース依存と区別し、test の実行資源は [tests/layout](./tests/layout.md) に従う。
 production のソース依存表、build・test-only 依存表、成果物の消費表が、root またぎ依存の機械検証の駆動元である。
 表に無い参照元から参照先への root またぎ依存は、禁止とする。
@@ -152,7 +152,8 @@ build または test のソース依存が production の成果物へ混入し�
 contracts 内部の層間の依存は [contracts](./contracts/layout.md) に従う。
 contracts/generated の生成と利用は [contracts/generated](./contracts/generated.md) に従う。
 host は、surface の port を、generated の通信 client・stub または core の埋め込みで実装する。
-core を埋め込む host は core を組み立て、contracts/adapters を通して port の入出力を公開 application 入口へ接続する。
+core を直接埋め込む host は core を組み立て、contracts/adapters を通して port の入出力を公開 application 入口へ接続する。
+埋め込み surface を使う host はその成果物を消費し、core の組立と契約 adapter の呼出は埋め込み surface が所有する。
 extension は、core を直接埋め込まない。
 extension の local の関心は、core を埋め込んだ別プロセスへ、言語非依存の protocol で接続する。
 そのプロセスは、対応する runtime が同梱して起動する。

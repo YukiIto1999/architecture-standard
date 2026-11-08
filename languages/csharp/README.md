@@ -35,7 +35,6 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [dapper](./dapper.md) | 手書き SQL の実行結果を型へ薄く写す永続化アクセス層である | C# は Npgsql の上の Dapper である |
 | [duende-access-token-management](./duende-access-token-management.md) | BFF が保持する token の交換と更新を担う機構である | C# は Duende.AccessTokenManagement である |
 | [grate](./grate.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | C# は grate の up の one-time script である |
-| [maui-hybridwebview](./maui-hybridwebview.md) | 被ホストの viewer と core を利用者の端末で動かす host である | core が C# のときは mobile は .NET MAUI の HybridWebView である |
 | [mutation-dotnet](./mutation-dotnet.md) | テストの検出力を評価し改善する mutation 分析である | C# は mutation-dotnet である |
 | [npgsql](./npgsql.md) | PostgreSQL へ接続し、transaction の確定と制約違反の判別を担う data provider である | C# は Npgsql である |
 | [nswag](./nswag.md) | 契約から C# の client と型を生成し、drift・conformance の検査に使う道具である | C# は NSwag である |
@@ -61,4 +60,5 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | 直列化 | 言語標準の source generation(JsonSerializerContext)を使い、外部の直列化ライブラリを別に選ばない | [translation](./translation.md) |
 | 未使用コードの検出 | コンパイラと lint の到達可能性に基づく検出で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | UI の accessibility 検査 | viewer を TypeScript に委ねるため採用を持たない | — |
-| desktop の shell と自動更新 | Rust の host に委ね、C# の core とは公開契約で接続する | [tauri](../rust/tauri.md) |
+| desktop と mobile の shell | Rust の host に委ね、C# の core とは公開契約で接続する | [tauri](../rust/tauri.md) |
+| mobile への core の組込 | Native AOT の共有ライブラリとして C ABI を公開する | [publication](./publication.md) |

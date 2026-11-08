@@ -365,7 +365,7 @@ impl HasOrders for AppEnv { fn orders(&self) -> &dyn OrderRepository { self.orde
 ## FFI を安全な境界に閉じる
 
 ### 要求
-C ABI との FFI は、infrastructure の専用 module に閉じ、公開面には safe な Rust の型だけを出す。
+C ABI との FFI は、外部依存を接続する境界の専用 module に閉じ、公開面には safe な Rust の型だけを出す。
 unsafe block は、成立している不変条件をコメントで示し、FFI を含む最小の item に限る。
 FFI が返す null・エラーコード・sentinel は、境界で Result へ写す。
 FFI が渡す資源(handle・C 文字列・buffer)の解放は、Drop を実装した wrapper 型で保証する。
@@ -376,7 +376,7 @@ null とエラーコードを境界で Result に写せば、失敗が型に現�
 Drop の wrapper は、解放漏れと二重解放を型の寿命で防ぐ。
 
 ### 完了条件
-FFI の呼び出しと unsafe が、infrastructure の専用 module に閉じている。
+FFI の呼び出しと unsafe が、外部依存を接続する境界の専用 module に閉じている。
 公開面に、raw pointer と C の型が出ていない。
 FFI の資源が、Drop を実装した wrapper で解放されている。
 

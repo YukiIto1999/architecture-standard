@@ -1,8 +1,8 @@
 # 埋め込み surface の構造
 
 埋め込み surface は、core を埋め込み、言語非依存の protocol を公開する surface である。
-自身では起動せず、被ホストの surface を抱える host が同梱して起動する。
-server の有無によらず、被ホストの surface が core をローカルの別プロセスで使うときに置く。
+自身では起動せず、被ホストの surface を抱える host が同梱して起動または初期化する。
+server の有無によらず、被ホストの surface が core をローカルの別プロセスまたは別言語の native library として使うときに置く。
 埋め込み surface は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ## フォルダ構成
@@ -11,7 +11,7 @@ server の有無によらず、被ホストの surface が core をローカル�
 <embedded>/
 ├─ endpoints/
 │  └─ <operation>   protocol の要求を契約 adapter の保護された公開入口へ渡す。
-└─ composition      core の埋め込み・protocol の公開・起動の入口。
+└─ composition      core の組立・protocol の公開・起動または初期化の入口。
 ```
 
 `endpoints` は、1 operation を1ファイルに置く。
@@ -42,11 +42,13 @@ endpoint と core の公開 API へ資格情報、principal、token、claim、pr
 
 ## 組み立てと起動
 
-composition は、build_core で core を埋め込み、protocol の listener を公開する。
-自身では起動せず、同梱する host の runtime が起動する。
-生存と準備の面は、protocol の予約した operation で公開する。
-host は準備を確認してから要求を振り分ける。
+composition は、build_core で core を組み立て、protocol の受信口を公開する。
+別プロセスの成果物では host がプロセスを起動し、native library の成果物では host が初期化の入口を呼ぶ。
+生存と準備の面は、protocol の予約した操作で公開する。
+host は準備を確認してから要求を振り分け、プロセスの起動成功や library の load 成功を準備完了とみなさない。
 lifecycle の規律は [concerns/lifecycle](../../../concerns/lifecycle/README.md) に従う。
+native library の正常停止は、新しい要求の受付を止め、実行中の要求と callback の完了を待ってから資源を解放する。
+同一プロセスに置くことは認証と契約の検査を省く理由にせず、host は業務判断と契約 adapter の写像を複製しない。
 検証済みの認証文脈を契約 adapter の保護された入口へ結び付け、業務に必要な主体だけをコンテキストの入力へ対応付ける。
 要求側が指定した認証主体を信頼せず、実行の期限、取消、相関は業務入力から分けて必要な効果へ渡す。
 設定と secret の読み込みは [concerns/configuration](../../../concerns/configuration/README.md) に従う。

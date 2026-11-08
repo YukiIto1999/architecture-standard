@@ -17,14 +17,14 @@ contracts/
 ```
 
 `canonical` は常に置く。
-`http` と `protocol` は、canonical を wire へ束ねる binding であり、プロセスをまたぐ通信があるときに、その通信形式に応じて置く。
-`http` は HTTP の通信に、`protocol` は webview と host の IPC や埋め込み surface との通信を含む非 HTTP のローカル通信に置く。
+`http` と `protocol` は、canonical を外部との受渡し形式へ束ねる binding であり、プロセスまたは言語の ABI をまたぐ通信があるときに、その通信形式に応じて置く。
+`http` は HTTP の通信に、`protocol` は webview と host の IPC や native library の ABI を含む埋め込み surface との非 HTTP のローカル通信に置く。
 `generated` は、canonical の契約を code から使うすべての場合に置く。
 `adapters` は、公開契約を core の公開 application 入口へ接続するときに置く。
 `toolchain` は生成の実行環境と入力を持つ置き場であり、契約の意味を定める層には加えない。
 公開契約を表す DTO は generated の型を使い、同じ意味の field、variant、制約を手書きで写した型を代わりに置かない。
 生成物の不足は canonical、binding、生成器の責務に応じて直し、利用側に契約の第二の正本を作らない。
-HTTP を持つ契約は OpenAPI 経由で client と型を、ローカル protocol を持つ契約は protocol の記述から stub と型を、いずれも持たない契約(同一プロセス・console 出力・ファイル形式)は JSON Schema 経由で型だけを、同じ `generated/` へ出す。
+HTTP を持つ契約は OpenAPI 経由で client と型を、ローカル protocol を持つ契約は protocol の記述から stub と型を、いずれも持たない契約(同じ言語の直接呼出・console 出力・ファイル形式)は JSON Schema 経由で型だけを、同じ `generated/` へ出す。
 生成するデータ型と、通信を実行する client・stub は、別の依存単位に分ける。
 protocol の記述の形式と stub の生成器は、protocol の採用とあわせて project が決定の記録に明記する。
 
