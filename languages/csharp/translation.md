@@ -3,19 +3,19 @@
 ## 概要
 translation は、C# で外部表現とドメイン型の変換を扱う実現軸である。
 principles の [separation](../../principles/separation/README.md) が定める境界での変換と、concerns の [types](../../concerns/types/README.md) が定める境界での parse・[security](../../concerns/security/README.md) が定める境界の不信を、C# の機構で満たす。
-problem+json への写しの規律は [aspnet-core](./aspnet-core.md) が、契約生成と drift 検査と、生成 client の応答の分類の規律は [nswag](./nswag.md) が持つ。
+problem+json への写しの規律は [aspnet-core](./aspnet-core.md) が、共通の生成経路は [tools/build/typespec](../../tools/build/typespec.md) が定める。
 
 ## 境界で一度だけ parse してドメイン型へ移す
 
 ### 要求
-HTTP などの公開入力と、worker が内部の durable queue から受ける payload は、生成 DTO で受け、source generation の `JsonSerializerContext` を通す。
-生成 DTO のプロパティ、外部名、必須性、不在、値の制約を canonical と binding から導き、同じ意味の record を手書きで定義しない。
+HTTP などの公開入力と、worker が内部の durable queue から受ける payload は、生成した型と codec で受け、System.Text.Json の source generation と生成 converter を使う。
+生成型のプロパティ、外部名、必須性、不在、値の制約は共通 toolchain の IR から導き、同じ意味の record を手書きで定義しない。
 生成 DTO とコンテキストの application 入出力との写像は [structure/contracts/adapters](../../structure/contracts/adapters.md) に置き、コンテキストの入力構築から値オブジェクトの factory へ検証を集め、失敗は Result で表す。
 検証を通った値だけを業務処理へ渡し、内側で同じ性質を再検証しない。
-未知の追加フィールドは弾かず、生成した `[JsonExtensionData]` の捕捉と serializer の処理で位置とキーを記録し、境界でログに出す。
+未知の追加フィールドは弾かず、生成 codec が受理値とは別の診断に位置とキーを記録し、境界でログに出す。
 未知の追加フィールドの受容で、既知項目の検証を緩めない。
-必須項目の欠落、契約が許さない null、既知項目の値の不正、判別子と payload の不一致は、既定値や空の値で補って業務処理へ渡さず、生成 DTO の `required` と生成した converter により拒否する。
-未指定と null は [canonical](../../structure/contracts/canonical.md) の「値の不在」に対応させ、契約上必要な区別を生成 DTO と converter で失わない。
+必須項目の欠落、契約が許さない null、既知項目の値の不正、判別子と payload の不一致は、生成 codec と構築で拒否し、既定値や空の値で補って業務処理へ渡さない。
+未指定と null は [canonical](../../structure/contracts/canonical.md) の「値の不在」に対応させ、三状態を必要とする項目は存在状態を表す生成型と専用 converter で保持する。
 この拒否と業務処理の非開始は、宣言の存在から推定せず、公開入力では endpoint が実際に受ける経路、内部の durable queue では [wolverine](./wolverine.md) が定める実際の受信経路へ入力を渡して確かめる。
 業務上の真の不明は、その意味と許す操作を正本のモデルで定めた型で表し、技術互換のための不要な任意化と区別する。
 旧版や送り手の都合で生じる不足は、現在の契約の必須項目や業務型の任意化でも、写像の既定値や架空の値でも隠さない。
@@ -64,9 +64,9 @@ contracts/adapters の写像からコンテキストの入力構築と値オブ�
 未知のフィールドが恒常的に届くことだけを、旧方式が残っている証拠として扱うこと。
 
 ### 行動
-生成 DTO を `JsonSerializerContext` に登録し、捕捉と既知項目の検証も生成経路に含める。
+生成 codec を System.Text.Json の source generation へ接続し、捕捉と既知項目の検証も IR から生成する。
 全 variant と入れ子の object の未知キーを捕捉し、境界で位置とキーを警告としてログに出し、値はログに載せない。
-生成経路が捕捉や検証を実現できなければ、[nswag](./nswag.md) の生成器の設定と template を直し、同義 DTO で回避しない。
+生成能力の不足は共通 toolchain の profile・IR・C# emitter で直し、同義 DTO で回避しない。
 contracts/adapters の Mapper は、生成 DTO の field を core が公開する application 入力構築へ渡し、ドメイン型を直接参照しない。
 必須項目の欠落、契約が許さない null、既知項目の不正、判別子の不一致の入力と、未知の追加フィールドだけを加えた入力を、endpoint と内部の durable queue の実際の受信経路へ別々に渡し、前者の拒否と業務処理の非開始、後者の受容を観測する。
 不足を項目ごとに、真の業務上の不明か、旧版や送り手の都合かに分け、後者は任意化や既定値でなく、互換を宣言した境界の変換か拒否で扱う。
@@ -90,6 +90,67 @@ internal static class CreateUserMapper
         Users.CreateUserCommand.Create(input.Email);
 }
 ```
+
+## 生成した契約値の構築と所有権を守る
+
+### 要求
+distinct scalar は private storage を持つ readonly value type とし、alias は同じ生成型への参照として扱う。
+通常の field 制約は所有する生成モデルの構築と decode で検証し、制約名だけを理由に別の値型を作らない。
+判別付き直和と操作の各結果は、生成側が variant を閉じた sealed record 階層にし、variant 固有の payload を検証付き構築で保持する。
+生成モデルは非公開 constructor と get-only property を持ち、local 構築と decode は受理値または位置・規則を持つ構造化した違反情報を返す。
+契約上不正になる struct の default は識別可能にし、accessor から正常な primitive 値として返さず、モデル構築・encode・操作入口でも通さない。
+default が契約上有効なら、初期化 flag を増やさない。
+非 null の位置の null と、可変な入力 collection の別参照による検証後の変更を防ぐ。
+既に不変な子は共有し、外部の可変 storage だけを完成時に切り離して、変更できない形で保持する。
+decimal と日時の生成表現は、契約が指定した受理値域・同値性・精度・scale・offset を保存し、System.Decimal や DateTimeOffset の範囲を契約の上限としない。
+
+### 根拠
+readonly value type は役割の型分離に参照型の allocation を要さないが、[struct の初期化](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/struct#struct-initialization-and-default-values)は constructor を経ない default を作れる。
+get-only property と非公開の完成処理を組み合わせれば、public init・with・未検証の collection の共有で構築の保証を迂回させずに済む。
+
+### 完了条件
+役割の異なる scalar の代入が型検査で拒否され、alias の互換が保たれている。
+local 構築と decode が同じ制約へ照合され、不正な default・null・元の collection の変更が受理済み値を壊さない。
+三状態、decimal と日時の保持要件を満たし、生成先の既定型で表せない有効値も受理できる。
+
+### 禁止事項
+公開 constructor・init・with、検証しない converter により契約値の検証を迂回すること。
+IReadOnlyList という公開型の名前だけで、元の可変 collection との共有が安全だと扱うこと。
+通常の構築・decode の違反を例外だけで返すこと。
+
+### 行動
+C# emitter に private storage、構築・decode の共通検証、default の検出、存在状態の converter と collection の所有処理を含める。
+構築済み graph を public factory に戻して二度走査せず、検証と完成処理を共有する。
+生成契約値は業務値と独立に所有し、contracts/adapters から application の公開入力構築へ写す。
+
+## 生成した通信処理を既存の効果へ接続する
+
+### 要求
+型・構築・codec の assembly と、HttpClient を使う consumer transport および提供側 dispatch の実行機構を分離する。
+純粋な構築と codec に Effect runtime を要求せず、通信操作は [connection](./connection.md) と [coordination](./coordination.md) の既存の Effect・Deadline・CancellationToken へ接続する。
+生成 transport は [structure/contracts/generated](../../structure/contracts/generated.md) の「応答の分類」に従い、status と media type・識別情報を先に選び、対応する body の decode を完了してから結果を返す。
+宣言した複数の成功と body のない結果を識別できる outcome にし、宣言した拒否は操作の想定内失敗として Failed に写す。
+502・503・504 の中継由来の不一致と通信の不成立は通信の Failed、呼出しごとの上限超過は別の Failed、それ以外の契約不一致と要求組立の欠陥は Defected にする。
+OperationCanceledException は coordination が定める token の帰属で分類し、取消を Canceled にし、受理と decode の完了後の結果を後着の取消で書き換えない。
+提供側 handler・dispatch の生成 Interface は contracts 側で使い、手書き Adapter が独立した application Interface へ接続し、core は composition を含めて生成物を参照しない。
+
+### 根拠
+生成 transport が outcome と codec を所有すれば、利用側の Adapter に成功例外の補償や未 decode body の解釈を散らさず、Effect の既存の終了分類へ接続できる。
+依存を assembly で分ければ、型と codec だけを使う側に HttpClient と通信実行機構を強制しない。
+
+### 完了条件
+純粋な生成型の依存 closure に通信 client と実行機構がなく、core の assembly から全生成 assembly への参照がない。
+全ての宣言結果、契約不一致、通信・上限・取消が生成通信処理で分類され、利用側で schema の再解釈をしていない。
+提供側 dispatch から手書き Adapter と独立した application Interface へ到達できる。
+
+### 禁止事項
+status の範囲だけで応答を分類し、複数の成功を一つの body 型へ潰すこと。
+通信例外の一括捕捉で要求組立の欠陥や取消を Failed にすること。
+生成 Interface を application に実装させること。
+
+### 行動
+生成 transport に接続先と HttpClient を注入し、codec と結果の判定を生成する。
+実際の応答・本文途中切断・接続拒否・組立失敗・上限・取消の競合を inspection の検証へ接続する。
 
 ## 参照
 境界の到達点となる型は [formation](./formation.md)、エラーモデルは [effect](../../concerns/effect/README.md)、契約の置き場は [structure/contracts](../../structure/contracts/layout.md) に従う。

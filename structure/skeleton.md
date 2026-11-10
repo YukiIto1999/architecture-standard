@@ -16,6 +16,7 @@ surfaces は、対話様式というアクターの軸で束ねており、技�
 │  ├─ canonical/
 │  ├─ http/
 │  ├─ protocol/
+│  ├─ toolchain/
 │  ├─ generated/
 │  └─ adapters/
 ├─ surfaces/
@@ -94,16 +95,16 @@ production のソースコードが持つ root またぎ依存は、次の表に
 |---|---|
 | core | libs |
 | libs | 他の libs の機構の公開 domain・application |
-| contracts/adapters | core の公開 API・libs・contracts/generated のデータ型 |
+| contracts/adapters | core の公開 API・libs・contracts/generated の型・構築・codec と提供側 Interface |
 | contracts/generated | libs |
-| server | core・libs・contracts/adapters の公開 API・contracts/generated のデータ型 |
-| console・worker | core・libs・contracts/adapters の公開 API・contracts/generated のデータ型 |
-| 埋め込み surface | core・libs・contracts/adapters の公開 API・contracts/generated のデータ型と protocol の提供側 stub |
-| viewer | libs・contracts/generated の型 |
-| extension の remote | libs・contracts/generated の型 |
-| extension の local | libs・contracts/generated のデータ型 |
+| server | core・libs・contracts/adapters の公開 API・contracts/generated の型・codec と HTTP の提供側接続 |
+| console・worker | core・libs・contracts/adapters の公開 API・contracts/generated の型・構築・codec と提供側 Interface |
+| 埋め込み surface | core・libs・contracts/adapters の公開 API・contracts/generated の型・codec と protocol の提供側接続 |
+| viewer | libs・contracts/generated の型・構築・codec |
+| extension の remote | libs・contracts/generated の型・構築・codec |
+| extension の local | libs・contracts/generated の型・構築・codec |
 | extension(UI を持つ場合) | viewer の公開 API |
-| runtimes/\<host\> | libs・対応する surface・その host の API・port の実装に用いる contracts/generated のデータ型と通信 client・stub・core を埋め込む場合は core と contracts/adapters の公開 API・その host が HTTP surface を自己ホストする場合は同じ core を埋め込む自己ホスト surface の routes |
+| runtimes/\<host\> | libs・対応する surface・その host の API・port の実装に用いる contracts/generated の型・構築・codec・通信 client・stub と host の技術操作の提供側接続・core を埋め込む場合は core と contracts/adapters の公開 API・その host が HTTP surface を自己ホストする場合は同じ core を埋め込む自己ホスト surface の routes |
 | deploy | 配備の機構に用いる libs の公開 API |
 
 core は composition を含め、contracts・surface・runtime・deploy・tests を参照しない。
@@ -131,7 +132,7 @@ core・surface・runtime は、必要な libs の公開 API を直接 import し
 libs の利用は core の埋め込みを条件にせず、core や別の surface を経由した再公開を要求しない。
 core と surface の公開 API が運ぶ libs の型(Result・Effect)を使う境界も、その機構へ直接依存する。
 libs の公開面と adapter 構築用 API の利用範囲は [libs](./libs/layout.md) に従う。
-canonical operation を HTTP へ束ねる写像の正本は contracts の http であり、自己ホスト surface の routes はその写像を実装する。
+canonical operation を HTTP へ束ねる写像の正本は contracts の http であり、自己ホスト surface の routes は生成した提供側接続を登録する。
 runtime がその HTTP surface を自己ホストする場合は routes を参照し、同じ写像を二重に作らない。
 HTTP を持たず core を埋め込む構成には、routes を要求せず、公開契約を持つ port は contracts/adapters を通して接続する。
 

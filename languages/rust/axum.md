@@ -9,15 +9,15 @@
 
 ### 要求
 server は axum で組み、依存は State で handler へ渡す。
-router はコンテキストごとに分けて合成し、境界の仕込みは tower の middleware で一括して積む。
+router は公開契約の HTTP binding の単位で生成した登録を合成し、境界の仕込みは tower の middleware で一括して積む。
 認証は route の一致時にだけ走る層に置く。
 server の認証境界は検証済み principal を認証主体へ確定し、認証主体と資格情報の許可範囲を認証と認可の内側に保持する。
 principal、token、claim、認証主体を core の公開 API または業務へ渡さず、core の公開 API が受け取るのは、検証済み入力と、主体を必要とする operation の認証主体から対応づけた業務入力だけにする。
 認可は [declarative-access-guards](../../concerns/authorization/declarative-access-guards.md) の「認可の宣言を公開入口で強制する」に従い、handler は [structure/contracts/adapters](../../structure/contracts/adapters.md) が公開する宣言された保護を適用する入口だけを呼び、認証主体をその入口へ渡す。
 匿名公開の route は匿名公開として宣言し、handler は認可を呼ばず許可結果を受け取らない。
-handler の契約のデータは generated の DTO で受け渡し、形式と制約を通った入力を契約 adapter の保護された公開入口へ渡す。
-serde の decode と未知項目の捕捉は [serde](./serde.md)、DTO と application の写像の所有者は [structure/contracts/adapters](../../structure/contracts/adapters.md)、surface 固有の応答 wrapper は [translation](./translation.md) に従う。
-server の想定内の失敗は、RFC 9457 の problem+json へ `IntoResponse` の実装で写す。
+生成した提供側接続が契約の decode・dispatch・outcome の encode を担い、形式と制約を通った入力を契約 adapter の保護された公開入口へ渡す。
+生成 codec と未知項目の捕捉は [serde](./serde.md)、独立した application Interface との写像は [structure/contracts/adapters](../../structure/contracts/adapters.md) に従う。
+宣言した想定内の失敗は、binding から生成した提供側接続が RFC 9457 の problem+json と status へ写し、server は生成した登録と handler の配線を行う。
 server の未処理の panic は、`CatchPanicLayer` で捕捉して内部の詳細を含まない problem+json へ写す。
 server の取り消しは、想定内の失敗の応答へ変換しない。
 冪等な endpoint は、認証主体の ID、匿名の安定した session または client の opaque scope、logical system actor の ID を、要求の種別に応じた actor scope として retention へ渡す。
@@ -28,21 +28,21 @@ single-tenant operation は正準な single-tenant sentinel を、tenant の概�
 
 ### 根拠
 依存を State で handler へ渡せば、依存がシグネチャに現れ、組立点だけが具象を知る。
-router をコンテキストごとに分けて合成すれば、面が変更理由ごとに分かれる。
+公開契約の binding ごとに生成した登録を合成すれば、公開操作の変更理由を core のコンテキストの配置と混同せずに済む。
 境界の仕込みを tower の middleware で一括して積めば、横断の関心が入口に集まる。
 認証を route の一致時にだけ走る層に置けば、未一致の要求が 404 のまま留まり、認証で 404 が 401 に化けて対象の存在を露出しない。
 認証主体を認証と認可の内側に保ち、主体を必要とする operation にだけ業務入力を対応づければ、core は token と認証方式を知らず、主体を使わない operation の署名が認証の変更に巻き込まれない。
 route が宣言された保護を適用する入口だけを呼べば、宣言のない route が公開のまま残らず、handler は認可を持たずに済む。
-`IntoResponse` に集約すれば、想定内の失敗の HTTP 表現が handler ごとに揺れない。
+生成した提供側接続が結果の HTTP 表現を持てば、status と codec の写像を手書き handler ごとに繰り返さずに済む。
 `CatchPanicLayer` で server の最上位を覆えば、欠陥を個々の handler で想定内の失敗に変えずに報告できる。
 
 ### 完了条件
 server が axum で組まれ、依存が State で handler へ渡されている。
-router が、コンテキストごとに合成されている。
+router が、公開契約の HTTP binding の単位で生成した登録を合成している。
 境界の仕込みが middleware で一括して積まれ、認証が route の一致時にだけ走る層に置かれている。
 検証済み principal が server の認証境界で認証主体へ確定されて境界内に保持され、core の公開 API が認証に関する値を受け取らず、主体を必要とする operation の業務入力だけが認証主体から対応づけられている。
 全ての route が、adapter の宣言された保護を適用する入口だけを呼ぶか、匿名公開として宣言され、handler が認可を呼ばず許可結果を受け取っていない。
-想定内の失敗が、`IntoResponse` の実装で problem+json へ写されている。
+宣言した想定内の失敗が、生成した提供側接続で problem+json と status へ写されている。
 未処理の panic が、`CatchPanicLayer` で内部の詳細を含まない problem+json へ写されている。
 取り消しが、想定内の失敗の応答へ変換されていない。
 冪等な endpoint が actor scope と tenant の全種別を retention の scope へ写し、未検証 tenant と `TenantId`・single-tenant sentinel・no-tenant sentinel の相互混同を拒否し、proof のない別 client へ保存済み response を返さないことが結合テストで検証されている。
@@ -62,11 +62,11 @@ handler に認可の呼出と許可結果の引数を置くこと。
 未検証の tenant context を `TenantId` として retention へ渡すこと。
 
 ### 行動
-依存を State で渡し、router をコンテキストごとに nest・merge で合成する。
+依存を State で渡し、HTTP binding から生成した router の登録を nest・merge で合成する。
 境界の仕込みを ServiceBuilder で積み、認証は route の一致時にだけ走る層に置く。
 検証済み principal を認証 middleware で認証主体へ確定して server の境界内に保持し、route から契約の形式と制約を通った生成 DTO と認証主体を adapter の宣言された保護を適用する入口へ渡す。
 adapter の入口が、認証主体から対応づけた業務入力と検証済み入力だけを core の公開 API へ渡す。
-想定内の失敗は、生成 DTO を保持する surface の応答 wrapper に `IntoResponse` を実装して problem+json と HTTP status へ写す。
+生成した提供側接続に decode・dispatch・outcome の HTTP 表現を任せ、server の手書き処理は認証・認可の接続と登録・配線に閉じる。
 `CatchPanicLayer` を ServiceBuilder に積み、未処理の panic を内部詳細のない problem+json へ写す。
 actor scope と tenant の種別を retention の scope へ写し、安定した匿名 scope がなければ server 発行 key と proof を使う。
 multi-tenant は認証済み、匿名、system の検証済み context から `TenantId` を構築する。

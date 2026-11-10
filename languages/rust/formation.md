@@ -3,6 +3,7 @@
 ## 概要
 formation は、Rust で値・型・不変条件をモデリングする実現軸である。
 principles の [modeling](../../principles/modeling/README.md) が定める業務意味の型封入と、concerns の [types](../../concerns/types/README.md) が定める型の規律を、Rust の機構で満たす。
+業務値は公開契約の型と独立に設計し、生成した契約値の newtype・構築・codec は [translation](./translation.md) が定める。
 
 ## 業務の値を型に封じる
 
@@ -118,7 +119,7 @@ impl Period {
 ### 要求
 場合分けのある概念は enum で表し、crate の内部では網羅の match で分岐の漏れを型検査に検出させる。
 不在は Option で表し、null の代わりの番兵値を使わない。
-crate の外へ公開する enum にだけ `#[non_exhaustive]` を付ける。
+業務モデルの crate の外へ公開する enum にだけ `#[non_exhaustive]` を付け、契約から生成する閉じた variant と outcome は translation に従う。
 
 ### 根拠
 enum は取りうる状態を型で枚挙し、データ付きバリアントは状態固有のデータを同梱する。

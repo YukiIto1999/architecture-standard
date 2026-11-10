@@ -6,11 +6,12 @@ protocol は [layout](./layout.md) の依存に従い、canonical を参照す�
 
 ## wire への射影
 
-protocol は、canonical の操作を、選んだ protocol の要求と応答へ写像する。
-protocol は固有の意味を持たず、canonical の意味を wire へ表すだけである。
+protocol は、canonical の操作と全ての結果を、選んだ protocol の要求と応答へ写像する。
+command や tag 等の識別情報、payload の有無と encoding を定め、対応の欠落や複数の結果への曖昧な復元を許さない。
+protocol は媒体への対応を所有し、canonical の操作や値の意味を再定義しない。
 この binding から生成したデータ型を、提供側と利用側の要求と応答に使う。
-通信 stub はその通信を所有する境界に置く。
-core の業務操作へ接続する受信口は、生成したデータ型を契約 adapter の保護された公開入口へ渡す。
+通信 stub はその通信を所有する境界に置き、生成した dispatch が契約を検証して提供側 handler へ渡す。
+core の業務操作へ接続する handler は契約 adapter が実現し、その保護された公開入口を使う。
 host の設定や要求の中継と取消など、host が所有する技術操作は host の公開 Interface へ接続し、そのための core の operation を新設しない。
 データ型と stub の分離と生成能力は [generated](./generated.md) に従う。
 同一プロセスの native 境界でも、ABI は生成した codec の payload を渡す媒体とし、業務の DTO や管理された object の配置を ABI の共有構造にしない。

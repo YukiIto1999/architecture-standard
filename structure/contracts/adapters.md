@@ -12,13 +12,14 @@ contracts/adapters/
 
 adapter は、core の業務操作へ接続する canonical の operation ごとに置く。
 同じ公開契約を使う surface と host は、同じ adapter の公開入口を使う。
+直接呼出しでも生成された受理処理を公開入口へ接続し、未指定の入力への既定値の適用を迂回しない。
 core を埋め込まない client は generated のデータ型と通信実装を使い、この層へ依存しない。
 
 ## 依存方向
 
 | 参照元 | 参照可 | 参照不可 |
 |---|---|---|
-| operation の adapter | generated のデータ型、core の公開 API、libs の公開 API | core の domain と非公開実装、surface、runtime、deploy、tests |
+| operation の adapter | generated の型と提供側 Interface、core の公開 application Interface、libs の公開 API | core の domain と非公開実装、surface、runtime、deploy、tests |
 
 core の組み立ては [core/composition](../core/composition.md) に従う。
 adapter は組み立て済みの core API と、宣言された入口の保護に必要な技術能力を、起動側の組立点から受け取る。
@@ -26,10 +27,10 @@ adapter は組み立て済みの core API と、宣言された入口の保護�
 
 ## 入出力の写像
 
-公開契約の DTO とコンテキストの application 入出力との写像は、この層だけが所有する。
-adapter は生成 DTO の field を core API が公開する application の入力構築へ渡し、公開 result と outcome を生成した結果型とエラー型へ写す。
-公開契約の形式と制約は、generated の decoder または契約から導く境界の変換器で検証する。
-コンテキスト固有の不変条件は、application の入力構築から内部の domain の検証付き constructor へ通す。
+公開契約の型と application 入出力との写像は、この層が手書きで所有する。
+adapter は生成した提供側 handler の Interface を実現し、独立して設計された application の入力構築と公開操作へ接続する。
+生成型の field を application の入力構築へ渡し、公開 result と outcome を契約の結果型とエラー型へ写す。
+公開契約の形式と制約は [generated](./generated.md) の構築・復元で保証し、コンテキスト固有の不変条件は application の入力構築から内部の domain の検証付き constructor へ通す。
 契約の復元を繰り返すための検証は足さず、業務型が持つ独立した保証を、契約型の形が似ていることだけで省かない。
 adapter のために domain 型や constructor を外へ公開せず、core に generated の型や Interface を参照・実装させない。
 

@@ -22,6 +22,7 @@
    一つの業務操作が複数コンテキストの判断・状態・確定・進行を要する場合は、[principles/separation](../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」に照合して分割を見直し、調整機構の選択へ進まない。
    公開契約と業務モデルを独立に定め、その接続は [structure/contracts/adapters](../structure/contracts/adapters.md)、業務の不変条件と確定範囲は [structure/core/application](../structure/core/application.md) に照合する。
    認証認可の宣言と強制される公開入口、対象取得後の評価点、業務入力から分離した実行文脈を、それぞれの [concerns](../concerns/) に照合する。
+   契約から生成する公開面と通信方式を [structure/contracts/generated](../structure/contracts/generated.md) に照合し、必要な生成能力と binding、独立した oracle、観測する経路を [structure/tests/methods](../structure/tests/methods.md) の「契約の意味と生成」へ対応付ける。
 8. 境界を決めてから、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の段を適用し、設計したドメイン型と操作を実現する機構を選ぶ。
    境界の決定を飛ばして言語の機構やパターンだけを選ばない([languages](../languages/) に従う)。
 
@@ -38,6 +39,7 @@
 公開入口への接続は [structure/contracts/adapters](../structure/contracts/adapters.md) と [structure/core/layout](../structure/core/layout.md) に照らし、手書き adapter が独立した application の公開 Interface へ接続し、core に生成 Interface の実装や参照を持ち込んでいないことを確かめる。
 業務操作の判断・状態・確定・進行の所有をコンテキストの分割へ戻して照合し、port、composition、workflow、event による間接化を独立性の根拠にしていないことを確かめる。
 必要な読み取りと変更の開始・確定・中止を application が制御し、同一コンテキスト内の複数モデルの操作と独立した外部とのやり取りを、コンテキストをまたぐ業務操作と混同していないことを確かめる。
+契約生成の設計は、必要な生成先の受入条件と、試行で観測した部分・未実装・未実行を区別し、生成器が未対応を拒否することだけで必要な能力を満たしたと判定していないことを確かめる。
 domain の純粋な判断へ実行文脈や認証方式を持ち込んでいないことを確かめる。
 新しい型・抽象・設定・依存を選んだ場合は、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の完了条件と禁止事項に照合する。
 暗黙の制約を反実仮想で検討した場合は、[structure/tests/methods](../structure/tests/methods.md) の「反実仮想で検証を選ぶ」に照らし、仮定と観測事実、強制する保証、検出済みか未実行かを区別して完了条件へ渡す。

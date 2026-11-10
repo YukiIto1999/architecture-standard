@@ -23,17 +23,17 @@ console/
 依存の向きは [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 composition が commands を組み立て、core を埋め込む。
 commands は composition を参照しない。
-起動の流れは main → composition → command の一方向であり、command は保護された契約 adapter の呼び出し口と、引数の形式と契約の制約を通った入力を composition から受け取る。
+起動の流れは main → composition → command の一方向であり、command は保護された契約 adapter の呼び出し口と、引数の解析結果を composition から受け取る。
 console の外との依存は [skeleton](../../skeleton.md) に従う。
 console 自身の技術的な処理は、[libs](../../libs/layout.md) の公開 API を直接使え、core の operation を仲介にしない。
 依存方向の規律は [concerns/dependency](../../../concerns/dependency/README.md) に従う。
 
 ## 入口とコマンド
 
-command は、引数を公開契約の生成 DTO へ写像し、契約 adapter の保護された公開入口を呼ぶ。
-引数の未完成入力と生成 DTO は保証が異なるため区別し、生成 DTO の field と同じ意味の中間 DTO は手書きしない。
+command は、引数を公開契約の生成された構築処理へ渡し、受理した入力で契約 adapter の保護された公開入口を呼ぶ。
+引数の未完成入力と受理済みの契約型は保証が異なるため区別し、同じ field と制約を持つ中間 DTO は手書きしない。
 command は業務判断やドメイン型への変換を持たず、公開契約と application 入出力の写像は [contracts/adapters](../../contracts/adapters.md) が所有する。
-機械向け出力が canonical の契約を使う場合も、[contracts/generated](../../contracts/generated.md) の生成 DTO を使い、人向け表示とは別の責務として扱う。
+機械向け出力が canonical の契約を使う場合も、[contracts/generated](../../contracts/generated.md) の型と encoder を使い、人向け表示とは別の責務として扱う。
 console は wire の binding を持たないが、引数、標準入出力、終了 status は人と script に公開する契約として扱う。
 console は、派生読みモデルの臨時・手動の再構築 workflow を command として起動する役割を担う。
 引数の解析の機構は [languages](../../../languages/) が定める。

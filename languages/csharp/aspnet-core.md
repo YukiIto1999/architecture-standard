@@ -8,15 +8,15 @@
 撤回条件は、判断基準を満たさなくなることであり、保守の停止とリリースポリシーの変化を再評価のトリガーとする。
 
 ### 要求
-server は ASP.NET Core の Minimal API で組み、endpoint の登録はコンテキストごとの登録に分ける。
+server は ASP.NET Core の Minimal API で組み、公開契約の HTTP binding ごとに生成した endpoint の登録を合成する。
 境界の仕込みは middleware で一括して積み、認証を認可の前に、認可を業務の前に置く。
 server の認証境界は検証済み `ClaimsPrincipal` を認証主体へ確定し、認証主体と資格情報の許可範囲を認証と認可の内側に保持する。
 `ClaimsPrincipal`、token、claim、認証主体を core の公開 API または業務へ渡さず、core の公開 API が受け取るのは、検証済み入力と、主体を必要とする operation の認証主体から対応づけた業務入力だけにする。
 認可は [declarative-access-guards](../../concerns/authorization/declarative-access-guards.md) の「認可の宣言を公開入口で強制する」に従い、endpoint は [structure/contracts/adapters](../../structure/contracts/adapters.md) が公開する宣言された保護を適用する入口だけを呼び、認証主体をその入口へ渡す。
 endpoint は `RequireAuthorization()` で認証済みの主体を要求するか `AllowAnonymous` で匿名公開を宣言し、どちらもない endpoint は `AuthorizationOptions.FallbackPolicy` の拒否 policy で拒否する。
 操作と対象の policy は adapter の入口が適用し、endpoint の `RequireAuthorization()` だけで満たしたとみなさず、handler は認可を呼ばず許可結果を受け取らない。
-handler の契約のデータは generated の DTO で受け渡し、形式と制約を通った入力を契約 adapter の保護された公開入口へ渡す。
-生成 DTO の decode と未知項目の捕捉は [translation](./translation.md)、DTO と application の写像の所有者は [structure/contracts/adapters](../../structure/contracts/adapters.md) に従う。
+生成した提供側接続が decode・dispatch・outcome の encode を担い、形式と制約を通った入力を契約 adapter の保護された公開入口へ渡す。
+生成型の構築と codec は [translation](./translation.md)、独立した application Interface との写像は [structure/contracts/adapters](../../structure/contracts/adapters.md) に従う。
 冪等な endpoint は、認証主体の ID、匿名の安定した session または client の opaque scope、logical system actor の ID を、要求の種別に応じた actor scope として retention へ渡す。
 actor scope は冪等 key を主体の種別ごとに分ける retention の scope 識別であり、core の業務入力でも業務のモデリングの役割でもない。
 multi-tenant operation は、認証済み claim または membership、authorization 済み選択、匿名の検証済み host または route と session/client context、system の logical actor 設定のいずれかから `TenantId` を構築する。
@@ -24,7 +24,7 @@ single-tenant operation は正準な single-tenant sentinel を、tenant の概�
 安定した匿名 scope がない endpoint は、server 発行の全体で一意な key と proof だけを受け付ける。
 
 ### 根拠
-endpoint の登録をコンテキストごとに分ければ、面が変更理由ごとに分かれ、コンテキストが自分の endpoint を所有する。
+HTTP binding ごとに生成した登録を合成すれば、公開操作の変更理由を core のコンテキストの配置と混同せずに済む。
 境界の仕込みを middleware で一括して積めば、横断の関心が入口に集まる。
 認証を認可の前に置けば、認証主体が確定してから認可が評価できる。
 認可を業務の前に置けば、拒否が業務に届く前に止まる。
@@ -34,7 +34,7 @@ endpoint の登録をコンテキストごとに分ければ、面が変更理�
 
 ### 完了条件
 server が、Minimal API で組まれている。
-endpoint の登録が、コンテキストごとの登録に分かれている。
+endpoint の登録が、公開契約の HTTP binding ごとに生成され、server で合成されている。
 境界の仕込みが middleware で一括して積まれ、認証・認可・業務の順序になっている。
 検証済み `ClaimsPrincipal` が server の認証境界で認証主体へ確定されて境界内に保持され、core の公開 API が認証に関する値を受け取らず、主体を必要とする operation の業務入力だけが認証主体から対応づけられている。
 全 endpoint が `RequireAuthorization()` か `AllowAnonymous` の宣言を持ち、宣言のない endpoint が fallback policy で拒否され、endpoint が adapter の宣言された保護を適用する入口だけを呼び、handler が認可を呼ばず許可結果を受け取っていない。
@@ -54,7 +54,7 @@ endpoint を、一箇所にまとめてベタ書きすること。
 未検証の tenant context を `TenantId` として retention へ渡すこと。
 
 ### 行動
-endpoint の登録をコンテキストごとの拡張メソッドに分け、Program.cs は合成だけにする。
+HTTP binding から生成した endpoint の登録を Program.cs で合成し、契約 adapter の handler と認証境界を配線する。
 middleware を認証・認可・業務の順に積む。
 検証済み `ClaimsPrincipal` を認証 middleware で認証主体へ確定して server の境界内に保持し、endpoint から契約の形式と制約を通った生成 DTO と認証主体を adapter の宣言された保護を適用する入口へ渡す。
 adapter の入口が認証主体から対応づけた業務入力と検証済み入力だけを core の公開 API へ渡す。
@@ -242,21 +242,21 @@ Task<IResult> CreateOrder(
 ## 公開するエラーを境界で problem+json へ写す
 
 ### 要求
-`Result` から HTTP の応答への写像は handler の終端に置き、binding から生成したエラーの DTO を RFC 9457 の problem+json として返す。
-HTTP status、header、content type は Minimal API の応答で組み立て、`ProblemDetails` の機構の出力にも生成したエラーの契約を適用する。
+契約 adapter が返す宣言した拒否を、binding から生成した提供側接続が RFC 9457 の problem+json として encode する。
+HTTP status、header、content type と body の対応は生成した接続が持ち、ProblemDetails の機構の出力にも生成したエラーの契約を適用する。
 公開契約の field を、別の手書き DTO へ写し直さない。
 未処理の例外は例外 handler の middleware が一括で problem+json へ変換する。
 内部の実装の詳細を、応答に出さない。
 
 ### 根拠
 エラーの写像を handler の各所に書くと、表現が揺れ重複する。
-handler の終端に置き、未処理の例外を middleware で一括変換すれば、公開するエラーの形が一箇所で決まる。
+公開契約の写像を生成した接続に集め、未処理の例外を middleware で一括変換すれば、手書き handler に同じ契約の解釈が散らない。
 problem+json の標準の形に従えば、利用側が機械的に扱える。
 内部の詳細を応答に出すと、攻撃の手がかりを与える。
 
 ### 完了条件
 失敗が、problem+json へ写されている。
-写像が handler の終端と例外 handler の middleware に集約され、各所に散っていない。
+宣言した結果の写像が生成した提供側接続に、未処理の例外の処理が例外 handler の middleware に集約されている。
 応答に、内部の実装の詳細が出ていない。
 公開契約のエラーの body が binding から生成した DTO に従い、handler がコンテキストの domain エラーや内部詳細を直接公開していない。
 
@@ -265,6 +265,6 @@ problem+json の標準の形に従えば、利用側が機械的に扱える。
 内部の実装の詳細を、応答に出すこと。
 
 ### 行動
-契約 adapter の公開入口が返す生成されたエラーの DTO と binding を使い、handler の終端で HTTP status と problem+json の応答を組み立てる。
+生成した提供側接続へ契約 adapter の handler を配線し、binding に従う HTTP status と problem+json の組み立てを生成処理に任せる。
 `ProblemDetails` の機構の serializer と例外 handler も、公開する body が generated の契約に一致するように設定する。
 未処理の例外を例外 handler の middleware で一括変換する。

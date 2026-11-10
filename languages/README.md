@@ -21,6 +21,9 @@ languages は、上位の設計原則である [principles](../principles/)、�
 
 各言語 ecosystem のディレクトリ配下に置かれた `README.md` が、所属するファイルの正本台帳を兼ねています。
 
+公開契約の共通生成経路の採用は [tools/build/typespec](../tools/build/typespec.md) が定めます。
+各 ecosystem は translation に言語別の型・構築・codec・操作と効果の接続を、inspection にその検証機構を置き、言語別の schema 入力 generator を重ねて採用しません。
+
 ## 6つの実現軸と全域規律
 
 コード上で責務が現れる場所に応じて、3言語共通で以下の6つの実現軸と1つの全域規律を定めています。

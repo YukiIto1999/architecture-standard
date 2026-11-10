@@ -9,12 +9,11 @@ server の有無によらず、被ホストの surface が core をローカル�
 
 ```
 <embedded>/
-├─ endpoints/
-│  └─ <operation>   protocol の要求を契約 adapter の保護された公開入口へ渡す。
+├─ endpoints/       生成した protocol 接続の登録と保護された公開入口への配線。
 └─ composition      core の組立・protocol の公開・起動または初期化の入口。
 ```
 
-`endpoints` は、1 operation を1ファイルに置く。
+`endpoints` は生成した protocol の提供側接続を登録し、operation の識別や codec を手書きで重ねない。
 `composition` は単一の組立点である。
 surface の名は、公開する protocol の対話様式で付ける。
 
@@ -29,13 +28,13 @@ endpoints は composition を参照しない。
 
 ## 入口と protocol
 
-endpoint は、protocol の要求を生成 DTO として decode し、契約 adapter の保護された公開入口へ渡し、生成 DTO の結果を protocol の応答へ encode する。
-endpoint は契約の形式と制約の検証と入口の呼び出しを担い、業務判断やドメイン型への変換を持たない。
+endpoints は、binding から生成した decode・dispatch・encode と、契約 adapter の保護された handler を接続する。
+契約の形式と制約の検証は生成処理が所有し、endpoints は業務判断や domain 型への変換を持たない。
 公開契約と application 入出力の写像は [contracts/adapters](../../contracts/adapters.md) が所有する。
-提供側 stub とデータ型の分離、未知項目の扱い、生成能力の不足の解消は [contracts/generated](../../contracts/generated.md) に従う。
-protocol の要求から operation を識別して endpoint へ振り分ける dispatch は、composition が持つ。
+型・codec と提供側接続の分離、未知項目の扱い、生成能力の不足の解消は [contracts/generated](../../contracts/generated.md) に従う。
+composition は protocol の受信機構と組み立て済みの handler を endpoints へ渡し、生成した dispatch を公開する。
 認証境界は、要求の資格情報の発行元、対象、完全性、有効性を検証し、認証主体と資格情報の許可範囲を確定する。
-endpoint は、振り分け済みの単一 operation へ接続する保護された呼び出し口を受け取る。
+各 handler は、振り分け済みの単一 operation へ接続する保護された呼び出し口である。
 資格情報が protocol の接続から自明な場合も、接続のどの証拠で認証主体を確定するかを project の決定の記録に明記する。
 endpoint と core の公開 API へ資格情報、principal、token、claim、protocol の認証方式の型を渡さない。
 公開する protocol の binding は [contracts/protocol](../../contracts/protocol.md) に従う。

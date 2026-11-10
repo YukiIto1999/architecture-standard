@@ -16,7 +16,7 @@ deserialize は契約の形式と制約を検証し、生成 DTO からコンテ
 生成 DTO とコンテキストの型がともに別 crate の型である場合は、contracts/adapters に `Result` を返す mapper 関数を置き、foreign な型同士の `TryFrom` を surface に実装しない。
 未知のフィールドは弾かず、生成した deserialize の処理で object の位置とキーを捕捉し、境界でログに出す。
 捕捉は全 variant と入れ子の object に及ぼし、未知のキーを既知の field や判別子として扱わず、必須項目、値の制約、variant の対応の検証を維持する。
-未知の追加項目の受容は、選択した版の必須項目の欠落、契約が許さない null、既知項目の不正、判別子の不整合の受容を意味せず、これらは deserialize または application 入力構築の失敗として拒否し、業務処理を始めない。
+未知の追加項目の受容は、選択した版の必須項目の欠落、契約が許さない null、既知項目の不正、判別子の不整合の受容を意味せず、これらは生成 codec の構造化した違反情報として拒否し、業務処理を始めない。
 必須項目の欠落と契約が許さない null の拒否を、`default` 属性による補完や `Option` への読み替えで外さない。
 `Option` による不在は契約が定める意味と範囲で使い、旧版との互換のためだけに必須項目を任意にしない。
 未指定と null は [canonical](../../structure/contracts/canonical.md) の「値の不在」に対応させ、契約上必要な区別を生成 DTO と deserialize の過程で失わない。
@@ -67,9 +67,9 @@ queue から受ける job の payload が、実際に受信する経路で、pay
 surface から非公開のドメイン型へ変換するために、domain を公開したり依存の向きを逆転したりすること。
 
 ### 行動
-canonical と binding から、具体的な DTO と、既知の項目を検証し未知キーを捕捉する `Deserialize` の処理を生成する。
-判別付き直和は schema の判別子で variant を選び、その variant の既知キーに照らして未知キーを捕捉する。
-生成経路が捕捉を実現できなければ、生成器の設定や schema 駆動の出力処理を直し、手書き DTO や unknown-field policy の抑止で回避しない。
+共通 toolchain の IR から、具体的な型と、既知の項目を検証し未知キーを捕捉する codec を生成する。
+判別付き直和は解釈済みの判別子と variant の対応で選び、その variant の既知キーに照らして未知キーを捕捉する。
+生成経路が捕捉を実現できなければ、profile・IR・Rust emitter を直し、手書き DTO や unknown-field policy の抑止で回避しない。
 境界は捕捉した位置とキーを警告として記録し、値そのものや未知の資格情報をログに載せない。
 queue の job は、受信経路の decode で payload が宣言する版の生成 DTO を選び、公開契約の入力と同じ検証を通してから mapper へ渡す。
 未知キーを加えた入力と、必須項目の欠落、契約が許さない null、既知項目の不正、判別子の不整合を加えた入力を、実際の受信経路へ別々に渡し、前者の受容と後者の拒否および業務処理の非開始を確かめる。
@@ -94,6 +94,6 @@ deserialize と未知キーの検知は mapper より上流の生成 decoder で
 fn create_user_mapper(
     input: generated::CreateUserCommand,
 ) -> Result<users::CreateUserCommand, users::CreateUserError> {
-    users::CreateUserCommand::try_new(input.email)
+    users::CreateUserCommand::try_new(input.into_email())
 }
 ```

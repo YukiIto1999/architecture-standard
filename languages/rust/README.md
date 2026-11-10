@@ -36,7 +36,6 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [cucumber](./cucumber.md) | 業務語彙の executable spec を実行する道具である | Rust は cucumber の Rust 実装である |
 | [jsonwebtoken](./jsonwebtoken.md) | OIDC の back-channel logout token を検証する JWT の検証機構である | Rust は jsonwebtoken(暗号の provider は `aws_lc_rs`)である |
 | [openidconnect](./openidconnect.md) | OIDC の code と PKCE のフローを終端し ID Token を検証するクライアントである | Rust は openidconnect である |
-| [progenitor](./progenitor.md) | 契約から Rust の client と型を生成し、drift・conformance の検査に使う道具である | Rust は progenitor である |
 | [proptest](./proptest.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | Rust は proptest と proptest-state-machine の組である |
 | [redis](./redis.md) | Valkey へ接続する非同期 client である | Rust は redis である |
 | [reqwest](./reqwest.md) | 外部の HTTP API を呼び出す非同期の client である | Rust は reqwest (TLS は rustls)である |
@@ -53,7 +52,6 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | [tower](./tower.md) | HTTP の経路の横断処理を、層として合成する機構である | Rust は tower と tower-http である |
 | [tower-lsp-server](./tower-lsp-server.md) | 言語サービスの公開・extension が接続する core への JSON-RPC | tower-lsp-server である |
 | [tower-sessions](./tower-sessions.md) | BFF の token 管理・BFF の session 管理 | Rust は tower-sessions のサーバー側セッション、redis の Valkey client と openidconnect のトークンエンドポイントクライアントである |
-| [typify](./typify.md) | JSON Schema から Rust のデータ型を生成し、HTTP と非 HTTP の契約の decode と未知項目の捕捉の生成規律を定める道具である | Rust は typify である |
 
 ## 言語機構で満たす用途
 
@@ -62,6 +60,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | 用途 | 満たし方 | 置き場 |
 |---|---|---|
 | 副作用と想定内失敗の表現 | 言語機構(Future・Result・環境への trait bound)で表し、型が表さない原始効果は clippy と syn の検査で補い、外部ライブラリを採らない | [connection](./connection.md) |
+| 公開契約の型・操作の生成 | 共通 toolchain の Rust emitter を使い、型・codec の crate と通信処理を分離する | [translation](./translation.md) |
 | API の禁止 | clippy の disallowed_methods で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | crate 依存の phase の区別 | `cargo metadata` の `dep_kinds` が返す normal・dev・build で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | 未使用コードの検出 | コンパイラと lint の到達可能性に基づく検出で満たし、専用の道具を置かない | [inspection](./inspection.md) |

@@ -31,7 +31,7 @@ conformance は、業務の語彙で書いた Gherkin の executable spec を、
 適合は、シナリオの合否で判定し、点数化しない。
 contract は、[contracts/canonical](../contracts/canonical.md) の契約定義を駆動元として検証する。
 generated が canonical と binding(http・protocol)から外れていないことを、drift の検査で確かめる。
-生成物の契約の表現と未知項目の扱いの検査は [methods](./methods.md) の「性質別の技法」に従い、drift の一致だけで生成能力の充足とみなさない。
+生成入口、型・構築・codec、両端の実行と証跡の所有は [methods](./methods.md) の「契約の意味と生成」に従い、drift の一致だけで生成能力の充足とみなさない。
 arch は、[skeleton](../skeleton.md) と各部の layout、[concerns/dependency](../../concerns/dependency/README.md) が定める依存と境界の禁止を、機械で検証する。
 arch の検査は repository の source と manifest を読むため、hermetic でなければ Medium に置き、実行する段は [process/verification](../../process/verification.md) が定める。
 viewer と extension が特定 host の API や型を参照しないことも、arch で検証する。

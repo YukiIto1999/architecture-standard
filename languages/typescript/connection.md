@@ -175,33 +175,30 @@ const session = createMemo(() => {
 });
 ```
 
-## 生成型を型としてのみ使い、通信を port に通す
+## 生成した契約値を使い、通信を port に通す
 
 ### 要求
-viewer と extension は contracts/generated の型を型としてだけ import し、生成した client を import しない。
+viewer と extension は contracts/generated の純粋な型・構築・codec の公開入口を使い、生成した通信 client と transport を import しない。
+型だけの import は import type とし、構築と codec の runtime import は通信依存を持たない公開入口に限る。
 viewer の通信は ui port、extension の通信は host port を通して行う。
-生成した client を使うのは、viewer の ui port または extension の host port を実装する host の adapters に限る。
+生成した通信 client を使うのは、viewer の ui port または extension の host port を実装する host の adapters に限る。
 
 ### 根拠
-viewer や extension が生成した client を import すると、surface が通信の実装に縛られ、host ごとに別の実装へ差し替えられなくなる。
-型としてだけ使えば、surface は契約の型の境界に留まる。
-通信を port に通せば、surface は通信の実装から切り離される。
-生成した client の利用を host の adapters に集めれば、transport の判断が host の側に揃う。
+純粋な構築と codec は、surface の local な値にも契約の検証を適用でき、通信の実装への依存を要しない。
+通信を port に通し client の利用を host の adapters に集めれば、surface を host ごとの通信実装から切り離せる。
 
 ### 完了条件
-viewer と extension で、生成型が型としてのみ import されている。
-viewer と extension が、生成した client を import していない。
+viewer と extension の生成物への import が、純粋な型・構築・codec の公開入口に閉じている。
 viewer の通信が ui port を、extension の通信が host port を通っている。
-生成した client の import が、viewer の ui port または extension の host port を実装する host の adapters に限られている。
+生成した通信 client の import が、対応する port を実装する host の adapters に限られている。
 
 ### 禁止事項
-viewer と extension で、生成型を runtime の値として使うこと。
-viewer と extension から、生成した client を import すること。
+純粋な生成入口の再輸出を経由して、通信 client または transport を surface へ流入させること。
 surface の通信を、対応する port の外で行うこと。
 
 ### 行動
-viewer と extension では生成型を `import type` で取り込み、通信はそれぞれ ui port と host port を通す。
-生成した client は、host の adapters が viewer の ui port または extension の host port の実装として使う。
+生成物の純粋な入口と通信の入口を分け、型だけの参照には import type を使う。
+local 構築と decode は純粋な入口を使い、生成した通信 client は host の adapters が port の実装として使う。
 
 ## 参照
 効果システムは [effect](../../concerns/effect/README.md)、依存の向きは [dependency](../../concerns/dependency/README.md) に従う。

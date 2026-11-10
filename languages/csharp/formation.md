@@ -3,6 +3,7 @@
 ## 概要
 formation は、C# で値・型・不変条件をモデリングする実現軸である。
 principles の [modeling](../../principles/modeling/README.md) が定める業務意味の型封入と、concerns の [types](../../concerns/types/README.md) が定める型の規律を、C# の機構で満たす。
+業務値は公開契約の型と独立に設計し、生成した契約値の readonly value type・構築・codec は [translation](./translation.md) が定める。
 
 ## 業務の値を型に封じる
 

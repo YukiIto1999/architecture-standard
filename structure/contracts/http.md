@@ -6,14 +6,15 @@ http は [layout](./layout.md) の依存に従い、canonical を参照する。
 
 ## wire への射影
 
-http は、canonical の操作を path・method・status へ写像する。
+http は、canonical の操作と全ての結果を path・method・status・media type・body の有無と encoding へ写像する。
+同じ status と media type に複数の結果を写す場合は、明示した判別子等で一意に識別できる対応を定める。
 request semantics は method 自身が持ち、target resource は method と矛盾しない形で操作を処理する。
 http は、canonical の意味を、method が定める protocol semantics と整合させて wire へ表す。
 path の階層に、リソースの親子関係を深く刻まない。
 階層は、一度公開すると変えにくい。
 提供しない method は、405 で拒む。
-この binding から生成したデータ型を、提供側の要求と応答にも使う。
-提供側の handler と core の接続は [surfaces/server](../surfaces/server/layout.md) が、DTO の生成能力と通信 client との分離は [generated](./generated.md) が定める。
+この binding から、提供側の dispatch と利用側の client を生成し、双方に同じ契約の型と codec を使う。
+提供側の公開と handler の接続は [surfaces/server](../surfaces/server/layout.md) が、生成する Interface と結果の分類は [generated](./generated.md) が定める。
 
 ## 応答の status
 

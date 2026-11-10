@@ -38,9 +38,9 @@ job が業務の operation を起動する経路は、core の公開 application
 core の業務処理が必要とする libs の port は、[core/composition](../../core/composition.md) が配線する。
 worker が所有する技術機構の配線は worker の composition に置き、queue の runner と schedule の入口はその公開 API を直接使う。
 job は、業務判断を持たず、配線された処理を呼ぶだけである。
-job は queue の機構の型を core へ持ち込まず、公開契約の生成 DTO を契約 adapter の公開入口へ渡す。
-payload の decode と契約の形式と制約の検証は境界で行い、application 入出力との写像は [contracts/adapters](../../contracts/adapters.md) が所有する。
-生成 DTO、未知項目の扱い、生成能力の不足の解消は [contracts/generated](../../contracts/generated.md) に従い、job が同義の DTO を手書きしない。
+job は queue の機構の型を core へ持ち込まず、公開契約の受理済みの型を契約 adapter の公開入口へ渡す。
+payload の decode と契約の形式と制約の検証は生成した codec で行い、application 入出力との写像は [contracts/adapters](../../contracts/adapters.md) が所有する。
+型・構築・codec、未知項目の扱い、生成能力の不足の解消は [contracts/generated](../../contracts/generated.md) に従い、job が同義の DTO を手書きしない。
 worker は、派生読みモデルの定常・定期の再構築 workflow を job として起動する役割を担う。
 
 ## OS と worker の分担

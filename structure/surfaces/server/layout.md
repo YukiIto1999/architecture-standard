@@ -10,8 +10,7 @@ server は [skeleton](../../skeleton.md) の依存と命名に従う。
 
 ```
 server/
-├─ routes/
-│  └─ <route>       http の handler。要求を契約 adapter の保護された公開入口へ渡す。
+├─ routes/          生成した HTTP 接続の登録と保護された公開入口への配線。
 ├─ authentication/
 │  ├─ boundary      資格情報の検証と認証主体の確定を公開する interface。
 │  └─ adapters      受理する資格情報ごとの検証と、認可評価への許可範囲の引き渡し。
@@ -23,7 +22,7 @@ server/
 └─ composition      core の埋め込み・境界の仕込み・request context の構築・http の起動。
 ```
 
-`routes` は、1 route を1ファイルに置く。
+`routes` は生成した HTTP の提供側接続を登録し、operation ごとの手書きの decode・dispatch・encode を置かない。
 `authentication` は、server が受理する資格情報を検証し、認証主体を確定する共通の認証境界を置く。
 `bff` は、Web frontend に代わる OAuth と、server 側の token と session の lifecycle を所有する。
 認証と Web BFF は別の interface とし、token の取得・更新と、API の要求で受け取る資格情報の検証を同じ公開操作へ束ねない。
@@ -42,10 +41,10 @@ server 自身の技術的な処理は、[libs](../../libs/layout.md) の公開 A
 
 ## 入口と handler
 
-handler は、http の要求を生成 DTO として decode し、binding 固有の path、header、query と body を契約 adapter の入力へ写像する。
-handler は、契約の形式と制約を通った生成 DTO を保護された公開入口へ渡し、その結果の生成 DTO を応答へ encode する。
-公開契約と application 入出力の写像は [contracts/adapters](../../contracts/adapters.md) が所有し、handler は業務判断やドメイン型への変換を持たない。
-生成 DTO と通信 client の分離、未知項目の扱い、生成能力の不足の解消は [contracts/generated](../../contracts/generated.md) に従う。
+routes は、binding から生成した要求の decode・dispatch・結果の encode と、契約 adapter が実現する保護された handler を接続する。
+path、header、query、body と公開契約の入力、結果と応答の写像は生成処理が所有し、routes に重ねて記述しない。
+公開契約と application 入出力の写像は [contracts/adapters](../../contracts/adapters.md) が所有し、routes は業務判断や domain 型への変換を持たない。
+型・codec と提供側接続の分離、未知項目の扱い、生成能力の不足の解消は [contracts/generated](../../contracts/generated.md) に従う。
 API の様式と表現の形式は [contracts/http](../../contracts/http.md) に、操作の意味は [contracts/canonical](../../contracts/canonical.md) に従う。
 認可の規律は [concerns/authorization](../../../concerns/authorization/README.md) に従う。
 composition が仕込む認証境界と入口の認可評価を通った要求だけを handler へ渡し、handler は資格情報の許可範囲を広げない。
@@ -57,7 +56,7 @@ composition が仕込む認証境界と入口の認可評価を通った要求�
 session cookie と API の access token は、それぞれの契約を検証する具体的な adapter から同じ認証の interface へ接続する。
 access token の検証を提供することと、Web frontend に代わる OAuth client を提供することは別の責務であり、どちらも一方だけを理由に導入しない。
 認証主体と検証済み資格情報の許可範囲は、認証と認可の境界内に保持し、保護された公開入口へ結び付ける。
-route は生成 DTO を契約 adapter の公開入口へ渡し、業務に必要な主体への対応付けもその入口へ集める。
+生成した提供側接続は契約の入力を adapter の保護された handler へ渡し、業務に必要な主体への対応付けもその入口へ集める。
 core の公開 API へ資格情報、principal、token、claim、認証方式の型を渡さない。
 
 ## Web BFF の OAuth と session

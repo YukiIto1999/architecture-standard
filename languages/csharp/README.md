@@ -37,7 +37,6 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | [grate](./grate.md) | schema を変更する forward-only の SQL script を、履歴順に一度だけ、アプリの配備から独立して適用する道具である | C# は grate の up の one-time script である |
 | [mutation-dotnet](./mutation-dotnet.md) | テストの検出力を評価し改善する mutation 分析である | C# は mutation-dotnet である |
 | [npgsql](./npgsql.md) | PostgreSQL へ接続し、transaction の確定と制約違反の判別を担う data provider である | C# は Npgsql である |
-| [nswag](./nswag.md) | 契約から C# の client と型を生成し、drift・conformance の検査に使う道具である | C# は NSwag である |
 | [reqnroll](./reqnroll.md) | 業務語彙の executable spec を実行する道具である | C# は Reqnroll である |
 | [roslyn-documentation-comment-analyzer](./roslyn-documentation-comment-analyzer.md) | ドキュメントコメントの存在、構文、宣言と tag の機械判定できる対応、最初の一行と句読点を検査する道具である | C# は Roslyn の documentation-comment analyzer である |
 | [sonaranalyzer-csharp](./sonaranalyzer-csharp.md) | 規則の違反をビルドで止める linter である | C# は SonarAnalyzer.CSharp である |
@@ -57,7 +56,8 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 | 取り消しの伝達 | 組み込みの機構(CancellationToken)で表し、外部ライブラリを採らない | [coordination](./coordination.md) |
 | 副作用と想定内失敗の表現 | libs の Effect 型と Result 型で表し、外部ライブラリを採らない | [connection](./connection.md) |
 | エラー型の定義 | sealed record の階層という言語機構で表し、外部ライブラリを採らない | [formation](./formation.md) |
-| 直列化 | 言語標準の source generation(JsonSerializerContext)を使い、外部の直列化ライブラリを別に選ばない | [translation](./translation.md) |
+| 直列化 | System.Text.Json の source generation と契約から生成する converter・codec で満たし、外部の直列化ライブラリを別に選ばない | [translation](./translation.md) |
+| 公開契約の型・操作の生成 | 共通 toolchain の C# emitter を使い、型・codec の assembly と通信処理を分離する | [translation](./translation.md) |
 | 未使用コードの検出 | コンパイラと lint の到達可能性に基づく検出で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | UI の accessibility 検査 | viewer を TypeScript に委ねるため採用を持たない | — |
 | desktop と mobile の shell | Rust の host に委ね、C# の core とは公開契約で接続する | [tauri](../rust/tauri.md) |

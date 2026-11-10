@@ -31,8 +31,6 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 | [chromium](./chromium.md) | extension とその UI を動かす browser-extension の host である | Chromium の Manifest V3 と拡張 API である |
 | [eslint-plugin-sonarjs](./eslint-plugin-sonarjs.md) | 関数の複雑さを linter の規則として測る道具である | TypeScript は eslint-plugin-sonarjs の cognitive-complexity 規則を、oxlint の JS plugin として読み込んだものである |
 | [fast-check](./fast-check.md) | 入出力の不変量を性質として多くの入力で検査する property-based testing である | TypeScript は fast-check である |
-| [http-client-js](./http-client-js.md) | 契約から TypeScript の client と型を生成し、drift・conformance の検査に使う道具である | TypeScript は `@typespec/http-client-js` である |
-| [json-schema-to-typescript](./json-schema-to-typescript.md) | HTTP を持たない契約の JSON Schema から TypeScript の型を生成する道具である | TypeScript は json-schema-to-typescript である |
 | [knip](./knip.md) | エントリーポイントからの到達可能性で、未使用のファイル・エクスポート・依存を見つける道具である | TypeScript は knip である |
 | [kobalte](./kobalte.md) | 見た目を持たない振る舞いだけの UI component を提供する機構である | @kobalte/core の SolidJS 2.0 対応版である |
 | [opentelemetry-js](./opentelemetry-js.md) | 利用者の環境で動く viewer の trace と構造化 event を、境界の殻で収集する機構である | TypeScript は OpenTelemetry JS の WebTracerProvider と span event、OTLP/HTTP の trace exporter である |
@@ -48,7 +46,7 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 | [tsdoc](./tsdoc.md) | ドキュメントコメントの存在、構文、宣言と tag の機械判定できる対応、最初の一行と句読点を検査する道具である | TypeScript は @typescript/typescript6 と @microsoft/tsdoc を使う構造検査である |
 | [tsgolint](./tsgolint.md) | 型情報を要する規則の違反を、ビルドで止める linter である | TypeScript は `oxlint-tsgolint` である |
 | [typescript-compiler-api](./typescript-compiler-api.md) | 依存方向と境界の禁止、および構文で判定できる形を実行可能な検査として検証する道具である | TypeScript は @typescript/typescript6 の compiler API を使う AST 構造検査である |
-| [valibot](./valibot.md) | 外部入力を schema で検証し、検証済みの値だけに型を名乗らせる機構である | TypeScript は valibot である |
+| [valibot](./valibot.md) | 受信側固有の業務値と公開契約外の入力を schema で検証し、その型を導出する機構である | TypeScript は valibot である |
 | [vite](./vite.md) | viewer を載せる host の entry と bundler である | Vite と @solidjs/vite-plugin である |
 | [vite-plus](./vite-plus.md) | TypeScript の build、lint、format、テストを、一つの入口と一つの設定で駆動する統合 toolchain である | TypeScript は `vite-plus` である |
 | [vitest](./vitest.md) | 単体・性質・結合のテストの実行系と、テストが実行していない箇所を見つけるカバレッジ計測である | TypeScript は Vitest と Vitest の coverage(v8 provider)である |
@@ -65,6 +63,7 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 | 非同期の runtime | 言語・実行環境に組み込みの非同期基盤を使い、外部の runtime を別に選ばない | [coordination](./coordination.md) |
 | 取り消しの伝達 | 組み込みの機構(AbortController)で表し、外部ライブラリを採らない | [coordination](./coordination.md) |
 | エラー型の定義 | 判別子つきの union という言語機構で表し、外部ライブラリを採らない | [formation](./formation.md) |
-| 直列化 | 境界の値検証に使う schema から導出し、外部の直列化ライブラリを別に選ばない | [translation](./translation.md) |
+| 直列化 | 公開契約は共通 toolchain が生成する codec で満たし、公開契約外は境界が所有する schema と標準の JSON 機構を使う | [translation](./translation.md) |
+| 公開契約の型・操作の生成 | 共通 toolchain の TypeScript emitter を使い、純粋な型・構築・codec の公開入口と通信処理を分離する | [translation](./translation.md) |
 | schema migration | server 側の永続化の役割を持たないため採用を持たない | — |
 | API の禁止 | import を介さない参照を oxlint の no-restricted-properties・no-restricted-globals で満たし、専用の道具を置かない | [inspection](./inspection.md) |

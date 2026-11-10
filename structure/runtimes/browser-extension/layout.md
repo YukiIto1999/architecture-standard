@@ -42,7 +42,7 @@ host の外とのソース依存と成果物の消費は [skeleton](../../skelet
 adapters は、extension の host port を host の API で実装する。
 remote の通信は、[contracts/generated](../../contracts/generated.md) の client を port の実装に用いる。
 接続設定と transport の instance は host が組み立て、client に与える。
-extension と viewer は generated のデータ型だけを import し、通信の実装は注入された port から受け取る。
+extension と viewer は generated の型・構築・codec を利用し、通信の実装は注入された port から受け取る。
 port は、host の API 名や実行 context の種類でなく、surface が必要とする目的と限定した operation で表す。
 具体の API、権限の宣言、認証 callback、保管と通信の機構は [languages](../../../languages/) が定める。
 

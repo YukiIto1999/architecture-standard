@@ -26,6 +26,7 @@
 severity の対応は、root の [README](../README.md) の判定の枠に従い、各領域の正本を再定義しない。
 照合で見つけた標準本文の矛盾と、標準への改訂提案は、root の [README](../README.md) の矛盾の解決に従って報告する。
 意味回収を行った場合は、監査の判断を左右した主張が [principles/requirements](../principles/requirements/evidence-decision-separation.md) の「根拠と決定状態を分ける」の完了条件を満たすことを確かめる。
+契約生成の能力と証跡の適用範囲は [structure/tests/methods](../structure/tests/methods.md) の「契約の意味と生成」に照合し、未対応の安全な拒否、必要な生成能力の実現、実際の binding の実行を別々に判定する。
 コンテキストをまたぐ業務操作がある場合は、間接呼び出しや非同期化を準拠の根拠にせず、分割を見直す対象として境界と操作の所有者へ対応付ける。
 
 ## 範囲外

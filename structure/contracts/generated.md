@@ -6,18 +6,18 @@ generated は [layout](./layout.md) の依存に従う。
 
 ## 生成物
 
-generated は、openapi・json schema・protocol の stub と、各言語の client・データ型・契約に基づく encoder と decoder である。
-generated は、canonical と、ある場合は http・protocol の binding から生成する。
-データ型は公開契約の field、variant、制約を具体的に表し、任意の map や未分類の payload に型の責務を委ねない。
-データ型と通信を実行する client・stub は別の package または同等の依存単位として出力し、データ型だけの利用で HTTP client、接続設定、通信 runtime への依存を持ち込まない。
-参照のドキュメントも、canonical と binding からの生成物であり、手で保守しない。
+generated には、契約の公開型、検証付き構築、encoder と decoder、操作の入力と結果、提供側と利用側の接続口と通信処理を出力する。
+canonical と binding の意味を一度解釈した内部モデルから各言語へ生成し、OpenAPI・JSON Schema と参照ドキュメントも同じ定義から投影する。
+公開型は field、variant、値の制約と型の役割を具体的に表し、任意の map や未分類の payload に責務を委ねない。
+型・構築・codec、提供側の接続、利用側の通信処理は別の package または同等の依存単位とし、型・codec だけの利用で HTTP client、接続設定、通信 runtime への依存を持ち込まない。
+提供側に利用側の client を要求せず、参照ドキュメントを手で保守しない。
 
 ## 生成のみ
 
 generated を、手で編集しない。
 generated を、正本にしない。
-生成器の設定、template、schema 駆動の出力処理の置き場と再現可能な生成入口は [layout](./layout.md) の「生成の toolchain」に従う。
-生成 DTO の field、variant、制約、deserialize の処理に不足がある場合は、[canonical](./canonical.md) と binding と生成器の該当する入力を直し、利用側の手書き同義 DTO や生成後の手修正で補わない。
+profile、生成器設定、emitter の置き場と再現可能な生成入口は [layout](./layout.md) の「生成の toolchain」に従う。
+公開型・構築・codec・操作対応に不足がある場合は、[canonical](./canonical.md) と binding と生成器の該当する入力を直し、利用側の手書き同義 DTO や生成後の手修正で補わない。
 
 ## 生成能力
 
@@ -30,7 +30,38 @@ JSON Schema の `minLength` と `maxLength` は、UTF-16 の code unit や UTF-8
 `format` は、JSON Schema では既定で検証されず([JSON Schema Validation](https://json-schema.org/draft/2020-12/json-schema-validation#section-7.2.1))、OpenAPI 3.0 では認識しない format を型だけへ戻してよい([OpenAPI Specification 3.0.3](https://spec.openapis.org/oas/v3.0.3.html#data-types))ので、出力 schema に `format` を書いたことだけを、decoder が形式を強制する保証にしない。
 未知の項目の扱いは [canonical](./canonical.md) の「進化」に従い、受容と検知を実現する言語別の機構は [languages](../../languages/) が定める。
 未知の項目を検知する生成処理は、全 variant と入れ子の object を対象にし、既知の項目の検証や variant の識別を省略しない。
-採用した生成器の既定の出力がこれらを満たさない場合は、契約から導く生成処理で能力を補い、満たさない生成物を検証入口で拒否する。
+生成器は宣言した役割の違いを型の非互換として表し、alias は同じ型への参照とする。
+通常の field 制約を理由に一律の wrapper を作らず、値の保持に必要な表現と型の役割を分ける。
+生成能力の検証は [tests の方法](../tests/methods.md) に従い、満たさない生成物を検証入口で拒否する。
+
+## 構築と復元
+
+local な構築と wire からの復元は同じ契約の規則を使い、受理した値と診断、または位置と破った規則を持つ違反情報を型付きで返す。
+違反時に部分的に有効化した値を返さず、通常の入力違反を例外の捕捉に依存させない。
+違反情報を想定内の失敗と欠陥のどちらへ運ぶかは、値の出所を知る境界が [concerns/effect](../../concerns/effect/value-origin-classification.md) の「失敗と欠陥を値の出所で判別する」に従って決める。
+encode は受理済みの値を契約の表現へ写し、内部の不整合を新たな外部入力の拒否として隠さない。
+raw DTO と検証済み DTO の同義の二重構造を公開せず、parser の中間表現と未検証の完成処理は codec の内部に閉じる。
+構築と復元で完成処理を共有し、検証・構築済みの graph を公開 constructor に戻して再検証しない。
+未知の object 項目は既知の項目を検証した上で受容し、その位置とキーを値とは別の診断に残す。
+未知項目の値を保持して業務入力や再 encode へ渡さず、未知項目の受容を未知 variant の受理へ広げない。
+受理後は呼出側が持つ可変 alias から制約を壊せない所有方法を採り、不変な子の不要な複製を避ける。
+言語の既定値や型の消去による迂回を静的保証だけで排除できるとは扱わず、未検証の入力は構築または codec を通す。
+生成した公開入口は不正な既定値を送信前に拒否し、静的な役割の区別を入力の出所の証明に使わない。
+言語別の表現と検査は [languages](../../languages/) が定める。
+
+## 生成時の診断
+
+生成前に、空の値域、不正な既定値、重複する判別子、必要な binding の欠落、結果を一意に復元できない対応を拒否する。
+未解釈の制約・encoding・注釈を黙って無視せず、生成先が必要な意味を保てない場合も拒否する。
+説明専用の注釈はその意味を登録して区別し、未知の注釈を説明専用と推測しない。
+診断は元の宣言位置、操作・型・field、対象出力、保持できない意味と理由を指す。
+任意の predicate を実行する拡張で、契約の意味の解釈や必要な生成先の実現を代用しない。
+必須の生成先が一つでも失敗したら、部分生成物を成功した更新として公開しない。
+未対応を拒否できることは安全条件であり、必要な契約を生成できない実装を完成としない。
+参照・探索用の投影が意味を省く場合は、その用途と欠落を明示する。
+その投影を完全な契約として検証や再生成の入力に使う場合は、意味の欠落を拒否する。
+同じ定義、profile、toolchain、設定から、時刻・絶対パス・列挙順に依存しない同じ成果物を生成する。
+
 
 ## drift の検査
 
@@ -40,12 +71,26 @@ drift があるときは、ビルドを失敗させる。
 ## 利用
 
 公開契約を code で扱う提供側と利用側は、その契約から生成したデータ型を使う。
-core の業務操作へ接続する提供側と host は、公開契約の入出力に generated のデータ型を使い、[adapters](./adapters.md) で core の application 型へ写像する。
+core の業務操作へ接続する提供側と host は、公開契約の入出力に generated の型を使い、[adapters](./adapters.md) で独立した application の公開 Interface へ接続する。
 host が所有する技術操作も同じ正本から生成したデータ型と codec を両端で使い、core 向けの adapter を経由させず host の公開 Interface へ接続する。
 HTTP または protocol の提供側に、利用側の通信 client を要求しない。
 通信する利用側は、その通信を所有する adapter に generated の client または stub を置き、接続設定と transport の instance を引数で与え、generated 内に固定しない。
-viewer と extension はデータ型の import にとどめ、通信の実装は host から port として受け取る。
+viewer と extension は型・構築・codec を利用し、通信の実装は host から port として受け取る。
 root をまたぐ依存の許可は [skeleton](../skeleton.md) に従い、core は composition を含め generated の型にも client・stub にも依存しない。
+
+## 操作の両端
+
+提供側には、要求の decode、未指定の入力への既定値の適用、公開操作への dispatch、返された結果の encode を生成する。
+同じ言語の直接呼出しも、既定値を適用する生成済みの受理処理を通して handler へ接続する。
+生成する handler の Interface は公開契約側の接続口であり、application に実装させず、[adapters](./adapters.md) が実現する。
+host の技術操作は、その host の実装を同じ接続口へ結ぶ。
+利用側は、操作の入力から要求を組み立て、応答を対応する成功または拒否の結果として返す。
+操作が宣言する結果の型と通信上の識別情報を対応付け、body の union と無関係な status の組を公開しない。
+通常の呼出しでは本文の読取りと検証を終えてから結果を返し、accessor を読むまで不正が分からない結果にしない。
+本文の不在、JSON null、空の object、空の binary を区別し、binary を text へ変換しない。
+stream を公開する場合は開始と読み取り完了を分け、値の寿命、所有権、途中の失敗と取消を Interface に表す。
+効果の要求、失敗と取消の表現は [concerns/effect](../../concerns/effect/README.md) に従い、実現は各 [languages](../../languages/) の effect が定める。
+
 
 ## 応答の分類
 
@@ -62,11 +107,11 @@ root をまたぐ依存の許可は [skeleton](../skeleton.md) に従い、core 
 受け取り終えた応答は確定した終了であり、その後に観測した取り消しや期限の超過で、割り当てを書き換えない。
 応答を受け取れずに中断した呼び出しのうち、取り消しにも時間上限の超過にもならないもの(HTTP client や OS が自ら設けた timeout と HTTP client の内部の取り消しを含む)は、通信の失敗に割り当てる。
 契約に無い応答と decode の失敗を欠陥とするのは、client の相手が同じ canonical を実装する提供側であり、その不一致が自ら直列化し自ら復元する処理の不一致にあたるためである。
-分類は、契約が宣言した応答の集合との照合で決める。
-照合は status を先に、次に body の型で行い、status の範囲や生成器の例外の型と variant だけで決めない。
-生成器が宣言した成功の応答を例外や契約に無い応答として返す場合は、宣言した status との照合で成功へ戻す。
-生成器が宣言した status の body を decode せずに返す場合は、利用側が契約から生成した型で decode し、一致しなければ decode の失敗として扱う。
-利用側は、宣言した失敗を operation の想定内の失敗の型へ写し、他の種類と同じ型や例外へ畳まない。
+分類は生成した通信処理が所有し、契約が宣言した応答の集合との照合で決める。
+status、media type と宣言した識別情報を先に照合し、選んだ結果の body を対応する codec で検証する。
+payload の構造を順に試すことや、status の範囲、通信ライブラリの例外の型だけで結果を選ばない。
+宣言した成功を例外から戻す処理や、未検証の body を decode する処理を利用側へ要求しない。
+宣言した拒否は operation の想定内の失敗の型へ写し、他の種類と同じ型や例外へ畳まない。
 想定内の失敗の型は [concerns/effect](../../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に従う。
 欠陥と想定内の失敗の別は [concerns/effect](../../concerns/effect/value-origin-classification.md) の「失敗と欠陥を値の出所で判別する」に従う。
 時間上限の超過と取り消しの別は [concerns/effect](../../concerns/effect/failure-defect-cancellation.md) の「失敗と欠陥と取り消しを分ける」に従う。
