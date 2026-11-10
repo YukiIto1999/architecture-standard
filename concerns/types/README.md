@@ -3,13 +3,13 @@
 ## 概要
 types は、型で全系の不変条件を守る規律である。
 principles の [modeling](../../principles/modeling/README.md) が定める、不正な状態の排除・境界での parse を、全系の型の扱いとして具象化する。
-全系を貫く鎖は一つである。
-境界で一度だけ外部の表現を型へ変換し、通った値だけが内側へ入り、内側は再検証せず型が保証する。
+保証を所有する型と責務ごとに入力境界を定め、同じ型への経路を一つの変換器の集合へ集める。
+その責務の内側は型の保証を前提にし、独立した契約や業務モデルへの写像は、受け手が所有する型の構築を通す。
 
 ## 規律
 
 - [不正な状態を型で構築できなくする](./unrepresentable-invalid-states.md) — 機械(formation型・網羅検査)
-- [境界で一度だけ parse する](./parse-once-at-boundary.md) — 機械(境界parse型+単体テスト)
+- [境界で一度だけ parse する](./parse-once-at-boundary.md) — 機械+レビュー(境界parse型+単体テスト+検証済み型と独立したモデルの構築責務の照合)
 - [型の情報を失う箇所を監査する](./audited-type-loss.md) — 機械(cast allowlist検査)
 - [部分的な成功を直和で表す](./partial-success-union.md) — 機械+レビュー(型網羅+境界設計review)
 

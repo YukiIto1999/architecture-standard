@@ -71,9 +71,7 @@ let profile = sqlx::query_as!(
 transaction の制御の所有は、[transaction](../../concerns/transaction/application-owned-transactions.md) の「トランザクションの制御を application に置く」に従う。
 application が宣言した scope の port を、infrastructure が sqlx の Transaction を内側に持つ型で実装し、use-case が begin、読み、書き込み、commit、abort をその port を通して制御する。
 use-case はこれらを `async fn` の Future として組み、呼んだだけでは begin も I/O も起きず、runtime が poll したときだけ始まる。
-複数のモデルの判断を要する use-case も、同じ scope の中で各モデルの書き込みを行い、一度の `commit` に含める。
-他のコンテキストの参加操作が使う store は、確定を所有する use-case の scope と同じ sqlx の Transaction の中で書き、begin・commit・rollback を呼ばない。
-同じ Transaction の共有は、libs の公開技術能力が表す同じ確定の抽象を通し、application の型とドメイン型に sqlx の型を現さない。
+同一コンテキスト内の複数のモデルの判断を要する use-case も、同じ scope の中で各モデルの書き込みを行い、一度の `commit` に含める。
 sqlx の Transaction と `sqlx::Error` は、application・domain・composition の型とシグネチャに現さず、scope の実装の内側に閉じる。
 scope の操作の失敗は、use-case が分岐に使う分類の閉じた型で表し、`sqlx::Error` の値と文字列を載せない。
 sqlx の生の診断情報は、infrastructure が [observability](../../concerns/observability/README.md) の境界の殻で扱う。
@@ -112,8 +110,7 @@ domain・application・composition の型とシグネチャに、sqlx の型が�
 scope の操作の失敗が、分類の閉じた型で返り、`sqlx::Error` の値と文字列を含んでいない。
 store が、begin・commit・rollback を呼んでいない。
 closure の結果から commit か rollback かを既定で決める API(`Connection::transaction` など)へ use-case の本体を渡す機構が、どの層にもない。
-複数のモデルの書き込みを含む use-case が、同じ scope の Transaction で一度だけ commit している。
-参加操作が使う store が、確定を所有する scope と同じ sqlx の Transaction で書き、begin・commit・rollback を呼んでいない。
+同一コンテキスト内の複数のモデルの書き込みを含む use-case が、同じ scope の Transaction で一度だけ commit している。
 確定点が、一つである。
 commit を始める前に終わる拒否、競合、失敗、欠陥、取り消しで、現在情報の更新も業務事実の追記も outbox の記録も確定していない。
 `abort` に失敗を注入すると、元の終わりが保たれ、`abort` の失敗が別に返されている。
@@ -137,7 +134,7 @@ commit の応答を受け取れない失敗を、成功、`NotCommitted`、取�
 use-case ごとに、必要な操作と commit と abort を持つ scope の port と、scope を begin する port を application に宣言する。
 scope の操作の失敗は、use-case が分岐に使う分類の enum にし、commit の失敗と abort の失敗は別の型にする。
 use-case で、scope を begin し、読み、domain の同期の関数へ値を渡し、判断の結果を書いて commit する。
-複数のモデルの判断を要する use-case は、同じ scope の port に各モデルの操作を宣言し、全ての書き込みを済ませてから一度だけ commit する。
+同一コンテキスト内の複数のモデルの判断を要する use-case は、同じ scope の port に各モデルの操作を宣言し、全ての書き込みを済ませてから一度だけ commit する。
 commit を始める前に終わるときは、`abort` を await して、元の終わりと `abort` の失敗を一緒に返す。
 infrastructure で、scope の port を Transaction を持つ型で実装し、store の関数へ scope の Transaction を渡す。
 `commit` は `Ok` だけを確定とし、失敗は未確定を確認できる根拠があるときだけ `NotCommitted`、それ以外は `OutcomeUnknown` へ写す。
@@ -369,7 +366,6 @@ payload commit と処理結果 commit の各直前・直後の停止、および
 同じ集約への同時の更新は [transaction](../../concerns/transaction/single-write-path.md) の「整合性を一つの書き込みパスに閉じる」に従って制御し、版で衝突を検出する集約、共有の鍵か鍵なしで更新する可変属性の行、一回だけ起きる業務事実を追記する集約では競合の Result に写す。
 集約の鍵は、scope の sqlx の Transaction の中で、検証より前に、排他なら `pg_advisory_xact_lock(bigint)`、共有なら `pg_advisory_xact_lock_shared(bigint)` で取る。
 集約の鍵の bigint は、集約の種類と集約の識別子から、種類の違う集約の鍵が衝突しないように一意に導き、その導出をコードの一か所に定義する。
-複数のコンテキストの集約の鍵を同じ確定で取る場合は、鍵の導出を、コンテキストを区別する種類を含めて、参加する全てのコンテキストが参照できる libs の公開技術能力に一か所で定義する。
 一つの書き込みが複数の鍵を取る場合は、全ての書き込み経路で bigint の値の昇順に取る。
 多数の鍵は、昇順に並べた bigint の配列を `unnest` で展開する一つの `SELECT` で取り、その文の中で並べ替えない。
 鍵を取った後の検証の読み取りは、READ COMMITTED の Transaction で行う。
@@ -432,7 +428,6 @@ version の制約と一回だけであることを守る主キー以外の制約
 集約の鍵を取る全ての書き込みが、scope の sqlx の Transaction の中で、use-case が検証より前に呼ぶ操作により、排他は `pg_advisory_xact_lock(bigint)`、共有は `pg_advisory_xact_lock_shared(bigint)` で鍵を取っている。
 複数の鍵を取る書き込みが、全ての書き込み経路で bigint の値の昇順に鍵を取っている。
 集約の鍵の bigint が、集約の種類と識別子から一意に導かれ、種類の違う集約の鍵が衝突せず、識別子が下位の bit の範囲に収まらないとき導出が鍵を作らず、導出がコードの一か所にだけ定義されている。
-複数のコンテキストの集約の鍵を同じ確定で取る書き込みが、参加する全てのコンテキストで共通の導出を使い、一つの値の空間の昇順で鍵を取っている。
 鍵を取った後の検証が READ COMMITTED で行われ、鍵を待つ間に確定した書き込みを読んでいる。
 書き込み経路の role が、事実の行への `UPDATE` と `DELETE` の権限を持たないまま集約の鍵を取り、事実の行に `SELECT ... FOR UPDATE` を使っていない。
 datastore が付ける業務事実の時刻の列の既定値が `clock_timestamp()` であり、鍵を待った書き込みが付けた時刻が、待つ間に確定した業務事実の時刻以後である。
@@ -459,7 +454,6 @@ outbox への integration event の記録を、必要な業務事実の追記の
 複数の鍵を、bigint の値の昇順以外の順序で取ること。
 集約の鍵の bigint を、集約の種類を含めずに識別子だけから導くこと。
 集約の鍵の導出を、書き込み経路ごとに書き写すこと。
-複数のコンテキストの集約の鍵の導出を、コンテキストごとに別々に定義すること。
 集約の鍵で競合制御する集約で、鍵を取る前に読んだ状態や、REPEATABLE READ 以上の snapshot を根拠に、検証して確定すること。
 datastore が付ける業務事実の時刻の列の既定値に、`CURRENT_TIMESTAMP`、`now()`、`statement_timestamp()` を使うこと。
 

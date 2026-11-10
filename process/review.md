@@ -35,6 +35,7 @@ mutation の状態と製品の受入結果を区別し、分析から判明し�
 対象言語の conventions と、変更で使う tools の採用と判断基準を読み飛ばしていないことを確かめる。
 source の変更では、[principles/legibility](../principles/legibility/README.md) と [principles/comment](../principles/comment/README.md) の完了条件と禁止事項に照合したことを確かめる。
 判断の意味の保存と文書の寿命を、[principles/documentation](../principles/documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」と [separate-document-types](../principles/documentation/separate-document-types.md) の「文書の種別を分け、読み手を定める」に照合する。
+コンテキストの独立性は、参照や循環の不在だけでなく、公開操作の成功・拒否・完了を決める判断と状態の所有から照合し、境界の不備を調整機構へ移していないことを確かめる。
 変更を書いた実行者の自己照合は、レビューの照合を代替しない。
 機械で検証できる指摘は、人手の指摘で終えず、検証の追加として返す([principles/verification](../principles/verification/machine-enforced-constraints.md) の「重要な制約を機械検証に固定する」に従う)。
 標準本文の矛盾と改訂提案の扱いは、[audit](./audit.md) の確認点に従う。

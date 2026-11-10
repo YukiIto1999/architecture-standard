@@ -8,6 +8,7 @@
 1. system purpose、語彙、重要な state の authority、実際の境界と実行経路が監査の根拠として確立していなければ、先に [recovery](./recovery.md) を実行する。
 2. [structure/skeleton](../structure/skeleton.md) の境界と依存方向表に、root の実態を照合する。
 3. 各境界の内部を、対応する layout の構成と固有規律に照合する。
+   コンテキストの独立性は [principles/separation](../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」、契約と業務モデルの分離は [structure/contracts/adapters](../structure/contracts/adapters.md) と [structure/core/layout](../structure/core/layout.md) に照合する。
 4. 横断の規律を、[concerns](../concerns/) の完了条件と禁止事項に照合する。
 5. 設計の判断を、[principles](../principles/) の完了条件と禁止事項に照合する。
 6. 実装を、[languages](../languages/) の採用機構と各規律の完了条件・禁止事項に照合する。
@@ -25,6 +26,7 @@
 severity の対応は、root の [README](../README.md) の判定の枠に従い、各領域の正本を再定義しない。
 照合で見つけた標準本文の矛盾と、標準への改訂提案は、root の [README](../README.md) の矛盾の解決に従って報告する。
 意味回収を行った場合は、監査の判断を左右した主張が [principles/requirements](../principles/requirements/evidence-decision-separation.md) の「根拠と決定状態を分ける」の完了条件を満たすことを確かめる。
+コンテキストをまたぐ業務操作がある場合は、間接呼び出しや非同期化を準拠の根拠にせず、分割を見直す対象として境界と操作の所有者へ対応付ける。
 
 ## 範囲外
 

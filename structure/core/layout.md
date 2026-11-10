@@ -24,8 +24,6 @@ core/
 │     ├─ persistence/<aggregate>-store
 │     ├─ migrations/
 │     └─ <external-system>
-├─ shared/
-│  └─ <shared-kernel>
 └─ composition/
    └─ build_core
 ```
@@ -43,7 +41,6 @@ core/
 
 `composition/` は常に置く。
 `<context>/` は、境界付けられたコンテキストが複数あるときにのみ置く。
-`shared/` は、複数のコンテキストが値を共有するときにのみ置く。
 `<context>/` の直下に置ける層は domain・application・infrastructure の3層であり、必要な層のみを置く。
 generic と分類したコンテキストには、業務の不変条件を持つ集約を置かない。
 集約を持たなければ domain 層も置かない。
@@ -52,13 +49,8 @@ generic と分類したコンテキストには、業務の不変条件を持つ
 集約が一つだけのコンテキストでは、common-value を置かず集約のファイル内に畳む。
 値が一つのときは `<common-value>` を直に置き、二つ以上で `values/` に集める。
 エラーの型は、値と同じ規則で置く。
-`<shared-kernel>` は、複数のコンテキストが共有する値・エラーの型である。
-shared-kernel は、値オブジェクトの constructor・不変条件・基本演算を持つ。
-shared-kernel は、use-case と policy を持たない。
-shared-kernel へ型を置けるのは、共有する全てのコンテキストで意味と変更理由が同一だと記録した場合に限る。
-同時の確定への参加でも、shared-kernel に型を置けるのはこの条件を満たす値に限り、参加の前提にしない。
-domain event はコンテキストの内部に閉じ、integration event は公開する application が所有するため、イベントの型は shared-kernel に置かない。
-コンテキスト間の関係と型の共有の判定は [principles/separation](../../principles/separation/README.md) に従う。
+複数のコンテキストに共通の業務型を置く `core/shared/` は設けない。
+業務を知らない技術機構の共用は [libs](../libs/layout.md) が定める。
 
 ## 単位
 
@@ -66,37 +58,36 @@ core 直下の単位の役割を示す。
 
 | 単位 | 役割 |
 |---|---|
-| `<context>/` | 境界付けられたコンテキストを境界ごとに置く。コンテキストは互いに参照しない |
-| `shared/` | 複数のコンテキストが共有する値・エラーの型を置く |
-| `composition/` | コンテキストと adapter の公開された構築用 API を使い、core の公開 application 入口を配線し、同時の確定に参加するコンテキスト間の境界 adapter を持つ |
+| `<context>/` | 業務の判断・状態・確定・進行を独立して所有する境界付けられたコンテキストを置く |
+| `composition/` | 各コンテキストと adapter の公開された構築用 API を使い、独立した application 入口と技術能力を配線する |
 
-同じコンテキストの複数の use-case にまたがる流れは、そのコンテキストの application workflow が担う。
-コンテキストをまたぐ状態変更のうち同時の確定を要さないものは、integration event で非同期に連携する。
-同時の確定を要するものは、確定を所有する一つのコンテキストの use-case が、他のコンテキストの公開面の参加操作を、自分の port を通して同じ確定に含める。
-この連携でも、コンテキストは互いを参照せず、port と参加操作を結ぶのは composition 単位の境界 adapter であり、両方のコンテキストの公開面だけを参照する。
+コンテキストの分割は [principles/separation](../../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」に従う。
+業務上の独立性を満たした境界を、相互参照の禁止と可視性で実装する。
+一つのコンテキストの複数モデルを扱う業務動作は、その application の use-case が組み立てる。
+同じコンテキスト内で複数の確定点にまたがる進行は application が所有し、独立した調整の責務がある場合だけ workflow を置く。
+独立した外部の操作と事実への接続は、各コンテキストが宣言する port と公開 application Interface を通す。
+一つの業務操作、不変条件、transaction、進行を複数のコンテキストが必要とする場合は、port、integration event、workflow、composition に調整を移さず、境界を引き直す。
 
 コンテキストの境界は、言語の可視性の単位(assembly・crate・package)と一致させ、境界の遵守を可視性の機械検査に載せる。
 コンテキストに属する単体の test は、そのコンテキストの内に置き、コンテキストを跨いだ平置きにしない。
 
 ## 依存方向
 
-単位は依存の上下で3つの tier に分かれる。
-下から shared、コンテキスト、composition の順に積み重なる。
-参照は上位 tier から下位 tier へ向かう。
+composition から独立した各コンテキストへ依存し、コンテキストどうしは参照しない。
 依存を一方向に保つ原則は [principles/separation](../../principles/separation/README.md) と [concerns/dependency](../../concerns/dependency/README.md) に従う。
 
 単位をまたぐ参照は、参照先の公開面にのみ到達する。
 
 | 参照元 | 公開面で参照可 | 参照不可 |
 |---|---|---|
-| composition | 各コンテキスト・shared | なし |
-| コンテキスト | shared | 他のコンテキスト、composition |
-| shared | なし | コンテキスト、composition |
+| composition | 各コンテキスト | なし |
+| コンテキスト | なし | 他のコンテキスト、composition |
 
-コンテキストの公開面は、use-case と workflow の公開入口、同時の確定に参加する参加操作、公開の command・result・outcome 型、ports である。
+コンテキストは、独立して所有する use-case と必要な workflow の入口、公開入力構築、command・result・outcome を公開する。
+この Interface は application が業務上の責務から手で定義し、外部の公開契約や生成 Interface の写しにしない。
+port は application が要求する能力の契約であり、adapter を構築するために必要な範囲だけを公開する。
 コンテキストの domain は公開面に含まれず、domain event はコンテキストの内部に閉じる。
 外部へ公開する event は、application が integration event へ写像し、公開 outcome に含める。
-shared の公開面は shared-kernel である。
 infrastructure は公開面に含まれない。
 composition が配線で使う adapter の constructor は、構築用の公開面として明示する。
 組立点も公開された構築用 API だけを使い、非公開の adapter や内部の型へ到達しない。
@@ -106,13 +97,13 @@ composition が配線で使う adapter の constructor は、構築用の公開�
 同一層内の参照は、各層の規則に従う。
 循環は全域で禁止する。
 
-## 正本契約の独立
+## 公開契約と業務モデルの独立
 
-canonical は contracts の正本スキーマであり、契約の定義と層は [contracts](../contracts/layout.md) で規定する。
-wire の binding と生成物も contracts が所有し、canonical と binding は生成器の入力であって core の業務モデルではない。
+外部の公開契約の定義、binding、生成物と adapter は [contracts](../contracts/layout.md) が定める。
+公開契約と core の業務モデルは、それぞれが異なる責務と変更理由から独立して所有し、共通のモデル定義や型から生成しない。
 core と contracts のあいだで許す参照は [skeleton](../skeleton.md) に従う。
-core は composition を含め、公開契約の生成 DTO、binding、通信実装を参照しない。
-コンテキスト固有の command、result、検証済みの domain 型はそのコンテキストが所有し、公開契約との写像は [contracts/adapters](../contracts/adapters.md) が担う。
+core は composition を含め、公開契約の定義、生成した型・構築・codec・Interface、binding、通信実装を参照しない。
+コンテキスト固有の command、result、domain 型はそのコンテキストが所有し、独立した application Interface と公開契約の写像は [contracts/adapters](../contracts/adapters.md) が担う。
 
 ## 1 ファイル 1 概念
 
@@ -121,7 +112,6 @@ core は composition を含め、公開契約の生成 DTO、binding、通信実
 下位の型は変更単位のファイル内に記述する。
 下位の型のうち、複数の変更単位で共有するもの、または肥大したもののみを別ファイルへ分離する。
 values・events・ports などの集合フォルダは、要素が二つ以上の場合に置く。
-shared-kernel も、値・エラーが二つ以上になれば、同じ規則で集合フォルダに分ける。
 
 ## 外部公開
 

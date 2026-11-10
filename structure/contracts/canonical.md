@@ -11,19 +11,21 @@ canonical は、公開する操作の入出力、型の field、直和の varian
 canonical は HTTP や protocol の詳細を含まず、媒体固有の表現は binding が所有する。
 emitter の注釈は、名前空間や import の名前だけで媒体依存と判定せず、定める内容と変更理由で配置する。
 型の制約や直和の意味を各出力へ保つ注釈は canonical に置き、HTTP の path、method、header、status などを定める注釈は binding に置く。
-core の業務モデルは canonical の写しではなく、各コンテキストが所有する責務と保証で定める。
+application と domain は、公開契約とは独立した責務と保証でモデルと Interface を定める。
+canonical からそれらの型を生成せず、業務モデルを共有するための定義にしない。
 業務の区分を公開する契約は、選択肢の意味と公開する値域を定め、内側の区分との対応を明示する。
 同じ意味と保証を持つ公開区分の定義は共有し、operation ごとに独立した一覧を保守しない。
 
 ## 単一の正本
 
-canonical は、契約の意味の唯一の正本である。
-http と protocol は canonical から導き、generated は canonical と binding から導く。
-言語の型を、正本にしない。
+canonical は、外部で交わす操作と値の意味の唯一の正本であり、システム全体や core の業務モデルの正本ではない。
+http と protocol は canonical を参照して媒体への対応を定義し、generated は canonical と binding から導く。
+生成先の言語型を、公開契約の別の定義として手で保守しない。
 
 ## 分割
 
-canonical は、業務のコンテキストや host の技術契約など、意味の所有者ごとのファイルに分け、一枚のファイルへ集約しない。
+canonical は、公開する操作と値の変更理由、公開先、互換性を管理する単位で分ける。
+core のコンテキストに機械的に対応させず、公開形の分割から core の責務を決めない。
 host 固有の技術操作を業務の契約と区別し、core の操作を呼ばないことを理由に公開契約の正本を手書きの言語型へ置き換えない。
 
 ## 記述

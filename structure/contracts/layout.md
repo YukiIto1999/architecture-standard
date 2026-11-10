@@ -46,7 +46,7 @@ toolchain は canonical と binding を入力とし、契約の意味や媒体�
 | http | 意味を HTTP の wire へ束ねる binding | HTTP の wire 形式の変化 |
 | protocol | 意味を非 HTTP のローカル protocol へ束ねる binding | ローカル protocol の形式の変化 |
 | generated | 出力。openapi・json schema・protocol の stub・各言語の client/型 | canonical と binding からの再生成 |
-| adapters | 生成 DTO と core の公開 application 入出力を写像し、公開入口へ接続する | 公開契約と application の保証の対応の変化 |
+| adapters | 公開契約と独立した application 入出力を写像し、公開入口へ接続する | 外部で交わす意味と業務の保証の対応の変化 |
 
 ## 依存方向
 
@@ -70,9 +70,9 @@ canonical の意味と、http・protocol・generated の表現を、二重の正
 
 ## 利用側の型との区別
 
-canonical と binding は、生成器へ公開契約を指定する正本であり、core の業務モデルではない。
-generated の DTO は、公開契約の具体的な field、variant、制約を表す。
-契約を表せない汎用の map や任意の payload を、生成 DTO の代わりにしない。
-runtime の未完成入力、core の検証済み・解決済みの業務状態、surface の表示状態は、公開契約とは責務または保証が異なるため、それぞれの所有者が型を持つ。
-層を越えることだけを理由に別の型を作らず、その境界で必要な責務と保証を generated の型が満たすなら再利用する。
+canonical と binding は公開契約を指定する定義であり、core の業務モデルではない。
+generated の型は、公開契約の具体的な field、variant、制約と操作の結果を表す。
+契約を表せない汎用の map や任意の payload を、その代わりにしない。
+runtime の未完成入力、core の業務状態、surface の表示状態は、それぞれの責務と保証で型を定める。
+generated の型を使える範囲は root の依存方向に従い、型の形が一致することを core からの依存の理由にしない。
 公開契約とコンテキストの application 入出力との写像は [adapters](./adapters.md) が所有する。

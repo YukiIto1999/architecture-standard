@@ -30,8 +30,8 @@ adapter は組み立て済みの core API と、宣言された入口の保護�
 adapter は生成 DTO の field を core API が公開する application の入力構築へ渡し、公開 result と outcome を生成した結果型とエラー型へ写す。
 公開契約の形式と制約は、generated の decoder または契約から導く境界の変換器で検証する。
 コンテキスト固有の不変条件は、application の入力構築から内部の domain の検証付き constructor へ通す。
-同じ性質を内側で再検証せず、業務型の構築と検証はコンテキストが所有する一点に保つ。
-adapter のためにドメイン型や constructor をコンテキストの外へ公開しない。
+契約の復元を繰り返すための検証は足さず、業務型が持つ独立した保証を、契約型の形が似ていることだけで省かない。
+adapter のために domain 型や constructor を外へ公開せず、core に generated の型や Interface を参照・実装させない。
 
 区分の写像は、公開する選択肢とコンテキストの型が取りうる場合の対応を持つ。
 名前の一致で対応を推測せず、公開しない場合と、複数の内側の場合を一つの公開区分へ写す場合も、その対応に含める。
@@ -55,9 +55,8 @@ adapter が use-case 全体を transaction で包んだり、業務本体へ認�
 
 adapter は、一つのコンテキストの公開 use-case または workflow へ接続する。
 use-case の順序、結果による分岐、再開、補償は [core/application](../core/application.md) が定める。
-独立した確定を持つ複数の use-case や複数のコンテキストの公開入口を、同期の呼び出しで束ねて一つの確定に見せない。
-adapter は、参加操作へ接続しない。
-同時の確定は、確定を所有する use-case と参加操作が core の内側で行い、二つの契約の写像は [core/composition](../core/composition.md) の境界 adapter が持つ。
-公開 event から受信側の application 入力への翻訳は、受信側の公開契約の adapter が所有する。
-上流の公開 event の意味と下流の入力の対応を明示し、上流の型を受信側の domain へ流さない。
+複数コンテキストの判断・状態変更・進行を一つの業務操作として束ねず、必要になった時点で [core/layout](../core/layout.md) に従い境界を見直す。
+同一コンテキストの同時確定と進行は application が所有し、adapter はトランザクションや workflow の調整を持たない。
+独立した外部からの公開 event を受ける場合、その意味から application 入力への翻訳を所有する。
+外部の型を domain へ流さず、event を経由することだけでコンテキスト間の業務上の結合を正当化しない。
 冪等キーと実行する主体の範囲を外部の契約から取り出す処理も、この層の写像として application の公開入力へ接続する。

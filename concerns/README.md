@@ -57,9 +57,9 @@ README の末尾には、他の概念と領域への参照を置きます。
 | [persistence](./persistence/README.md) | 状態・連携 | 永続データの設計。同一性・業務事実・属性・現在関係・期間の判定・版の変換・正規化・制約 |
 | [caching](./caching/README.md) | 状態・連携 | 正本から再構築できる導出状態の鮮度・無効化・不在 |
 | [migration](./migration/README.md) | 状態・連携 | 稼働中の系の移行。段の分割・同一時点の検証・cutover |
-| [transaction](./transaction/README.md) | 状態・連携 | 書き込みパスの一貫性と確定点 |
-| [messaging](./messaging/README.md) | 状態・連携 | event の契約と配送・消費 |
-| [workflow](./workflow/README.md) | 状態・連携 | 複数の確定点にまたがる業務目的の順序・分岐・再開・補償 |
+| [transaction](./transaction/README.md) | 状態・連携 | 一つのコンテキストの書き込みパスの一貫性と確定点 |
+| [messaging](./messaging/README.md) | 状態・連携 | 内部の非同期処理と独立して公開する event の契約・配送・消費 |
+| [workflow](./workflow/README.md) | 状態・連携 | 一つのコンテキストが所有する業務目的の順序・分岐・再開・補償 |
 | [authentication](./authentication/README.md) | 信頼・情報保護 | 資格情報の検証と認証主体の確定 |
 | [authorization](./authorization/README.md) | 信頼・情報保護 | アクセス制御の流れ |
 | [privacy](./privacy/README.md) | 信頼・情報保護 | 個人情報の最小化と期限の消去 |

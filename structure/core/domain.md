@@ -1,7 +1,7 @@
 # domain 層
 
-domain 層は、ドメイン型とその操作を置く純粋な核である。
-集約とその不変条件を表し、値・区分・集合・状態・イベント・エラーを置く。
+domain 層は、そのコンテキストの業務判断と内部表現を所有する純粋な核である。
+集約とその不変条件を表し、値・区分・集合・状態・イベント・エラーを置き、外部への公開と手順の所有は application に分ける。
 domain は [layout](./layout.md) の単位と依存に従う。
 
 ## 集約
@@ -13,8 +13,8 @@ domain は [layout](./layout.md) の単位と依存に従う。
 集約は、別の集約の内部を参照せず、識別子で参照する。
 集約は、table、コンテキスト、transaction の単位と同一視しない。
 domain は、一つの集約の不変条件と遷移を純粋な関数で判断し、複数の集約の変更を同時に確定するかも、確定の範囲も決めない。
-複数の集約の判断を要する業務動作は、application の use-case が各集約の純粋な関数を呼んで結果を組み、同時に確定するかを決める。
-別の確定に分けた集約どうしの一貫性は、application の workflow が、各 use-case の型付き outcome を用いて最終的に保つ。
+同じコンテキストの複数の集約の判断を要する業務動作は、application の use-case が各集約の純粋な関数を呼んで結果を組み、同時に確定するかを決める。
+別の確定に分けた集約どうしの一貫性と進行は、同じコンテキストの application が所有し、複数の動作の調整が必要な場合は workflow が各 use-case の型付き outcome を用いる。
 整合性と集約境界の原則は [principles/data](../../principles/data/README.md) に従う。
 
 ## 常に正しい構築
@@ -38,8 +38,8 @@ domain は、加えてログ、外部 SDK、非同期実行も参照しない。
 値の計算と比較、区分に基づく判断、集合の業務操作を持つ型と関数は domain に置き、application はその操作を呼ぶ。
 値の意味と操作は [modeling](../../principles/modeling/meaning-in-types.md) の「業務の意味を型に封じる」に従う。
 区分と判断は [construction](../../principles/construction/decisions-as-types.md) の「業務判断を型と多態で構造化する」に、集合と操作は [construction](../../principles/construction/named-collection-operations.md) の「集合処理を名前のある操作で表す」に従う。
-domain が用いてよいのは、ドメイン型と shared である。
-domain は、persistence の record、wire 型、DTO、contracts の型を参照しない。
+domain の業務型と規則は、そのコンテキストが独立して所有し、外部との公開 Interface や共有の業務モデルにしない。
+domain は、persistence の record、wire 型、DTO、公開契約の定義と生成した型・構築・codec・Interface を参照しない。
 許可される依存は [layout](./layout.md) の依存方向に、型の設計は [concerns/types](../../concerns/types/README.md) に、命名は [principles/naming](../../principles/naming/README.md) に従う。
 
 ## イベント

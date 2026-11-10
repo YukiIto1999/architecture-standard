@@ -7,7 +7,7 @@ composition は [layout](./layout.md) の単位と依存に従う。
 ## build_core
 
 build_core は、core の組立点である。
-build_core は、コンテキストと shared を配線し、組み立て済みの API を返す。
+build_core は、独立したコンテキストと技術能力を配線し、組み立て済みの API を返す。
 build_core は、core の唯一の構築入口である。
 build_core は起動しない。
 build_core は module factory であり、プロセス全体の composition root ではない。
@@ -17,55 +17,37 @@ build_core は module factory であり、プロセス全体の composition root
 ## 配線
 
 composition は、port に adapter を結びつける。
-コンテキストの adapter を配線し、それぞれの port を結ぶ。
-異なるコンテキストの状態変更を、独立した確定の同期呼び出しで結ばない。
-同時の確定を要する場合は、確定を所有する use-case の port を、他のコンテキストの参加操作へ、境界 adapter を介して、または契約が同一なら直接結ぶ。
-複数コンテキストの情報を即時に読む operation は、その query を所有するコンテキストの読みモデルへ写像する。
+各コンテキストの application が要求する port に、そのコンテキストの infrastructure の adapter または libs の公開技術能力を結ぶ。
+コンテキストの独立性は [principles/separation](../../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」に従い、他のコンテキストの業務操作を呼ぶ能力を port へ結ばない。
+派生読みモデルは、その query の業務上の意味を所有するコンテキストに置き、独立して公開された外部の事実を入力にする。
 application が公開した integration event を libs の配送 port へ渡す経路を、composition が配線する。
 整合の即時性を要さない派生読みモデルへは、outbox を経て非同期で駆動する。
-integration event の消費は、composition が受信側コンテキストの公開 application 入口へ配線する。
+独立して公開された integration event の消費は、composition が受信側コンテキストの公開 application 入口へ配線する。
 公開 event から受信側の入力への翻訳は [contracts/adapters](../contracts/adapters.md) が所有し、composition は翻訳済みの受信入口を配線する。
-コンテキスト間の関係と翻訳の所有の記録は [principles/separation](../../principles/separation/README.md) に従う。
-composition は、業務判断を持たない。
-composition が行うのは、公開された構築用 API を使った配線と、境界 adapter による同時の確定に参加するコンテキスト間の契約の写像だけである。
+composition が行うのは、公開された構築用 API を使った配線だけであり、業務判断や契約間の写像は持たない。
 依存注入の規律は [concerns/dependency](../../concerns/dependency/README.md) に従う。
 
 ## 公開 API
 
 組み立て済みの API は、各コンテキストの公開 application 入口と、その入力構築、result と outcome の Interface を公開する。
-use-case の順序、結果による分岐、再開、補償は、コンテキストの application workflow が持つ。
+業務動作の手順と進行は、そのコンテキストの application が所有し、複数の動作の調整を分ける場合は workflow に置く。
 派生読みモデルへの問い合わせも、読みモデルを所有するコンテキストの application に置く。
 composition は、コンテキストが公開した入力構築をそのまま利用できるように配線し、業務型の constructor を外へ公開しない。
-外部の canonical operation と core API の接続、生成 DTO との写像は [contracts/adapters](../contracts/adapters.md) が所有する。
-core は、公開契約の schema、生成 DTO、通信 client と stub を参照しない。
-canonical との対応は外部へ業務契約として公開する operation を対象とし、構築用 API、port、参加操作、内部の application 入口を同数の operation として追加しない。
+外部の公開 operation と core API の接続、生成した契約型との写像は [contracts/adapters](../contracts/adapters.md) が所有する。
+composition は、公開契約の定義、生成した型・構築・codec・Interface、通信 client と handler を参照しない。
+外部契約との対応は外部へ業務契約として公開する operation を対象とし、構築用 API、port、内部の application 入口を同数の operation として追加しない。
 コンテキストの管理操作も application の公開する実行契約へ配線し、composition 自身に処理の順序や実行本体を置かない。
 イベントの公開と配送は [application](./application.md) と [concerns/messaging](../../concerns/messaging/README.md) に従う。
 
 ## トランザクションの能力の配線
 
 トランザクションの制御は [concerns/transaction](../../concerns/transaction/application-owned-transactions.md) の「トランザクションの制御を application に置く」に従う。
-composition は、application が必要とする確定の能力と、同じ書き込み範囲で使う複数のモデルの store、outbox、冪等性の能力を配線する。
+composition は、一つのコンテキストの application が必要とする確定の能力と、同じ書き込み範囲で使う複数のモデルの store、outbox、冪等性の能力を配線する。
 開始、読む順序、書く順序、確定、中止を決める処理や、use-case の終わりの成否から確定か中止かを既定で決める実行ラッパーを置かない。
 具体的な DB driver の transaction 型を application の Interface へ渡さない。
-参加操作を使う port は、確定を所有する use-case と同じ確定の抽象を参加操作の要求へ結ぶ形で配線し、契約が異なるときの写像は境界 adapter が持つ。
 outbox への記録経路と、確定済み outbox を読む配送経路を別々に配線する。
 状態、業務事実、outbox、workflow の step と冪等性の必要な同時確定は、application が制御する書き込みパスへ閉じる。
 冪等性の規律は [concerns/resilience](../../concerns/resilience/README.md) に従う。
-
-## コンテキスト間の境界 adapter
-
-境界 adapter は、確定を所有する use-case の port 契約と、他のコンテキストの参加操作の契約が異なるときに、その違いを写す。
-境界 adapter は composition 単位に置き、両方のコンテキストの公開 application 面だけを参照する。
-境界 adapter は、型・値・型付き拒否の翻訳と、同じ確定の抽象の参加操作への接続だけを行う。
-翻訳は、確定を所有する側の port 契約の意味を守る向きで行い、参加するコンテキストの公開契約を変えない。
-境界 adapter は、業務判断、transaction の開始・確定・中止、効果の実行、他のコンテキストの内部の型、driver の型を持たない。
-境界 adapter は、外部システムにも datastore にも接続する infrastructure の adapter ではなく、二つの公開 application 契約の間だけに置く。
-境界 adapter は、外部の canonical と wire の写像を持たず、生成 DTO と通信の型を参照しない。
-外部の公開契約の写像は、従来どおり [contracts/adapters](../contracts/adapters.md) が所有する。
-build_core と配線関数は、境界 adapter を組み立てて port へ結ぶだけで、写像を持たない。
-二つの契約が同一なら、変換や wrapper を足さず、port へ参加操作を直接結ぶ。
-shared-kernel の型は、意味と変更理由の同一を記録した値を実際に共有する場合にだけ使い、参加の前提にしない。
 
 ## 観測
 

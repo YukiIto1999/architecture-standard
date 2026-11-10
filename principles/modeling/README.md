@@ -13,8 +13,8 @@ modeling は、業務の意味を型で表すための原則を置く。
 
 ## 規律
 
-- [業務の意味を型に封じる](./meaning-in-types.md) — 機械+レビュー(型と構築・操作の検証+意味と責務の照合)
+- [業務の意味を型に封じる](./meaning-in-types.md) — 機械+レビュー(型と構築・操作の検証+コンテキスト内の意味と責務の照合)
 - [不正な状態を表現できなくする](./illegal-states-unrepresentable.md) — 機械(型(直和と網羅検査))
-- [境界で検証して型に通す](./parse-at-boundary.md) — 機械(型+境界 parse テスト)
-- [知識の増加を型に残す](./knowledge-in-types.md) — レビュー(保証差の判断レビュー)
+- [境界で検証して型に通す](./parse-at-boundary.md) — 機械+レビュー(型+境界 parse テスト+独立した責務の入力構築の照合)
+- [知識の増加を型に残す](./knowledge-in-types.md) — レビュー(同じモデルの処理段階の保証差の判断レビュー)
 - [論理設計と物理設計を分ける](./logical-physical-separation.md) — 機械+レビュー(依存方向検査+意味レビュー)

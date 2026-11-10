@@ -7,7 +7,7 @@ infrastructure は [layout](./layout.md) の単位と依存に従う。
 ## adapter
 
 adapter は、application の port を実装する。
-adapter は、core の側では application の port と domain、および shared のみに依存する。
+adapter は、core の側では同じコンテキストの application の port と domain のみに依存する。
 adapter は、use-case を参照しない。
 adapter の実装型は、配線する composition のみが参照する。
 adapter の名前は、実装の方式を表す語で付ける。
@@ -30,9 +30,9 @@ store は、型付きの SQL を発行する薄い adapter として書く。
 現在情報の変更、必要な業務イベント、projection、outbox を束ねる書き込みパスの制御は [application](./application.md) が所有する。
 infrastructure は、application が要求する具体的な接続、取得、保存、確定と中止の操作を実装し、driver の型と資源を内部に閉じる。
 個々の store が独立して確定したり、use-case 全体を受け取って成否から確定か中止かを既定で決める形で transaction を包んだりしない。
-参加操作が使う store も、確定を所有する use-case と同じ transaction の中で書き、独立して確定しない。
-派生読みモデルの再構築は、正本の現在情報または業務イベントを port から読み出す application workflow として、読みモデルを所有するコンテキストに置く。
-起動は workflow を呼べる surface の layout に従う。
+同時に確定する複数モデルの store は、そのコンテキストの use-case が制御する同じ transaction の中で書く。
+派生読みモデルの再構築は、所有する現在情報または独立して公開された業務事実を port から読み出す application の操作として、読みモデルを所有するコンテキストに置く。
+停止を越える進行はその操作が所有し、複数の動作の調整が必要な場合は workflow に分け、起動はその公開入口を呼べる surface の layout に従う。
 コンテキストが所有する schema の migration artifact は、そのコンテキストの `infrastructure/migrations/` に置く。
 同じ DB を共有しても、コンテキストごとの artifact の所有を root へまとめない。
 採用した依存が所有する migration の集合は、その依存の原本を使い、アプリケーションの集合へ写して改番しない。
