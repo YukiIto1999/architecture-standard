@@ -97,6 +97,9 @@ local 構築と decode は Result で受理値または位置・規則を持つ�
 required nullable の存在は Option の値と別に追跡し、optional nullable は未指定・null・値を区別する生成型と専用 codec で保持する。
 decimal と日時は、契約が要求する値域・同値性・精度・scale・offset を保存する検証済み表現を使い、標準型や有限精度型の範囲へ契約を狭めない。
 生成した enum に non_exhaustive を付けて、宣言結果の追加を利用側の網羅検査から隠さない。
+深い値の全経路は [structure/contracts/generated](../../structure/contracts/generated.md) の「生成能力」に従い、非公開 storage と明示的な走査状態で処理する。
+Drop と、公開する Clone・Debug・等価性・hash の実装も対象にし、parse だけを非再帰にして derive や解放に再帰を残さない。
+JSON の字句解析は既存 parser を再利用し、[structure/contracts/layout](../../structure/contracts/layout.md) の「JSON の相互運用 profile」を満たす受入処理へ接続する。
 
 ### 根拠
 private field と fallible constructor は生成値の検証を構築の一点に閉じ、所有権の移動は可変 alias を残さず不要な複製を避ける。
@@ -106,6 +109,7 @@ Option だけでは field の欠落と明示的な null が同じ形になりう
 役割の異なる scalar が型検査で取り違えを拒否し、alias の互換と通常の field の primitive 表現が保たれている。
 local 構築と decode が同じ制約へ照合され、存在状態と契約の全受理値域が保存されている。
 検証を迂回する Default・Deserialize・mutable accessor がなく、移せる storage が不要に clone されていない。
+共通の wire profile と深さ・診断保持の検査が、[structure/tests/methods](../../structure/tests/methods.md) の「契約の意味と生成」へ接続されている。
 
 ### 禁止事項
 生成値の不変条件を derive の既定動作だけで満たしたと扱うこと。
@@ -113,7 +117,7 @@ local 構築と decode が同じ制約へ照合され、存在状態と契約の
 
 ### 行動
 Rust emitter に private field、fallible constructor、検証付きの codec と消費する accessor を含める。
-serde の入力処理と local 構築は、検証済み graph を public constructor で再走査せず、private な検証・完成処理を共有する。
+入力処理と local 構築は、検証済み graph を public constructor で再走査せず、private な検証・完成処理を共有する。
 生成した契約値は業務型と独立に所有し、contracts/adapters の mapper を application の公開入力構築へ接続する。
 
 ## 生成した通信処理を既存の効果へ接続する

@@ -18,6 +18,9 @@ local 構築でも明示的な undefined を未指定へ潰さず拒否し、JSO
 readonly を公開型に付け、外部の可変な object と配列は完成時に切り離して凍結し、検証後に別参照から変更できないようにする。
 既に生成された不変な子は共有し、primitive の型分離のために heap object を作らない。
 decimal と日時は、必要な値域・同値性・精度・scale・offset を保存する検証済み表現を使い、number や Date の範囲・丸め・正規化へ契約を合わせない。
+深い値の全経路は [structure/contracts/generated](../../structure/contracts/generated.md) の「生成能力」に従い、構築・凍結・default・encode を明示的な走査状態で処理する。
+JSON の字句解析は既存 parser を再利用し、[structure/contracts/layout](../../structure/contracts/layout.md) の「JSON の相互運用 profile」を満たす受入処理へ接続する。
+JSON.parse の後では失われる重複名や数値精度を、復元後の object の検査だけで保証したと扱わない。
 
 ### 根拠
 [exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html) は項目の欠落と明示的な undefined の型上の区別を保つが、外部値や型 assertion の実行時の正当性は保証しない。
@@ -27,6 +30,7 @@ readonly は別参照からの変更を止めないため、検証後の値を�
 役割の取り違えと variant の payload 不一致が型検査で拒否され、alias の互換と通常の field の primitive 表現が保たれている。
 local 構築と decode が同じ規則へ照合され、明示的な undefined と不正値が拒否される。
 元の配列と object の変更が受理済み値を変えず、存在状態と契約の全受理値域が保持されている。
+共通の wire profile と深さ・診断保持の検査が、[structure/tests/methods](../../structure/tests/methods.md) の「契約の意味と生成」へ接続されている。
 
 ### 禁止事項
 型 assertion や any で未検証の値を契約型として信頼すること。

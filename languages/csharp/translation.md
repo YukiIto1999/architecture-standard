@@ -8,7 +8,11 @@ problem+json への写しの規律は [aspnet-core](./aspnet-core.md) が、共�
 ## 境界で一度だけ parse してドメイン型へ移す
 
 ### 要求
-HTTP などの公開入力と、worker が内部の durable queue から受ける payload は、生成した型と codec で受け、System.Text.Json の source generation と生成 converter を使う。
+HTTP などの公開入力と、worker が内部の durable queue から受ける payload は、生成した型と codec で受ける。
+System.Text.Json の serializer と接続する場合は source generation と生成 converter を使い、公開契約の codec と別の検証経路を作らない。
+JSON の字句解析は System.Text.Json の reader 等の BCL 機構を再利用し、grammar を独自実装しない。
+生成 converter は明示的な走査状態と非公開の完成処理を用い、serializer の再帰や既定の深さ制限で契約値を狭めない。
+wire の受入条件は [structure/contracts/layout](../../structure/contracts/layout.md) の「JSON の相互運用 profile」に従い、BCL の既定挙動だけで充足したとは扱わない。
 生成型のプロパティ、外部名、必須性、不在、値の制約は共通 toolchain の IR から導き、同じ意味の record を手書きで定義しない。
 生成 DTO とコンテキストの application 入出力との写像は [structure/contracts/adapters](../../structure/contracts/adapters.md) に置き、コンテキストの入力構築から値オブジェクトの factory へ検証を集め、失敗は Result で表す。
 検証を通った値だけを業務処理へ渡し、内側で同じ性質を再検証しない。
@@ -64,7 +68,7 @@ contracts/adapters の写像からコンテキストの入力構築と値オブ�
 未知のフィールドが恒常的に届くことだけを、旧方式が残っている証拠として扱うこと。
 
 ### 行動
-生成 codec を System.Text.Json の source generation へ接続し、捕捉と既知項目の検証も IR から生成する。
+BCL の字句解析へ生成 codec を接続し、捕捉と既知項目の検証も IR から生成する。serializer 統合には source generation と同じ codec へ接続する converter を使う。
 全 variant と入れ子の object の未知キーを捕捉し、境界で位置とキーを警告としてログに出し、値はログに載せない。
 生成能力の不足は共通 toolchain の profile・IR・C# emitter で直し、同義 DTO で回避しない。
 contracts/adapters の Mapper は、生成 DTO の field を core が公開する application 入力構築へ渡し、ドメイン型を直接参照しない。
@@ -97,12 +101,14 @@ internal static class CreateUserMapper
 distinct scalar は private storage を持つ readonly value type とし、alias は同じ生成型への参照として扱う。
 通常の field 制約は所有する生成モデルの構築と decode で検証し、制約名だけを理由に別の値型を作らない。
 判別付き直和と操作の各結果は、生成側が variant を閉じた sealed record 階層にし、variant 固有の payload を検証付き構築で保持する。
+閉じた階層は [formation](./formation.md) の「不正な状態を構築できなくする」に従って標識し、生成器が出す consumer の診断設定でも TYPMOD021 を error として有効にする。
 生成モデルは非公開 constructor と get-only property を持ち、local 構築と decode は受理値または位置・規則を持つ構造化した違反情報を返す。
 契約上不正になる struct の default は識別可能にし、accessor から正常な primitive 値として返さず、モデル構築・encode・操作入口でも通さない。
 default が契約上有効なら、初期化 flag を増やさない。
 非 null の位置の null と、可変な入力 collection の別参照による検証後の変更を防ぐ。
 既に不変な子は共有し、外部の可変 storage だけを完成時に切り離して、変更できない形で保持する。
 decimal と日時の生成表現は、契約が指定した受理値域・同値性・精度・scale・offset を保存し、System.Decimal や DateTimeOffset の範囲を契約の上限としない。
+深い値の全経路は [structure/contracts/generated](../../structure/contracts/generated.md) の「生成能力」に従い、record が合成する等価性・hash・文字列化も公開する場合は再帰に依存しない実装を生成する。
 
 ### 根拠
 readonly value type は役割の型分離に参照型の allocation を要さないが、[struct の初期化](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/struct#struct-initialization-and-default-values)は constructor を経ない default を作れる。
@@ -112,6 +118,7 @@ get-only property と非公開の完成処理を組み合わせれば、public i
 役割の異なる scalar の代入が型検査で拒否され、alias の互換が保たれている。
 local 構築と decode が同じ制約へ照合され、不正な default・null・元の collection の変更が受理済み値を壊さない。
 三状態、decimal と日時の保持要件を満たし、生成先の既定型で表せない有効値も受理できる。
+共通の wire profile と深さ・診断保持の検査が、[structure/tests/methods](../../structure/tests/methods.md) の「契約の意味と生成」へ接続されている。
 
 ### 禁止事項
 公開 constructor・init・with、検証しない converter により契約値の検証を迂回すること。

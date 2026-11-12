@@ -44,6 +44,28 @@ CLI を一度呼ぶだけの処理は task 定義から直接実行し、変換�
 意味を追加するときは、profile の意味と合成規則、必要な全出力、独立した受入例を合わせて更新する。
 未対応の宣言と不完全な binding の扱いは [generated](./generated.md) の「生成時の診断」に従う。
 
+### JSON の相互運用 profile
+
+JSON を使う binding と codec は、全生成先で同じ閉じた wire profile を使う。
+基礎仕様は [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259) とし、次の条件は実装間の解釈差を避けるためにこの profile が選ぶ受入規則である。
+RFC の grammar 自体が重複名や BOM を一律に禁止しているとは扱わない。
+
+- object の全項目名を escape の復元後に比較し、同じ名前の重複を拒否する。値が同じ場合、異なる場合、未知項目とその subtree も対象にし、先勝ち・後勝ちにしない。
+- text と byte の両入口で文書先頭の BOM を拒否する。文字列値や項目名の内側にある U+FEFF はそのまま保持する。
+- byte は不正な UTF-8 を、text と JSON escape は孤立した UTF-16 surrogate を拒否し、置換文字で補修しない。
+- 有効な Unicode scalar value を非文字であることだけでは除外せず、正規化で別の文字列に変えない。数値の値域と精度もこの profile のために狭めず、canonical が定める意味を保持する。
+
+重複名の相互運用上の問題は [RFC 8259 §4](https://www.rfc-editor.org/rfc/rfc8259#section-4)、UTF-8 と BOM は [§8.1](https://www.rfc-editor.org/rfc/rfc8259#section-8.1)、不対 surrogate の相互運用上の問題は [§8.2](https://www.rfc-editor.org/rfc/rfc8259#section-8.2) を参照する。
+I-JSON の数値範囲や非文字の制限を暗黙に追加しない。
+
+### pattern の共通部分集合
+
+profile は pattern の構文と照合の意味を、全生成先で安全に実現できる共通部分集合として明示する。
+部分一致と全体一致、文字と長さの単位、anchor と改行の扱いを一意に定める。
+生成時と実行時のどちらでも破局的な backtracking に依存せず、profile 外の構文や engine が対応しない機能は、意味を落として通すのでなく生成時に拒否する。
+対象言語の engine はこの意味を実現する手段として選び、一言語向けの engine を全言語に要求しない。
+宣言を安全に拒否することと、必要な全生成先で pattern を実装できることの区別は [generated](./generated.md) の「生成時の診断」に従う。
+
 ## 層
 
 | 層 | 役割 | 変更理由 |

@@ -54,9 +54,9 @@ csharp の言語としての採用と、実現規律、採用物を置く。
 |---|---|---|
 | 非同期の runtime | 言語・実行環境に組み込みの非同期基盤を使い、外部の runtime を別に選ばない | [coordination](./coordination.md) |
 | 取り消しの伝達 | 組み込みの機構(CancellationToken)で表し、外部ライブラリを採らない | [coordination](./coordination.md) |
-| 副作用と想定内失敗の表現 | libs の Effect 型と Result 型で表し、外部ライブラリを採らない | [connection](./connection.md) |
-| エラー型の定義 | sealed record の階層という言語機構で表し、外部ライブラリを採らない | [formation](./formation.md) |
-| 直列化 | System.Text.Json の source generation と契約から生成する converter・codec で満たし、外部の直列化ライブラリを別に選ばない | [translation](./translation.md) |
+| 副作用と想定内失敗の表現 | libs の EffectSystem の Effect・公開 runtime と TypeModeling の Result を使い、第二の効果体系を置かない | [connection](./connection.md) |
+| エラー型の定義 | sealed record の階層を TypeModeling の Closed 属性で標識し、suppressor と明示的に有効にした TYPMOD021 で網羅性を守る | [formation](./formation.md) |
+| 直列化 | System.Text.Json の native reader・writer と生成 codec を使い、serializer との接続は source generation と生成 converter で満たす | [translation](./translation.md) |
 | 公開契約の型・操作の生成 | 共通 toolchain の C# emitter を使い、型・codec の assembly と通信処理を分離する | [translation](./translation.md) |
 | 未使用コードの検出 | コンパイラと lint の到達可能性に基づく検出で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | UI の accessibility 検査 | viewer を TypeScript に委ねるため採用を持たない | — |

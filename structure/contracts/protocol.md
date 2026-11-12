@@ -20,6 +20,7 @@ ABI の呼出規約、buffer と handle の所有権、初期化・準備・停�
 ## スタイル
 
 protocol は、言語非依存の単一の形式に従う。
+JSON を使う場合の受入規則は [layout](./layout.md) の「JSON の相互運用 profile」に従う。
 エラーの表現は、canonical のエラーを protocol の失敗の形へ写す。
 
 ## 機構

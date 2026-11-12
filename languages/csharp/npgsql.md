@@ -101,6 +101,7 @@ await transaction.CommitAsync();
 domain の判断は、transaction も scope も受け取らない同期の純粋な関数である。
 
 ```csharp
+[Closed]
 internal abstract record PlaceRejected
 {
     private PlaceRejected() { }
@@ -114,8 +115,8 @@ internal sealed record Order(CustomerId CustomerId)
 {
     public static Result<Order, PlaceRejected> Place(Customer customer) =>
         customer.Active
-            ? Result.Success<Order, PlaceRejected>(new Order(customer.Id))
-            : Result.Failure<Order, PlaceRejected>(new PlaceRejected.CustomerInactive());
+            ? Result.Succeeded(new Order(customer.Id))
+            : Result.Failed<PlaceRejected>(new PlaceRejected.CustomerInactive());
 }
 ```
 
@@ -123,6 +124,7 @@ application は scope の port と use-case を持つ。
 拒否は Effect の Failed で終わり、`AcquireRelease` の release が scope を中止する。
 
 ```csharp
+[Closed]
 internal abstract record PlaceOrderFailure
 {
     private PlaceOrderFailure() { }
@@ -164,9 +166,9 @@ internal sealed class PlaceOrder<TR>(IPlaceOrderScopes<TR> scopes)
             scope => scope.FindCustomer(command.CustomerId)
                 .Bind(customer => customer is null
                     ? _fx.Fail<Customer>(new PlaceOrderFailure.CustomerNotFound())
-                    : _fx.Success(customer))
+                    : _fx.Succeed(customer))
                 .Bind(customer => Order.Place(customer).Match(
-                    order => _fx.Success(order),
+                    order => _fx.Succeed(order),
                     reason => _fx.Fail<Order>(new PlaceOrderFailure.Rejected(reason))))
                 .Bind(order => scope.InsertOrder(order))
                 .Bind(order => scope.Commit().Map(_ => new PlacedOrder(order.CustomerId))));
@@ -411,8 +413,8 @@ var updated = await connection.ExecuteAsync(
     transaction
 );
 return updated == 0
-    ? Result.Failure<UserProfile, WriteError>(new WriteError.Conflict())
-    : Result.Success<UserProfile, WriteError>(profile);
+    ? Result.Failed<WriteError>(new WriteError.Conflict())
+    : Result.Succeeded(profile);
 ```
 
 取消の時刻と理由を残す義務があるとき、`orders` の `status` 列を `UPDATE` して取消を表すと、取消の事実が欠落し、取消済みかを事実の行と別の列で二重に持つ。
@@ -423,7 +425,7 @@ await connection.ExecuteAsync(
     new { OrderId = id },
     transaction
 );
-return Result.Success<Order, WriteError>(order);
+return Result.Succeeded(order);
 ```
 
 状態の列を置かず、取消を `order_cancellations(order_id PRIMARY KEY, reason_code)` への追記で表す。
@@ -447,13 +449,13 @@ try
         new { OrderId = id, ReasonCode = reasonCode },
         transaction
     );
-    return Result.Success<Order, WriteError>(order);
+    return Result.Succeeded(order);
 }
 catch (PostgresException exception)
     when (exception.SqlState == PostgresErrorCodes.UniqueViolation
         && exception.ConstraintName == OrderCancellationConstraint)
 {
-    return Result.Failure<Order, WriteError>(new WriteError.Conflict());
+    return Result.Failed<WriteError>(new WriteError.Conflict());
 }
 ```
 
@@ -467,11 +469,11 @@ try
         new { AccountId = id, Version = expectedVersion + 1, Amount = amount },
         transaction
     );
-    return Result.Success<Account, WriteError>(account);
+    return Result.Succeeded(account);
 }
 catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.UniqueViolation)
 {
-    return Result.Failure<Account, WriteError>(new WriteError.Conflict());
+    return Result.Failed<WriteError>(new WriteError.Conflict());
 }
 ```
 
@@ -487,12 +489,12 @@ try
         new { AccountId = id, Version = expectedVersion + 1, Amount = amount },
         transaction
     );
-    return Result.Success<Account, WriteError>(account);
+    return Result.Succeeded(account);
 }
 catch (PostgresException exception)
     when (exception.SqlState == PostgresErrorCodes.UniqueViolation
         && exception.ConstraintName == LedgerVersionConstraint)
 {
-    return Result.Failure<Account, WriteError>(new WriteError.Conflict());
+    return Result.Failed<WriteError>(new WriteError.Conflict());
 }
 ```

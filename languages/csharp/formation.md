@@ -59,8 +59,8 @@ public sealed record Address
     private Address(string street, string zipCode) => (Street, ZipCode) = (street, zipCode);
     public static Result<Address, AddressFailure> Create(string street, string zipCode) =>
         IsValidZip(zipCode)
-            ? Result<Address, AddressFailure>.Succeeded(new Address(street, zipCode))
-            : Result<Address, AddressFailure>.Failed(new AddressFailure.InvalidZip(zipCode));
+            ? Result.Succeeded(new Address(street, zipCode))
+            : Result.Failed<AddressFailure>(new AddressFailure.InvalidZip(zipCode));
 }
 ```
 
@@ -70,10 +70,11 @@ public sealed record Address
 
 ### 要求
 場合分けのある概念は、外部の派生を封じた sealed record の階層で表す。
-基底の constructor を非公開にして、バリアントをネストした sealed record に限る。
+基底を `[Closed]` で標識し、constructor を非公開にして、バリアントをネストした sealed record に限る。
 分岐は switch 式で網羅し、default のアームも discard のアームも置かない。
 閉じた階層を認識して CS8509 を抑止する diagnostic suppressor を入れ、網羅の検査を保ったまま default と discard を不要にする。
 網羅の警告をエラー扱いにし、バリアントの追加で漏れをビルドの失敗にする。
+TypeModeling の opt-in 規則 TYPMOD021 を error として有効にし、将来追加される case を暗黙に受け取る arm を拒否する。
 不在は nullable reference types を有効にして、型の上の nullable で表す。
 階層の外からの派生は、ArchUnitNET の構造検査で検出する。
 
@@ -83,6 +84,7 @@ C# のコンパイラは閉じた階層を網羅とみなさず、全バリア�
 discard のアームを置くと、バリアントを追加しても未処理が警告されず、網羅の検査が効かなくなる。
 閉じた階層を認識する diagnostic suppressor は、全バリアントを処理した switch の CS8509 だけを抑止し、バリアントを追加して未処理が出たときの警告は残す。
 これで discard を置かずに網羅を検査でき、警告をエラー扱いにすればバリアントの漏れでビルドが落ちる。
+TYPMOD021 は将来の case を受ける arm を検出する補助規則であり、現在の case の欠落を検出する CS8509 等の網羅検査の代わりではない。
 default や discard のアームで例外を投げる形は、漏れを実行時まで遅らせる。
 nullable reference types は、不在を型に現し、null の取り違えを型検査で防ぐ。
 record は、通常の constructor を private にしても外部 assembly からの派生を型だけでは防げない。
@@ -93,7 +95,7 @@ record は、通常の constructor を private にしても外部 assembly か�
 ### 完了条件
 場合分けが、外部の派生を封じた sealed record の階層で表されている。
 網羅の switch に、default のアームも discard のアームも無い。
-閉じた階層の CS8509 を抑止する suppressor が入り、網羅の警告がエラー扱いで、バリアントの追加がビルドで気づける。
+`[Closed]` を認識する suppressor と、error として有効にした TYPMOD021 が入り、CS8509 を含む網羅の警告がエラー扱いで、バリアントの追加がビルドで気づける。
 不在が、型の上の nullable で表されている。
 階層の外からの派生が、構造検査で検出されている。
 
@@ -104,7 +106,8 @@ protected な copy constructor を経由した階層の外からの派生の防�
 
 ### 行動
 基底を abstract record にして constructor を非公開にし、バリアントをネストした sealed record で宣言して `required` で初期化を強制する。
-閉じた階層を認識する diagnostic suppressor を入れ、switch 式を default も discard も無しで書き、CS8509 を含む網羅の警告をエラー扱いに設定する。
+閉じた階層を認識する suppressor を入れ、switch 式を default も discard も無しで書き、CS8509 を含む網羅の警告と `dotnet_diagnostic.TYPMOD021.severity = error` を設定する。
+TYPMOD001 は廃止済みの規則であり、switch 文の一律禁止を現在の library の機能として扱わない。分岐を switch 式で網羅する本規律と、library の診断範囲を区別する。
 階層の外からの派生の有無を、ArchUnitNET の構造検査で確かめる。
 
 ### 例
@@ -118,6 +121,7 @@ var label = account switch { Account.Iban iban => iban.Value, _ => throw new Arg
 suppressor は閉じた階層の CS8509 だけを抑止するため、バリアントを足すと未処理を検出できる。
 
 ```csharp
+[Closed]
 public abstract record Account
 {
     private Account() { }

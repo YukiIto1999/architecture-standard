@@ -12,7 +12,7 @@ concerns の [effect](../../concerns/effect/README.md) が定める効果シス�
 副作用を伴う計算は、`Effect<TRequirements, TFailure, TValue>` で表す。
 これは `Func<TRequirements, Deadline, CancellationToken, ValueTask<EffectExit<TFailure, TValue>>>` を包む `readonly struct` とし、生成では実行しない。
 内部の Run は ValueTask を返し、公開 host API の Task と役割を混ぜない。
-Roslyn analyzer は、明示的な `default(Effect<...>)`、Effect への `default` literal の代入、型解決で Effect と判定できる `default(T)` を検出する。
+Roslyn analyzer の EFFSYS008 で、明示的な default に加え、Effect の未初期化配列・field、同一 compilation で追跡できる generic producer による未初期化値の生成を拒否する。
 Run は `_run` が null なら `UninitializedEffectException` を送出し、未初期化の Effect を専用の defect として閉じる。
 純粋な計算は Effect で包まず、純粋な関数のままにする。
 
@@ -22,7 +22,7 @@ ValueTask で同期と非同期を一つの型で扱い、割り当てを抑え�
 三つの型引数で、要求する依存と想定内失敗と成功の値を型に出す。
 純粋な計算を Effect で包むと、不要な delegate と ValueTask の語彙が核に侵入する。
 明示的な default と型解決できる default は、Roslyn analyzer で利用前に止められる。
-配列、field、未解決の generic から来る default まで analyzer で完全には検出できない。
+別 assembly の metadata だけを参照する generic producer の内部までは consumer の analyzer で追跡できないため、静的拒否だけで未初期化値の到達を排除しない。
 Run が null delegate を呼ぶ前に専用の defect を送出すれば、静的検査を抜けた default を通常の NullReferenceException と取り違えない。
 
 ### 完了条件
@@ -30,9 +30,9 @@ Run が null delegate を呼ぶ前に専用の defect を送出すれば、静�
 `Effect` が、生成では実行されない遅延した値である。
 純粋な計算が、Effect で包まれていない。
 内部の Run が、Deadline と CancellationToken を受け取り ValueTask を返している。
-明示的な `default(Effect<...>)`、Effect への `default` literal の代入、型解決で Effect と判定できる `default(T)` が、Roslyn analyzer で検出されている。
+EFFSYS008 が、明示的な default と、未初期化配列・field・同一 compilation の generic producer の検出対象を拒否している。
 Run が `_run` の null を実行前に検出し、`UninitializedEffectException` を送出している。
-配列、field、未解決の generic 由来の default Effect を runtime で実行し、いずれも Defected の `UninitializedEffectException` になることが実行テストで確認されている。
+metadata-only の外部 producer から到達した default Effect が、runtime で Defected の `UninitializedEffectException` になることが実行テストで確認されている。
 
 ### 禁止事項
 副作用を伴う計算を、生成で実行する eager な形で書くこと。
@@ -46,9 +46,9 @@ Effect の内部の Run から、Task または Task<T> を返すこと。
 副作用を伴う計算を Effect で返し、Map と Bind で合成する。
 query 式を使う場合は Select と SelectMany を実装する。
 delegate を外へ見せず、構築は文脈の値の生成関数に限る。
-明示的な `default(Effect<...>)`、Effect への `default` literal の代入、型解決で Effect と判定できる `default(T)` を、Roslyn analyzer で検出する。
+未初期化値の静的拒否を EFFSYS008 で検査し、配列や同一 compilation の generic producer を検査の盲点として扱わない。
 Run の先頭で `_run` の null を検出し、`UninitializedEffectException` を送出する。
-配列、field、未解決の generic 由来の default を実行テストへ置き、EffectRuntime が専用の defect を返すことを確認する。
+source を consumer の compilation に含めない外部 producer を使い、runtime の未初期化 guard を専用の consumer で確かめる。
 
 ### 例
 公開 host API で `Task<T>` を生成するとその場で実行が始まり、効果を合成したり差し替えたりできない。
@@ -87,12 +87,12 @@ public readonly struct Effect<TRequirements, TFailure, TValue>
 
 ### 要求
 Effect の生成は、文脈(`TRequirements` と `TFailure`)を型引数2つの値へ一度だけ束ねた `EffectContext` の生成関数で行う。
-`Success<TValue>` と `Try<TValue>` は、値または delegate の戻り値から `TValue` を推論させる。
+`Succeed<TValue>` と `Try<TValue>` は、値または delegate の戻り値から `TValue` を推論させる。
 `Fail<TValue>` と `Defect<TValue>` は、引数に `TValue` が現れないため、呼び出し側で値型の型引数を明示する。
 合成は拡張 method の combinator で行い、delegate を直に触らせない。
 生成・合成・失敗変換・資源・依存提供のための combinator を備える。
 query 式のため、`Select` を `Map` から、`SelectMany` を `Bind` と `Map` から与える。
-`Try` の body は Deadline、CancellationToken を受け取って ValueTask<TValue> を返し、`AcquireRelease` の release は Deadline を受け取って ValueTask を返す。
+`Try` の body は TRequirements、Deadline、CancellationToken をこの順に受け取って ValueTask<TValue> を返し、`AcquireRelease` の release は資源と Deadline を受け取って ValueTask を返す。
 `AcquireRelease` の release は非取消の後始末であり、元の Deadline は受け取るが CancellationToken は受け取らない。
 AcquireRelease が扱う資源を子が使う場合の合流と、処理と解放がともに失敗する終了経路は [coordination](./coordination.md) の「資源解放」に従う。
 Effect 内部の body と release に Task を混在させない。
@@ -101,11 +101,11 @@ Map、Bind、Select、SelectMany、MapFailure、Recover、AcquireRelease は、R
 ### 根拠
 C# は型引数の部分推論を持たないため、文脈と値を同じ型引数列に並べると、呼び出しのたびに全型引数を書く儀式になる。
 文脈を値へ束ねると、呼び出し面では変わるものだけを名指せる。
-`Success` と `Try` は `TValue` が引数に現れるため型推論できるが、`Fail` と `Defect` は failure または exception だけを受け取るため `TValue` を推論できない。
+`Succeed` と `Try` は `TValue` が引数に現れるため型推論できるが、`Fail` と `Defect` は failure または exception だけを受け取るため `TValue` を推論できない。
 生成関数が delegate を内に隠すので、利用側は `_run` を直に触らず Effect を作れる。
 `Bind` は前段の成功値に依存して次の Effect を返す合成の核で、`Map` はその特例として導出できる。
 `MapFailure` と `Recover` は Failed だけを変換し回復し、Defected と Canceled には触れない。
-`AcquireRelease` は取得した資源を、成功・失敗・取り消しのいずれでもちょうど一度解放する。
+`AcquireRelease` は取得に成功した資源を、使用の成功・失敗・欠陥・取り消しのいずれでもちょうど一度解放する。
 release を CancellationToken なしで待てば、Effect が取り消された後も後始末を中断しない。
 元の Deadline を release へ渡せば期限の診断 context を保持できるが、期限超過を release の取消には使わない。
 `Provide` は要求する依存を与えて `TRequirements` を `NoRequirements` に畳み、実行できる形にする。
@@ -113,14 +113,14 @@ body と release を ValueTask に揃えると、Effect runtime が一度だけ 
 combinator が同じ Deadline を渡せば、Bind の段数ごとに時間枠が引き直されない。
 
 ### 完了条件
-生成が `EffectContext` の `Success`・`Fail`・`Defect`・`Try` で行われている。
-`Success` と `Try` の `TValue` が引数から推論されている。
+生成が `EffectContext` の `Succeed`・`Fail`・`Defect`・`Try` で行われている。
+`Succeed` と `Try` の `TValue` が引数から推論されている。
 `Fail<TValue>` と `Defect<TValue>` の呼び出しに値型の型引数が明示されている。
 合成が `Map`・`Bind`(query 式なら `Select`・`SelectMany`)で行われている。
-資源の取得と解放が `AcquireRelease` で、成功・失敗・取り消しのいずれでも解放されている。
+資源の取得と解放が `AcquireRelease` で行われ、使用の全終了経路で解放が一度だけ完了している。
 依存提供が `Provide` で行われている。
-`Try` の body が Deadline、CancellationToken、ValueTask<TValue> のシグネチャを持っている。
-`AcquireRelease` の release が Deadline、ValueTask のシグネチャを持ち、Task を返していない。
+`Try` の body が TRequirements、Deadline、CancellationToken、ValueTask<TValue> のシグネチャを持っている。
+`AcquireRelease` の release が資源と Deadline を受けて ValueTask を返し、Task を返していない。
 `AcquireRelease` の release が CancellationToken を受け取らず、取り消し後も非取消で完了している。
 全ての combinator が、Run から受けた同じ Deadline を下流の Effect と release へ渡している。
 
@@ -135,7 +135,7 @@ combinator の内側で Deadline を生成し、相対 timeout を引き直す�
 
 ### 行動
 生成・合成・失敗変換・資源・依存提供を、上記の combinator で組む。
-`Success` と `Try` は引数から `TValue` を推論させ、`Fail<TValue>` と `Defect<TValue>` は値型を明示する。
+`Succeed` と `Try` は引数から `TValue` を推論させ、`Fail<TValue>` と `Defect<TValue>` は値型を明示する。
 `Recover` は Failed だけを扱い、Defected と Canceled を素通しする。
 `Try` の body と `AcquireRelease` の release は、Deadline を受け取る ValueTask の delegate に揃える。
 `AcquireRelease` の release は元の Deadline だけを渡す非取消の後始末とし、CancellationToken を追加しない。
@@ -143,40 +143,14 @@ combinator の内側で Deadline を生成し、相対 timeout を引き直す�
 
 ### 例
 文脈は一度だけ名指しする。
-`Success` と `Try` の値型は引数から推論させ、`Fail` と `Defect` の値型は明示する。
+`Succeed` と `Try` の値型は引数から推論させ、`Fail` と `Defect` の値型は明示する。
 release は元の絶対期限を保持した非取消の後始末であり、終了状態にかかわらず一度実行する。
-
-```csharp
-public readonly struct EffectContext<TRequirements, TFailure>
-    where TRequirements : IEffectRequirements
-{
-    public Effect<TRequirements, TFailure, TValue> Success<TValue>(TValue value) =>
-        EffectModule.Success<TRequirements, TFailure, TValue>(value);
-
-    public Effect<TRequirements, TFailure, TValue> Fail<TValue>(TFailure failure) =>
-        EffectModule.Fail<TRequirements, TFailure, TValue>(failure);
-
-    public Effect<TRequirements, TFailure, TValue> Defect<TValue>(Exception defect) =>
-        EffectModule.Defect<TRequirements, TFailure, TValue>(defect);
-
-    public Effect<TRequirements, TFailure, TValue> Try<TValue>(
-        Func<TRequirements, Deadline, CancellationToken, ValueTask<TValue>> body,
-        Func<Exception, TFailure> onError) =>
-        EffectModule.Try<TRequirements, TFailure, TValue>(body, onError);
-
-    public Effect<TRequirements, TFailure, TValue> AcquireRelease<TResource, TValue>(
-        Effect<TRequirements, TFailure, TResource> acquire,
-        Func<TResource, Deadline, ValueTask> release,
-        Func<TResource, Effect<TRequirements, TFailure, TValue>> use) =>
-        EffectModule.AcquireRelease(acquire, release, use);
-}
-```
 
 文脈から成功と試行の値型を推論し、値を持たない失敗と欠陥では値型を明示する。
 
 ```csharp
 var fx = new EffectContext<TR, Fault>();
-var effect = fx.Try(body, onError).Bind(value => fx.Success(Summarize(value)));
+var effect = fx.Try(body, onError).Bind(value => fx.Succeed(Summarize(value)));
 Effect<TR, Fault, Summary> failed = fx.Fail<Summary>(fault);
 Effect<TR, Fault, Summary> defected = fx.Defect<Summary>(exception);
 ```
@@ -234,7 +208,10 @@ Effect の終了は `EffectExit<TFailure, TValue>` の閉じた階層で表し�
 Result の実装は、Effect と同じく libs の機構が持つ。
 Roslyn analyzer は、明示的な `default(Result<...>)`、Result への `default` literal の代入、型解決で Result と判定できる `default(T)` を検出する。
 Result の内部 tag は、0 を未初期化、1 を成功、2 を失敗に固定する。
-全ての observer、`Match`、unwrap 相当の操作は tag 0 を runtime で検出し、欠陥を送出して閉じる。
+初期化状態を照会する `HasValue` だけは tag 0 を false として返す。
+case の投影・取得を行う `Value` と `TryGetValue`、`Match`、`IsFailed`、等価性、hash、文字列化と演算子は、tag 0 を runtime で検出して欠陥を送出する。
+等価性は両 operand を検査し、object overload も受け手が未初期化なら相手の型だけを見て false にしない。
+初期化済みの case が許す null payload は有効であり、未初期化や第三の空の case と混同しない。
 
 ### 根拠
 Result の二状態では、欠陥と取り消しを一つの型に分けて全域化できず、失敗に畳むか型の外へ逃がすことになる。
@@ -242,7 +219,7 @@ Result の二状態では、欠陥と取り消しを一つの型に分けて全�
 TFailure を sealed record の階層にすると、網羅の switch で扱える。
 明示的な default と型解決できる default は、Roslyn analyzer で利用前に止められる。
 配列要素、field、未解決の generic から来る default まで analyzer で完全には検出できない。
-tag 0 を有効な二状態から外し全ての観測で guard すれば、静的検査を抜けた default を成功や失敗として処理せず欠陥として閉じられる。
+初期化状態の照会と有効な case の観測を分ければ、HasValue の false を保ちつつ、default を成功・失敗や空の値として処理する経路を閉じられる。
 外部依存の失敗は adapter で回復できる失敗と欠陥に分け、回復できる失敗を Failed に、欠陥を Defected にする。
 EffectExit の基底も非 sealed な abstract record で、外部 assembly からの派生を型だけでは防げない限界と、その手当ては [formation](./formation.md) の「不正な状態を構築できなくする」に従う。
 
@@ -252,66 +229,52 @@ Effect の終了が、Succeeded・Failed・Defected・Canceled に分かれて�
 純粋な計算の想定内失敗が、libs の機構の `Result<TValue, TFailure>` で表されている。
 明示的な `default(Result<...>)`、Result への `default` literal の代入、型解決で Result と判定できる `default(T)` が、Roslyn analyzer で検出されている。
 Result の内部 tag 0 が、未初期化に割り当てられている。
-全ての observer、`Match`、unwrap 相当の操作が tag 0 を runtime で検出し、欠陥を送出している。
+HasValue だけが未初期化を false として返し、case の取得・投影と意味を使う各操作が tag 0 を欠陥として拒否している。
 欠陥と取り消しが、TFailure に混ざっていない。
 
 ### 禁止事項
 欠陥や取り消しを、TFailure に混ぜること。
 想定内失敗を、例外で送出すること。
-純粋な計算の失敗の表現に、外部ライブラリの Result 型を使うこと。
+純粋な計算の失敗の表現に、採用した libs の Result と異なる第二の Result 型を持ち込むこと。
 tag 0 の Result を、成功または失敗として扱うこと。
 全ての default Result を、analyzer だけで検出できるとみなすこと。
-observer、`Match`、unwrap 相当の操作から、tag 0 の runtime guard を外すこと。
+HasValue 以外の case の観測や意味を使う操作から tag 0 の guard を外すこと、または未初期化を有効な空の case として公開すること。
 
 ### 行動
 終了を EffectExit の四状態に分け、TFailure を sealed record の階層にする。
 外部依存の失敗を adapter で仕分け、回復できる失敗を Failed、欠陥を Defected にする。
 明示的な `default(Result<...>)`、Result への `default` literal の代入、型解決で Result と判定できる `default(T)` を、Roslyn analyzer で検出する。
 Result の内部 tag 0 を未初期化に固定する。
-全ての observer、`Match`、unwrap 相当の操作で tag 0 を検出し、欠陥を送出する。
+HasValue の初期化状態の照会を残し、case の取得・投影、分岐、等価性、hash、文字列化と演算子は tag 0 を欠陥として閉じる。
 配列要素、field、generic から来る default を実行テストへ置き、runtime guard を確認する。
 
 ### 例
 すべての例外を想定内失敗へ畳み込むと、欠陥と取り消しまで同じ型に化ける。
 
 ```csharp
-try { return Result.Success<Order, OrderError>(Place(cart)); }
-catch (Exception exception) { return Result.Failure<Order, OrderError>(OrderError.From(exception)); }
+try { return Result.Succeeded(Place(cart)); }
+catch (Exception exception) { return Result.Failed(OrderError.From(exception)); }
 ```
 
 型解決できる `default` は Roslyn analyzer で止める。
-静的検査を抜ける値は、すべての観測操作で未初期化を欠陥として閉じる。
-内部 tag は0を未初期化、1を成功、2を失敗とし、`IsFailure` や値の取得なども `EnsureInitialized` を最初に呼ぶ。
+静的検査を抜ける値は、HasValue の状態照会と、有効な case を観測する操作の欠陥を分けて確かめる。
+成功と失敗の構築には `Result.Succeeded(value)` と `Result.Failed(failure)` を使う。
+型付きの早期 return は `IsFailed`、全体の写像は `Match` で行う。
+`Result.Value` の case は top-level の `Succeeded<TValue>` と `Failed<TFailure>` であり、Result の入れ子型ではない。
 
 ```csharp
-Result<Order, OrderError> explicitDefault = default;
-
-var arrayDefault = new Result<Order, OrderError>[1][0];
-arrayDefault.Match(onSuccess, onFailure);
-
-public readonly struct Result<TValue, TFailure>
+Result<Order, OrderError> placed = Place(cart);
+if (placed.IsFailed(out var failed, out var order))
 {
-    private readonly byte _tag;
-    private readonly TValue? _value;
-    private readonly TFailure? _failure;
-
-    private void EnsureInitialized()
-    {
-        if (_tag == 0) throw new InvalidOperationException("未初期化の Result");
-    }
-
-    public bool IsSuccess { get { EnsureInitialized(); return _tag == 1; } }
-    public TResult Match<TResult>(Func<TValue, TResult> onSuccess, Func<TFailure, TResult> onFailure)
-    {
-        EnsureInitialized();
-        return _tag == 1 ? onSuccess(_value!) : onFailure(_failure!);
-    }
+    return failed;
 }
+return Result.Succeeded(Summarize(order));
 ```
 
 効果の終了は閉じた四状態で表す。
 
 ```csharp
+[Closed]
 public abstract record EffectExit<TFailure, TValue>
 {
     private EffectExit() { }
@@ -378,12 +341,18 @@ public sealed class ProductionRequirements(IClock clock, IOrderRepository orders
 ### 要求
 Effect の実行は `EffectRuntime<TRequirements>` の境界に限り、内側の層では実行しない。
 EffectRuntime は requirements を保持し、Effect を解釈して `EffectExit` を返す。
-EffectRuntime とその Run は internal に閉じ、Run は同じ Deadline と、期限用の token を合流させた CancellationToken を Effect へ渡して ValueTask を返す。
+EffectRuntime と Run は、別 assembly の composition root が呼べる公開 library API とする。
+application の実行箇所は analyzer で composition root へ限定し、`Effect.Run` は library 内部の internal に保つ。
+Run は Effect、Deadline、期限超過を TFailure へ写す関数、CancellationToken の順で受け、ValueTask を返す。
+requirements、TimeProvider、IDeadlineDiagnostics を構築時に明示し、診断を捨てる既定の no-op 実装を置かない。
 実行中に送出された OperationCanceledException を Canceled に、その他の例外を Defected に写し、想定内失敗は throw せず Fail で返す。
 Run は `Deadline` の処理を始める境界として、[coordination](./coordination.md) の「取り消し」に従い、期限用の CancellationTokenSource を作り、その token と受け取った CancellationToken を linked token に合流させる。
+開始前に親の取り消しと期限を判定し、期限切れの Effect を開始しない。期限の通知 owner と長い期限の扱いは同じ「取り消し」の規律に従う。
 Run は、Canceled で終えた Effect を、受け取った CancellationToken が取り消し済みなら Canceled のまま返し、取り消されておらず期限用の token が取り消し済みなら、呼び出し側が渡す関数で作った期限超過の TFailure の値を持つ Failed へ写す。
 Run は、どちらの token も取り消されていない Canceled を、adapter を経ずに届いた写し損ねとして、専用の欠陥 `UnattributedCancellationException` を持つ Defected で返す。
 Run は、Succeeded・Failed・Defected で終えた Effect を、返却の後に観測した取り消しや Deadline の超過で書き換えず、Deadline を越えていれば診断へ記録する。
+診断処理が例外を送出した場合は `DeadlineDiagnosticsException<TFailure, TValue>` の Defected とし、`CompletedExit` に診断前の終了の同一 instance、`InnerException` に診断例外を保持する。
+この診断の欠陥を、業務操作が未実行または未確定だったという結果へ読み替えない。
 Effect.Run の未初期化 guard が送出する `UninitializedEffectException` は、EffectRuntime が専用の Defected として返す。
 型で縛れない規則は、analyzer と source generator が次の4責務で強制する: R の合成環境の生成、Bind 連鎖での要求包含の検査、原始効果の閉じ込め、`NoRequirements` への迂回の禁止。
 
@@ -393,7 +362,7 @@ host の async と取り消しで Effect を駆動し、送出された取り消
 Canceled は結果を要らなくなった側の取り消しであり、Deadline の超過は期限用の CancellationTokenSource を作る境界である Run が想定内の失敗として受け取るので、Run は Canceled の原因を、受け取った CancellationToken と自身が所有する期限用の token の状態で判定してから返す。
 どちらの token でも説明できない Canceled を、期限超過や取り消しと推測して返すと、他の機構による中断が期限の超過として報告されるので、専用の欠陥にする。
 期限超過の TFailure の値を呼び出し側から受ければ、境界の失敗の型に期限超過の case が無いと Run を呼べず、応答を決める分岐が網羅の switch に現れる。
-EffectRuntime を internal の ValueTask 経路に閉じれば、公開 host API の Task と awaitable の役割が混ざらない。
+library の公開 Run と application の公開 host port を分ければ、assembly 越しの実行入口を提供しながら、host port の Task と一度だけ await する ValueTask の役割を保てる。
 Deadline を Run から Effect へ値のまま渡せば、Effect の合成中に時間枠を引き直さない。
 C# は型推論が弱く、実行境界の限定と要求の充足と原始効果の直呼びの禁止を、型だけでは縛れない。
 要求する能力の組み合わせごとに環境型を手で書くと、組み合わせの数だけ nominal な型か神環境型のどちらかに倒れるので、source generator が組み合わせから環境型を生成する(R の合成)。
@@ -408,7 +377,8 @@ Run が、期限用の CancellationTokenSource を作り、受け取った Cance
 Run が、受け取った CancellationToken が取り消し済みの Canceled を Canceled のまま返し、取り消されておらず期限用の token が取り消し済みの Canceled を期限超過の Failed へ写している。
 Run が、どちらの token も取り消されていない Canceled を、`UnattributedCancellationException` の Defected として返している。
 Run が、Succeeded・Failed・Defected を返却後の取り消しや Deadline の超過で書き換えず、Deadline を越えていれば診断へ記録している。
-EffectRuntime と Run が internal で、Run が Deadline、CancellationToken を受け取って ValueTask を返している。
+公開 library API の Run が composition root からだけ呼ばれ、Effect.Run は internal に閉じ、CancellationToken が末尾の必須引数になっている。
+診断の依存が明示され、診断例外から元の終了と診断例外の両方を identity を失わず観測できる。
 `UninitializedEffectException` が、EffectRuntime から Defected として返されている。
 実行境界の限定と要求の充足が、analyzer で検査されている。
 R の合成環境が、source generator で作られている。
@@ -420,7 +390,8 @@ Bind の連鎖の要求包含が、analyzer の検査を通っている。
 内側の層で、Effect を実行すること。
 `DateTimeOffset.UtcNow` のような原始効果を、純粋核や application で直に呼ぶこと。
 analyzer と source generator の4責務のいずれかを、実装せず素通りさせること。
-EffectRuntime または Run を公開 host API にし、ValueTask を外へ公開すること。
+library の公開 Run を application の公開 host port と同一視し、host port へ ValueTask を流出させること。
+診断を no-op へ既定化することや、診断の欠陥だけを返して確定済みの終了を消すこと。
 Effect を実行するときに Deadline を渡さず、相対 timeout を引き直すこと。
 Run で、受け取った CancellationToken が取り消し済みの Canceled を、期限超過の Failed へ写すこと。
 Run で、受け取った token が取り消されていないことだけから、Canceled を期限超過の Failed へ写すこと。
@@ -429,103 +400,30 @@ Run で、Succeeded・Failed・Defected を、返却後に観測した取り消�
 
 ### 行動
 Effect の実行を composition root の `EffectRuntime.Run` に集める。
-EffectRuntime.Run を internal の ValueTask 経路にし、境界で一度だけ生成した Deadline と、期限用の token を合流させた CancellationToken を Effect.Run へ渡す。
+公開 EffectRuntime.Run の呼出箇所を analyzer で限定し、境界で一度だけ生成した Deadline と、期限用の token を合流させた CancellationToken を internal の Effect.Run へ渡す。
 Effect が Canceled で終えたら、受け取った CancellationToken が取り消し済みなら Canceled のまま、取り消されておらず期限用の token が取り消し済みなら期限超過の Failed へ、どちらでもなければ UnattributedCancellationException の Defected へ写す。
 Succeeded・Failed・Defected は返却後の再確認で変えず、Deadline を越えていれば診断へ記録する。
 `UninitializedEffectException` を、他の欠陥と同じく Defected へ写す。
 source generator に R の合成を、analyzer に Bind 連鎖の検査・原始効果の閉じ込め・`NoRequirements` への迂回の検出を実装する。
 
 ### 例
-依存を保持する runtime が効果を解釈し、例外を `Canceled` または `Defected` へ写し、受け取った CancellationToken が取り消されていない `Canceled` のうち、期限用の token が取り消し済みのものだけを期限超過の `Failed` へ写す。
-実行は境界に限る。
-analyzer が追えない経路から生じた `default` は、専用の defect になることを実行テストで確かめる。
+composition root は、期限と時計と診断の依存を明示して公開 library API を一度 await する。
+application が外へ公開する非同期 port の戻り値は Task のままにし、runtime の実装を application 側へ複製しない。
 
 ```csharp
-internal sealed class EffectRuntime<TRequirements>(
-    TRequirements requirements,
-    TimeProvider timeProvider,
-    IDeadlineDiagnostics diagnostics)
-    where TRequirements : IEffectRequirements
-{
-    internal async ValueTask<EffectExit<TFailure, TValue>> Run<TFailure, TValue>(
-        Effect<TRequirements, TFailure, TValue> effect,
-        Deadline deadline,
-        CancellationToken cancellationToken,
-        Func<Deadline, TFailure> deadlineExceeded)
-    {
-        var remaining = deadline.Remaining(timeProvider);
-        using var deadlineCts = new CancellationTokenSource(
-            remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero,
-            timeProvider);
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken,
-            deadlineCts.Token);
-
-        EffectExit<TFailure, TValue> exit;
-        OperationCanceledException? canceled = null;
-        try { exit = await effect.Run(requirements, deadline, linkedCts.Token); }
-        catch (OperationCanceledException exception)
-        {
-            canceled = exception;
-            exit = new EffectExit<TFailure, TValue>.Canceled();
-        }
-        catch (Exception exception) { exit = new EffectExit<TFailure, TValue>.Defected(exception); }
-
-        if (exit is EffectExit<TFailure, TValue>.Canceled && !cancellationToken.IsCancellationRequested)
-        {
-            return deadlineCts.IsCancellationRequested
-                ? new EffectExit<TFailure, TValue>.Failed(deadlineExceeded(deadline))
-                : new EffectExit<TFailure, TValue>.Defected(new UnattributedCancellationException(canceled));
-        }
-
-        if (deadline.Remaining(timeProvider) <= TimeSpan.Zero)
-        {
-            diagnostics.RecordOverrun(deadline, exit);
-        }
-
-        return exit;
-    }
-}
-```
-
-runtime は、境界で生成した期限と取り消しを受けて、期限用の token を合流させ、効果を一度だけ解釈する。
-
-```csharp
+var deadline = Deadline.FromBudget(timeProvider, requestBudget);
 var runtime = new EffectRuntime<ProductionRequirements>(requirements, timeProvider, diagnostics);
 EffectExit<PlaceOrderFailure, OrderId> exit = await runtime.Run(
     PlaceOrder<ProductionRequirements>(command),
     deadline,
-    cancellationToken,
-    PlaceOrderFailure.FromDeadline);
+    PlaceOrderFailure.FromDeadline,
+    cancellationToken);
 ```
 
-analyzer が型を確定できない経路から未初期化値を作り、runtime が専用の欠陥へ写すことを確かめる。
+未初期化値の実行時防御は、consumer が metadata だけを参照する外部 assembly の generic producer から default Effect を受け取る境界で確かめる。
+期限内かつ親が取り消されていない実行で、`UninitializedEffectException` を持つ Defected になることを観測する。
+未初期化配列と同一 compilation の generic producer は EFFSYS008 の静的拒否を検査する対象であり、analyzer を回避できる利用例として掲載しない。
 
-```csharp
-static T UnresolvedDefault<T>() => default!;
-var defaultEffects = new Effect<ProductionRequirements, PlaceOrderFailure, OrderId>[]
-{
-    new Effect<ProductionRequirements, PlaceOrderFailure, OrderId>[1][0],
-    new EffectHolder().Value,
-    UnresolvedDefault<Effect<ProductionRequirements, PlaceOrderFailure, OrderId>>(),
-};
-foreach (var defaultEffect in defaultEffects)
-{
-    var defaultExit = await runtime.Run(defaultEffect, deadline, cancellationToken, PlaceOrderFailure.FromDeadline);
-    if (defaultExit is not EffectExit<PlaceOrderFailure, OrderId>.Defected
-        { Exception: UninitializedEffectException })
-        throw new InvalidOperationException("未初期化の Effect が専用 defect になっていない");
-}
-```
-
-配列と field を経由する未初期化値には、保持用の型を使う。
-
-```csharp
-internal sealed class EffectHolder
-{
-    internal Effect<ProductionRequirements, PlaceOrderFailure, OrderId> Value;
-}
-```
 
 ## port を interface で宣言する
 

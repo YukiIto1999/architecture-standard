@@ -12,7 +12,8 @@ principles の [separation](../../principles/separation/README.md) が定める�
 例外と取り消しを追えるよう、async void を使わない。
 surface と host が公開する非同期 API は、呼び出し側が複数回 await しても同じ完了を観測できる Task または Task<T> を返す。
 Effect の内部の Run と AcquireRelease の release は、内部で一度だけ await する ValueTask または ValueTask<T> を返す。
-Task と ValueTask は、公開 host API と Effect 内部という観測可能な役割で一意に分ける。
+Task と ValueTask は、application が外へ公開する host port と、一度だけ await する Effect の実行経路で分ける。
+別 assembly の composition root 向けに公開する library の EffectRuntime.Run は後者であり、host port ではない。
 
 ### 根拠
 副作用の経路を async/await で書けば、待ちがスレッドを塞がない。
@@ -20,7 +21,7 @@ domain を同期の純粋な関数に保てば、判断が非同期の足場か�
 domain が Task を返すと、判断に非同期が侵入し、純粋さが失われる。
 async void は Task を持たないので、例外が捕まえられず、待ち合わせもできない。
 Task は複数回の await と完了の共有を契約にできるため、framework と利用側が観測する公開 host API に合う。
-ValueTask は一度だけ await する内部経路に閉じれば、複数回 await や保存を許すかという契約を公開面へ持ち出さずに済む。
+ValueTask の実行経路を composition root と library 内部に限定すれば、host port へ複数回 await や保存の制約を流出させずに済む。
 
 ### 完了条件
 副作用の経路が、async/await で書かれている。
@@ -44,9 +45,9 @@ Effect の内部の Run と release は ValueTask または ValueTask<T> を返�
 ## 取り消し
 
 ### 要求
-CancellationToken を非取消の後始末を除く全ての非同期 API に下流まで渡し、取り消しを受けた処理は協調して止まる。
+CancellationToken を非取消の後始末を除く全ての非同期 API の末尾の必須引数として下流まで渡し、取り消しを受けた処理は協調して止まる。
 CancellationToken を省略可能にして渡さない形にせず、時間切れは linked token で内部の token に合流させて下流へ伝える。
-時間の上限は `Deadline` carrier の絶対時刻で表し、request、message、job の境界で TimeProvider から一度だけ生成する。
+時間の上限は `Deadline.At` の絶対時刻で表し、request、message、job の境界で明示した TimeProvider と `Deadline.FromBudget` から一度だけ生成する。
 境界より内側の非同期 API は、`AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` という非取消の後始末を除き、同じ `Deadline` と CancellationToken を必須の引数として受け取り下流へ渡す。
 非取消の後始末でも元の `Deadline` を保持する。
 `AcquireRelease` の release は同じ `Deadline` を引数で受け、`IAsyncDisposable.DisposeAsync` の呼出側は同じ `Deadline` を後始末の scope に保持するが、どちらにも CancellationToken を渡さない。
@@ -54,8 +55,10 @@ CancellationToken を省略可能にして渡さない形にせず、時間切�
 同期の純粋な domain の関数には、`Deadline` と CancellationToken の引数を要求しない。
 `Deadline` ごとに期限用の CancellationTokenSource を一つだけ作り、作るのは `Deadline` の処理を始める境界とし、Effect を実行する場合は EffectRuntime.Run とする。
 Effect を実行する host は、`Deadline` を生成して Run へ渡すだけで、期限用の CancellationTokenSource を作らない。
-境界は、TimeProvider の現在時刻から `Deadline` までの remaining で期限用の CancellationTokenSource を作り、その token と親の CancellationToken を linked token に合流させ、同じ `Deadline` とともに下流へ渡す。
-remaining が 0 以下なら、期限用の CancellationTokenSource を遅延 0 で作り、期限切れの処理を始めずに取り消し済みの token を渡す。
+境界は、同じ TimeProvider と `Deadline.Remaining` で期限の通知を管理し、その token と親の CancellationToken を linked token に合流させ、元の Deadline とともに下流へ渡す。
+開始時の remaining が 0 以下なら、期限切れを同期的に確定して処理を開始しない。遅延0の timer callback が走ることを開始前拒否の保証にしない。
+有効な長い期限を timer 一回の最大遅延で拒否せず、通知 owner が同じ Deadline に対して timer を再設定し、期限に到達したときだけ通知する。
+timer の再設定は新しい時間枠や下流の通知元を作る処理ではなく、所有者は終了時に callback と timer の寿命を回収する。
 境界の内側の hop は、受け取った token を下流へ渡し、`Deadline` から別の timeout を作らない。
 境界の内側の hop は、外部効果を始める前に ThrowIfCancellationRequested で取り消しを確認する。
 期限用の CancellationTokenSource を作る境界は、自身の `Deadline` の超過を想定内の失敗として受け取り、親の CancellationToken の取り消しは取り消しのまま通す。
@@ -108,6 +111,7 @@ CancellationToken が、省略されずに渡されている。
 境界より内側の非同期 API が、`AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` を除いて、同じ `Deadline` と CancellationToken を必須の引数として受け取り下流へ渡している。
 非取消の後始末が元の `Deadline` を保持し、release と `DisposeAsync` のどちらにも CancellationToken が渡されていない。
 `Deadline` ごとの期限用の CancellationTokenSource が一つだけで、Effect を実行する場合は EffectRuntime.Run が作り、Run を呼ぶ host が作っていない。
+期限切れの開始前拒否と、timer の一回の最大遅延を越える有効な期限の通知・解放が検査されている。
 境界の期限用の token と親の CancellationToken が linked token に合流し、同じ `Deadline` とともに下流へ伝播している。
 境界の内側の hop が、受け取った token を下流へ渡し、`Deadline` から別の timeout を作っておらず、外部効果を始める前に取り消しを確認している。
 境界が、親の CancellationToken が取り消し済みの取り消しを、期限の超過が併存していても取り消しのまま返している。
@@ -134,11 +138,12 @@ CancellationToken を省略可能にして、渡さずに済ませること。
 上限を設けた adapter で、どちらの token も取り消されていない取り消しを、取り消しまたは時間上限の超過として返すこと。
 `HttpClient.Timeout` を、呼び出しごとの時間上限の手段にすること。
 返却後の ThrowIfCancellationRequested や `Deadline` の再確認で、確定した Succeeded・Failed・Defected を取り消しや期限超過へ書き換えること。
+遅延0の timer 通知に依存して期限切れの処理を開始することや、timer の遅延上限を Deadline の受理範囲へ転用すること。
 
 ### 行動
 CancellationToken を非取消の後始末を除いて末端まで渡し、ThrowIfCancellationRequested で止める。
 境界で TimeProvider から `Deadline` を一度だけ生成し、全ての内側の非同期 API に同じ値を渡す。
-境界で `deadline.Remaining(timeProvider)` を計算し、その値だけを期限用の CancellationTokenSource に使って、親の token と linked token に合流させる。
+境界の通知 owner が remaining を計算し、開始前拒否と timer の再設定を管理して、親の token と合流させる。
 下流へは remaining でなく元の `Deadline` と linked token を渡し、内側の hop は受け取った token を下流へ渡す。
 同期の純粋な domain の関数からは `Deadline` と CancellationToken を除き、効果を実行する非同期 API だけが個別の引数で受ける。
 `AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` は非取消の後始末として実行し、元の `Deadline` を保持したまま CancellationToken を渡さない。
@@ -155,44 +160,10 @@ public async Task Process(Order order) { await _client.SendAsync(order); }
 ```
 
 絶対期限は host の request 境界で一度だけ生成する。
-非取消の後始末を除き、下流の非同期 API は同じ期限と token を受け取る。
-境界は、期限用の CancellationTokenSource を一つだけ作り、親の token が取り消されておらず期限用の token が取り消し済みの取り消しだけを、自身の `Deadline` の超過として想定内の失敗へ写す。
+Effect の実行例は [connection](./connection.md) の「効果を境界で実行し analyzer と generator で縛る」に従い、host 側へ期限用の通知元を重ねない。
+内側の非同期 API は、同じ期限と末尾の token を受け取る。
 
 ```csharp
-public readonly record struct Deadline(DateTimeOffset At)
-{
-    public static Deadline FromBudget(TimeProvider timeProvider, TimeSpan budget) =>
-        new(timeProvider.GetUtcNow() + budget);
-
-    public TimeSpan Remaining(TimeProvider timeProvider) => At - timeProvider.GetUtcNow();
-}
-
-public async Task<Result<Receipt, ProcessFailure>> Process(Order order, CancellationToken cancellationToken)
-{
-    var deadline = Deadline.FromBudget(_timeProvider, RequestBudget);
-    var remaining = deadline.Remaining(_timeProvider);
-    using var deadlineCts = new CancellationTokenSource(
-        remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero,
-        _timeProvider);
-    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-        cancellationToken,
-        deadlineCts.Token);
-    try
-    {
-        var receipt = await ProcessCore(order, deadline, linkedCts.Token);
-        return Result.Success<Receipt, ProcessFailure>(receipt);
-    }
-    catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
-    {
-        if (deadlineCts.IsCancellationRequested)
-        {
-            return Result.Failure<Receipt, ProcessFailure>(new ProcessFailure.DeadlineExceeded(deadline));
-        }
-
-        throw new UnattributedCancellationException(exception);
-    }
-}
-
 private async Task<Receipt> ProcessCore(
     Order order,
     Deadline deadline,
@@ -219,11 +190,11 @@ public async Task<Result<Receipt, SendFailure>> Send(
     try
     {
         var receipt = await _client.SendAsync(order, deadline, linkedCts.Token);
-        return Result.Success<Receipt, SendFailure>(receipt);
+        return Result.Succeeded(receipt);
     }
     catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
     {
-        return Result.Failure<Receipt, SendFailure>(
+        return Result.Failed<SendFailure>(
             limitCts.IsCancellationRequested
                 ? new SendFailure.TimeLimitExceeded(CallLimit)
                 : new SendFailure.CommunicationFailed(exception));
@@ -362,6 +333,9 @@ Effect の中で取得する資源の解放は、connection の `AcquireRelease`
 後始末は元の `Deadline` を保持するが、CancellationToken を受け取らない。
 子が使う資源の using または await using の範囲は、子の drain の外側に置き、drain が終わる前に抜けない。
 Dispose または DisposeAsync が失敗する経路では、元の処理の終了理由と解放の失敗をともに保持し、他の必要な解放を続ける。
+AcquireRelease の release が失敗した場合は、`ResourceReleaseException<TFailure, TValue>` の Defected で返す。
+その `UseOutcome` は、使用が返した型付き EffectExit の Returned と、使用が送出した例外の Threw を区別し、元の instance を保持する。
+`InnerException` は解放の例外を保持し、使用の失敗や確定結果を解放の欠陥だけで消さない。
 
 ### 根拠
 `using`/`await using` は、例外や早期リターンでスコープを抜けるときも `IDisposable`/`IAsyncDisposable` の `Dispose`/`DisposeAsync` を呼ぶ言語機構である。
@@ -376,6 +350,7 @@ coordination が扱う資源が、`IDisposable` は `using`、`IAsyncDisposable`
 Effect の中の資源取得と解放が、connection の `AcquireRelease` に委ねられている。
 `AcquireRelease` の release と `IAsyncDisposable.DisposeAsync` が非取消で完了し、元の `Deadline` が後始末の範囲に保持されている。
 子の drain が using または await using の終了より先に完了し、処理と解放の両方が失敗してもどちらの失敗も観測されている。
+AcquireRelease の使用と解放がともに失敗する場合も、UseOutcome の型と元の instance、解放例外が保持されている。
 
 ### 禁止事項
 資源を、`using` も `await using` も無いまま持ち回ること。

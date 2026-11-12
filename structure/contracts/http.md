@@ -15,6 +15,8 @@ path の階層に、リソースの親子関係を深く刻まない。
 提供しない method は、405 で拒む。
 この binding から、提供側の dispatch と利用側の client を生成し、双方に同じ契約の型と codec を使う。
 提供側の公開と handler の接続は [surfaces/server](../surfaces/server/layout.md) が、生成する Interface と結果の分類は [generated](./generated.md) が定める。
+route template と header の名前・値は、HTTP の構文と生成先の routing の構文の両方に照合し、改行・制御文字の注入や曖昧な path parameter を生成前に拒否する。
+実行時の path・query の値は対応する URI component として encode し、header の値へ不正な区切り文字を通さない。
 
 ## 応答の status
 
@@ -44,6 +46,7 @@ query の省略は canonical の未指定へ写し、空文字や文字列 null 
 
 http は、REST と OpenAPI 3.x に従う。
 構造化データは JSON に統一し、ファイル本体はそのファイル形式で表す。
+JSON の受入規則は [layout](./layout.md) の「JSON の相互運用 profile」に従う。
 エラーの表現は、RFC 9457 の problem+json に束ねる。
 HTTP 仕様の SHOULD の規定には、明確な理由がない限り従う。
 エラーの内部の詳細は外部の応答へ出さず、利用者の語彙へ翻訳して返す。

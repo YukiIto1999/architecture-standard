@@ -8,7 +8,12 @@
 ## 境界で一度だけ parse してドメイン型へ移す
 
 ### 要求
-公開契約の入力は、[structure/contracts/generated](../../structure/contracts/generated.md) が定める生成 DTO と生成した `Deserialize` の処理で受ける。
+公開契約の入力は、[structure/contracts/generated](../../structure/contracts/generated.md) が定める生成 DTO と生成 codec で受ける。
+serde の Serialize・Deserialize を公開契約へ接続する場合も、同じ検証と完成処理を使い、[translation](./translation.md) の「生成した契約値の構築と所有権を守る」に従う。
+汎用の serializer 経路を JSON の公開入口へ強制せず、共通 wire profile と深さの保証を満たす生成 codec が wire の受入と出力を所有する。
+汎用の Deserialize や呼出側が作った DOM からの変換は、渡された表現に残る値の検証に限り、既に失われた重複名・数値字句・encoding の妥当性まで保証したとは扱わない。
+呼出側の serializer・DOM の走査と解放の深さも生成 codec の保証範囲へ含めず、その経路を canonical の wire codec の代替にしない。
+未検証の DOM を公開契約型の双子として公開せず、wire profile の検査は元の text または byte を受ける codec の入口で完了させる。
 worker が durable queue から受ける job の payload も境界の入力であり、実際に受信する経路で、payload が宣言する版の契約の生成 DTO により decode と検証を行う。
 deserialize は契約の形式と制約を検証し、生成 DTO からコンテキストの application 入力への写像は [structure/contracts/adapters](../../structure/contracts/adapters.md) に置く。
 コンテキストの application は、自らの入力構築を検証付きの domain の constructor へ通し、検証を通った業務型だけを処理へ渡し、内側で同じ性質を再検証しない。
@@ -76,7 +81,7 @@ queue の job は、受信経路の decode で payload が宣言する版の生�
 旧版の都合だけで任意になっている項目は、互換構造を境界に置き、現在の型を必須のまま保つ。
 旧版の撤去は、履歴の読み出し変換と配送の一時的な互換対応を分け、それぞれの存続条件で判断する。
 contracts/adapters の mapper は、生成 DTO の field を core が公開する application 入力構築へ渡し、ドメイン型を直接参照しない。
-出力は application の公開 result・outcome から生成 DTO への mapper で写し、生成 DTO の `Serialize` で直列化する。
+出力は application の公開 result・outcome から生成 DTO への mapper で写し、入力と同じ profile を実現する生成 codec で直列化する。
 
 ### 例
 ドメイン型に `Deserialize` を付けると、任意の入力が検証なしで内側へ入る。
