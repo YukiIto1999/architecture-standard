@@ -22,16 +22,17 @@ core から外部システムへの呼び出しの制限に使うカウンタは
 ## 永続化
 
 datastore の採用は [tools/platforms/postgresql](../../tools/platforms/postgresql.md) が定める。
-事実、状態、projection、派生読みモデルの性質は [concerns/persistence](../../concerns/persistence/README.md) に従い、確定点と outbox の性質は [concerns/transaction](../../concerns/transaction/README.md) に従う。
+事実、状態、今の状態の控え、projection、派生読みモデルの性質は [concerns/persistence](../../concerns/persistence/README.md) に従い、確定点と outbox の性質は [concerns/transaction](../../concerns/transaction/README.md) に従う。
 store と projection の読み取り port は application が宣言し、その実装と外部 datastore の adapter を infrastructure に置く。
 store は record 型を定義し、domain と record の写像を持つ。
 業務の区分と定義の識別子の写像は store が持ち、定義の行との対応の保証は [concerns/persistence](../../concerns/persistence/fact-state-time-relations.md) の「事実・状態・時間を別の関係に落とす」に従う。
 store は、型付きの SQL を発行する薄い adapter として書く。
-現在情報の変更、必要な業務イベント、projection、outbox を束ねる書き込みパスの制御は [application](./application.md) が所有する。
+現在情報の変更、必要な業務イベント、同じ確定で更新する控えと派生読みモデル、outbox を束ねる書き込みパスの制御は [application](./application.md) が所有する。
 infrastructure は、application が要求する具体的な接続、取得、保存、確定と中止の操作を実装し、driver の型と資源を内部に閉じる。
 個々の store が独立して確定したり、use-case 全体を受け取って成否から確定か中止かを既定で決める形で transaction を包んだりしない。
 同時に確定する複数モデルの store は、そのコンテキストの use-case が制御する同じ transaction の中で書く。
-派生読みモデルの再構築は、所有する現在情報または独立して公開された業務事実を port から読み出す application の操作として、読みモデルを所有するコンテキストに置く。
+同じ確定で更新する控えの store は、事実の store と同じ transaction の中で書き、反映した事実の版の連続を確かめる更新を実装する。
+控えと派生読みモデルの再構築は、自ら所有する現在情報・業務事実、または他の所有者が独立して公開した業務事実を port から読み出す application の操作として、控えと読みモデルを所有するコンテキストに置く。
 停止を越える進行はその操作が所有し、複数の動作の調整が必要な場合は workflow に分け、起動はその公開入口を呼べる surface の layout に従う。
 コンテキストが所有する schema の migration artifact は、そのコンテキストの `infrastructure/migrations/` に置く。
 同じ DB を共有しても、コンテキストごとの artifact の所有を root へまとめない。

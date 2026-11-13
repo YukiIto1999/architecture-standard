@@ -74,6 +74,16 @@ use-case は、業務の判断を domain の純粋関数に閉じる。
 試行回数、待ち時間、次の実行時刻のように業務の意味を持たない再実行の判断は、use-case と workflow の本体にも domain にも書かず、進行を記録する port の実装か [libs](../libs/layout.md) の公開技術能力に委ねる。
 読む・判断する・書くの順と純粋核と効果の殻の分離は [concerns/effect](../../concerns/effect/README.md) に従う。
 
+## 更新と参照
+
+use-case は、不変条件を守って状態を変える更新と、状態を変えずに値を返す参照を分け、参照の形(一覧、集計、検索)は、更新に使う集約の形から独立に決める。
+更新と参照の分離(CQRS)は、責務とモデルの分離であり、別の datastore、確定の後に更新する派生読みモデル、broker、イベント列を状態の正本とする方式の採用を意味しない。
+同じ datastore の正本を、更新は集約を通して、参照は port の問い合わせで読んでよい。
+参照ごとに整合の強さと読む形を定め、確定の後に更新する派生読みモデルは、その遅れを許す参照だけが読む。
+書き込みの検証が読む状態は、確定の範囲の正本か、同じ確定で更新する控えに限り、確定の後に更新する派生読みモデルを読まない。
+domain イベント、業務事実の保持、integration event の配送、イベント列を状態の正本とする方式は、更新と参照の分離とは別の採否として、それぞれの正本の規律に従って決める。
+控えと派生読みモデルの条件は [principles/data](../../principles/data/derive-state-from-facts.md) の「今の状態を事実の行から導く」に、更新方式の性質は [concerns/persistence](../../concerns/persistence/measured-physical-optimization.md) の「物理の最適化は計測した根拠で行う」に従う。
+
 ## トランザクション
 
 use-case は、同じコンテキストの同時に確定する変更と事実、判断に必要な読み取り、確定条件を所有し、開始から確定または中止までを制御する。
@@ -83,7 +93,7 @@ use-case は、同じコンテキストの同時に確定する変更と事実�
 domain の純粋な判断は、状態と入力から新しい状態、事実、拒否を返し、transaction の境界を受け取らない。
 application が定める開始と transaction scope の抽象と、具体的な DB driver の transaction handle を区別し、後者を application の Interface へ流さない。
 冪等性が必要な use-case は、idempotency の store を port として宣言する。
-状態の変更、必要な業務事実、公開する integration event の outbox 記録を同じ確定に含める。
+状態の変更、必要な業務事実、同じ確定で更新する控え、公開する integration event の outbox 記録を同じ確定に含める。
 workflow の step の確定は、workflow と step の組の一意性、状態の変更、outbox 記録、step の完了記録を同じ範囲へ含める。
 競合、確定前の拒否、失敗、取消では中止を制御し、確定の結果が不明なときは成功や確実な未確定へ丸めない。
 制御の所有は [concerns/transaction](../../concerns/transaction/application-owned-transactions.md) の「トランザクションの制御を application に置く」に従う。

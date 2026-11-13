@@ -19,9 +19,10 @@ build_core は module factory であり、プロセス全体の composition root
 composition は、port に adapter を結びつける。
 各コンテキストの application が要求する port に、そのコンテキストの infrastructure の adapter または libs の公開技術能力を結ぶ。
 コンテキストの独立性は [principles/separation](../../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」に従い、他のコンテキストの業務操作を呼ぶ能力を port へ結ばない。
-派生読みモデルは、その query の業務上の意味を所有するコンテキストに置き、独立して公開された外部の事実を入力にする。
+確定の後に別の経路で更新する派生読みモデルは、その query の業務上の意味を所有するコンテキストに置き、独立して公開された外部の事実を入力にする。
+同じ確定で更新する控えは、その事実を所有するコンテキストの書き込みパスが更新する。
 application が公開した integration event を libs の配送 port へ渡す経路を、composition が配線する。
-整合の即時性を要さない派生読みモデルへは、outbox を経て非同期で駆動する。
+整合の即時性を要さず、書き込みの可否の判定にも読まれない派生読みモデルへは、outbox を経て非同期で駆動する。
 独立して公開された integration event の消費は、composition が受信側コンテキストの公開 application 入口へ配線する。
 公開 event から受信側の入力への翻訳は [contracts/adapters](../contracts/adapters.md) が所有し、composition は翻訳済みの受信入口を配線する。
 composition が行うのは、公開された構築用 API を使った配線だけであり、業務判断や契約間の写像は持たない。

@@ -280,7 +280,7 @@ payload commit と処理結果 commit の各直前・直後の停止、および
 一つの書き込みが複数の鍵を取る場合は、全ての書き込み経路で bigint の値の昇順に取る。
 多数の鍵は、昇順に並べた bigint の配列を `unnest` で展開する一つの `SELECT` で取り、その文の中で並べ替えない。
 鍵を取った後の検証の読み取りは、READ COMMITTED の transaction で行う。
-datastore が付ける業務事実の活動の時刻の列は、既定値を `clock_timestamp()` にし、`CURRENT_TIMESTAMP`、`now()`、`statement_timestamp()` を既定値に使わない。
+datastore が付ける業務事実の時刻の列(活動の時刻と記録の時刻)は、既定値を `clock_timestamp()` にし、`CURRENT_TIMESTAMP`、`now()`、`statement_timestamp()` を既定値に使わない。
 予定の始まりや終わりの到来と保持期限の経過を判定するビューは、判定の時点に `statement_timestamp()` を使い、`CURRENT_TIMESTAMP`、`now()`、`clock_timestamp()` を使わず、そのビューを読む文は鍵を取る文と別の命令で送る。
 識別子を datastore が採番する列だけを持つ関係へは、識別子を指定せず `DEFAULT VALUES` で追記し、`OVERRIDING SYSTEM VALUE` を使わない。
 datastore が付ける活動の時刻から規則で決まる業務事実の値(変更を適用する始まりの日など)は、その時刻の列から求める `GENERATED ALWAYS AS (...) STORED` の列に持ち、規則の改定では、改定より前の行が同じ値になる式へ移行の `ALTER COLUMN ... SET EXPRESSION` で置き換える。
@@ -289,6 +289,8 @@ datastore が付ける活動の時刻から規則で決まる業務事実の値(
 版で衝突を検出し、正本が追記する事実の関係である集約では、名前を付けた `(集約の識別子, version)` の一意制約の違反だけを競合とし、他の制約違反は競合に写さない。
 一回だけ起きる業務事実を追記する集約では、一回だけであることを守る主キーに名前を付け、その名前付きの主キーの違反だけを競合とし、他の制約違反は競合に写さない。
 版で競合を検出する集約へ書く全ての書き込み経路は、正本に応じた同じ検出を通す。
+同じ確定で更新する控えは、業務事実の追記と同じ Npgsql transaction で、`UPDATE` の `WHERE` に反映した事実の版の列が期待する版と等しいことを含め、同じ文で版を進め、影響行数が 0 のときを競合とする。
+控えを読んで判定する書き込みは、鍵の後の READ COMMITTED の文で控えの反映した事実の版と事実の現在の版を比べ、欠けた控えと一致しない控えでは判定せず、競合と区別した失敗を返して中止する。
 必要な業務事実は、現在情報の書き込みと同じ Npgsql transaction で追記する。
 業務事実を必要としない現在情報の更新は、集約に定めた競合制御を通し、業務事実を追記せず `UPDATE` で書いてよい。
 競合または失敗のとき、use-case は確定せず、`AcquireRelease` の release が scope を中止し、現在情報の更新、業務事実の追記、outbox の記録のどれも残さず、複数の集約を含む確定ではどの集約の書き込みも残さない。
@@ -305,6 +307,8 @@ Dapper の `ExecuteAsync` は影響行数を返すので、0 を競合と判別�
 Npgsql は制約違反を `PostgresException` で送出し、`SqlState` が `PostgresErrorCodes.UniqueViolation` のとき一意制約違反と判別できる。
 `PostgresException.ConstraintName` は違反した制約の名前を返すので、version の制約や主キーに付けた名前と照合すれば競合だけを識別できる。
 どちらで検出するかは正本が何かで決まるので、書き込みごとに選ばない。
+控えの更新を事実の追記と同じ transaction で書き、反映した事実の版を `WHERE` で比べれば、追記と更新の片方だけが確定することも、古い版で控えを上書きすることもない。
+鍵の後の READ COMMITTED の文で版を比べれば、鍵を待つ間に確定した追記を含む現在の版と、控えの版を比べられる。
 `pg_advisory_xact_lock(bigint)` と `pg_advisory_xact_lock_shared(bigint)` は、表の行でなく bigint の値に鍵を掛けるので、書き込み経路が更新してはならない事実の行への更新権限なしに集約の鍵を取れる。
 `SELECT ... FOR UPDATE` などの行ロック句は対象の行への `UPDATE` 権限を要するので、事実の行に使うと、鍵のために書き込み経路へ事実の行の更新権限を与えることになる。
 `pg_advisory_xact_lock` 系の鍵は transaction の終了で自動的に解放されるので、scope の確定または中止(release の dispose による rollback)が解放点になり、store は解放を持たない。
@@ -338,6 +342,8 @@ domain event と integration event の区別は [messaging](../../concerns/messa
 一回だけ起きる業務事実の二度目の追記が、名前を付けた主キーの違反として検出され、競合の Result で返されている。
 version の制約と一回だけであることを守る主キー以外の制約違反が、競合の Result に写されていない。
 版で衝突を検出する集約と、共有の鍵か鍵なしで更新する可変属性の行の全ての書き込み経路で、古い version を期待した更新が競合になり、現在情報が変わっていない。
+同じ確定で更新する控えが、業務事実の追記と同じ Npgsql transaction で、反映した事実の版を条件にした `UPDATE` で更新され、同じ版を期待する並行する更新の片方だけが確定し、他方が競合の Result で返されている。
+控えを読んで判定する書き込みが、鍵の後に反映した事実の版と事実の現在の版の一致を確かめ、欠けた控えと一致しない控えでは判定せず、競合と区別した失敗で中止している。
 集約の鍵を取る全ての書き込みが、scope の Npgsql transaction の中で、use-case が検証より前に呼ぶ操作により、排他は `pg_advisory_xact_lock(bigint)`、共有は `pg_advisory_xact_lock_shared(bigint)` で鍵を取っている。
 複数の鍵を取る書き込みが、全ての書き込み経路で bigint の値の昇順に鍵を取っている。
 集約の鍵の bigint が、集約の種類と識別子から一意に導かれ、種類の違う集約の鍵が衝突せず、識別子が下位の bit の範囲に収まらないとき導出が鍵を作らず、導出がコードの一か所にだけ定義されている。
@@ -357,7 +363,9 @@ datastore が付ける業務事実の時刻の列の既定値が `clock_timestam
 版で衝突を検出する集約と、共有の鍵か鍵なしで更新する可変属性の行で、条件付き `UPDATE` の影響行数 0 を、競合として扱わず成功にすること。
 共有の鍵か鍵なしで更新する可変属性の行を、version の比較なしで更新すること。
 必要な業務事実を、事実を追記しない現在情報の `UPDATE` だけで表すこと。
-事実の行から導ける今の状態を、状態の列として持ち `UPDATE` で書くこと。
+事実の行から導ける今の状態を、控えの条件を満たさない状態の列として持ち `UPDATE` で書くこと。
+同じ確定で更新する控えを、業務事実の追記と別の transaction で更新すること。
+反映した事実の版を比べずに、控えを書き込みの検証の根拠にすること。
 現在情報の更新と必要な業務事実の追記を、別々の transaction で確定すること。
 競合または失敗した更新の、現在情報の更新、業務事実の追記、outbox の記録の一部だけを commit すること。
 version の制約と一回だけであることを守る主キー以外の制約違反を、競合の Result に写すこと。
@@ -378,6 +386,8 @@ datastore が付ける業務事実の時刻の列の既定値に、`CURRENT_TIME
 集約の鍵で競合制御する集約では、鍵を取った後に、READ COMMITTED の文で今の状態を検証してから書く。
 事実の行に `SELECT ... FOR UPDATE` を使わず、書き込み経路の role に事実の行への `UPDATE` と `DELETE` の権限を与えない。
 版で衝突を検出する集約の可変属性の行と、共有の鍵か鍵なしで更新する可変属性の行は、`SET` で `version = version + 1` に進め、`WHERE` に `version = @ExpectedVersion` を含む `UPDATE` で書き、`ExecuteAsync` の戻り値が 0 なら `WriteError.Conflict` を返す。
+同じ確定で更新する控えは、業務事実の追記と同じ transaction で、`SET` で反映した事実の版を進め、`WHERE` に反映した事実の版の列が期待する版と等しいことを含む `UPDATE` で書き、`ExecuteAsync` の戻り値が 0 なら `WriteError.Conflict` を返す。
+控えを読んで判定する書き込みは、鍵を取った後に控えの版と事実の現在の版を比べ、一致しなければ判定せず、競合と区別した失敗を返して scope を中止する。
 版で衝突を検出する事実の関係は、`(集約の識別子, version)` に名前を付けた一意制約を置き、`PostgresException` の `SqlState` が `PostgresErrorCodes.UniqueViolation` で `ConstraintName` がその名前と一致するときだけ `WriteError.Conflict` を返し、他の制約違反は競合に写さない。
 一回だけ起きる業務事実の関係は、対象のキーを主キーにして主キーに名前を付け、`PostgresException` の `SqlState` が `PostgresErrorCodes.UniqueViolation` で `ConstraintName` がその名前と一致するときだけ `WriteError.Conflict` を返し、他の制約違反は競合に写さない。
 datastore が付ける業務事実の時刻の列は `DEFAULT clock_timestamp()` で定義し、鍵を待った書き込みの時刻が待つ間に確定した業務事実の時刻以後になることを結合テストで確認する。
@@ -387,6 +397,7 @@ datastore が付ける業務事実の時刻の列は `DEFAULT clock_timestamp()`
 集約の鍵を排他で取る集約では、全経路での直列化と鍵の後の検証、書き込み経路の role が事実の行へ `UPDATE` も `DELETE` もできないこと、複数の鍵を一つの順序で取ること、種類の違う集約の鍵が衝突しないこと、一回だけ起きる業務事実の二度目の追記で名前付きの主キーの違反だけが競合に写ることを結合テストで確認し、排他の鍵の下で更新する判定の対象の行への version の追加は要求しない。
 共有の鍵か鍵なしで更新する可変属性の行では、同じ行への同時の更新を結合テストで再現し、片方だけが確定して他方が競合になることを確認する。
 現在情報の更新と業務事実の追記の間の失敗は、どちらの集約でも再現する。
+控えのある集約では、控えの行の欠落、版のずれ、並行する追記を結合テストで再現し、判定の拒否と競合を確認する。
 複数の集約を含む確定では、含めた集約ごとの競合と失敗を注入し、全ての書き込みが残らないことを再現する。
 
 ### 例

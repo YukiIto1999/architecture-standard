@@ -7,11 +7,11 @@ event の契約と配送・消費の扱いは、[参照](#参照) が示す正�
 
 ## 規律
 
-- [domain event と integration event を分ける](./domain-integration-events.md) — レビュー(review規律照合のみ)
+- [domain event と integration event を分ける](./domain-integration-events.md) — レビュー(イベントの型と保持・outbox・配送・状態の正本の採否の分離の照合)
 - [同期で済む連携はイベントにしない](./async-only-events.md) — レビュー(業務操作・進行の所有と非同期にする理由の照合)
 - [outbox から配送する](./outbox-delivery.md) — 機械(状態とoutbox同時確定)
 - [少なくとも一度の配送を前提に冪等に消費する](./idempotent-consumption.md) — 機械(durable inbox検査)
-- [順序・再試行・行き止まりを扱う](./ordering-retry-deadletter.md) — 機械(methods表 順序・行き止まり)
+- [順序・再試行・行き止まりを扱う](./ordering-retry-deadletter.md) — 機械(methods表 順序・行き止まりと、event で更新する projection の書き込み判定からの隔離)
 - [イベント契約を版で進化させ、寛容に読む](./event-contract-versioning.md) — 機械+レビュー(実受信経路の受容と拒否・業務処理非開始・旧版配送残存の検査+版変換と撤去範囲の照合)
 
 ## 参照

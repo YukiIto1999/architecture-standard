@@ -10,15 +10,15 @@ store の採用では、persistence は datastore と一時データの store �
 
 ## 規律
 
-- [事実・状態・時間を別の関係に落とす](./fact-state-time-relations.md) — レビュー(schema設計の分類と遷移表の照合+状態の列と関係の不在のレビュー)
+- [事実・状態・時間を別の関係に落とす](./fact-state-time-relations.md) — レビュー(schema設計の分類と遷移表の照合+状態の列と関係の不在と控えの関係の形と記録の時刻の列のレビュー)
 - [期間の判定を一か所のビューに定義する](./period-state-views.md) — 機械+レビュー(実datastoreで期間の閉じ方と開いた回が複数ある組の判定を検査+判定の書き写しと認可の置き場のレビュー)
-- [業務事実を保持期間の間は追記で残す](./append-only-facts.md) — 機械+レビュー(関係名の denylist 検査+保持期間内の更新削除と消せる行のビュー外の削除の拒否を実datastoreで検査+schema 設計のレビュー)
+- [業務事実を保持期間の間は追記で残す](./append-only-facts.md) — 機械+レビュー(関係名の denylist 検査+保持期間内の更新削除と消せる行のビュー外の削除の拒否を実datastoreで検査+datastore が付ける時刻の列への書き込み権限の不在の検査+schema 設計のレビュー)
 - [保存済みの事実を意味と値を保って移行する](./fact-preserving-migrations.md) — 機械+レビュー(移行前後の意味と値の照合、保存行の不変・変換結果の実行検査+方式選択と保持範囲と撤去条件の照合)
 - [正規化して一つの事実を一箇所に置く](./normalization.md) — レビュー(属性の単位と正本のschema設計はreview)
 - [関係の意図を制約で表す](./relational-constraints.md) — 機械+レビュー(実datastore制約テストと外部キーの循環の検査+参照先と削除規則のレビュー)
 - [読み取りと確定の単位で問い合わせ数を制限する](./bounded-query-count.md) — 機械+レビュー(読み取り・確定ごとの問い合わせ数と全体の上限の検査+単位の分割と確定範囲のレビュー)
-- [物理の最適化は計測した根拠で行う](./measured-physical-optimization.md) — 機械+レビュー(計測+再構築の検証)
-- [派生の再構築を決定的にする](./deterministic-rebuild.md) — 機械(再構築決定性テスト)
+- [物理の最適化は計測した根拠で行う](./measured-physical-optimization.md) — 機械+レビュー(計測+再構築の検証+派生読みモデルの更新方式と書き込みの可否の判定からの隔離のレビュー)
+- [派生の再構築を決定的にする](./deterministic-rebuild.md) — 機械(再構築決定性テストと、控えの再構築結果と保存した値の照合および並行する追記との版の連続のテスト)
 - [datastore と一時データの store を単一に採用する](./single-store-adoption.md) — 機械+レビュー(store単一性の構造検査)
 
 ## 参照

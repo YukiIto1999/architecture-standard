@@ -13,6 +13,7 @@
    依頼の各必須成果を出典と結び、受入条件、実現する変更単位、検証する経路へ対応させる。
    分割または再計画ではこの対応を更新し、計画から抜けた必須成果を未達として戻してから次へ進む。
 4. 対象コンテキストの語彙を確かめる([principles/naming](../principles/naming/unified-vocabulary.md) の「語彙を統一する」の行動に従う)。
+   リソースの単位、同一性、範囲を、キーと表の設計より前に、[principles/data](../principles/data/fact-state-time.md) の「データを事実・状態・時間で分類する」に従って決める。
 5. 値・区分・集合の業務知識と操作を洗い出し、型の構築・入力・結果に保証を定める([principles/modeling](../principles/modeling/meaning-in-types.md) の「業務の意味を型に封じる」、[principles/construction](../principles/construction/decisions-as-types.md) の「業務判断を型と多態で構造化する」、[named-collection-operations](../principles/construction/named-collection-operations.md) の「集合処理を名前のある操作で表す」に従う)。
    状態と制約は [principles/modeling](../principles/modeling/illegal-states-unrepresentable.md) の「不正な状態を表現できなくする」の行動に従って洗い出す。
    暗黙の制約がある場合は、[structure/tests/methods](../structure/tests/methods.md) の「反実仮想で検証を選ぶ」に従い、合理的な小変更から利用者が観測する失敗と検出手段までを辿る。
@@ -25,12 +26,15 @@
    契約から生成する公開面と通信方式を [structure/contracts/generated](../structure/contracts/generated.md) に照合し、必要な生成能力と binding、独立した oracle、観測する経路を [structure/tests/methods](../structure/tests/methods.md) の「契約の意味と生成」へ対応付ける。
 8. 境界を決めてから、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の段を適用し、設計したドメイン型と操作を実現する機構を選ぶ。
    境界の決定を飛ばして言語の機構やパターンだけを選ばない([languages](../languages/) に従う)。
+   今の状態の控え、派生読みモデル、イベントの保持と配送、イベント列を状態の正本にする方式は、アクセス要件、整合の強さ、保持の契約から別々に採否を決め、[principles/data](../principles/data/derive-state-from-facts.md) の「今の状態を事実の行から導く」に従う。
 
 ## 確認点
 
 構造を確定する前に、principles の modeling・construction・separation の完了条件・禁止事項と、変更が触れる concerns の完了条件・禁止事項に照合する。
+リソースの単位、同一性、範囲が、キーと表の設計より前の決定として設計の記録から追えることを確かめる。
 業務の計算・判断・集合処理がある箇所では、その知識を持つ型と操作の所在を、該当する値・区分・集合の規律に照合する。
 意味を伴う適合判断は、root の [README](../README.md) の適用判断に照らし、対象の事実と規律の条件から結論を導いた根拠が設計の記録から追えることを確かめる。
+今の状態の控え、派生読みモデル、イベントの保持と配送、イベント列を状態の正本にする方式の採否が別々に決められ、書き込みの検証が確定の後に更新する読みモデルを読んでいないことを確かめる。
 業務の受入条件が実行可能な仕様へ対応し、成功、拒否、結果を変える境界条件を実装の都合で落としていないことを確かめる。
 依頼の出典にある必須成果が、受入条件と変更単位への対応から脱落していないことを確かめる。
 採用する道具は、[tools](../tools/) と [languages](../languages/) の採用に従う。
