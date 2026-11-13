@@ -346,21 +346,23 @@ application の実行箇所は analyzer で composition root へ限定し、`Eff
 Run は Effect、Deadline、期限超過を TFailure へ写す関数、CancellationToken の順で受け、ValueTask を返す。
 requirements、TimeProvider、IDeadlineDiagnostics を構築時に明示し、診断を捨てる既定の no-op 実装を置かない。
 実行中に送出された OperationCanceledException を Canceled に、その他の例外を Defected に写し、想定内失敗は throw せず Fail で返す。
-Run は `Deadline` の処理を始める境界として、[coordination](./coordination.md) の「取り消し」に従い、期限用の CancellationTokenSource を作り、その token と受け取った CancellationToken を linked token に合流させる。
+Run は `Deadline` の処理を始める境界として、[coordination](./coordination.md) の「取り消し」に従い、一つの通知 owner が親の取り消しと期限到達を合流させた token を Effect へ渡す。
 開始前に親の取り消しと期限を判定し、期限切れの Effect を開始しない。期限の通知 owner と長い期限の扱いは同じ「取り消し」の規律に従う。
-Run は、Canceled で終えた Effect を、受け取った CancellationToken が取り消し済みなら Canceled のまま返し、取り消されておらず期限用の token が取り消し済みなら、呼び出し側が渡す関数で作った期限超過の TFailure の値を持つ Failed へ写す。
-Run は、どちらの token も取り消されていない Canceled を、adapter を経ずに届いた写し損ねとして、専用の欠陥 `UnattributedCancellationException` を持つ Defected で返す。
+Run は、Canceled で終えた Effect を、受け取った CancellationToken が取り消し済みなら Canceled のまま返し、取り消されておらず通知 owner が期限到達を記録していれば、呼び出し側が渡す関数で作った期限超過の TFailure の値を持つ Failed へ写す。
+Run は、親の取り消しにも記録した期限到達にも帰属しない Canceled を、adapter を経ずに届いた写し損ねとして、専用の欠陥 `UnattributedCancellationException` を持つ Defected で返す。
 Run は、Succeeded・Failed・Defected で終えた Effect を、返却の後に観測した取り消しや Deadline の超過で書き換えず、Deadline を越えていれば診断へ記録する。
 診断処理が例外を送出した場合は `DeadlineDiagnosticsException<TFailure, TValue>` の Defected とし、`CompletedExit` に診断前の終了の同一 instance、`InnerException` に診断例外を保持する。
 この診断の欠陥を、業務操作が未実行または未確定だったという結果へ読み替えない。
+Run は、通知 owner の callback と解放の欠陥を Defected で返し、元の終了と独立した欠陥の instance を失わず保持する。
+この欠陥を期限超過の Failed にせず、元の終了の保持には [coordination](./coordination.md) の「資源解放」と同じ型付き `UseOutcome` を使う。
 Effect.Run の未初期化 guard が送出する `UninitializedEffectException` は、EffectRuntime が専用の Defected として返す。
 型で縛れない規則は、analyzer と source generator が次の4責務で強制する: R の合成環境の生成、Bind 連鎖での要求包含の検査、原始効果の閉じ込め、`NoRequirements` への迂回の禁止。
 
 ### 根拠
 実行を境界に集めると、どこで副作用が起きるかが一箇所で読める。
 host の async と取り消しで Effect を駆動し、送出された取り消しと欠陥を終了状態に写すので、内側は throw でなく Fail で想定内失敗を返せる。
-Canceled は結果を要らなくなった側の取り消しであり、Deadline の超過は期限用の CancellationTokenSource を作る境界である Run が想定内の失敗として受け取るので、Run は Canceled の原因を、受け取った CancellationToken と自身が所有する期限用の token の状態で判定してから返す。
-どちらの token でも説明できない Canceled を、期限超過や取り消しと推測して返すと、他の機構による中断が期限の超過として報告されるので、専用の欠陥にする。
+Canceled は結果を要らなくなった側の取り消しであり、Deadline の超過は通知を所有する Run が想定内の失敗として受け取るので、Run は親の CancellationToken と、通知 owner が記録した期限到達を分けて判定する。
+どちらからも説明できない Canceled を期限超過や取り消しと推測して返すと、他の機構による中断が期限の超過として報告されるので、専用の欠陥にする。
 期限超過の TFailure の値を呼び出し側から受ければ、境界の失敗の型に期限超過の case が無いと Run を呼べず、応答を決める分岐が網羅の switch に現れる。
 library の公開 Run と application の公開 host port を分ければ、assembly 越しの実行入口を提供しながら、host port の Task と一度だけ await する ValueTask の役割を保てる。
 Deadline を Run から Effect へ値のまま渡せば、Effect の合成中に時間枠を引き直さない。
@@ -373,12 +375,13 @@ Bind の連鎖は C# の型推論だけでは呼び元の R が呼び先の R �
 ### 完了条件
 Effect の実行が、composition root の境界に限られている。
 OperationCanceledException が Canceled に、その他の例外が Defected に写されている。
-Run が、期限用の CancellationTokenSource を作り、受け取った CancellationToken と linked token に合流させて Effect.Run へ渡している。
-Run が、受け取った CancellationToken が取り消し済みの Canceled を Canceled のまま返し、取り消されておらず期限用の token が取り消し済みの Canceled を期限超過の Failed へ写している。
-Run が、どちらの token も取り消されていない Canceled を、`UnattributedCancellationException` の Defected として返している。
+Run が、親の取り消しと期限到達を一つの owner で通知し、同じ Deadline と合流した token を Effect.Run へ渡している。
+Run が、親の CancellationToken が取り消し済みの Canceled を Canceled のまま返し、親が取り消されておらず期限到達が記録された Canceled だけを期限超過の Failed へ写している。
+Run が、親の取り消しにも期限到達にも帰属しない Canceled を、`UnattributedCancellationException` の Defected として返している。
 Run が、Succeeded・Failed・Defected を返却後の取り消しや Deadline の超過で書き換えず、Deadline を越えていれば診断へ記録している。
 公開 library API の Run が composition root からだけ呼ばれ、Effect.Run は internal に閉じ、CancellationToken が末尾の必須引数になっている。
 診断の依存が明示され、診断例外から元の終了と診断例外の両方を identity を失わず観測できる。
+親と期限の各通知経路で callback の完了と欠陥が回収され、通知と解放の独立した欠陥および元の終了を同一 instance として観測できる。
 `UninitializedEffectException` が、EffectRuntime から Defected として返されている。
 実行境界の限定と要求の充足が、analyzer で検査されている。
 R の合成環境が、source generator で作られている。
@@ -395,14 +398,16 @@ library の公開 Run を application の公開 host port と同一視し、host
 Effect を実行するときに Deadline を渡さず、相対 timeout を引き直すこと。
 Run で、受け取った CancellationToken が取り消し済みの Canceled を、期限超過の Failed へ写すこと。
 Run で、受け取った token が取り消されていないことだけから、Canceled を期限超過の Failed へ写すこと。
-Run で、どちらの token も取り消されていない Canceled を、Canceled のまま、または期限超過の Failed として返すこと。
+Run で、親の取り消しにも記録した期限到達にも帰属しない Canceled を、Canceled のまま、または期限超過の Failed として返すこと。
 Run で、Succeeded・Failed・Defected を、返却後に観測した取り消しや Deadline の超過で別の終了へ書き換えること。
+callback の例外を親側や timer へ漏らすことや、通知機構の欠陥を期限超過へ写して元の終了を消すこと。
 
 ### 行動
 Effect の実行を composition root の `EffectRuntime.Run` に集める。
-公開 EffectRuntime.Run の呼出箇所を analyzer で限定し、境界で一度だけ生成した Deadline と、期限用の token を合流させた CancellationToken を internal の Effect.Run へ渡す。
-Effect が Canceled で終えたら、受け取った CancellationToken が取り消し済みなら Canceled のまま、取り消されておらず期限用の token が取り消し済みなら期限超過の Failed へ、どちらでもなければ UnattributedCancellationException の Defected へ写す。
+公開 EffectRuntime.Run の呼出箇所を analyzer で限定し、境界で一度だけ生成した Deadline と、親の取り消しと期限到達を合流させた token を internal の Effect.Run へ渡す。
+Effect が Canceled で終えたら、親の CancellationToken が取り消し済みなら Canceled のまま、親が取り消されておらず期限到達が記録されていれば期限超過の Failed へ、どちらでもなければ UnattributedCancellationException の Defected へ写す。
 Succeeded・Failed・Defected は返却後の再確認で変えず、Deadline を越えていれば診断へ記録する。
+Run が返る前に通知と解放へ合流し、その欠陥と元の終了を型付き UseOutcome で保持する。
 `UninitializedEffectException` を、他の欠陥と同じく Defected へ写す。
 source generator に R の合成を、analyzer に Bind 連鎖の検査・原始効果の閉じ込め・`NoRequirements` への迂回の検出を実装する。
 
