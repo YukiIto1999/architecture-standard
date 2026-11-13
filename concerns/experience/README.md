@@ -17,7 +17,7 @@ principles の [legibility](../../principles/legibility/README.md) が定める�
 - [状態と結果を即時に返す](./immediate-feedback.md) — 機械(browser を駆動する integration の表示時間の計測)
 - [誤りを防ぎ、起きたら回復を助け、取り返せるようにする](./error-prevention-recovery.md) — 機械+レビュー(回復経路test+文言判断)
 - [利用者の語彙と現実に合わせ、操作できることを見える形で示す](./user-vocabulary-affordance.md) — 機械+レビュー(公開観測面から列挙した日本語の操作ラベルの末尾の品詞の構造検査+語彙と操作できる形の判断)
-- [情報を局面と依存でまとめ、余白と階層で導く](./information-grouping.md) — レビュー(配置・余白の判断のみ)
+- [情報を局面と依存でまとめ、余白と階層で導く](./information-grouping.md) — レビュー(配置・余白と、稀用の情報と操作の要否と置き場の判断のみ)
 - [同じ目的に同じ画面のパターンを使う](./consistent-patterns.md) — レビュー(pattern統一と画面横断の照合の判断)
 - [情報構造を作業の流れに沿わせ、現在地を示す](./workflow-aligned-navigation.md) — レビュー(流れ整合の判断のみ)
 - [誇張せず、効かないものを見せない](./honest-capability-display.md) — 機械+レビュー(状態遷移test+誘導判断)
