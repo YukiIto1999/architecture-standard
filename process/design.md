@@ -5,6 +5,10 @@
 
 ## 順序
 
+以下の順序は、問題と要件から語彙、保証、責務、境界、実現へ至る判断の依存を表す。
+変更では、既存の判断のうち影響を受けるものと、その前提が変わるものを更新し、引き続き成立する判断と証跡は再利用する。
+対象に適用される確認点は維持し、未確認の判断に依存して実現を確定しない。
+
 1. 解くべき問題を、観測された事実と解釈を分け、判断を左右する主張の根拠と決定状態を記録して定める([principles/requirements](../principles/requirements/purpose-driven-requirements.md) の「目的から要件を導く」と [evidence-decision-separation](../principles/requirements/evidence-decision-separation.md) の「根拠と決定状態を分ける」に従う)。
    既存システムの意味が確立していなければ [recovery](./recovery.md) へ戻る。
    以後のどの段でも、システムへ固定する判断の根拠が利用できる資料、契約、現行の観測では足りない場合は、他の段の完了を待たず、その判断に絞った使い捨ての実験で根拠を得てよい([principles/evolution](../principles/evolution/defer-decisions.md) の「いま不要な決定は可逆な形で先送りし、記録に残す」に従う)。
@@ -19,7 +23,7 @@
 5. 値・区分・集合の業務知識と操作を洗い出し、型の構築・入力・結果に保証を定める([principles/modeling](../principles/modeling/meaning-in-types.md) の「業務の意味を型に封じる」、[principles/construction](../principles/construction/decisions-as-types.md) の「業務判断を型と多態で構造化する」、[named-collection-operations](../principles/construction/named-collection-operations.md) の「集合処理を名前のある操作で表す」に従う)。
    状態と制約は [principles/modeling](../principles/modeling/illegal-states-unrepresentable.md) の「不正な状態を表現できなくする」の行動に従って洗い出す。
    暗黙の制約がある場合は、[structure/tests/methods](../structure/tests/methods.md) の「反実仮想で検証を選ぶ」に従い、合理的な小変更から利用者が観測する失敗と検出手段までを辿る。
-6. モデリング上の役割と目的、変更を要求する責任主体を図示し、変更理由の異なる目的が一つの処理へ混在していないかを確かめる([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
+6. モデリング上の役割と目的、変更を要求する責任主体を対応付け、変更理由の異なる目的が一つの処理へ混在していないかを確かめる([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
    認証主体や権限の role を分割単位へ置き換えず、複数の役割が同じ目的を持つ場合は数だけで分けない。
 7. 境界と依存の方向を決める([principles/separation](../principles/separation/README.md)、[structure/skeleton](../structure/skeleton.md) に従う)。
    一つの業務操作が複数コンテキストの判断・状態・確定・進行を要する場合は、[principles/separation](../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」に照合して分割を見直し、調整機構の選択へ進まない。
@@ -42,7 +46,8 @@
 依頼の出典にある必須成果が、受入条件と変更単位への対応から脱落していないことを確かめる。
 採用する道具は、[tools](../tools/) と [languages](../languages/) の採用に従う。
 実装へ渡す判断の対象、採る案、その理由と帰結を定め、後の保守に必要な意味の所在を確かめる([principles/documentation](../principles/documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」に従う)。
-アクターと処理の図示は、設計の時点と、実装を書いた後の検証の両方で行い、[principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」の完了条件に照合する。
+役割、目的、責任主体と処理の対応を設計と実装で照合し、[principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」の完了条件を満たすことを確かめる。
+既存の契約やコードから追えない所有と依存の関係は図示し、関係が変わったときに更新する。
 公開入口への接続は [structure/contracts/adapters](../structure/contracts/adapters.md) と [structure/core/layout](../structure/core/layout.md) に照らし、手書き adapter が独立した application の公開 Interface へ接続し、core に生成 Interface の実装や参照を持ち込んでいないことを確かめる。
 業務操作の判断・状態・確定・進行の所有をコンテキストの分割へ戻して照合し、port、composition、workflow、event による間接化を独立性の根拠にしていないことを確かめる。
 必要な読み取りと変更の開始・確定・中止を application が制御し、同一コンテキスト内の複数モデルの操作と独立した外部とのやり取りを、コンテキストをまたぐ業務操作と混同していないことを確かめる。

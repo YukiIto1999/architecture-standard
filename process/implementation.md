@@ -52,7 +52,7 @@
 アクターとuse-caseへの帰属は、テストを書く段で確かめ、refactor の段へ先送りしない([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に照合する)。
 直和へ新しい場合を追加するときは、新しい arm を足し、既存の arm の本文が変わっていないことを確かめる([principles/construction](../principles/construction/decisions-as-types.md) の「業務判断を型と多態で構造化する」に照合する)。
 緑にする作業を機械に任せた場合も、痛みと臭いの知覚と言語化を省かない([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」に従う)。
-実装を書いた後のアクターと処理の図示照合は、[design](./design.md) の確認点に従う。
+実装を書いた後の役割、目的、責任主体と処理の対応の照合は、[design](./design.md) の確認点に従う。
 変更したコードを、[principles/legibility](../principles/legibility/code-as-documentation.md) の「コードを第一級の文書として明瞭に書く」の完了条件と禁止事項に照合する。
 コメントを、[principles/comment](../principles/comment/README.md) の各規律の完了条件と禁止事項に照合する。
 テストの技法と有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。

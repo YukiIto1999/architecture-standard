@@ -5,7 +5,7 @@ separation は、分割と依存に関する原則を置く。
 
 ## 規律
 
-- [変更理由で分ける](./split-by-change-reason.md) — レビュー(design/実装の図示照合)
+- [変更理由で分ける](./split-by-change-reason.md) — レビュー(役割・目的・変更理由と設計/実装の対応の照合)
 - [サブドメインの種別で設計投資を配分する](./subdomain-investment.md) — 機械+レビュー(分類記録と構造対応の検査)
 - [コンテキストを業務上独立させる](./context-relationships.md) — レビュー(業務操作・規則・状態・確定・進行の所有と境界の照合)
 - [分類軸と粒度を階層で揃える](./classification-granularity.md) — 機械+レビュー(配置検査+分類軸レビュー)
