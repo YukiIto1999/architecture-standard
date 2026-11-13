@@ -16,6 +16,7 @@
 2. 候補の手段から上位の目的へ遡り、目的から例を挙げて要件へ降りる([principles/requirements](../principles/requirements/purpose-driven-requirements.md) の「目的から要件を導く」に従う)。
 3. 要件と完了条件を定める([principles/requirements](../principles/requirements/verifiable-requirements.md) の「検証できる形で要件と制約を定める」に従う)。
    業務の受入条件は、[structure/tests](../structure/tests/layout.md) の「実行可能な仕様」に従い、テストを作る前に既存仕様との対応と具体的な前提、操作、期待結果を定める。
+   定めた仕様を目的からの具体例へ照合し、実装の適合とは別に過不足と相互の整合を確かめる([principles/requirements](../principles/requirements/specification-quality.md) の「仕様自体の欠陥を実装の合否と別に確かめる」に従う)。
    依頼の各必須成果を出典と結び、受入条件、実現する変更単位、検証する経路へ対応させる。
    分割または再計画ではこの対応を更新し、計画から抜けた必須成果を未達として戻してから次へ進む。
 4. 対象コンテキストの語彙を確かめる([principles/naming](../principles/naming/unified-vocabulary.md) の「語彙を統一する」の行動に従う)。
@@ -43,6 +44,7 @@
 意味を伴う適合判断は、root の [README](../README.md) の適用判断に照らし、対象の事実と規律の条件から結論を導いた根拠が設計の記録から追えることを確かめる。
 事実と現在情報の正本、導出と控えの関係が data の規律に従い、書き込みの検証が確定の後に更新する読みモデルを読んでいないことを確かめる。
 業務の受入条件が実行可能な仕様へ対応し、成功、拒否、結果を変える境界条件を実装の都合で落としていないことを確かめる。
+仕様自体を確かめた具体例、関係する前提と制約、解消した不足・過剰、未確定の判断が追え、実装の合格だけで仕様の妥当性を確定していないことを確かめる。
 依頼の出典にある必須成果が、受入条件と変更単位への対応から脱落していないことを確かめる。
 採用する道具は、[tools](../tools/) と [languages](../languages/) の採用に従う。
 実装へ渡す判断の対象、採る案、その理由と帰結を定め、後の保守に必要な意味の所在を確かめる([principles/documentation](../principles/documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」に従う)。

@@ -20,7 +20,7 @@ principles は、ソフトウェア設計におけるすべての判断の土台
 | 構成 | [modeling](./modeling/README.md) | 型と意味。業務意味の型封入、不正状態の排除、論理と物理の分離 |
 | 構成 | [data](./data/README.md) | データと状態。整合性と集約、同一性と業務事実と現在情報の分類、必要な事実の保持と消去、事実からの状態の導出、制約と原則の順位 |
 | 構成 | [construction](./construction/README.md) | 実装の構成。不変性、全域関数、判断と集合の構造化、パターンの統一 |
-| 規律 | [requirements](./requirements/README.md) | 要件の確定。目的からの導出、根拠と決定状態、検証可能な定義 |
+| 規律 | [requirements](./requirements/README.md) | 要件の確定。目的からの導出、根拠と決定状態、検証可能な定義、仕様自体の欠陥の確認 |
 | 規律 | [verification](./verification/README.md) | 検証。機械検証と実行可能な仕様、テストの設計と安全網、信頼性の確保 |
 | 規律 | [evolution](./evolution/README.md) | 変更の作法。段階的な変更、影響の波及制御、構造改善、決定の先送り |
 | 表現 | [legibility](./legibility/README.md) | コードによる意図表現。可読性と視認性、認知負荷の最小化 |
