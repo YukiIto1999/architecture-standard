@@ -26,7 +26,7 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 
 | ファイル | 用途 | 採用 |
 |---|---|---|
-| [axe-core-playwright](./axe-core-playwright.md) | UI の E2E で、自動判定できる accessibility の違反を検出する道具である | TypeScript は @axe-core/playwright である |
+| [axe-core-playwright](./axe-core-playwright.md) | 実 browser で描画した UI で、自動判定できる accessibility の違反を検出する道具である | TypeScript は @axe-core/playwright である |
 | [cucumber-js](./cucumber-js.md) | 業務語彙の executable spec を実行する道具である | TypeScript は cucumber-js である |
 | [chromium](./chromium.md) | extension とその UI を動かす browser-extension の host である | Chromium の Manifest V3 と拡張 API である |
 | [eslint-plugin-sonarjs](./eslint-plugin-sonarjs.md) | 関数の複雑さを linter の規則として測る道具である | TypeScript は eslint-plugin-sonarjs の cognitive-complexity 規則を、oxlint の JS plugin として読み込んだものである |

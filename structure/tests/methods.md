@@ -289,7 +289,7 @@ transaction の検証は、application が開始から確定または中止ま�
 | lifecycle と configuration | 不正設定での起動拒否、設定層の競合と未指定の解決、生存と準備、受付停止、期限内 drain、突然死後の回復 |
 | security と privacy | default deny と最小権限、信頼境界ごとの abuse case、標準暗号の設定、ネットワークを通る伝送または信頼境界を越える伝送での平文と意図しない受信者の拒否、secret と個人情報の非流出、保持期限後の消去、供給物と依存の検査 |
 | experience | 利用者面の受入による状態遷移と正確な業務結果、区分の識別と表示の対応、表示対象と選択可能な集合の区別、拒否と回復、表示までの時間、公開観測面から列挙した日本語の操作ラベルの末尾の品詞、空状態の正常完了の事実または次に行う操作の表示 |
-| accessibility | keyboard 操作、focus、名前と役割、contrast、入力機構と知覚の差を越えた到達性 |
+| accessibility | 「利用者面の検査境界」に従って選んだ実描画の境界(component・page・route)での keyboard 操作、focus、名前と役割、contrast、入力機構と知覚の差を越えた到達性 |
 | console の呼び出しと terminal | stdout・stderr・終了 status と状態変化、TTY と非 TTY、非対話での入力不足、破壊操作の確認、再実行、確定前後の取り消し、terminal の復元と一時引き渡し、cell 幅と resize、入力 loop が処理中も操作を受けること |
 | performance | 固定した workload と環境での SLO 計測、変更前後の比較、計測結果を伴う退行判定 |
 
@@ -324,8 +324,21 @@ page を開いたこと、操作の成功、request の成功、DOM 上の存在
 critical path の smoke は、代表する一つの業務 task を利用者の操作から完了まで辿り、利用者面に現れる正確な結果を到達点とする。
 
 要求ごとの判定は、実行した条件と観測の証拠を添えた合格、不合格、未確認に分け、実行しなかった重要な状態、経路、表示や入力の条件とその理由を残す。
+実行した条件には、利用者面を検査した境界を含める。
 業務結果、描画、accessibility、performance、security の合否を互いの代替にせず、それぞれの保証に割り当てた検証で判定する。
 console と network の診断は、失敗した要求の原因を絞るために使い、error の不在や通信の成功を受入の証拠にしない。
+
+## 利用者面の検査境界
+
+利用者面の自動検査は、実際に描画した状態を観測し、結合する範囲は検査する保証を壊しうる原因から選ぶ。
+layout、style、focus、accessibility tree を計算しない描画の代替と、描画を伴わない mock の結果は、focus、contrast、pointer target、名前と役割の合否の根拠にしない。
+markup、style、focus の管理、操作の処理のように、描画した component または page の内側だけに原因がある保証は、実 browser で描画したその component または page を境界にして検査し、server、datastore、route の遷移を結合しない。
+modal dialog の focus の循環、Escape での閉鎖、閉鎖後の復帰先、名前と役割、状態の色以外の表現、contrast、pointer target がこれに当たる。
+route の遷移、認証や権限、実際の応答、datastore、構成の組立にも原因がある保証は、それらを制御した値へ置き換えず、実際の結合を通す e2e で検査する。
+遷移後の focus の位置、route をまたぐ focus の復帰、権限と実際の応答が決める表示と操作の有無がこれに当たる。
+component または page の境界の検査は、route と構成の不具合の検出と、結合した経路の利用者面の受入を代替しない。
+e2e は、component または page の境界で成り立つ状態の組合せの網羅に使わない。
+境界の配置は [layout](./layout.md) に従う。
 
 ## 構造の検証
 

@@ -39,7 +39,8 @@ viewer と extension が特定 host の API や型を参照しないことも、
 業務上の独立性は参照の不在だけで判定せず、[principles/separation](../../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」に照らし、操作の判断・状態・確定・進行の所有と公開 application Interface をレビューで照合する。
 e2e は、公開入口から実際の構成を通した結果のうち、他の検査で保証していない性質を検証し、critical path の smoke と visual だけに限定しない。
 同じ計算の組合せを重ねず、他の検査へ移す性質と入力領域について、移管先が対象の不具合を実際に検出する証拠を [methods](./methods.md) の「テストの有効性」に従って確認する。
-利用者面の操作ごとに状態、feedback、progress が表示されるまでの時間を browser を駆動して測る検証は、e2e に置かず integration に置く。
+利用者面の状態、feedback、progress が表示されるまでの時間と、accessibility、keyboard の自動検査は、[methods](./methods.md) の「利用者面の検査境界」に従って境界を選ぶ。
+描画した component または page の境界で成り立つ性質の検査は integration に置き、route と実際の構成を通して初めて成り立つ性質の検査を e2e に置く。
 smoke の到達点と visual の受入判定は、[methods](./methods.md) の「利用者面の受入」に従う。
 integration は、複数の実装単位または境界を組み合わせて検証する。
 検証の重みは、公開 interface 越しのuse-caseの検証に置き、内側の個別のテストは型と契約の保証で減らす([principles/verification](../../principles/verification/README.md) に従う)。
