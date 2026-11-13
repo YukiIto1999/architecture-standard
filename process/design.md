@@ -7,6 +7,8 @@
 
 1. 解くべき問題を、観測された事実と解釈を分け、判断を左右する主張の根拠と決定状態を記録して定める([principles/requirements](../principles/requirements/purpose-driven-requirements.md) の「目的から要件を導く」と [evidence-decision-separation](../principles/requirements/evidence-decision-separation.md) の「根拠と決定状態を分ける」に従う)。
    既存システムの意味が確立していなければ [recovery](./recovery.md) へ戻る。
+   以後のどの段でも、システムへ固定する判断の根拠が利用できる資料、契約、現行の観測では足りない場合は、他の段の完了を待たず、その判断に絞った使い捨ての実験で根拠を得てよい([principles/evolution](../principles/evolution/defer-decisions.md) の「いま不要な決定は可逆な形で先送りし、記録に残す」に従う)。
+   実験で確かめた案の採否を決めたら、採る場合は受入条件を含め影響する段へ戻ってシステムとして定め直し、退ける場合は残す意味を [principles/documentation](../principles/documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」に従って移す。
 2. 候補の手段から上位の目的へ遡り、目的から例を挙げて要件へ降りる([principles/requirements](../principles/requirements/purpose-driven-requirements.md) の「目的から要件を導く」に従う)。
 3. 要件と完了条件を定める([principles/requirements](../principles/requirements/verifiable-requirements.md) の「検証できる形で要件と制約を定める」に従う)。
    業務の受入条件は、[structure/tests](../structure/tests/layout.md) の「実行可能な仕様」に従い、テストを作る前に既存仕様との対応と具体的な前提、操作、期待結果を定める。
@@ -47,6 +49,7 @@
 domain の純粋な判断へ実行文脈や認証方式を持ち込んでいないことを確かめる。
 新しい型・抽象・設定・依存を選んだ場合は、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の完了条件と禁止事項に照合する。
 暗黙の制約を反実仮想で検討した場合は、[structure/tests/methods](../structure/tests/methods.md) の「反実仮想で検証を選ぶ」に照らし、仮定と観測事実、強制する保証、検出済みか未実行かを区別して完了条件へ渡す。
+使い捨ての実験を行った場合は、[principles/evolution](../principles/evolution/defer-decisions.md) の「いま不要な決定は可逆な形で先送りし、記録に残す」の完了条件と禁止事項に、開始の前と採否を決めた後で照合する。
 
 ## 範囲外
 
