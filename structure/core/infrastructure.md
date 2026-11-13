@@ -12,9 +12,9 @@ adapter は、use-case を参照しない。
 adapter の実装型は、配線する composition のみが参照する。
 adapter の名前は、実装の方式を表す語で付ける。
 DB driver、HTTP client、ファイルシステム、現在時刻の取得、乱数生成、外部 SDK は、この層でのみ用いる。
-キャッシュは、cache-aside の adapter として置く。
+可変な正本の取得 cache は、cache-aside の adapter として置く。
 キャッシュと一時データの store の採用は [tools/platforms/valkey](../../tools/platforms/valkey.md) が定める。
-キャッシュの失効、無効化、配送 cache の範囲は [concerns/caching](../../concerns/caching/cache-aside.md) の「cache を正本の控えに保つ」に従う。
+取得 cache の失効、無効化、配送 cache の範囲は [concerns/caching](../../concerns/caching/cache-aside.md) の「可変な正本の取得 cache の古さを期限と無効化で閉じる」に従う。
 流入の制限は surface 側の境界に置き、置き場は各 surface の layout が定める。
 core から外部システムへの呼び出しの制限に使うカウンタは、この層で一時データの store に置く。
 副作用と非同期の境界の規律は [concerns/effect](../../concerns/effect/README.md) と [concerns/concurrency](../../concerns/concurrency/README.md) に従う。

@@ -55,7 +55,7 @@ README の末尾には、他の概念と領域への参照を置きます。
 | [types](./types/README.md) | 実行・構成 | 型による不変条件の保護 |
 | [context-propagation](./context-propagation/README.md) | 実行・構成 | 同一実行に随伴する metadata の carrier と伝播 |
 | [persistence](./persistence/README.md) | 状態・連携 | 永続データの設計。同一性・業務事実・属性・現在関係・期間の判定・版の変換・正規化・制約 |
-| [caching](./caching/README.md) | 状態・連携 | 正本から再構築できる導出状態の鮮度・無効化・不在 |
+| [caching](./caching/README.md) | 状態・連携 | 再構築できる結果の再利用。可変な正本の取得 cache の鮮度・無効化・不在と、決定的な計算の memo の同一性・有界の保持 |
 | [migration](./migration/README.md) | 状態・連携 | 稼働中の系の移行。段の分割・同一時点の検証・cutover |
 | [transaction](./transaction/README.md) | 状態・連携 | 一つのコンテキストの書き込みパスの一貫性と確定点 |
 | [messaging](./messaging/README.md) | 状態・連携 | 内部の非同期処理と独立して公開する event の契約・配送・消費 |
