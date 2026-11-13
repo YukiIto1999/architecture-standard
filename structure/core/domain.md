@@ -23,6 +23,8 @@ domain は、一つの集約の不変条件と遷移を純粋な関数で判断�
 集約と値は、不変条件を検証する factory のみで生成する。
 不変条件を迂回する公開 constructor は持たない。
 状態の変更は、集約のメソッドを通じて、新しい状態を返す純粋な遷移として行う。
+遷移の結果は、新しい状態と起きた出来事の対応を一つの業務判断として表し、呼出側が両者を別々の規則で組み立てない。
+この新しい状態は判断結果の値であり、保存時の正本と導出の関係は [principles/data](../../principles/data/derive-state-from-facts.md) の「今の状態を事実の行から導く」に従う。
 フィールドを直接書き換える setter は持たない。
 値とイベントは不変である。
 
@@ -51,6 +53,8 @@ domain は、persistence の record、wire 型、DTO、公開契約の定義と�
 domain イベントは、集約の遷移で起きた業務上の出来事を、domain が値として返す表現である。
 domain イベントを返すことは、業務事実としての保持、outbox への記録、外部への公開、イベント列からの状態の復元のいずれも約束しない。
 出来事を業務事実として残すかは、[principles/data](../../principles/data/preserve-facts-and-current-state.md) の「業務事実と現在情報を分けて保持する」に従って契約から決め、残さない出来事は遷移の結果の値にとどめる。
-イベント列を集約の状態の正本にする方式(Event Sourcing)は、その集約の全ての状態変更を事実の行として保持する契約があり、再構築、訂正、消去、競合の扱いを定められる場合に、集約ごとに選ぶ採否であり、domain イベントを置くことの帰結にも、別の datastore や broker を採る理由にもしない。
+イベント列を集約の状態の正本にする方式(Event Sourcing)でも、状態の正本と導出は data の規律に従う。
+対象となる全ての状態変更を事実の行として保持する契約と、再構築、訂正、消去、競合の扱いを必要とし、domain イベントがあることからこの保持契約を作らない。
+domain イベントの存在を、別の datastore や broker を採る理由にしない。
 integration event への写像は application が担い、配送経路の配線は composition が担う。
 配送の規律は [concerns/messaging](../../concerns/messaging/README.md) に従う。

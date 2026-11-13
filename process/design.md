@@ -28,7 +28,8 @@
    契約から生成する公開面と通信方式を [structure/contracts/generated](../structure/contracts/generated.md) に照合し、必要な生成能力と binding、独立した oracle、観測する経路を [structure/tests/methods](../structure/tests/methods.md) の「契約の意味と生成」へ対応付ける。
 8. 境界を決めてから、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の段を適用し、設計したドメイン型と操作を実現する機構を選ぶ。
    境界の決定を飛ばして言語の機構やパターンだけを選ばない([languages](../languages/) に従う)。
-   今の状態の控え、派生読みモデル、イベントの保持と配送、イベント列を状態の正本にする方式は、アクセス要件、整合の強さ、保持の契約から別々に採否を決め、[principles/data](../principles/data/derive-state-from-facts.md) の「今の状態を事実の行から導く」に従う。
+   保持の契約から事実と現在情報の正本を定め、状態の導出と控えは [principles/data](../principles/data/derive-state-from-facts.md) の「今の状態を事実の行から導く」に従う。
+   遷移の判断、保持する事実、外部への通知を混同せず、[structure/core/domain](../structure/core/domain.md) の「イベント」と [structure/core/application](../structure/core/application.md) の「トランザクション」に従って構成する。
 
 ## 確認点
 
@@ -36,7 +37,7 @@
 リソースの単位、同一性、範囲が、キーと表の設計より前の決定として設計の記録から追えることを確かめる。
 業務の計算・判断・集合処理がある箇所では、その知識を持つ型と操作の所在を、該当する値・区分・集合の規律に照合する。
 意味を伴う適合判断は、root の [README](../README.md) の適用判断に照らし、対象の事実と規律の条件から結論を導いた根拠が設計の記録から追えることを確かめる。
-今の状態の控え、派生読みモデル、イベントの保持と配送、イベント列を状態の正本にする方式の採否が別々に決められ、書き込みの検証が確定の後に更新する読みモデルを読んでいないことを確かめる。
+事実と現在情報の正本、導出と控えの関係が data の規律に従い、書き込みの検証が確定の後に更新する読みモデルを読んでいないことを確かめる。
 業務の受入条件が実行可能な仕様へ対応し、成功、拒否、結果を変える境界条件を実装の都合で落としていないことを確かめる。
 依頼の出典にある必須成果が、受入条件と変更単位への対応から脱落していないことを確かめる。
 採用する道具は、[tools](../tools/) と [languages](../languages/) の採用に従う。
