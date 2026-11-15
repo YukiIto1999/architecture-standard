@@ -28,13 +28,9 @@
 同じ語または型を手掛かりに、対象 project の明示された要件と宣言の契約、state authority、writer、caller、既存 test を、source から実演された link に沿って material evidence が揃うまで追い、変更契約と検証へ反映する。
 caller を一つ読んだだけで追跡を止めず、authority または既存 test を確認できなければ、その語の意味と検証条件を未確認にする。
 future または task の終了と、domain の terminal state または永続化された authority の更新を同じ completion とみなさない。
-`join` または task 回収という語は、対象の `JoinHandle`、`JoinSet` その他の task handle を await する経路を観測した場合だけ使う。
-親の future が返ることや固定の success 文字列を、spawned task の join と説明しない。
-両者の一致を担う writer と失敗契約が観測できなければ、task の join が保証できるのは task の終了を回収してから親が返ることだけであり、「全 job の完了後に返る」「completion の受入条件を満たす」と書かない。
+完了、join、回収のように終了を表す語は、その終了を観測した経路の範囲でだけ使い、親の return や固定の成功値を task の join とも domain の完了とも説明せず、task の回収を domain の完了と説明しない。
 Accepted な契約が persisted state を authority とする場合、全 record の terminal state を確認できて初めて domain completion と判定する。
-標準の言語実現が、permit 待ちを job task 内で cancellation と deadline に競わせると定める場合、親が permit を取得してから task を spawn する構造へ変えない。
-`JoinSet` に束ねた job task 内で取消優先の permit 待ちを行うことを必須構造とし、CancellationToken、Deadline、失敗値の具体的な入力契約だけを Unknown に残す。
-未確認の project 契約を理由に標準が定めた permit の所有場所を反転させず、反対に token や error 型を発明しない。
+標準の言語実現が並行処理の構造(permit を待つ場所など)を定める場合は、その構造を設計の必須構造とし、変えず、token、deadline、失敗値の具体的な入力契約だけを Unknown に残し、それらを発明しない。
 project の判断の意味は、現在の標準本文が定める情報の正本に沿って、source、宣言の契約、test、設定、変更理由、Why not と、README または直接リンクされた要件や文書から回収する。
 入力契約と未実装の要件の確認を、現在の実装の観測で代替しない。
 外部 ADR の置き場の宣言がないことだけでは、契約の authority や判断の意味を Unknown としない。
@@ -61,14 +57,11 @@ source、caller、契約、変更理由、Why not、直接リンクされた資�
 未観測の契約に依存する分岐や、隣接する migration の設計へ広げない。
 検証は対象入力または setup、観測する値、合格となる期待結果を指定する。
 task の終了数や実行中 counter は並行度と task 回収だけを検証し、persisted state が authority なら domain completion の検証には使わない。
-並行度の case と、`run` が返った時点で対象となる全 record の authority が terminal state であることを観測する case を分ける。
-Accepted な契約が authority と terminal state を定めていれば、後者の三要素は `識別可能な複数 job を既存の公開 caller へ渡す / run の return 時に同じ ID の persisted authority を読む / 全 record が契約上の terminal state である` まで固定する。
-writer、reader、persistence の具体的な呼出し方を現行 project から確定できなければ、その実現だけを未確定とし、三要素自体を不明として省略しない。
+persisted state を completion authority とする Accepted な契約では、並行度、task 回収、domain authority の terminal state を検証一覧の別々の case にする。
+domain authority の case は、識別できる複数の入力を公開 caller へ渡し、返った時点で同じ識別子の authority を読み、全件が契約上の terminal state であることを期待結果にする。
+writer、reader、persistence の具体的な呼出しを確定できなければ、その実現だけを同じ case に未確定と書き、case を検証一覧から省かない。
+domain authority の case がなければ設計を完了と報告しない。
 架空の seam、helper、型は補わず、検証可能または完了と書かない。
-persisted state を completion authority とする Accepted な契約を読んだ設計では、最終応答の検証一覧に `並行度 / task 回収 / domain authority` の三 case を必ず別々に置く。
-domain authority の case を未確定条件の prose だけへ移したり、writer が Unknown であることを理由に検証一覧から省いたりしない。
-三要素と、具体的な writer・reader 呼出しだけが未確定であることを同じ item に書く。
-この item がなければ設計を完了と報告しない。
 尺度と閾値の列挙だけを検証設計と扱わない。
 受入条件ごとに少なくとも一つの具体的な case を上の三要素で閉じられなければ、設計を完了としない。
 検証入口を設計・変更する場合は、承認対象と必要保証の対応を入力に [process/verification](../../../process/verification.md) の実行計画を具体化する。
@@ -85,9 +78,3 @@ mutation 分析の全件消化、未検出 0 件、score の閾値は受入条�
 依頼が複数のモードを含む場合は、完了したモードの成果と証拠を次のモードへ渡し、実行可能な残件を進める。
 最終応答の各節、設計要素、参照 file を一つずつ除いたとき、変更契約の条件または未確認事項の根拠が失われるか確かめる。
 失われないものは応答から除く。
-設計の最終応答は、変更不要から選んだ実現段まで、または必須条件が Unknown なら最初に成立しうる暫定段までの判定だけを列挙する。
-それより後の候補、抽象、依存、新規実装には、未検討・不要・不採用という言及もしない。
-「新しい依存は不要」「独自実装は不要」「後続の段は検討しない」のような否定文も、後段への言及なので書かない。
-暫定段を「選択」「成立」「十分」「この段で止める」と表現せず、確定に必要な未確認契約だけを示す。
-依頼が設計だけなら、将来の決定の記録、file 作成、cleanup、別変更の指示も削除する。
-必須参照の途中で変更契約外の配置違反や別件を見つけても、最終応答へ付記せず、この設計の候補、risk、今後の作業へ広げない。
