@@ -16,7 +16,7 @@
 1. 変更単位と受入条件を定め、製品の保証ごとに検査、入力、観測する境界、確認する時点を対応付ける。
    検出力を調べる分析は別の目的として定め、製品受入の完了条件へ混ぜない。
 2. 比較元、source、依存、テスト、入力と設定を確定し、[methods](../structure/tests/methods.md) の「変更と影響範囲」から対象を選ぶ。
-   契約、migration、認証・認可、供給網、検証入口の変更は保証を共有する境界へ追い、無関係な全量の反復と区別する。
+   全範囲へ広げる変更と依存を解決できない場合は、[methods](../structure/tests/methods.md) の「変更と影響範囲」に従って影響する保証の全範囲へ広げ、無関係な全量の反復と区別する。
    契約生成の変更は、compiler の意味情報、profile、生成器、生成先と binding の関係を [methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」へ対応付ける。
 3. 検査ごとの既存証跡を照合し、必要な保証が有効な証跡で覆われない範囲だけを実行計画へ入れる。
    生成器共通の能力と製品固有の契約・adapter・binding は、[methods-contracts](../structure/tests/methods-contracts.md) の「証跡の所有と再利用」に従って所有者と有効な証跡を照合する。
