@@ -258,22 +258,44 @@ public sealed record Money(decimal Value);
 ### 要求
 値オブジェクトの生成、閉じた階層の網羅の suppressor、効果の規律の analyzer は、libs の機構として core と別の netstandard2.0 の project に置く。
 この project は `OutputItemType="Analyzer"` と `ReferenceOutputAssembly="false"` で参照し、実行時の依存にしない。
+参照は、[structure/libs/layout](../../structure/libs/layout.md) の「消費側への取り込みと検査の実行機」に従い、機構が配る analysis の props を、repository の全 project を覆う `Directory.Build.props` から1回だけ import して全 project へ届ける。
+analysis の props は、analyzer の project の欠落、`RunAnalyzers` と `RunAnalyzersDuringBuild` による analyzer の停止、project の analyzer からの除外、機構の診断を弱める設定を、build の error にする。
+機構の診断を弱める設定は、`.editorconfig` と global config での機構の診断の重大度の引下げ、機構の診断に及ぶ一括の重大度の引下げ、機構の診断を挙げる `NoWarn`、同じ file で `restore` しない `#pragma warning disable` である。
+同じ file で `restore` する `#pragma` と、機構の診断に及ばない一括の重大度は、弱める設定に含めない。
+solution の隣の `Directory.Solution.targets` から、機構が配る solution の targets を1回だけ import する。
+solution の targets は、solution の project と、そこから `ProjectReference` で推移的に build される project のうち、`ImportDirectoryBuildProps` を `false` にした project や、親を import しない入れ子の `Directory.Build.props` の下の project のように analysis の props が届かない project を、参照元とともに挙げて solution の build を error にする。
+機構の props や targets が別の機構の props や targets を取り込む場合は、取り込まれる側を重ねて import しない。
+検証入口は solution を build する。
 
 ### 根拠
 compile 時のツールが実行時の層に属さず出荷物にも含まれない理由は [structure/libs/layout](../../structure/libs/layout.md) に従う。
 Roslyn は analyzer と source generator に netstandard2.0 を課し、生成器は自身を含むアセンブリのビルドに使えないので、core と同じ project には置けない。
 `ReferenceOutputAssembly="false"` は、ツールの dll を実行時の参照に混ぜないために要る。
+project ごとに参照を書くと、新しい project で参照が漏れても build は通り、検査されない compile 単位が黙って残る。
+`Directory.Build.props` の import が届かない project は自身の build では検出できないので、solution の build の前に targets が列挙する。
+build は build した構成だけを判定するので、`Release` だけにある設定の欠陥は `Release` の build で初めて検出される。
+出荷する成果物はその構成で build されるので、その構成の取り込みの欠陥は、出荷の前の build で止まる。
+単独の `.csproj` の build は solution の targets を通らないため、受入を solution の build に限る。
+solution の targets は solution の project から `ProjectReference` を推移的にたどるので、solution に直接載らず推移的に build される project も、solution の build で検査される。
 
 ### 完了条件
 生成器と suppressor と analyzer が、libs の機構として core と別の netstandard2.0 project にある。
 これらが `OutputItemType="Analyzer"` で参照され、実行時の依存に現れない。
+消費側の analyzer の参照が、`Directory.Build.props` から import した analysis の props の1か所にあり、参照の欠落、analyzer の停止、機構の診断を弱める設定で build が失敗する。
+`Directory.Solution.targets` が solution の targets を import し、props が届かない project が solution から build される場合に solution の build が失敗する。
+検証入口が solution を build する。
 
 ### 禁止事項
 生成器や analyzer を、実行時の project や core の層に置くこと。
 ツールの dll を、実行時の参照に含めること。
+analyzer の参照を project ごとに書くこと。
+参照の有無を、project を build し直す実行テストや実行機で確かめること。
+単独の `.csproj` の build の成功を、受入の証拠にすること。
 
 ### 行動
-検証と生成を libs 配下の別の netstandard2.0 analyzer project にし、各 project から `OutputItemType="Analyzer"`・`ReferenceOutputAssembly="false"` で参照する。
+検証と生成を libs 配下の別の netstandard2.0 analyzer project にし、機構が配る analysis の props から `OutputItemType="Analyzer"`・`ReferenceOutputAssembly="false"` で参照させる。
+消費側は analysis の props を `Directory.Build.props` で、solution の targets を `Directory.Solution.targets` で、それぞれ1回だけ import する。
+検証入口から solution を build する。
 配布するときは `analyzers/dotnet/cs` に詰め、`IncludeBuildOutput=false` で実行時の出力に含めない。
 
 ## 参照

@@ -191,7 +191,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | formation | 継承を閉じた型階層と境界の契約に限る | 型(判別共用体の基底以外の自作 class と record class の sealed)+レビュー(継承が閉じた型階層の宣言か境界で必須の基底型契約への適合であること、後者の言語仕様または採用済み framework の API による根拠、業務の振る舞いの再利用と Template Method 拡張の不在) |
 | formation | 不変を既定にする | 型(init 専用プロパティ)+レビュー(値とイベントの更新が元を変えず新しい値を返すこと、値オブジェクトの全構築・更新経路が検証付き factory を通り、公開 init と with が不変条件を迂回しないこと、浅い複製で共有する参照先の不変性) |
 | formation | 意味と単位を型で区別する | 型(record) |
-| formation | 検証と生成を libs の analyzer project に分ける | 構造検査(analyzer project 境界)+型(netstandard2.0 の Analyzer 参照制約) |
+| formation | 検証と生成を libs の analyzer project に分ける | 構造検査(analyzer project 境界、消費側の analyzer 参照が `Directory.Build.props` から import した analysis の props の1か所にあり project ごとの参照がないこと、`Directory.Solution.targets` が solution の targets を import していること)+型(netstandard2.0 の Analyzer 参照制約)+analyzer/lint(analysis の props による参照の欠落・analyzer の停止・機構の診断を弱める設定の build error、solution の targets による、solution から推移的に build される project を含む props の届かない project の build 前の error。検証入口の solution の build で判定する)+レビュー(弱める設定を報告する診断自身を挙げる assembly 全体の `SuppressMessage` の不在) |
 | conventions | 命名と整形を道具に委ねる | analyzer/lint(CSharpier チェック、production の SonarAnalyzer.CSharp 命名規則、test project では Sonar の method 命名規則だけを抑止して命名 analyzer で test attribute 付き entry の snake_case とその他 method の .NET 命名を検査) |
 | conventions | ドキュメントコメントを書く | analyzer/lint(CS1591 エラー化。公開要素のコメント欠落)+analyzer(Roslyn analyzer。全宣言のコメント存在・param/typeparam/returns/value・先頭行・当該宣言内で機械判定できる欠陥の exception)+レビュー(実効的な可視境界に応じた外部契約または内部契約、伝播する欠陥、再述でない意味) |
 | conventions | 型名の接尾辞を役割で揃える | 構造検査(ArchUnitNET による保存用と binding 固有の型の役割別の命名照合)+レビュー(行と列の保存構造、wire の全体と部分の割当、既存の契約名との対応、接尾辞だけの同義型の不在) |

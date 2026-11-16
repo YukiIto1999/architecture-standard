@@ -126,9 +126,22 @@ compile 時のツールは、ビルド時にだけ参照され、実行時の依
 言語ごとの検査と生成の機構、およびその構築と参照の仕方は [languages](../../languages/) が定める。
 公開契約固有の生成 package、設定、template、script の置き場と生成入口は、[contracts](../contracts/layout.md) の「生成の toolchain」に従う。
 
-## 検査の実行機
+## 消費側への取り込みと検査の実行機
 
-消費側の設営義務(attach・閉包・台帳の検査)を宣言だけで検査する実行機を提供する場合は、機構の `testing/` に同梱する Testing package として置く。
+compile 単位の compile に接続して動く検査と生成の機構は、消費側が取り込む二つのものを配る。
+一つ目は、消費側の全ての compile 単位を覆う build 設定の共通の入口で一度だけ取り込む設定である。
+この設定は、届いた全ての compile 単位へ機構を接続し、機構の欠落、検査の停止、機構の診断を弱める設定を、その compile 単位の build の失敗にする。
+どの設定を機構の診断を弱める設定とするかは、[languages](../../languages/) が定める。
+二つ目は、compile 単位を列挙して build する入口で取り込む検査である。
+この検査は、列挙の入口が build する compile 単位と、そこから推移的に build される compile 単位のうち、一つ目の設定が届かないものを、どの compile 単位も build する前に参照元とともに列挙して、列挙の入口の build を失敗にする。
+消費側は、二つをそれぞれ1か所で取り込み、compile 単位ごとに機構を接続しない。
+機構の取り込みの有無を、実行機、実行テスト、project の build を繰り返す検査で確かめない。
+
+build は build した構成の設定だけを判定するので、一つの構成でだけ生じる取り込みの欠陥は、その構成の build で初めて検出される。
+出荷する成果物はその構成で build されるので、その構成の取り込みの欠陥は、出荷の前の build で止まる。
+検証入口は、列挙の入口を通して build し、compile 単位を単独で build した成功を受入の証拠にしない。
+
+消費側の設営義務のうち閉包と台帳の検査を宣言だけで検査する実行機を提供する場合は、機構の `testing/` に同梱する Testing package として置く。
 実行機は機構の公開面の一部であり、消費側の test からだけ参照される。
 root tests と各境界内の test package だけが、skeleton の build・test-only 依存表を通して Testing package を参照する。
 arch test は、Testing package の参照元が test package であることを検査する。
