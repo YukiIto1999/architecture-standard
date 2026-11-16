@@ -36,7 +36,7 @@ JSON Schema の `minLength` と `maxLength` は、UTF-16 の code unit や UTF-8
 未知の項目を検知する生成処理は、全 variant と入れ子の object を対象にし、既知の項目の検証や variant の識別を省略しない。
 生成器は宣言した役割の違いを型の非互換として表し、alias は同じ型への参照とする。
 通常の field 制約を理由に一律の wrapper を作らず、値の保持に必要な表現と型の役割を分ける。
-生成能力の検証は [tests の方法](../tests/methods.md) に従い、満たさない生成物を検証入口で拒否する。
+生成能力の検証は [tests の契約の方法](../tests/methods-contracts.md) に従い、満たさない生成物を検証入口で拒否する。
 
 ## 構築と復元
 

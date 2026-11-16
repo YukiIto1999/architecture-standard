@@ -118,7 +118,7 @@ get-only property と非公開の完成処理を組み合わせれば、public i
 役割の異なる scalar の代入が型検査で拒否され、alias の互換が保たれている。
 local 構築と decode が同じ制約へ照合され、不正な default・null・元の collection の変更が受理済み値を壊さない。
 三状態、decimal と日時の保持要件を満たし、生成先の既定型で表せない有効値も受理できる。
-共通の wire profile と深さ・診断保持の検査が、[structure/tests/methods](../../structure/tests/methods.md) の「契約の意味と生成」へ接続されている。
+共通の wire profile と深さ・診断保持の検査が、[structure/tests/methods-contracts](../../structure/tests/methods-contracts.md) の「契約の意味と生成」へ接続されている。
 
 ### 禁止事項
 公開 constructor・init・with、検証しない converter により契約値の検証を迂回すること。

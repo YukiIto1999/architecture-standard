@@ -15,7 +15,7 @@
 3. 差分だけでなく、対象 repo の現在の内容、生成物、設定、変更されていない consumer を読み、変更の影響範囲を特定する。
 4. その境界の layout と、変更が触れる [principles](../principles/)・[concerns](../concerns/) を読む。
    source の変更では [principles/legibility](../principles/legibility/README.md)、[principles/naming](../principles/naming/test-names-as-specs.md)、[principles/comment](../principles/comment/README.md) を、テストの変更では [principles/verification](../principles/verification/README.md) と naming の「テスト名は仕様を表す」を、commit の件名では [principles/documentation](../principles/documentation/commit-purpose.md) の「commit の件名に対象と変化を書く」を含める。
-   コンテキストの境界は [principles/separation](../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」、契約生成と application への接続は [structure/contracts](../structure/contracts/layout.md) と [structure/tests/methods](../structure/tests/methods.md) の「契約の意味と生成」に照合する。
+   コンテキストの境界は [principles/separation](../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」、契約生成と application への接続は [structure/contracts](../structure/contracts/layout.md) と [structure/tests/methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」に照合する。
 5. 対象言語の該当する実現軸と conventions([languages](../languages/))で、使う機構と全域規律を確かめる。
 6. 変更で使う道具を、[tools](../tools/) と [languages](../languages/) の採用と判断基準に照合する。
 7. 逸脱の決定の記録を、root の [README](../README.md) が要求する採用理由、撤回条件、単一採用、置き換える標準規律のファイル、逸脱の前提となる技術的制約の実証に照合する。

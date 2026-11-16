@@ -31,7 +31,7 @@ TypeSpec の [encoding の扱い](https://typespec.io/docs/extending-typespec/em
 各言語の実行用生成物が、投影 schema でなく同じ解釈済み IR から導かれている。
 profile が役割・alias・値域・保存表現・存在状態・variant・operation・binding の意味を判定可能に定めている。
 未解釈の宣言、不完全または曖昧な binding、出力先の能力不足が、元の位置を持つ生成失敗になり、成功成果物が公開されない。
-必要な全契約が選択した production target で生成され、[tests の方法](../../structure/tests/methods.md)が定める生成能力の検査へ接続されている。
+必要な全契約が選択した production target で生成され、[tests の契約の方法](../../structure/tests/methods-contracts.md)が定める生成能力の検査へ接続されている。
 
 ### 禁止事項
 各 emitter や consumer が投影 schema から制約を再解釈し、同じ契約の検証を別に定義すること。

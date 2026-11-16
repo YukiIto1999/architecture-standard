@@ -30,7 +30,7 @@ readonly は別参照からの変更を止めないため、検証後の値を�
 役割の取り違えと variant の payload 不一致が型検査で拒否され、alias の互換と通常の field の primitive 表現が保たれている。
 local 構築と decode が同じ規則へ照合され、明示的な undefined と不正値が拒否される。
 元の配列と object の変更が受理済み値を変えず、存在状態と契約の全受理値域が保持されている。
-共通の wire profile と深さ・診断保持の検査が、[structure/tests/methods](../../structure/tests/methods.md) の「契約の意味と生成」へ接続されている。
+共通の wire profile と深さ・診断保持の検査が、[structure/tests/methods-contracts](../../structure/tests/methods-contracts.md) の「契約の意味と生成」へ接続されている。
 
 ### 禁止事項
 型 assertion や any で未検証の値を契約型として信頼すること。

@@ -167,7 +167,7 @@ root の構成は skeleton が、各部の内部は各 layout が、概念の規
 認可の保証は実装が一つのモジュールでも concerns に置き、認可 adapter の配置は structure に置きます。
 TypeScript の規約はプロジェクト全域に効いても languages に置きます。
 root をまたぐ具体的な許可依存は [structure/skeleton.md](./structure/skeleton.md) が、依存が満たす一般的な性質と保証は [concerns/dependency](./concerns/dependency/README.md) が所有し、root を一つの巨大なモジュールと読み替えて区別を失わせません。
-検証技法と規範から検証への割当は [structure/tests/methods.md](./structure/tests/methods.md) が所有し、structure をフォルダ配置だけに限定しません。
+検証技法と規範から検証への割当は [structure/tests/methods.md](./structure/tests/methods.md) と、その冒頭の表が対象別に分けた技法の file が所有し、structure をフォルダ配置だけに限定しません。
 
 ## 運用と判定
 
@@ -263,7 +263,7 @@ revision の一致を、現行規範への適合や対象 source の現在の妥
 |---|---|
 | 設計判断と規律の正本 | この README と六領域の標準本文 |
 | 対象 project への適用 | [standard-apply](./skills/standard-apply/SKILL.md) |
-| 規範から検査への割当 | [structure/tests/methods.md](./structure/tests/methods.md)、[principles](./principles/) と [concerns](./concerns/) の概念 README の規律台帳、言語別 inspection の対応表である [Rust](./languages/rust/inspection.md)、[C#](./languages/csharp/inspection.md)、[TypeScript](./languages/typescript/inspection.md) |
+| 規範から検査への割当 | [structure/tests/methods.md](./structure/tests/methods.md) とその冒頭の表が対象別に分けた技法の file、[principles](./principles/) と [concerns](./concerns/) の概念 README の規律台帳、言語別 inspection の対応表である [Rust](./languages/rust/inspection.md)、[C#](./languages/csharp/inspection.md)、[TypeScript](./languages/typescript/inspection.md) |
 | 検査の実行と合否 | [process/verification.md](./process/verification.md) と対象 project の検証入口 |
 | 監査の順序 | [process/audit.md](./process/audit.md) |
 | 適合性監査と根拠付き報告 | [standard-conformance](./skills/standard-conformance/SKILL.md) |

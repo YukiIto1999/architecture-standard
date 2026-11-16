@@ -41,7 +41,7 @@ surface と core の接続、runtime がホストする surface と core の埋�
 | [surfaces](./surfaces/) | 一覧の [README](./surfaces/README.md) が定める | 対話様式ごとの入口。server・console・worker・viewer・extension・embedded |
 | [runtimes](./runtimes/) | 一覧の [README](./runtimes/README.md) が定める | 被ホスト surface の具体 host。web・desktop・mobile・ide・browser-extension |
 | [deploy](./deploy/layout.md) | layout | 配備。infrastructure・delivery・provenance・secrets は layout の節である |
-| [tests](./tests/layout.md) | layout・methods・doubles | root の規模の検証と、検証技法およびダブルの設計 |
+| [tests](./tests/layout.md) | layout・methods・methods-domain・methods-persistence・methods-contracts・methods-surfaces・methods-structure・doubles | root の規模の検証と、検証技法およびダブルの設計 |
 
 ## 統治と正本の原則
 
@@ -49,7 +49,7 @@ skeleton.md がリポジトリ全体の構成と境界の正本です。
 root をまたぐ具体的な許可依存は skeleton が一元管理し、各部の内部構造は各 layout が定めます。
 依存が満たす一般的な性質と保証は concerns が所有し、適用されるモジュール数では正本を分けません。
 適合は、skeleton が定義する境界と依存方向表への一致、および構成表の各部の本文が定める固有の設計規律への合致をもって判定します。
-検証技法の選択、性質から型・静的検査・実行テスト・計測への割当、mutation・coverage・実行範囲は [tests/methods.md](./tests/methods.md) が所有します。
+検証技法の選択、性質から型・静的検査・実行テスト・計測への割当、mutation・coverage・実行範囲は [tests/methods.md](./tests/methods.md) と、その冒頭の表が対象別に分けた技法の file が所有します。
 
 ## 読み方と各部の詳細
 

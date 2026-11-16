@@ -460,7 +460,7 @@ cp "$fixture/structure/core/domain.md" "$fixture/structure/core/stray.md"
 expect_fail "台帳に無い structure 本文ファイルを検出する" "$fixture" "structure/core/stray"
 
 fixture=$(make_fixture structure-ledger-missing-entry)
-sed -i 's/| layout・methods・doubles |/| layout・methods |/' "$fixture/structure/README.md"
+sed -i 's/| layout・methods・methods-domain・methods-persistence・methods-contracts・methods-surfaces・methods-structure・doubles |/| layout・methods・methods-domain・methods-persistence・methods-contracts・methods-surfaces・methods-structure |/' "$fixture/structure/README.md"
 expect_fail "台帳から落ちた structure 本文ファイルを検出する" "$fixture" "structure/tests/doubles"
 
 fixture=$(make_fixture structure-ledger-subdirectory)

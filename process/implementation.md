@@ -14,7 +14,7 @@
 3. 着手時点で分かっている、検証すべき振る舞いを、テストリストに列挙する。
    各項目に仕様上の根拠、入力、期待結果、観測する公開境界と既存の検査を対応付け、新しい検査が区別する誤実装を定める。
    意味が異なる空入力、境界、拒否、操作列と途中失敗後の結果・状態を含め、未決の期待値は実装から逆算せず [design](./design.md) へ戻す。
-   契約定義・profile・生成器・binding を変える場合は、[structure/tests/methods](../structure/tests/methods.md) の「契約の意味と生成」に照らし、その変更で失効する証跡と、型・構築・codec・実際の両端の接続で新たに観測する違反を対応付ける。
+   契約定義・profile・生成器・binding を変える場合は、[structure/tests/methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」に照らし、その変更で失効する証跡と、型・構築・codec・実際の両端の接続で新たに観測する違反を対応付ける。
 4. 初回は、公開 interface を越して確かめられる最小の振る舞いをリストから選ぶ。
 5. 選んだ振る舞いについて、[principles/construction](../principles/construction/reuse-before-new.md) の「新しい要素を最後に選ぶ」の段を記載順に適用し、要求を満たす最初の段で止める。
 6. 選んだ振る舞いに、新しい依存を表す型か想定内の失敗を表す型が必要かを判断する([concerns/effect](../concerns/effect/typed-requirements-failures.md) の「要求と想定内失敗を型に現す」に従う)。
@@ -58,7 +58,7 @@
 変更したコードを、[principles/legibility](../principles/legibility/code-as-documentation.md) の「コードを第一級の文書として明瞭に書く」の完了条件と禁止事項に照合する。
 コメントを、[principles/comment](../principles/comment/README.md) の各規律の完了条件と禁止事項に照合する。
 テストの技法と有効性の検査は [structure/tests/methods](../structure/tests/methods.md) に従う。
-契約生成の変更では、[structure/contracts/generated](../structure/contracts/generated.md) の生成能力を、[structure/tests/methods](../structure/tests/methods.md) の「契約の意味と生成」に従って検証したことを確かめる。
+契約生成の変更では、[structure/contracts/generated](../structure/contracts/generated.md) の生成能力を、[structure/tests/methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」に従って検証したことを確かめる。
 公開契約と application の接続では、生成物を core に実装させず、[structure/contracts/adapters](../structure/contracts/adapters.md) の手書き adapter を実際の binding と application の公開入口へ接続したことを確かめる。
 局所の反復、作業単位の受入と検出力の分析は [verification](./verification.md) に従って分け、分析の全件完了を作業単位の確定条件にしない。
 公開 interface から観測できる振る舞いを変えた作業単位では、手順17で記録を取り除く前に、探索の記録が charter、触れた範囲、見つけた事象を持ち、見つけた欠陥がテストリストを経て自動の検証へ、仕様の漏れが [design](./design.md) へ移されていることを確かめる([structure/tests/methods](../structure/tests/methods.md) に照合する)。

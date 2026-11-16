@@ -2,7 +2,7 @@
 
 structure は、ターゲットプロジェクト全体と各部の責務、境界、依存方向、配置、および各部固有の設計規律を言語非依存に定める。
 配置は `<standard-root>/README.md` の配置規則に従い、構成を決める判断と特定概念の性質や保証を決める判断を分け、モジュール数で所有先を決めない。
-検証技法の選択と規範から検証への割当は `structure/tests/methods.md` が所有し、structure を folder 配置だけに狭めない。
+検証技法の選択と規範から検証への割当は `structure/tests/methods.md` と、その冒頭の表が対象別に分けた技法の file が所有し、structure を folder 配置だけに狭めない。
 
 ## 依存表の正本
 
@@ -37,6 +37,7 @@ layout の固有規律は、principles/concerns/languages の必須5節(要求�
 - surfaces の直下に、技術カテゴリの箱(gui・hosts 等)を作っていないか。
   対話様式のアクターで境界を引いているか。
 - root をまたぐ具体的な許可依存を skeleton、概念の一般的な性質と保証を concerns が所有しているか(複数の部に効くことだけを理由に構成の正本を concerns へ移さない)。
-- 検証技法と規範から検証への割当の正本を、構成以外の判断だからという理由で `structure/tests/methods.md` から除いていないか。
+- 検証技法と規範から検証への割当の正本を、構成以外の判断だからという理由で `structure/tests/methods.md` とその冒頭の表が対象別に分けた技法の file から除いていないか。
+- どの対象の割当にも使う規律を `structure/tests/methods.md` に置き、特定の対象にだけ使う技法を対象別の file へ分けているか。
 - 新しい面・host・部を足すとき、skeleton の固定7境界・surfaces の6 surface という既存の型に当たらないかを先に確かめたか。
 - layout の書式(フォルダ構成・依存表・topical 見出し)から外れて、principles/concerns/languages の必須5節を持ち込んでいないか。

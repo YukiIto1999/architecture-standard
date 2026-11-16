@@ -91,7 +91,7 @@ terminal の入力 loop と描画の経路では、file、network、子 process 
 配置、切詰め、cursor 位置は文字列の長さでなく terminal の cell 幅から求め、結合文字を途中で切らない。
 日本語、結合文字、emoji、狭い terminal、resize に対する表示と keyboard の操作経路を検証する。
 terminal を所有する描画先へ、非同期の log や診断を割り込ませない。
-契約の検査と terminal 所有の実測は [tests/methods](../../tests/methods.md) に従い、後者を状態モデルの成功だけで代替しない。
+契約の検査と terminal 所有の実測は [tests/methods-surfaces](../../tests/methods-surfaces.md) に従い、後者を状態モデルの成功だけで代替しない。
 
 ## 配布
 

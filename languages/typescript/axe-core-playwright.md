@@ -11,7 +11,7 @@
 ### 要求
 自動判定できる accessibility の違反は、実 browser で描画した状態で機械検査する。
 これを @axe-core/playwright で満たす。
-検査する境界は、[structure/tests/methods](../../structure/tests/methods.md) の「利用者面の検査境界」に従い、違反を壊しうる原因から、component・page の描画の境界か、route と実際の構成を通す e2e かを選ぶ。
+検査する境界は、[structure/tests/methods-surfaces](../../structure/tests/methods-surfaces.md) の「利用者面の検査境界」に従い、違反を壊しうる原因から、component・page の描画の境界か、route と実際の構成を通す e2e かを選ぶ。
 キーボードの到達性は、選んだ境界で Playwright の操作と focus の assertion のシナリオとして確かめる。
 pointer target は、Playwright で表示後の bounding box を CSS px で測定し、Success Criterion 2.5.8 の例外記録と照合する。
 text と non-text の contrast は、Playwright で表示結果の style、font face、user agent の font metadata、font metrics、隣接色を取得し、Success Criterion 1.4.3 と1.4.11の閾値と例外記録に照合する。

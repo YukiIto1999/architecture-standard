@@ -31,7 +31,7 @@ conformance は、業務の語彙で書いた Gherkin の executable spec を、
 適合は、シナリオの合否で判定し、点数化しない。
 contract は、[contracts/canonical](../contracts/canonical.md) の契約定義を駆動元として検証する。
 generated が canonical と binding(http・protocol)から外れていないことを、drift の検査で確かめる。
-生成入口、型・構築・codec、両端の実行と証跡の所有は [methods](./methods.md) の「契約の意味と生成」に従い、drift の一致だけで生成能力の充足とみなさない。
+生成入口、型・構築・codec、両端の実行と証跡の所有は [methods-contracts](./methods-contracts.md) の「契約の意味と生成」に従い、drift の一致だけで生成能力の充足とみなさない。
 arch は、[skeleton](../skeleton.md) と各部の layout、[concerns/dependency](../../concerns/dependency/README.md) が定める依存と境界の禁止を、機械で検証する。
 arch の検査は repository の source と manifest を読むため、hermetic でなければ Medium に置き、実行する段は [process/verification](../../process/verification.md) が定める。
 viewer と extension が特定 host の API や型を参照しないことも、arch で検証する。
@@ -39,9 +39,9 @@ viewer と extension が特定 host の API や型を参照しないことも、
 業務上の独立性は参照の不在だけで判定せず、[principles/separation](../../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」に照らし、操作の判断・状態・確定・進行の所有と公開 application Interface をレビューで照合する。
 e2e は、公開入口から実際の構成を通した結果のうち、他の検査で保証していない性質を検証し、critical path の smoke と visual だけに限定しない。
 同じ計算の組合せを重ねず、他の検査へ移す性質と入力領域について、移管先が対象の不具合を実際に検出する証拠を [methods](./methods.md) の「テストの有効性」に従って確認する。
-利用者面の状態、feedback、progress が表示されるまでの時間と、accessibility、keyboard の自動検査は、[methods](./methods.md) の「利用者面の検査境界」に従って境界を選ぶ。
+利用者面の状態、feedback、progress が表示されるまでの時間と、accessibility、keyboard の自動検査は、[methods-surfaces](./methods-surfaces.md) の「利用者面の検査境界」に従って境界を選ぶ。
 描画した component または page の境界で成り立つ性質の検査は integration に置き、route と実際の構成を通して初めて成り立つ性質の検査を e2e に置く。
-smoke の到達点と visual の受入判定は、[methods](./methods.md) の「利用者面の受入」に従う。
+smoke の到達点と visual の受入判定は、[methods-surfaces](./methods-surfaces.md) の「利用者面の受入」に従う。
 integration は、複数の実装単位または境界を組み合わせて検証する。
 検証の重みは、公開 interface 越しのuse-caseの検証に置き、内側の個別のテストは型と契約の保証で減らす([principles/verification](../../principles/verification/README.md) に従う)。
 performance は、固定した workload と環境で SLO を計測し、変更前後の比較から退行を判定する。

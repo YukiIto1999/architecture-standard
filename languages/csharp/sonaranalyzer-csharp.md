@@ -14,7 +14,7 @@ linter は SonarAnalyzer.CSharp を使い、その警告を検証入口でエラ
 ファイル・関数の大きさとネストの深さのしきい値は SonarAnalyzer.CSharp の S104(ファイル)・S138(関数)・S134(ネスト)の規則として定め、既定値から緩める変更は project の決定の記録に明記する。
 S3267 は、集合の型の内部で判定と集計を一つの foreach にまとめる実装にも LINQ への書き換えを求めるので、.editorconfig で重大度を none にして使わない。
 未使用の要素と未使用の参照は、コンパイラと analyzer の到達可能性の診断を検証入口でエラーとして扱い検出する。
-関数の複雑さは、[structure/tests の methods](../../structure/tests/methods.md) の「構造の検証」に従い、SonarAnalyzer.CSharp の S3776 で測る。
+関数の複雑さは、[structure/tests の methods-structure](../../structure/tests/methods-structure.md) の「構造の検証」に従い、SonarAnalyzer.CSharp の S3776 で測る。
 S3776 は既定で無効なので、.editorconfig で重大度を error にし、しきい値は SonarLint.xml の threshold parameter に置く。
 基線台帳に記録した既存の違反は、その member の `SuppressMessage` で抑止し、Justification に理由を書く。
 
@@ -32,7 +32,7 @@ SonarAnalyzer.CSharp が、linter として使われている。
 S3267 の重大度が、.editorconfig で none になっている。
 未使用の要素と未使用の参照の診断が、検証入口でエラーとして扱われている。
 緩和が、project の決定の記録に明記されている。
-S3776 が .editorconfig で error になり、しきい値が [structure/tests の methods](../../structure/tests/methods.md) の値である。
+S3776 が .editorconfig で error になり、しきい値が [structure/tests の methods-structure](../../structure/tests/methods-structure.md) の値である。
 S3776 の抑止が、基線台帳に記録した member の `SuppressMessage` に限られ、Justification を持っている。
 
 ### 禁止事項

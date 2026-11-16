@@ -10,7 +10,7 @@ Skill 本文と標準本文は独自に記述し、外部 package の本文、re
 
 確認日は 2026-10-06 である。
 取得した方法は採否の材料として扱い、製品や framework の経験的な品質の主張は採用していない。
-CLI 固有の規範は `structure/surfaces/console/layout.md`、設定解決は `concerns/configuration/single-config-source.md`、検査への割当は `structure/tests/methods.md` に置いた。
+CLI 固有の規範は `structure/surfaces/console/layout.md`、設定解決は `concerns/configuration/single-config-source.md`、検査への割当は `structure/tests/methods-surfaces.md` に置いた。
 複数源の解決を一つの設定源の契約に集め、環境変数と secret の既存の禁止を維持した。
 Skill はそれらを project の呼び出しへ落とす手順だけを所有する。
 

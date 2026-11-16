@@ -109,7 +109,7 @@ Option だけでは field の欠落と明示的な null が同じ形になりう
 役割の異なる scalar が型検査で取り違えを拒否し、alias の互換と通常の field の primitive 表現が保たれている。
 local 構築と decode が同じ制約へ照合され、存在状態と契約の全受理値域が保存されている。
 検証を迂回する Default・Deserialize・mutable accessor がなく、移せる storage が不要に clone されていない。
-共通の wire profile と深さ・診断保持の検査が、[structure/tests/methods](../../structure/tests/methods.md) の「契約の意味と生成」へ接続されている。
+共通の wire profile と深さ・診断保持の検査が、[structure/tests/methods-contracts](../../structure/tests/methods-contracts.md) の「契約の意味と生成」へ接続されている。
 
 ### 禁止事項
 生成値の不変条件を derive の既定動作だけで満たしたと扱うこと。

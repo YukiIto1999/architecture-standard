@@ -85,7 +85,7 @@ cell 幅を使う配置と切詰めの実現を既存 ecosystem で確認し、�
 
 契約から必要な呼び出しを選び、argv、stdin、設定、TTY の条件、stdout、stderr、終了 status、前後の業務状態を期待結果に対応させる。
 成功、入力拒否、空結果、出力途中の失敗、競合、非対話の破壊操作、再実行、確定前後の取り消しは、対象に存在する経路を漏らさず含める。
-terminal の取得と復元、一時引き渡し、入力 loop の実結合は `<standard-root>/structure/tests/methods.md` の tests の方法が定める PTY の検査へ割り当てる。
+terminal の取得と復元、一時引き渡し、入力 loop の実結合は `<standard-root>/structure/tests/methods-surfaces.md` の tests の方法が定める PTY の検査へ割り当てる。
 例の件数を固定せず、同じ失敗を複数の例で重ねる前に未観測の契約条件を探す。
 
 実装を依頼された場合は、定めた契約の範囲だけを既存の parser と composition に反映し、consumer、help、利用例、test を一緒に更新する。

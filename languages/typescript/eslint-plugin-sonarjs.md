@@ -8,7 +8,7 @@
 ## 関数の複雑さを lint で止める
 
 ### 要求
-関数の複雑さは、[structure/tests の methods](../../structure/tests/methods.md) の「構造の検証」に従い、`vite.config.ts` の `lint.jsPlugins` に eslint-plugin-sonarjs を読み込み、sonarjs/cognitive-complexity を error にして測る。
+関数の複雑さは、[structure/tests の methods-structure](../../structure/tests/methods-structure.md) の「構造の検証」に従い、`vite.config.ts` の `lint.jsPlugins` に eslint-plugin-sonarjs を読み込み、sonarjs/cognitive-complexity を error にして測る。
 しきい値は、sonarjs/cognitive-complexity の option に置く。
 基線台帳に記録した既存の違反は、その関数の直前に `// oxlint-disable-next-line sonarjs/cognitive-complexity -- 理由` を置いて抑止する。
 `lint.options` の reportUnusedDisableDirectives を error にする。
@@ -20,7 +20,7 @@ JS plugin として読み込めば、型認識の検査と同じ `vp check` の�
 reportUnusedDisableDirectives を error にすれば、違反を直した後に残った抑止が検証入口を止め、抑止が基線台帳とともに減る。
 
 ### 完了条件
-sonarjs/cognitive-complexity が error で、しきい値が [structure/tests の methods](../../structure/tests/methods.md) の値である。
+sonarjs/cognitive-complexity が error で、しきい値が [structure/tests の methods-structure](../../structure/tests/methods-structure.md) の値である。
 `lint.options` の reportUnusedDisableDirectives が、error になっている。
 sonarjs/cognitive-complexity の抑止が、基線台帳に記録した関数の理由付きの oxlint-disable-next-line に限られている。
 

@@ -17,7 +17,7 @@ description: architecture-standard 自体へ規律、採用、構造、手順、
 - `concerns/` — 言語非依存の24概念で守る性質と保証を所有する。
   effect・concurrency・dependency・types・context-propagation・persistence・caching・migration・transaction・messaging・workflow・authentication・authorization・privacy・security・secrets・audit-trail・observability・configuration・resilience・performance・lifecycle・experience・accessibility を扱う。
 - `structure/` — project 全体と各部の責務、境界、依存方向、配置、および各部固有の設計規律を所有する。
-  検証技法の選択、性質から型・静的検査・実行テスト・計測への割当、mutation・coverage・実行範囲は `structure/tests/methods.md` が所有する。
+  検証技法の選択、性質から型・静的検査・実行テスト・計測への割当、mutation・coverage・実行範囲は `structure/tests/methods.md` と、その冒頭の表が対象別に分けた技法の file が所有する。
 - `tools/` — 言語横断の開発道具(build)、自運用基盤(platforms)、外部 Web サービス(services)の採用と共通基準を所有する。
 - `languages/` — rust・csharp・typescript の言語 ecosystem として、6実現軸の規律、全域規律 conventions、その言語 ecosystem の採用物を所有する。
 - `process/` — bootstrap・recovery・design・implementation・refactoring・review・audit・migration・verification・release・drill の順序と確認点を横断的に所有する。
