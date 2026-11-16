@@ -16,6 +16,7 @@
 4. その境界の layout と、変更が触れる [principles](../principles/)・[concerns](../concerns/) を読む。
    source の変更では [principles/legibility](../principles/legibility/README.md)、[principles/naming](../principles/naming/test-names-as-specs.md)、[principles/comment](../principles/comment/README.md) を、テストの変更では [principles/verification](../principles/verification/README.md) と naming の「テスト名は仕様を表す」を、commit の件名では [principles/documentation](../principles/documentation/commit-purpose.md) の「commit の件名に対象と変化を書く」を含める。
    コンテキストの境界は [principles/separation](../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」、契約生成と application への接続は [structure/contracts](../structure/contracts/layout.md) と [structure/tests/methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」に照合する。
+   認証または認可の判断、credential、policy、保護する入口を変える変更では、[concerns/authentication](../concerns/authentication/README.md) と [concerns/authorization](../concerns/authorization/README.md) に [concerns/security](../concerns/security/README.md) を照合の軸として加え、信頼境界ごとの abuse case、保護の迂回、許可と拒否の対応を照合する。
 5. 対象言語の該当する実現軸と conventions([languages](../languages/))で、使う機構と全域規律を確かめる。
 6. 変更で使う道具を、[tools](../tools/) と [languages](../languages/) の採用と判断基準に照合する。
 7. 逸脱の決定の記録を、root の [README](../README.md) が要求する採用理由、撤回条件、単一採用、置き換える標準規律のファイル、逸脱の前提となる技術的制約の実証に照合する。
@@ -38,6 +39,7 @@ source の変更では、[principles/legibility](../principles/legibility/README
 判断の意味の保存と文書の寿命を、[principles/documentation](../principles/documentation/decision-records.md) の「設計判断の理由を決定の記録に残す」と [separate-document-types](../principles/documentation/separate-document-types.md) の「文書の種別を分け、読み手を定める」に照合する。
 コンテキストの独立性は、参照や循環の不在だけでなく、公開操作の成功・拒否・完了を決める判断と状態の所有から照合し、境界の不備を調整機構へ移していないことを確かめる。
 契約生成の証跡は、生成器から独立した oracle、実際に実行した提供側と利用側の binding、必要な能力と観測済みの範囲の対応を照合し、生成 source の見かけや drift の一致だけで適合としていないことを確かめる。
+認証・認可を変える変更で、security の軸の照合と、[structure/tests/methods](../structure/tests/methods.md) の「規範から検証への対応」が認証と認可に定める必須の検証の割当を確かめたことを確かめる。
 変更を書いた実行者の自己照合は、レビューの照合を代替しない。
 機械で検証できる指摘は、人手の指摘で終えず、検証の追加として返す([principles/verification](../principles/verification/machine-enforced-constraints.md) の「重要な制約を機械検証に固定する」に従う)。
 標準本文の矛盾と改訂提案の扱いは、[audit](./audit.md) の確認点に従う。
