@@ -124,7 +124,7 @@ mechanism: <mechanism>
 言語の機構を補う compile 時の検査・生成機構は、libs の機構として置く。
 compile 時のツールは、ビルド時にだけ参照され、実行時の依存に現れない。
 言語ごとの検査と生成の機構、およびその構築と参照の仕方は [languages](../../languages/) が定める。
-公開契約固有の生成 package、設定、template、script の置き場と生成入口は、[contracts](../contracts/layout.md) の「生成の toolchain」に従う。
+公開契約の共有の生成器も libs の機構として取り込むが、compile 単位に接続せず生成 task から実行し、project 固有の生成入力の置き場と生成入口は、[contracts](../contracts/layout.md) の「生成の toolchain」に従う。
 
 ## 消費側への取り込みと検査の実行機
 
@@ -166,7 +166,7 @@ docs・work の扱いは [principles/documentation](../../principles/documentati
 ## 独立した repository からの取り込み
 
 独立した repository で機構を管理し、target に共有する場合に、この取り込みの規律を適用する。
-その repository の名は、機構名に言語の接尾辞を付ける。
+その repository の名は、一つの言語 ecosystem で使う機構では機構名に言語の接尾辞を付け、公開契約の共有の生成器のように複数の言語へ出力する機構では機構名とする。
 target は、取り込む機構の origin、exact commit、`libs/<mechanism>` の path を追跡対象にする。
 取得の機構は [tools/build/vendoring](../../tools/build/vendoring.md) が、初期化と確認の順序は [process/bootstrap](../../process/bootstrap.md) が定める。
 機構の repository では、コード、test、消費側文書、arch test の入力となるルートの `spec.md` を Git で管理し、clone に含める。

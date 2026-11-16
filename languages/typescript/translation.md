@@ -45,7 +45,7 @@ TypeScript emitter に非公開 brand、検証付き構築、codec、存在状�
 ## 公開契約の境界を生成 codec に通す
 
 ### 要求
-HTTP・IPC・postMessage の公開契約の入力は unknown で受け、共通 toolchain が IR から生成する codec に通す。
+HTTP・IPC・postMessage の公開契約の入力は unknown で受け、共有の生成器が IR から生成する codec に通す。
 公開契約の field・variant・制約を Valibot 等の consumer 固有の schema に書き写さない。
 codec は既知項目と判別子を検証し、全 variant と入れ子・配列内 object の未知キーを受容して、位置とキーを受理値とは別の診断で返す。
 通信を所有する host の adapter は診断の位置とキーを警告として記録し、捕捉値を業務入力・再送値・ログへ流さない。

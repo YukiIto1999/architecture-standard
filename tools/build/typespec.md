@@ -1,13 +1,15 @@
 # TypeSpec
 
 用途は、公開契約の意味を記述し、各言語の型・構築・codec・操作と通信接続を build 時に生成する道具である。
-採用は、TypeSpec である。
-契約 profile と生成処理の source は [structure/contracts](../../structure/contracts/layout.md) が定める toolchain に置き、repository の revision と依存 lock で compiler・profile・emitter・設定の組を固定する。
+採用は、TypeSpec の compiler と、その compiler の emitter である contract-generator の組であり、入手は contract-generator の repository の release タグが指す exact commit を、出所の origin とともに [vendoring](./vendoring.md) で `libs/contract-generator` へ取り込んで版を固定する。
+契約 profile、内部モデル、各言語の emitter は contract-generator が所有し、利用する repository はそれらを置かず、[structure/contracts](../../structure/contracts/layout.md) が定める toolchain に project 固有の生成入力だけを置く。
 OpenAPI と JSON Schema は同じ契約からの投影として `@typespec/openapi3` と `@typespec/json-schema` で出力し、実行用の型や codec の必須入力にはしない。
 判断基準は、compiler が解決した operation・scalar・union・field・注釈と宣言位置を、投影による情報の欠落より前に読み取り、[structure/contracts/generated](../../structure/contracts/generated.md) が定める生成能力へ一度だけ解釈できることである。
 TypeSpec の [emitter の入口と意味走査](https://typespec.io/docs/extending-typespec/emitters-basics/#emitting-typespec-types-to-assets-on-disk)と [Program の意味 graph・診断・emitter 接続](https://github.com/microsoft/typespec/blob/34435f46bf441cd10047c6f604cf977c4b041e16/packages/compiler/src/core/program.ts)を使い、parser と名前解決を作り直さず、追加する意味と各言語への保存を profile と emitter が所有する。
+contract-generator は標準を運用する側が上流を保守する機構であり、TypeSpec の既定の emitter と投影 schema からの生成器では、別の役割の型の identity、存在状態、全生成先で安全な pattern の共通部分集合、提供側と利用側の両端を、一つの解釈済みの意味から C#・Rust・TypeScript へ生成できないことが、この機構を採る理由である。
+生成器の能力と下の規律の充足は、[structure/tests/methods](../../structure/tests/methods.md) の「規範から検証への対応」に従って contract-generator の検証入口が版ごとに確かめ、利用する project は生成と drift、adapter の写像、実際の binding と業務の受入を確かめる。
 この採用は生成経路の指定であり、TypeSpec の既定 emitter や代表契約の試行が実行時の全保証を満たすという判定ではない。
-撤回条件は、判断基準を満たさなくなることであり、compiler API の変更、意味の保存または決定的生成の不成立、profile または emitter の保守停止、同じ保証を満たす生成機構の成立を再評価のトリガーとする。
+撤回条件は、判断基準を満たさなくなることであり、compiler API の変更、意味の保存または決定的生成の不成立、contract-generator の保守の停止、同じ保証を満たす生成機構の出現を再評価のトリガーとする。
 
 ## 契約の意味を一度解釈して直接生成する
 
@@ -42,7 +44,7 @@ profile が役割・alias・値域・保存表現・存在状態・variant・ope
 ### 行動
 profile の意味と構成子、各出力先への写像、投影で失う情報を対応付ける。
 compiler 更新時は意味抽出と位置付き診断を照合し、必要な契約を全出力先で生成できることを確かめる。
-不足は profile・IR・emitter の該当する所有者で直し、生成後の手修正や同義 DTO で補わない。
+不足は contract-generator の repository の profile・IR・emitter で直し、利用する repository の生成後の手修正、同義 DTO、独自の emitter で補わない。
 
 ## 生成を再現できる build 入力に閉じる
 
@@ -65,5 +67,5 @@ compiler 更新時は意味抽出と位置付き診断を照合し、必要な�
 生成器の都合で製品の言語版または通信 runtime の依存を増やすこと。
 
 ### 行動
-独立した生成入口で全出力を作り、決定的生成・drift・依存分離の検査を検証入口へ接続する。
+独立した生成入口で全出力を作り、決定的生成の検査は contract-generator の検証入口に、利用する project の drift と依存分離の検査はその project の検証入口へ接続する。
 言語別の型・所有権・効果への接続は各 ecosystem の translation と inspection に従う。

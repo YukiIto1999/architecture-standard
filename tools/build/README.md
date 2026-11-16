@@ -8,7 +8,7 @@ build は、task の編成、共有ライブラリの取得、契約と release 
 |---|---|---|
 | task orchestrator | Nx | [nx.md](./nx.md) |
 | 共有ライブラリの取得 | Vendoring | [vendoring.md](./vendoring.md) |
-| 契約の記述と生成 | TypeSpec compiler・契約 profile・IR からの直接 emitter | [typespec.md](./typespec.md) |
+| 契約の記述と生成 | TypeSpec compiler と contract-generator | [typespec.md](./typespec.md) |
 | SBOM の生成 | Syft | [syft.md](./syft.md) |
 | 成果物の署名と provenance | Cosign | [cosign.md](./cosign.md) |
 | 契約駆動の fuzz | Schemathesis | [schemathesis.md](./schemathesis.md) |

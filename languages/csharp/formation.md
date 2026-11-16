@@ -266,6 +266,7 @@ solution の隣の `Directory.Solution.targets` から、機構が配る solutio
 solution の targets は、solution の project と、そこから `ProjectReference` で推移的に build される project のうち、`ImportDirectoryBuildProps` を `false` にした project や、親を import しない入れ子の `Directory.Build.props` の下の project のように analysis の props が届かない project を、参照元とともに挙げて solution の build を error にする。
 機構の props や targets が別の機構の props や targets を取り込む場合は、取り込まれる側を重ねて import しない。
 検証入口は solution を build する。
+共有の生成器が出力する C# project も消費側の project であり、analyzer の参照と機構の props の import を自身に持たず、`Directory.Build.props` の import で analyzer を受け取る。
 
 ### 根拠
 compile 時のツールが実行時の層に属さず出荷物にも含まれない理由は [structure/libs/layout](../../structure/libs/layout.md) に従う。

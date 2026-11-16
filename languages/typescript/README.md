@@ -63,7 +63,7 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 | 非同期の runtime | 言語・実行環境に組み込みの非同期基盤を使い、外部の runtime を別に選ばない | [coordination](./coordination.md) |
 | 取り消しの伝達 | 組み込みの機構(AbortController)で表し、外部ライブラリを採らない | [coordination](./coordination.md) |
 | エラー型の定義 | 判別子つきの union という言語機構で表し、外部ライブラリを採らない | [formation](./formation.md) |
-| 直列化 | 公開契約は共通 toolchain が生成する codec で満たし、公開契約外は境界が所有する schema と標準の JSON 機構を使う | [translation](./translation.md) |
-| 公開契約の型・操作の生成 | 共通 toolchain の TypeScript emitter を使い、純粋な型・構築・codec の公開入口と通信処理を分離する | [translation](./translation.md) |
+| 直列化 | 公開契約は共有の生成器が生成する codec で満たし、公開契約外は境界が所有する schema と標準の JSON 機構を使う | [translation](./translation.md) |
+| 公開契約の型・操作の生成 | 取り込んだ contract-generator の TypeScript emitter を使い、純粋な型・構築・codec の公開入口と通信処理を分離する | [translation](./translation.md) |
 | schema migration | server 側の永続化の役割を持たないため採用を持たない | — |
 | API の禁止 | import を介さない参照を oxlint の no-restricted-properties・no-restricted-globals で満たし、専用の道具を置かない | [inspection](./inspection.md) |

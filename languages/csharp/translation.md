@@ -13,7 +13,7 @@ System.Text.Json の serializer と接続する場合は source generation と�
 JSON の字句解析は System.Text.Json の reader 等の BCL 機構を再利用し、grammar を独自実装しない。
 生成 converter は明示的な走査状態と非公開の完成処理を用い、serializer の再帰や既定の深さ制限で契約値を狭めない。
 wire の受入条件は [structure/contracts/layout](../../structure/contracts/layout.md) の「JSON の相互運用 profile」に従い、BCL の既定挙動だけで充足したとは扱わない。
-生成型のプロパティ、外部名、必須性、不在、値の制約は共通 toolchain の IR から導き、同じ意味の record を手書きで定義しない。
+生成型のプロパティ、外部名、必須性、不在、値の制約は共有の生成器の IR から導き、同じ意味の record を手書きで定義しない。
 生成 DTO とコンテキストの application 入出力との写像は [structure/contracts/adapters](../../structure/contracts/adapters.md) に置き、コンテキストの入力構築から値オブジェクトの factory へ検証を集め、失敗は Result で表す。
 検証を通った値だけを業務処理へ渡し、内側で同じ性質を再検証しない。
 未知の追加フィールドは弾かず、生成 codec が受理値とは別の診断に位置とキーを記録し、境界でログに出す。
@@ -70,7 +70,7 @@ contracts/adapters の写像からコンテキストの入力構築と値オブ�
 ### 行動
 BCL の字句解析へ生成 codec を接続し、捕捉と既知項目の検証も IR から生成する。serializer 統合には source generation と同じ codec へ接続する converter を使う。
 全 variant と入れ子の object の未知キーを捕捉し、境界で位置とキーを警告としてログに出し、値はログに載せない。
-生成能力の不足は共通 toolchain の profile・IR・C# emitter で直し、同義 DTO で回避しない。
+生成能力の不足は共有の生成器の repository の profile・IR・C# emitter で直し、同義 DTO で回避しない。
 contracts/adapters の Mapper は、生成 DTO の field を core が公開する application 入力構築へ渡し、ドメイン型を直接参照しない。
 必須項目の欠落、契約が許さない null、既知項目の不正、判別子の不一致の入力と、未知の追加フィールドだけを加えた入力を、endpoint と内部の durable queue の実際の受信経路へ別々に渡し、前者の拒否と業務処理の非開始、後者の受容を観測する。
 不足を項目ごとに、真の業務上の不明か、旧版や送り手の都合かに分け、後者は任意化や既定値でなく、互換を宣言した境界の変換か拒否で扱う。

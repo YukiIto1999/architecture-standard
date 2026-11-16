@@ -60,7 +60,7 @@ rust の言語としての採用と、実現規律、採用物を置く。
 | 用途 | 満たし方 | 置き場 |
 |---|---|---|
 | 副作用と想定内失敗の表現 | 言語機構(Future・Result・環境への trait bound)で表し、型が表さない原始効果は clippy と syn の検査で補い、外部ライブラリを採らない | [connection](./connection.md) |
-| 公開契約の型・操作の生成 | 共通 toolchain の Rust emitter を使い、型・codec の crate と通信処理を分離する | [translation](./translation.md) |
+| 公開契約の型・操作の生成 | 取り込んだ contract-generator の Rust emitter を使い、型・codec の crate と通信処理を分離する | [translation](./translation.md) |
 | API の禁止 | clippy の disallowed_methods で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | crate 依存の phase の区別 | `cargo metadata` の `dep_kinds` が返す normal・dev・build で満たし、専用の道具を置かない | [inspection](./inspection.md) |
 | 未使用コードの検出 | コンパイラと lint の到達可能性に基づく検出で満たし、専用の道具を置かない | [inspection](./inspection.md) |

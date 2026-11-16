@@ -16,8 +16,8 @@ canonical と binding の意味を一度解釈した内部モデルから各言�
 
 generated を、手で編集しない。
 generated を、正本にしない。
-profile、生成器設定、emitter の置き場と再現可能な生成入口は [layout](./layout.md) の「生成の toolchain」に従う。
-公開型・構築・codec・操作対応に不足がある場合は、[canonical](./canonical.md) と binding と生成器の該当する入力を直し、利用側の手書き同義 DTO や生成後の手修正で補わない。
+共有の生成器の所有と取り込み、project 固有の生成入力の置き場、再現可能な生成入口は [layout](./layout.md) の「生成の toolchain」に従う。
+公開型・構築・codec・操作対応に不足がある場合は、[canonical](./canonical.md) と binding と生成器の repository の該当する入力を直し、利用側の手書き同義 DTO や生成後の手修正で補わない。
 
 ## 生成能力
 
