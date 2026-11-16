@@ -79,7 +79,7 @@ process は順序と確認点だけを所有し、性質の規範を再定義し
 ## 運用 Skill
 
 運用 Skill の正本は、このリポジトリの `skills/<id>/` に置き、client の設定 directory では所有しません。
-対象 project への適用は [standard-apply](./skills/standard-apply/SKILL.md)、適合性の全域監査は [standard-conformance](./skills/standard-conformance/SKILL.md)、標準への改訂提案の報告は [standard-feedback](./skills/standard-feedback/SKILL.md) を使います。
+対象 project への適用は [standard-apply](./skills/standard-apply/SKILL.md)、適合性の全域監査と標準の改訂の後の照合は [standard-conformance](./skills/standard-conformance/SKILL.md)、標準への改訂提案の報告は [standard-feedback](./skills/standard-feedback/SKILL.md) を使います。
 標準自体の変更は [standard-update](./skills/standard-update/SKILL.md)、読み取り専用監査は [standard-audit](./skills/standard-audit/SKILL.md) を入口にします。
 CLI の人と script の呼び出しの設計は [cli-design](./skills/cli-design/SKILL.md)、契約から生成器と oracle、操作列、反例の分類へ落とす検査は [property-testing](./skills/property-testing/SKILL.md) を使います。
 
@@ -247,8 +247,11 @@ revision の一致を、現行規範への適合や対象 source の現在の妥
 標準本文だけが更新され、配備済みの package がその本文を扱えない場合は、配送の不足として停止し、旧い本文で合格にしません。
 
 設計、実装、レビュー、監査は、いずれも現在の標準本文を基準として照合します。
+標準本文を読む機械検査も、現在の標準本文を読みます。
 過去の版を基準にすると、すでに改訂された規律への適合を合格と判定し、現行の規律への違反を見落とします。
-標準の改訂によって既存の実装が違反になった場合は、[process/migration.md](./process/migration.md) に従って現行の標準へ寄せます。
+一方で、受入の合否は変更が持ち込んだ違反で決め、比較元の source に既にあった違反で変更を止めません。
+この判定は [process/verification.md](./process/verification.md) の確認点に従います。
+標準の改訂によって既存の実装が違反になった場合は、[process/migration.md](./process/migration.md) に従って基線台帳へ記録し、現行の標準へ寄せます。
 
 ### 運用と検査の役割
 

@@ -9,7 +9,13 @@
 1. 現行の意味、state の authority、実行経路が確立していなければ [recovery](./recovery.md) を実行し、目標の形が確立していなければ [design](./design.md) を実行する。
    その後、現行と目標の差分を出す(標準との差分は [audit](./audit.md) の順序で出す)。
 2. 既存の違反を一度に解消できない場合は、[audit](./audit.md) が定める基線台帳へ全件記録し、各行に所有者・解消条件・検出する root check を割り当てる。
-   新しい違反は基線台帳に加えない。
+   変更が持ち込んだ違反([verification](./verification.md) の確認点が定める)は、基線台帳に加えない。
+   標準の改訂で既存の source が違反になった場合は、その違反を変更が持ち込んだ違反と区別し、原因が標準の改訂であることを添えて基線台帳へ記録する。
+   受入の検査が比較元の source にもある違反として報告した、標準の改訂を原因としない台帳の漏れも、原因が台帳の漏れであることを添えて同じ形で記録する。
+   この記録は、標準の改訂の後にその project で始める最初の作業単位が、自身の変更より前に、別の commit で行う。
+   その作業単位は、基線台帳が記録する照合済みの標準本文の revision から現在の revision までに変わった規律を [audit](./audit.md) の順序で照合し、記録の後に照合済みの revision を現在の revision へ更新する。
+   照合済みの revision がない基線台帳は、この照合済みの revision の規則を導入した標準本文の revision(`process/migration.md` にこの文を加えた commit)を照合済みとして記録し、その revision からの差分を照合する。
+   その revision より前から基線台帳に漏れていた既存の違反は、全ての規律の照合で前もって探さず、受入が [verification](./verification.md) の確認点に従って比較元の source にもある違反として報告した時点で、原因を台帳の漏れとして記録する。
 3. 変える前に安全網を張る([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」に従い、回帰テスト・本番の観測・新旧の整合検査を備える)。
 4. 変更を小さく可逆な段に分け、各段に達成条件・撤退条件・不可逆点を定める([principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」に従う)。
    保存済みの事実を含む場合は、[concerns/persistence](../concerns/persistence/fact-preserving-migrations.md) の「保存済みの事実を意味と値を保って移行する」に従い、書き換える移行と旧い版の行を残す読み出し変換のどちらで意味と値を保つかを選び、保持する版の解釈と移行対象の旧い経路を分ける。
@@ -31,7 +37,8 @@
 ## 確認点
 
 各段の達成条件・撤退条件・不可逆点の定めと安全網の具備は、[principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」の完了条件に照合する。
-基線台帳に、準拠との差分の欠落、新規違反、所有者・解消条件・root check の欠落がないことを確かめる。
+基線台帳に、準拠との差分の欠落、変更が持ち込んだ違反、所有者・解消条件・root check の欠落がないことを確かめる。
+標準の改訂で生じた違反が、原因を添えて、改訂の後の最初の作業単位の自身の変更より前の commit で記録され、照合済みの標準本文の revision が更新されていることを確かめる。
 安全網の検出力は、守る性質を破る変更を検証対象へ加え、その違反で判定が失敗する証拠で確かめる([principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」に照合する)。
 この確認は、[principles/verification](../principles/verification/test-reliability.md) の「テストの信頼性を保つ」が要求する検証対象の保証の違反と判定結果に照合し、runner だけの赤と区別して、条件が同じ既存の検出の証跡を再利用する。
 同じ datastore の移行は、[concerns/transaction](../concerns/transaction/README.md) の一つの確定点と、[concerns/migration](../concerns/migration/schema-change-cutover.md) の「新旧の併存に応じてスキーマを切り替える」の完了条件に照合し、停止切替か併存かの選択の根拠を決定の記録に照合する。

@@ -1,6 +1,6 @@
 ---
 name: standard-conformance
-description: architecture-standard に対する対象プロジェクトの適合性を読み取り専用で監査し、設定 drift と規律違反を baseline 差分管理可能な JSON 形式で報告する。「標準に適合しているか検査」「設定 drift を確認」「conformance baseline と比較」「適合性を JSON で報告」と指定された作業では、調査や編集に着手する前に、この skill を必ず使う。修正、コードの書き換え、標準本文の編集は行わない。対象 project への設計と実装は standard-apply、標準本文の改訂は standard-update、標準側の不備の還流は standard-feedback を使う。
+description: architecture-standard に対する対象プロジェクトの適合性を読み取り専用で監査し、設定 drift と規律違反を baseline 差分管理可能な JSON 形式で報告する。「標準に適合しているか検査」「設定 drift を確認」「conformance baseline と比較」「適合性を JSON で報告」と指定された作業と、標準の改訂の後に改訂で生じた違反を基線台帳へ移すための照合では、調査や編集に着手する前に、この skill を必ず使う。commit の前や push の前の受入の検査には使わない。修正、コードや基線台帳の書き換え、標準本文の編集は行わない。対象 project への設計と実装は standard-apply、標準本文の改訂は standard-update、標準側の不備の還流は standard-feedback を使う。
 ---
 
 # standard-conformance
@@ -9,6 +9,9 @@ description: architecture-standard に対する対象プロジェクトの適合
 適用する規律を一つずつ、対象 project の実際の source、設定、実行結果と照合し、違反、非適用、未確認を分けて報告する。
 コードや基線台帳は編集せず、監査結果と基線台帳との差分を報告する。
 違反が見つからないことと、全域の調査が完了したことを分ける。
+受入の合否は `<standard-root>/process/verification.md` の確認点が変更の持ち込んだ違反で決めるので、この監査を受入の検査の代わりに使わない。
+監査の範囲は、全ての規律を照合する全域監査と、標準の改訂で変わった規律だけを照合する改訂後の照合のどちらかにする。
+全域監査は明示された監査の依頼で使い、作業単位の変更の前に行う照合には使わない。
 
 ## 前提
 
@@ -41,6 +44,18 @@ principles と concerns は概念 README の規律台帳、languages は `langua
 未知の構造を「割当なし」へ読み替えて合格させない。
 監査の途中で正本、対象 source、基線台帳が変わったら、影響する規律を読み直し、以前の観測を新しい評価として扱わない。
 
+### 改訂後の照合
+
+改訂後の照合は、`<standard-root>/process/migration.md` の順序の2が定める、標準の改訂の後に project で始める最初の作業単位から使う。
+範囲の起点は、基線台帳が記録する照合済みの標準本文の revision とし、終点は `<standard-root>` の現在の revision とする。
+起点の revision が記録されていなければ、`<standard-root>/process/migration.md` の順序の2に従い、照合済みの revision の規則を導入した revision を起点にする。
+起点の revision を `<standard-root>` の Git 履歴で解決できなければ、全域監査へ切り替えず、不足する前提として報告する。
+起点から終点までに変わった規範文書を Git の差分から列挙し、変わった文書の全ての規律を、全域監査と同じ単位で照合する。
+変わった文書が規律を参照して適用条件や検証の割当を変えている場合は、参照先の規律も照合する。
+範囲の外の規律は照合済みにも非適用にもせず、報告に範囲を残す。
+改訂後の照合の報告は全域の適合を主張せず、範囲内で基線台帳に一致しない違反を、標準の改訂で生じた違反の候補として返す。
+基線台帳への記録と照合済みの revision の更新は、この Skill でなく、その作業単位が project の変更として行う。
+
 ### 照合
 
 1. `<standard-root>/README.md` と `<standard-root>/process/audit.md` を読み、現在の判定の枠と監査順序を使う。
@@ -69,6 +84,8 @@ principles と concerns は概念 README の規律台帳、languages は `langua
 監査報告は `violations`、`baseline`、`inspection` を持つ JSON とする。
 次は形式の例であり、path、出典、検査結果は実際の観測値に置き換える。
 `inspection.entries` は例の規律だけで終えず、列挙した全規律について一件ずつ記録する。
+改訂後の照合では、`inspection` に `scope` を加え、`kind: "revision-diff"`、起点の `from`、終点の `to`、照合した文書の path の一覧を記録する。
+全域監査の `scope` は `kind: "full"` とする。
 
 ```json
 {
@@ -89,6 +106,9 @@ principles と concerns は概念 README の規律台帳、languages は `langua
     "resolvedCount": 0
   },
   "inspection": {
+    "scope": {
+      "kind": "full"
+    },
     "entries": [
       {
         "rule": "<標準ファイルの相対パス>#<該当見出し>",
@@ -160,19 +180,21 @@ root check が別の file を読む場合は、その不一致を `<standard-roo
 - `newCount` は、台帳に一致しない報告の違反の数である。
 - `baselineCount` は、台帳の項目と一致した報告の違反の数である。
 - `resolvedCount` は、現在の報告に一致しない台帳の項目の数である。
+  改訂後の照合では、範囲内の規律を指す項目だけを数え、範囲の外の項目を解消済みにしない。
 
 `baseline.status` は、検証設定が台帳を定めていないか定めた file がなければ `baseline-not-found`、照合できない台帳か項目が残れば新規違反の有無にかかわらず `baseline-unresolved`、全項目を照合でき新規違反があれば `new-violations-found`、なければ `matched` とする。
 削除や移動された規律の旧項目も比較元とし、現在の報告に一致しない項目は `resolvedCount` に含める。
 現在の報告の違反は現在の標準本文の規律を指し、旧項目を現在の規範の代わりにしたり、path を読み替えて一致した既存違反にしたりしない。
 報告の `baseline.status` や `newCount: 0` で実ファイルとの比較を代替しない。
 基線台帳がなければ `baseline-not-found` とし、観測した違反をすべて新規として扱う。
-新規違反を追記して基線を肥大化させず、解消後の削除は project 側の変更として `<standard-root>/process/audit.md` に従う。
+変更が持ち込んだ違反を追記して基線を肥大化させず、解消後の削除は project 側の変更として `<standard-root>/process/audit.md` に従う。
+改訂後の照合で返した標準の改訂で生じた違反の候補は、その作業単位が `<standard-root>/process/migration.md` の順序の2に従って記録する。
 
 ## 完了の判定
 
 報告を返す前に、次を実際に確かめる。
 
-- 列挙した全文書と全規律に `inspection.entries` の項目がある。
+- 列挙した全文書と全規律に `inspection.entries` の項目がある。改訂後の照合では、範囲内の全文書と全規律に項目がある。
 - `checked` の各項目が、割り当てられた検査の種類ごとに実照合の結果と `evidence` を持つ。
 - `not-applicable` と `unresolved` の各項目が、`evidence` と非空の `reason` を持つ。
 - `failed` の検査ごとに、同じ `rule` を指す `violations[]` の項目がある。
@@ -189,6 +211,7 @@ root check が別の file を読む場合は、その不一致を `<standard-roo
 | 違反なし | 全規律の照合を終え、違反がない |
 
 未完了は他の結論より優先し、観測した新規違反と既存違反は別に報告する。
+改訂後の照合の結論は、表の「全規律」を範囲内の規律と読み、範囲の外の適合を主張しない。
 未完了の報告は、未確認の規律と不足する根拠を示し、全域の適合も未確認の規律の適合も主張しない。
 実行しなかった検査、読めなかった資料、利用できなかった検証入口は、通過したものとして扱わない。
 

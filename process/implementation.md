@@ -10,6 +10,7 @@
 
 1. 一つの目的と取り消し理由を持つ作業単位の名前と範囲を宣言する([principles/evolution](../principles/evolution/improve-touched-scope.md) の「触れた範囲を構造改善する」と [principles/documentation](../principles/documentation/commit-purpose.md) の「commit の件名に対象と変化を書く」に従う)。
    [design](./design.md) で定めた全体要件との対応から、その単位が満たす受入条件と未達の範囲を確認する。
+   基線台帳の照合済みの標準本文の revision がないか現在の revision と異なる場合は、作業単位の変更より前に、[migration](./migration.md) の順序の2に従って起点を定め、標準の改訂で生じた違反を基線台帳へ記録する。
 2. 変更がどのアクターのどのuse-caseに属するかを答え、答えられなければ [design](./design.md) へ戻る([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
 3. 着手時点で分かっている、検証すべき振る舞いを、テストリストに列挙する。
    各項目に仕様上の根拠、入力、期待結果、観測する公開境界と既存の検査を対応付け、新しい検査が区別する誤実装を定める。
