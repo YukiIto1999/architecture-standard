@@ -41,7 +41,8 @@ source の変更では、[principles/legibility](../principles/legibility/README
 契約生成の証跡は、生成器から独立した oracle、実際に実行した提供側と利用側の binding、必要な能力と観測済みの範囲の対応を照合し、生成 source の見かけや drift の一致だけで適合としていないことを確かめる。
 認証・認可を変える変更で、security の軸の照合と、[structure/tests/methods](../structure/tests/methods.md) の「規範から検証への対応」が認証と認可に定める必須の検証の割当を確かめたことを確かめる。
 変更を書いた実行者の自己照合は、レビューの照合を代替しない。
-機械で検証できる指摘は、人手の指摘で終えず、検証の追加として返す([principles/verification](../principles/verification/machine-enforced-constraints.md) の「重要な制約を機械検証に固定する」に従う)。
+機械で検証できる指摘は、人手の指摘で終えず、判定できる最も内側の手段による検証の追加として返す([principles/verification](../principles/verification/machine-enforced-constraints.md) の「重要な制約を機械検証に固定する」に従う)。
+変更が加えた実行テストの検査に、型と静的検査で判定できない理由が残っていることを確かめる。
 標準本文の矛盾と改訂提案の扱いは、[audit](./audit.md) の確認点に従う。
 現在の要求に対応しない将来用の抽象・設定・依存を、改善案として要求していないことを確かめる。
 
