@@ -20,6 +20,7 @@
    契約生成の変更は、compiler の意味情報、profile、生成器、生成先と binding の関係を [methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」へ対応付ける。
 3. 検査ごとの既存証跡を照合し、必要な保証が有効な証跡で覆われない範囲だけを実行計画へ入れる。
    生成器共通の能力と製品固有の契約・adapter・binding は、[methods-contracts](../structure/tests/methods-contracts.md) の「証跡の所有と再利用」に従って所有者と有効な証跡を照合する。
+   T1・T2 は、実行と省略の選択を [methods](../structure/tests/methods.md) の「変更と影響範囲」の選択の記録として保存する。
 4. 一走行の起動・build、cache、検査本体、資源待ち、結果確定と、変更全体の待ち時間を [concerns/performance](../concerns/performance/measure-before-compare.md) の「計測を定めてから比べる」に従って測る。
    累積実行時間は実行区間の和集合で記録し、中断や再試行を含め、並行区間を二重計上しない。
 5. フィードバック時間の目標と一走行の資源保護の上限を、範囲と環境の実測から現在の検証設定と [決定の記録](../principles/documentation/decision-records.md) へ残す。
@@ -37,7 +38,7 @@
     project は実行の契機、資源割当、結果を扱う担当とレビューまたは改善作業への取込先を現在の設定に定める。
     mutation は [methods](../structure/tests/methods.md) の「変更と影響範囲」から選択し、全量分析も必要な問いがある場合に選ぶ。
     全量回帰は、分析と上限、取消、終了 status を共有しない別の走行にし、分析の実行時間や未完了で全量回帰の完了を遅らせない。
-    全量回帰の失敗は、[methods](../structure/tests/methods.md) の「変更と影響範囲」に従って、その source に含まれる変更を検証した T1・T2 の選択が省いた検査かを照合する。
+    全量回帰の失敗は、[methods](../structure/tests/methods.md) の「変更と影響範囲」に従って、その source に含まれる変更を検証した T1・T2 の選択の記録と照合し、非影響による見逃し、cache の失効の不備、照合不能に分けて集計する。
 11. 分析結果は対象 source と現在の変更への適用を照合し、[methods](../structure/tests/methods.md) の「テストの有効性」に従って分類する。
     判明した製品の欠陥や具体的な受入検査の不足は通常の修正へ返し、該当する回帰検査と影響範囲で確認する。
     修正の完了を、無関係な分析の再完了に依存させない。
@@ -56,7 +57,7 @@ mutation の実行中、未実施、未分類、未検出や score だけで、c
 製品検証が長時間の待機を要する構成では、保証の割当、対象選択、証拠の再利用、起動と build、資源競合を見直して短い経路を成立させる。
 時間短縮だけを理由に、必要な入力領域を削ったり、実依存の観測を fake へ置き換えたりしない。
 非同期分析は資源を独占して製品検証を妨げず、終了待ちを hook や CI の必須チェックへ再導入しない。
-T3 の全量回帰が分析と別の走行で完走し、その失敗が、その source に含まれる変更を検証した T1・T2 の対象選択と照合されている。
+T1・T2 が選択の記録を保存し、T3 の全量回帰が分析と別の走行で完走し、その失敗が、その source に含まれる変更を検証した T1・T2 の選択の記録と照合され、非影響による見逃しと cache の失効の不備が分けて集計されている。
 利用者面の scenario と実際の結果、未確認条件は [methods-surfaces](../structure/tests/methods-surfaces.md) の「利用者面の受入」に従う。
 変更単位の受入証拠を全体要件へ戻し、その単位の成立と依頼全体の完了を区別する。
 契約生成は、[methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」に照らし、必要な生成先と binding の受入条件を、試行で観測した部分、未実装、未実行と区別する。
