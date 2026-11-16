@@ -8,7 +8,7 @@
 |---|---|---|---|
 | T0 | 編集中の局所フィードバック | なし | 変更に関係する型・analyzer・lint・formatter・構造と、選んだ公開振る舞いの検査 |
 | T1 | 作業単位を終える前と commit の前 | `verify` | 影響範囲の静的検査、root の arch、Small test、契約の迅速な確認 |
-| T2 | push の前 | `verify-push` | 変更に必要な実結合と利用者面の受入の迅速な確認。有効な証跡を照合し、不足する検査を実行 |
+| T2 | push の前 | `verify-push` | 変更に必要な実結合と利用者面の受入の迅速な確認。T1 の task は同じ内容 cache から再利用し、不足する検査を実行 |
 | T3 | push の後、本流への取り込みの後、定期のうち、project が T3a と T3b のそれぞれに設定で定める継続的な契機 | `verify-full` | T3a は全量回帰による T1・T2 の対象選択の照合、T3b は時間枠の内で選択した mutation、長期負荷などの独立した評価。結果を改善へ返し、実行完了を製品変更の共通条件にしない |
 
 ## 順序
@@ -18,7 +18,7 @@
 2. 比較元、source、依存、テスト、入力と設定を確定し、[methods](../structure/tests/methods.md) の「変更と影響範囲」から対象を選ぶ。
    全範囲へ広げる変更と依存を解決できない場合は、[methods](../structure/tests/methods.md) の「変更と影響範囲」に従って影響する保証の全範囲へ広げ、無関係な全量の反復と区別する。
    契約生成の変更は、compiler の意味情報、profile、生成器、生成先と binding の関係を [methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」へ対応付ける。
-3. 検査ごとの既存証跡を照合し、必要な保証が有効な証跡で覆われない範囲だけを実行計画へ入れる。
+3. 検査ごとの既存証跡を [methods](../structure/tests/methods.md) の「変更と影響範囲」が定める build graph の内容 cache で照合し、必要な保証が有効な証跡で覆われない範囲だけを実行計画へ入れる。
    共有の道具が保証する性質は、[methods](../structure/tests/methods.md) の「規範から検証への対応」に従って持ち主の版の有効な証跡を照合し、契約の生成器と製品固有の契約・adapter・binding の分担は [methods-contracts](../structure/tests/methods-contracts.md) の「証跡の所有と再利用」に従う。
    T1・T2 は、実行と省略の選択を [methods](../structure/tests/methods.md) の「変更と影響範囲」の選択の記録として保存する。
 4. 一走行の起動・build、cache、検査本体、資源待ち、結果確定と、変更全体の待ち時間を [concerns/performance](../concerns/performance/measure-before-compare.md) の「計測を定めてから比べる」に従って測る。
@@ -31,6 +31,7 @@
 7. T1 は `verify` から必要な保証を確認して、作業単位の確定へ進む。
    root の arch は Medium の資源を使う場合もここで確認する。
 8. T2 は pre-push hook から `verify-push` を起動し、送信する source に対する受入の証跡と不足する検査の結果を確認する。
+   T2 は T1 の task を再実行せず、同じ source と入力に対する結果を同じ内容 cache から再利用する。
    本流が更新された場合も、実際に取り込む内容への影響を判定し、該当する証跡と検査を更新する。
 9. CI は同じ root の task を使い、commit の規約、secret と必要な製品検証を確認する。
    検査の実行場所でなく source、入力、環境、実行者と結果の出所を照合し、有効な証跡であれば作業機と CI で同じ検査を重ねない。
@@ -66,7 +67,7 @@ T1・T2 が選択の記録を保存し、T3a が T3b と別の走行で完走し
 変更単位の受入証拠を全体要件へ戻し、その単位の成立と依頼全体の完了を区別する。
 契約生成は、[methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」に照らし、必要な生成先と binding の受入条件を、試行で観測した部分、未実装、未実行と区別する。
 共有の道具が保証する性質を [methods](../structure/tests/methods.md) の「規範から検証への対応」に従って持ち主の検証入口へ割り当て、利用する製品へ複製せず、製品に残る接続・設定・drift・写像・binding・業務の受入の観測を、道具の代表例の成功で代替していないことを確かめる。
-証跡の再利用は、source の依存閉包、テスト、入力、command、設定、実行環境、検証器と出所の同一性を照合する。
+証跡の再利用は、build graph の内容 cache が source の依存閉包、テスト、入力、command、設定、実行環境、検証器と出所の同一性を鍵にして照合し、検証入口に自作の証跡の保存と照合がないことを確かめる。
 検査名や変更 file の一致だけでは再利用せず、無関係な source の変更だけでも失効させない。
 有効な同一検査の結果は再実行せず、未知の同一性、新たな失敗や反証がある範囲を確認する。
 T0 で絞った PBT の反復や入力はその範囲の証拠であり、受入に必要な入力領域の検査を代替しない。

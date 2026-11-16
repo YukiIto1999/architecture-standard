@@ -27,6 +27,9 @@ index、worktree、未追跡の入力、削除、移動と改名を検出し、�
 削除と改名の影響は、変更前の参照と変更後の参照から追い、現在存在する file の参照だけで非影響としない。
 影響範囲は、宣言された依存から影響する単位を返す build graph、入力の閉包・command・toolchain・宣言した環境を鍵にする内容 cache、道具に備わった差分選択で選ぶ。
 project の検証入口に、変更入力から影響範囲を導く独自の planner や影響の判定を実装しない。
+検査の証跡の保存、照合、再利用は、同じ build graph の内容 cache に担わせ、project の検証入口に証跡の保存、鍵の算出、照合を実装しない。
+後段の検証入口は、前段の task を build graph の task として含め、同じ source と入力に対する前段の task の結果を同じ内容 cache から再利用する。
+build graph と内容 cache を持つ道具の採用は、[tools/build](../../tools/build/README.md) が定める。
 静的参照だけでは表せない設定、生成物、登録、実依存と scenario の結び付きは、build graph の依存と cache の鍵の入力として宣言する。
 lockfile と依存の版、toolchain、build 設定、検証入口、生成器、契約と契約 profile、migration、認証・認可の policy、設定 schema の変更は、build graph の依存に現れない形で多くの保証へ届く。
 これらの変更では、変更ごとの検査の対象を、その入力を使う保証の全範囲へ広げ、広げた理由を記録する。
