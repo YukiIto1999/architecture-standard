@@ -19,7 +19,7 @@
    全範囲へ広げる変更と依存を解決できない場合は、[methods](../structure/tests/methods.md) の「変更と影響範囲」に従って影響する保証の全範囲へ広げ、無関係な全量の反復と区別する。
    契約生成の変更は、compiler の意味情報、profile、生成器、生成先と binding の関係を [methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」へ対応付ける。
 3. 検査ごとの既存証跡を照合し、必要な保証が有効な証跡で覆われない範囲だけを実行計画へ入れる。
-   生成器共通の能力と製品固有の契約・adapter・binding は、[methods-contracts](../structure/tests/methods-contracts.md) の「証跡の所有と再利用」に従って所有者と有効な証跡を照合する。
+   共有の道具が保証する性質は、[methods](../structure/tests/methods.md) の「規範から検証への対応」に従って持ち主の版の有効な証跡を照合し、契約の生成器と製品固有の契約・adapter・binding の分担は [methods-contracts](../structure/tests/methods-contracts.md) の「証跡の所有と再利用」に従う。
    T1・T2 は、実行と省略の選択を [methods](../structure/tests/methods.md) の「変更と影響範囲」の選択の記録として保存する。
 4. 一走行の起動・build、cache、検査本体、資源待ち、結果確定と、変更全体の待ち時間を [concerns/performance](../concerns/performance/measure-before-compare.md) の「計測を定めてから比べる」に従って測る。
    累積実行時間は実行区間の和集合で記録し、中断や再試行を含め、並行区間を二重計上しない。
@@ -65,7 +65,7 @@ T1・T2 が選択の記録を保存し、T3a が T3b と別の走行で完走し
 利用者面の scenario と実際の結果、未確認条件は [methods-surfaces](../structure/tests/methods-surfaces.md) の「利用者面の受入」に従う。
 変更単位の受入証拠を全体要件へ戻し、その単位の成立と依頼全体の完了を区別する。
 契約生成は、[methods-contracts](../structure/tests/methods-contracts.md) の「契約の意味と生成」に照らし、必要な生成先と binding の受入条件を、試行で観測した部分、未実装、未実行と区別する。
-生成器共通の検査を各製品へ重複させず、製品が必要とする現在の契約・adapter・binding の観測を、生成器の代表例の成功で代替していないことを確かめる。
+共有の道具が保証する性質を [methods](../structure/tests/methods.md) の「規範から検証への対応」に従って持ち主の検証入口へ割り当て、利用する製品へ複製せず、製品に残る接続・設定・drift・写像・binding・業務の受入の観測を、道具の代表例の成功で代替していないことを確かめる。
 証跡の再利用は、source の依存閉包、テスト、入力、command、設定、実行環境、検証器と出所の同一性を照合する。
 検査名や変更 file の一致だけでは再利用せず、無関係な source の変更だけでも失効させない。
 有効な同一検査の結果は再実行せず、未知の同一性、新たな失敗や反証がある範囲を確認する。
