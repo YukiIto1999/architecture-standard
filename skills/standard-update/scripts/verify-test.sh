@@ -431,8 +431,8 @@ printf '\nSchemathesisLike は別の識別子である。\n' >> "$fixture/princi
 expect_pass "製品名の部分文字列だけでは違反にしない" "$fixture"
 
 fixture=$(make_fixture product-at-prefix)
-printf '\n@typespec/openapi3 を原則本文で名指しする。\n' >> "$fixture/principles/comment/no-code-explanation.md"
-expect_fail "@ で始まる製品名を正規名の境界で検出する" "$fixture" "@typespec/openapi3"
+printf '\n@axe-core/playwright を原則本文で名指しする。\n' >> "$fixture/principles/comment/no-code-explanation.md"
+expect_fail "@ で始まる製品名を正規名の境界で検出する" "$fixture" "@axe-core/playwright"
 
 fixture=$(make_fixture product-adoption-declaration)
 adoption_entry="$TEST_ROOT/product-adoption-declaration.md"

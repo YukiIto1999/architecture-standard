@@ -3,7 +3,7 @@
 用途は、公開契約の意味を記述し、各言語の型・構築・codec・操作と通信接続を build 時に生成する道具である。
 採用は、TypeSpec の compiler と、その compiler の emitter である contract-generator の組であり、入手は contract-generator の repository の release タグが指す exact commit を、出所の origin とともに [vendoring](./vendoring.md) で `libs/contract-generator` へ取り込んで版を固定する。
 契約 profile、内部モデル、各言語の emitter は contract-generator が所有し、利用する repository はそれらを置かず、[structure/contracts](../../structure/contracts/layout.md) が定める toolchain に project 固有の生成入力だけを置く。
-OpenAPI と JSON Schema は同じ契約からの投影として `@typespec/openapi3` と `@typespec/json-schema` で出力し、実行用の型や codec の必須入力にはしない。
+OpenAPI と JSON Schema は contract-generator が同じ内部モデルから用途と欠落を明示した投影として出力し、実行用の型や codec の必須入力にはしない。
 判断基準は、compiler が解決した operation・scalar・union・field・注釈と宣言位置を、投影による情報の欠落より前に読み取り、[structure/contracts/generated](../../structure/contracts/generated.md) が定める生成能力へ一度だけ解釈できることである。
 TypeSpec の [emitter の入口と意味走査](https://typespec.io/docs/extending-typespec/emitters-basics/#emitting-typespec-types-to-assets-on-disk)と [Program の意味 graph・診断・emitter 接続](https://github.com/microsoft/typespec/blob/34435f46bf441cd10047c6f604cf977c4b041e16/packages/compiler/src/core/program.ts)を使い、parser と名前解決を作り直さず、追加する意味と各言語への保存を profile と emitter が所有する。
 contract-generator は標準を運用する側が上流を保守する機構であり、TypeSpec の既定の emitter と投影 schema からの生成器では、別の役割の型の identity、存在状態、全生成先で安全な pattern の共通部分集合、提供側と利用側の両端を、一つの解釈済みの意味から C#・Rust・TypeScript へ生成できないことが、この機構を採る理由である。
