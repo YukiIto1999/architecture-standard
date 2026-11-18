@@ -2,6 +2,6 @@
   "version": 1,
   "verify": {
     "seconds": 300,
-    "goalSeconds": 180
+    "feedbackTargetSeconds": 180
   }
 }
