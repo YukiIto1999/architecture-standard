@@ -29,6 +29,8 @@ deploy/
 ## 配備先の共有
 
 一つの配備先へ複数の配備を載せる場合も、配備ごとに専有の実行環境を保つ。
+この環境は配備全体を隔離する境界であり、個々のアプリケーション成果物を包む配布形式ではない。
+自運用の server と worker でこの環境を実現する機構と隔離の検証は、[tools/platforms/nixos](../../tools/platforms/nixos.md) の「共有ホストの配備を隔離する」が定める。
 hardware、機の利用者、接続経路、共有する listener、機の鍵、OS の世代の固定は、どの配備にも属さない配備先そのものの事実である。
 配備先そのものの事実の正本は、その配備先を所有する一つの project の infrastructure に置く。
 どの project が配備先を所有するかを、その配備先へ載せる全ての project の決定の記録に明記する。
@@ -37,7 +39,8 @@ hardware、機の利用者、接続経路、共有する listener、機の鍵、
 配備先の上の一覧は、[principles/data](../../principles/data/preserve-facts-and-current-state.md) の「業務事実と現在情報を分けて保持する」に従う控えとして扱う。
 反映は、一覧へ自らの項を冪等に加除し、他の配備の項を変えず、更新した一覧を配備先へ書き戻す。
 共有する配備先の再現は、配備先そのものの事実と、一覧が指す各配備の宣言から行い、running な実行環境から数え上げない。
-反映の確認は、その配備の生存と準備の面で行い、配備先全体の集約状態で判定しない。
+常駐 service の反映は、対象の配備の生存と準備の面を運用で使う経路から観測し、配備先全体の集約状態では判定しない。
+共有する公開入口がない service には、反映の確認のための公開経路を設けない。
 
 ## 公開と配布の選択
 
@@ -80,8 +83,9 @@ OS が担う仕事とアプリケーションが担う仕事の分担は、[work
 ## delivery
 
 delivery は、immutable な成果物を配備先へ反映する。
-成果物は、配備先の宣言的な配備機構が運ぶ immutable な形とし、container を前提にしない。
-server と worker の成果物は、OS の宣言が起動し、OS が持つ起動・監視・資源制限を container で重ねて再現しない。
+成果物は、配備先の宣言的な配備機構が運ぶ immutable な形とする。
+配備を隔離する環境の形式を、成果物の形式の前提にしない。
+server と worker は実行環境の OS の宣言から直接起動し、監視や資源制限をアプリケーション成果物に重ねて実装しない。
 成果物の semantic versioning による版づけと不変性は [concerns/security](../../concerns/security/README.md) に、generated の drift 検査は [contracts/generated](../contracts/generated.md) に従う。
 配備先の desired state を、宣言として版で管理する。
 running な配備先を、手続きで直接書き換えない。
