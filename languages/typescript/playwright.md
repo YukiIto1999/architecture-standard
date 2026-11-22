@@ -6,9 +6,29 @@
 撤回条件は、判断基準を満たさなくなることであり、保守の停止を再評価のトリガーとする。
 
 UI の受入と smoke の判定は、[structure/tests/methods-surfaces](../../structure/tests/methods-surfaces.md) の「利用者面の受入」に従う。
-Playwright の操作対象は、利用者向けの role、label、text の locator で一意にし、固定の待機でなく、期待する文言、値、件数、状態への web-first assertion で結果を待って判定する。
-受入画像の取得には、業務結果を assertion した同じ page の screenshot を使い、対応する scenario と表示条件を test の出力へ添える。
+Playwright Test の test を追加しなくても、Playwright で実画面を操作し、変更時の受入の証拠を得られる。
+Playwright の test では、操作対象を利用者向けの role、label、text の locator で一意にし、固定の待機でなく、期待する文言、値、件数、状態への web-first assertion で結果を待って判定する。
+Playwright で受入画像を取得する場合は、期待した結果を確認した同じ page の screenshot を使い、対応する検査条件と表示条件を証拠に添える。
 継続的な visual の差分の検査は、この file の「baseline 画像と環境指紋を一つの更新単位で版管理する」に従う。
+
+## 継続するブラウザ検査を直接実行する
+
+### 要求
+継続して実行するブラウザの E2E と visual は、Playwright Test に操作と assertion を直接定義し、repository の検証入口から実行する。
+
+### 根拠
+ブラウザの操作手順は UI の構成に依存するが、同じ業務結果を保証する限り、操作手順が変わっても業務の事例は変わらない。
+継続検査は、選んだ経路を同じ入口で再実行できればよく、Gherkin から変換する層を必要としない。
+
+### 完了条件
+継続して守る E2E と visual の経路が、Playwright Test の検証入口から列挙でき、対応する期待結果に対して実行されている。
+
+### 禁止事項
+ブラウザの E2E と visual を、[structure/tests/layout](../../structure/tests/layout.md) の「実行可能な仕様」で定める業務仕様の代わりにすること。
+変更時の一回の実行を、継続して実行する必要がある検査の代わりにすること。
+
+### 行動
+継続して守る経路は、Playwright Test に操作と assertion を直接書く。
 
 ## 表示までの時間を browser で測る
 

@@ -36,7 +36,6 @@ TypeScript 本体が安定 API を再び同梱したことを compiler API 採�
 | [opentelemetry-js](./opentelemetry-js.md) | 利用者の環境で動く viewer の trace と構造化 event を、境界の殻で収集する機構である | TypeScript は OpenTelemetry JS の WebTracerProvider と span event、OTLP/HTTP の trace exporter である |
 | [oxfmt](./oxfmt.md) | 表記を道具の既定で一意に揃える formatter である | TypeScript は oxfmt である |
 | [oxlint](./oxlint.md) | 型情報を要さない規則の違反をビルドで止める linter である | TypeScript は oxlint である |
-| [playwright-bdd](./playwright-bdd.md) | Gherkin の feature を Playwright Test のテストファイルへ変換し、UI smoke を Gherkin で書けるようにする変換器である | TypeScript は playwright-bdd である |
 | [playwright](./playwright.md) | UI をブラウザ越しに操作し見た目と疎通を確かめる実行系である | TypeScript は Playwright である |
 | [solidjs](./solidjs.md) | GUI の surface を組む骨格である | SolidJS 2.0 系、@solidjs/web、@solidjs/vite-plugin である |
 | [stryker-js](./stryker-js.md) | テストの検出力を評価し改善する mutation 分析である | TypeScript は StrykerJS である |

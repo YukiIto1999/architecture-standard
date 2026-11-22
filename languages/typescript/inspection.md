@@ -257,7 +257,7 @@ converter と factory が検証後だけ型を構築することを、実行テ�
 | vitest | 実行 | 実行テスト(`vp test` が駆動する Vitest の単体・性質・結合を検証入口で実行し、発見件数0を失敗にする) |
 | fast-check | 性質 | 実行テスト(fast-check の生成・縮小・stateful property と回帰 seed の再実行) |
 | cucumber-js | 仕様 | 構造検査(feature・step binding・公開 interface operation の実体由来一覧の drift)+実行テスト(cucumber-js を実装と同じ検証入口で実行) |
-| playwright-bdd | UI smoke の Gherkin を Playwright の test へ変換する | 実行テスト(playwright-bdd が変換した test を Playwright の runner で実装と同じ検証入口から実行)+レビュー(executable spec と UI の E2E smoke・visual を代替に並べていないことの判断) |
+| playwright | 継続するブラウザ検査を直接実行する | 実行テスト(継続するブラウザの E2E と visual を Playwright Test で検証入口から実行)+レビュー(継続して守る経路と期待結果を実行対象に照合し、単発の画面操作で代替していないこと、操作と assertion の直接定義、UI 検査と業務仕様の検査の分離) |
 | axe-core-playwright | accessibility | 実行テスト(@axe-core/playwright による自動判定可能な違反、Playwright による keyboard 操作・pointer target の bounding box・WCAG 2.2 Level AA の text/non-text contrast と例外記録の照合を、[methods-surfaces](../../structure/tests/methods-surfaces.md) の「利用者面の検査境界」に従って選んだ component・page の描画の境界と route を通す e2e で実行)+レビュー(自動判定できない WCAG 2.2 Level AA の確認) |
 | testcontainers | 実依存 | 実行テスト(testcontainers の割当 host・port を使う結合テストと終了時の破棄)+runner 検査(`vp test list --json` と Playwright `--list` が返す project・file・suite・test の組を native test ID とする size ごとの排他・全域集合一致、発見件数0の拒否、実行環境の資源制限。cucumber-js scenario は URI・line・name の組を同じ集合へ加える) |
 | knip | 未使用 | analyzer/lint(knip で未使用のファイル・export・依存を検出し検証入口で失敗) |
