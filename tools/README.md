@@ -17,7 +17,7 @@ tools の採用は、project が開発、運用、または上位の規律が求
 
 | 区分 | 場所 | 中身 |
 |---|---|---|
-| 言語横断の開発道具 | [build](./build/README.md) | task の編成、共有ライブラリの取得、契約の生成、署名と検査の道具 |
+| 言語横断の開発道具 | [build](./build/README.md) | 開発環境、task の編成、共有ライブラリの取得、契約の生成、署名と検査の道具 |
 | 自運用基盤 | [platforms](./platforms/README.md) | セルフホストする基盤の採用 |
 | 外部 Web サービス | [services](./services/README.md) | 外部 Web サービスの採用方針 |
 
