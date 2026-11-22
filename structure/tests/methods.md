@@ -205,7 +205,7 @@ transaction の検証は、application が開始から確定または中止ま�
 | structure と dependency | root と単位の列挙、ソース参照の phase と成果物の消費の区別、依存方向、libs の package 内外の公開面、配置、循環、複雑さの閾値と統合・削除での変更前後の比較、禁止 import、deploy と tests への流入依存の不在、tests の配備 script 非利用、サブドメイン分類の記録と構造の対応 |
 | lifecycle と configuration | 不正設定での起動拒否、設定層の競合と未指定の解決、生存と準備、受付停止、期限内 drain、突然死後の回復、再生に使う履歴の業務事実・技術記録の分類と保持期間のレビュー |
 | security と privacy | default deny と最小権限、信頼境界ごとの abuse case、標準暗号の設定、ネットワークを通る伝送または信頼境界を越える伝送での平文と意図しない受信者の拒否、secret と個人情報の非流出、保持期限後の消去、供給物と依存の検査 |
-| experience | 利用者面の受入による状態遷移と正確な業務結果、区分の識別と表示の対応、表示対象と選択可能な集合の区別、拒否と回復、表示までの時間、公開観測面から列挙した日本語の操作ラベルの末尾の品詞、空状態の正常完了の事実または次に行う操作の表示 |
+| experience | 利用者面の受入による状態遷移と正確な業務結果、区分の識別と表示の対応、表示対象と選択可能な集合の区別、拒否と回復、表示までの時間、操作前の表示と実際の対象・効果の照合、空状態の正常完了の事実または次に行う操作の表示 |
 | accessibility | [methods-surfaces](./methods-surfaces.md) の「利用者面の検査境界」に従って選んだ実描画の境界(component・page・route)での keyboard 操作、focus、名前と役割、contrast、入力機構と知覚の差を越えた到達性 |
 | console の呼び出しと terminal | stdout・stderr・終了 status と状態変化、TTY と非 TTY、非対話での入力不足、破壊操作の確認、再実行、確定前後の取り消し、terminal の復元と一時引き渡し、cell 幅と resize、入力 loop が処理中も操作を受けること |
 | performance | 固定した workload と環境での SLO 計測、変更前後の比較、計測結果を伴う退行判定 |
