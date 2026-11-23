@@ -14,21 +14,21 @@ Playwright で受入画像を取得する場合は、期待した結果を確認
 ## 継続するブラウザ検査を直接実行する
 
 ### 要求
-継続して実行するブラウザの E2E と visual は、Playwright Test に操作と assertion を直接定義し、repository の検証入口から実行する。
+継続して実行する UI の E2E smoke と visual は、Playwright Test に操作と assertion を直接定義し、repository の検証入口から実行する。
 
 ### 根拠
 ブラウザの操作手順は UI の構成に依存するが、同じ業務結果を保証する限り、操作手順が変わっても業務の事例は変わらない。
 継続検査は、選んだ経路を同じ入口で再実行できればよく、Gherkin から変換する層を必要としない。
 
 ### 完了条件
-継続して守る E2E と visual の経路が、Playwright Test の検証入口から列挙でき、対応する期待結果に対して実行されている。
+継続して守る UI の E2E smoke と visual の経路が、Playwright Test の検証入口から列挙でき、対応する期待結果に対して実行されている。
 
 ### 禁止事項
-ブラウザの E2E と visual を、[structure/tests/layout](../../structure/tests/layout.md) の「実行可能な仕様」で定める業務仕様の代わりにすること。
+UI の E2E smoke と visual を、[structure/tests/layout](../../structure/tests/layout.md) の「実行可能な仕様」で定める業務仕様の代わりにすること。
 変更時の一回の実行を、継続して実行する必要がある検査の代わりにすること。
 
 ### 行動
-継続して守る経路は、Playwright Test に操作と assertion を直接書く。
+継続して守る UI の E2E smoke と visual の経路は、Playwright Test に操作と assertion を直接書く。
 
 ## 表示までの時間を browser で測る
 
