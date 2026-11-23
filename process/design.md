@@ -27,6 +27,9 @@
 6. モデリング上の役割と目的、変更を要求する責任主体を対応付け、変更理由の異なる目的が一つの処理へ混在していないかを確かめる([principles/separation](../principles/separation/split-by-change-reason.md) の「変更理由で分ける」に従う)。
    認証主体や権限の role を分割単位へ置き換えず、複数の役割が同じ目的を持つ場合は数だけで分けない。
 7. 境界と依存の方向を決める([principles/separation](../principles/separation/README.md)、[structure/skeleton](../structure/skeleton.md) に従う)。
+   目的からの再設計では、現行を残す案のほか、責務や工程をなくす、統合する、実行時の検査を型や静的検査へ移す、既存機構へ任せるといった案のうち、採否を分けるものを比較する。
+   同じ外部契約と資源制約の下で、得られる結果、失敗時の影響、運用と移行の費用を比べ、目標の構造を選ぶ。
+   切替までの併存や復旧に限って必要な構造は、目標の構造と分けて [migration](./migration.md) へ渡す。
    一つの業務操作が複数コンテキストの判断・状態・確定・進行を要する場合は、[principles/separation](../principles/separation/context-relationships.md) の「コンテキストを業務上独立させる」に照合して分割を見直し、調整機構の選択へ進まない。
    公開契約と業務モデルを独立に定め、その接続は [structure/contracts/adapters](../structure/contracts/adapters.md)、業務の不変条件と確定範囲は [structure/core/application](../structure/core/application.md) に照合する。
    認証認可の宣言と強制される公開入口、対象取得後の評価点、業務入力から分離した実行文脈を、それぞれの [concerns](../concerns/) に照合する。

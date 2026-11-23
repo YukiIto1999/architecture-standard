@@ -16,11 +16,13 @@
    その作業単位は、基線台帳が記録する照合済みの標準本文の revision から現在の revision までに変わった規律を [audit](./audit.md) の順序で照合し、記録の後に照合済みの revision を現在の revision へ更新する。
    照合済みの revision がない基線台帳は、この照合済みの revision の規則を導入した標準本文の revision(`process/migration.md` にこの文を加えた commit)を照合済みとして記録し、その revision からの差分を照合する。
    その revision より前から基線台帳に漏れていた既存の違反は、全ての規律の照合で前もって探さず、受入が [verification](./verification.md) の確認点に従って比較元の source にもある違反として報告した時点で、原因を台帳の漏れとして記録する。
-3. 変える前に安全網を張る([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」に従い、回帰テスト・本番の観測・新旧の整合検査を備える)。
-4. 変更を小さく可逆な段に分け、各段に達成条件・撤退条件・不可逆点を定める([principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」に従う)。
+3. 切替で守る契約と意図して変える結果を分け、移行後の結果を何と照合するか定める([principles/verification](../principles/verification/behavioral-safety-net.md) の「テストを振る舞いの安全網にする」と [structure/tests/methods](../structure/tests/methods.md) の「性質別の技法」に従う)。
+   移行対象の読み書きを止められるか、新旧の利用者や保存先が併存するかを確かめ、選んだ切替方式とその根拠を決定の記録に残す。
+4. 選んだ方式について、[principles/evolution](../principles/evolution/incremental-reversible-change.md) の「変更は段階的で可逆にする」に従い、切替の単位と、各段の達成条件・撤退条件・不可逆点を定める。
+   その段で守る契約と意図した差を判定できる安全網を、変更の適用前に張る。
    保存済みの事実を含む場合は、[concerns/persistence](../concerns/persistence/fact-preserving-migrations.md) の「保存済みの事実を意味と値を保って移行する」に従い、書き換える移行と旧い版の行を残す読み出し変換のどちらで意味と値を保つかを選び、保持する版の解釈と移行対象の旧い経路を分ける。
 5. 新旧が同じ datastore にある場合は、[concerns/transaction](../concerns/transaction/single-commit-point.md) の「一つの確定点を持つ」と、[concerns/migration](../concerns/migration/schema-change-cutover.md) の「新旧の併存に応じてスキーマを切り替える」を適用する。
-   旧い構造を読み書きする全ての経路を止められるか、新旧が併存するかを決めて決定の記録に残し、止められる場合は停止の確認、復旧点、変更の適用、照合、受付の再開の順に進める。
+   全ての読み書きを止める方式では、停止の確認、復旧点、変更の適用、照合、受付の再開の順に進める。
    併存する場合は、互換を保てない変更を三段の順に進め、互換を保てる変更は旧い program の読み書きを壊さないことを確かめて適用する。
    schema migration の artifact は [concerns/migration](../concerns/migration/schema-change-cutover.md) の「新旧の併存に応じてスキーマを切り替える」が定める forward-only に従い、停止切替でも併存でも、service の配備とは独立して適用する。
    独立した集合ごとに source、対象 DB、適用履歴、設定を対応づけ、同じ DB への適用を所有する配備の task を一つに定め、各段の順序に従って直列に適用する。

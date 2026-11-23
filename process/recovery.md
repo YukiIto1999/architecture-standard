@@ -5,8 +5,9 @@
 
 ## 順序
 
-1. 対象 repo に記録された build・test・主要な実行例の入口を実行し、再現できた結果と再現できない範囲を記録する。
-   入口の修復は行わない。
+1. 回収する主張と、対象 repo の build・test・主要な実行例のうち、その主張を観測できる入口を対応付ける。
+   [verification](./verification.md) に従って有効な既存証跡を再利用し、判断に必要な観測が足りない場合と再現自体を求められた場合は、該当する入口を許可された範囲で実行する。
+   今回再現できた結果、再利用した結果と未確認の範囲を分け、入口の修復は行わない。
 2. 判断または変更を左右する主張を抽出し、[principles/requirements](../principles/requirements/evidence-decision-separation.md) の「根拠と決定状態を分ける」に従って根拠の状態と決定の状態を分類する。
 3. 一次資料、契約、入口の文書、利用者から、system purpose、actor、主要な use case、bounded context を回収する。
 4. 主要概念を、コード・DB・API・UI・error・log・test の表現から横断して追い、一つのコンテキスト内の語彙と境界間の対応を回収する。

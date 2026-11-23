@@ -66,7 +66,7 @@ project root しか分からない場合は README や manifest の宣言を確�
 
 ## 作業境界
 
-設計、実装、構造改善、移行では、設計本文または編集の前に [change contract](references/change-contract.md) を読み、変更契約と実現段を固定する。
+設計、実装、構造改善、移行では、設計本文または編集の前に [change contract](references/change-contract.md) を読み、求める結果と守る条件を定めてから、その実現段を選ぶ。
 どのモードでも、固定した変更契約の条件へ直接結びつかない設計要素、file、型、抽象、設定、依存、fallback を追加しない。
 現在のモードで実測できる条件を確かめ、未実装と未実行の条件を分け、依頼の完了を全体要件との対応で判定する。
 
