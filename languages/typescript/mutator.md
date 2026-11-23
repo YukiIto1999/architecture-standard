@@ -11,17 +11,20 @@
 mutation は、`vite-plus` が同梱する Vitest を runner とする @mizchi/mutator で分析する。
 @mizchi/mutator は project の devDependency に置いて版を manifest と lockfile に記録し、環境はその `engines` を満たす Node.js を供給する。
 分析の候補は、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」に従い、変更した production の箇所と未変更の影響する production の箇所から導き、生成対象は `include` と `exclude` で production の source に指定する。
-変更部分は、比較元を `--since` に渡す実行で選び、diff にテストの変更を含む場合は `--include-test-changes` を加える。
+変更部分は、比較元として確かめた commit の hash を `--since` に渡す実行で選び、diff にテストの変更を含む場合は `--include-test-changes` を加える。
+`--since` に渡す commit が HEAD の祖先であることを実行前に確かめ、diff の基点と比較に使う snapshot に同じ commit を使う。
 影響部分を分析する場合は、build graph が導く影響する project の source を `include` に指定し、`--since` を付けない別の実行で、前回の snapshot から継承できない mutant を再判定して選び、diff で選んだ変更部分の結果を影響部分の代わりにしない。
-テストの変更が届く mutant は、比較元の source に対して同じ `include` の範囲で書いた snapshot と比べる。
-間にテストの変更後の source で別の実行が snapshot を更新した report と、`comparison` が `unavailable` の report では、比較を未分析として記録する。
+テストの変更が届く mutant は、`--since` に渡した commit を未変更のまま取り出した作業木で、同じ `include` と `exclude` の範囲で書いた snapshot と比べ、snapshot を書いた commit と snapshot の内容 hash を記録する。
+比較の実行の直前に読む snapshot の内容 hash が記録と一致しない report、記録した commit が `--since` に渡した commit と一致しないか確かめられない report と、`comparison` が `unavailable` の report では、比較を未分析として記録する。
 mutator が照合しない入力の変更が届く mutant は道具が選べない影響部分とし、届く範囲は前回の snapshot を読まない実行で再判定するか未分析として記録する。
 production の diff が空の場合も、テスト、契約、設定、依存、生成器または生成元の変更が届く影響部分を、上の選択か未分析の記録へ割り当てる。
 道具が選べない影響部分は、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」に従って未分析として関係とともに記録し、mutator の実装課題として扱う。
 生成対象と各 mutant を観測する被覆テストの選択を分け、被覆テストの絞り込みで生成対象を狭めない。
 変異の型検査は `typecheck` を `true` にして行い、型検査器を解決できず終了した実行を分析の不成立として報告する。
 `json` reporter の report の status は生の値のまま保持し、`Survived` と `NoCoverage` の合計をそのまま未検出として分類に渡さない。
-未検出に数えるのは、被覆の確認が成立した `NoCoverage` と、被覆テストの実行を確かめて検出されなかった `Survived` である。
+未検出に数えるのは、被覆の確認が成立し、変異が型として成立することを確かめた `NoCoverage` と、被覆テストの実行を確かめて検出されなかった `Survived` である。
+`NoCoverage` の変異が型として成立するかは、変異の差分だけを隔離した入力に project の型検査を行って確かめる。
+型として成立しない変異は [structure/tests/methods](../../structure/tests/methods.md) の「テストの有効性」に従って検出にも未検出にも数えず、確かめていない変異は型の成立が未確認として未検出に数えない。
 `Pending` は、`statusReason` に範囲外の再判定の結果を持つものを `detectionRegression` の finding とともに読み、それ以外を、`--since` の範囲外は選ばなかった範囲、`--time-budget` と `--mutants-per-line` が実行しなかったものは選んだ範囲の未判定として、text の要約の内訳とともに記録する。
 report の `statusReason` が `possibly reached in a child process` を示す変異は、`Pending` として報告された範囲外の再判定を含め、変異を観測できない範囲として別に記録し、未検出に数えない。
 runner が変更したテスト file を収集しない warning、テストがどの mutant にも到達しない warning、dry run が見つけたテスト file が 0 件の実行は、分析の不成立として報告し、その実行の未検出の件数を分類の入力にしない。
@@ -31,9 +34,9 @@ mutator は被覆によって選んだテストを一件も実行しなかった
 module の読み込み時に評価される変異は、その module の読み込みを観測する。
 変異の差分だけを隔離した入力で、特定したテストの実行と結果を [structure/tests/methods](../../structure/tests/methods.md) の「テストの有効性」に従って確かめる。
 実行して失敗しなかったことを確かめた `Survived` だけを未検出に数え、runner がそのテストを実行しなかった mutant は分析の不成立として、確かめていない mutant は実行未確認として、検出にも未検出にも数えない。
-`detectionRegression` は、同じ変異を比較でき、今回の結果を未検出に数えられると確かめたときだけ、検出の低下と判定する。
+`detectionRegression` は、同じ変異を比較でき、`--since` に渡した commit でその変異が検出され、今回の結果を未検出に数えられると確かめたときだけ、検出の低下と判定する。
 検出の維持は、同じ変異が比較元と現在の両方で検出された証拠から判定する。
-同じ変異を比較できない場合と、今回の観測が成立しない場合は、その理由を記録して低下も維持も確定しない。
+同じ変異を比較できない場合、比較元で検出されたことが確かめられない場合、または今回の観測が成立しない場合は、その理由を記録して低下も維持も確定しない。
 この区別を mutator の実装課題として記録し、採用する版の組を下の確認で固定する。
 等価変異と契約内の観測差の判断は、[structure/tests/methods](../../structure/tests/methods.md) の「テストの有効性」の分類の記録に残し、`mutator accept` で report の status を書き換えない。
 `thresholds.break`、`failOnSurvived`、`critical` を設定せず、終了 status を分析の状態だけに使う。
@@ -44,7 +47,7 @@ report、text の要約、log と終了 status は生の値のまま保持する
 
 ### 根拠
 テストの検出力を mutation で分析する理由は [structure/tests/methods](../../structure/tests/methods.md) に従う。
-被覆の確認が成立した `NoCoverage` は、変異を覆うテストがなく検出できなかったことを示す。
+被覆の確認が成立し型として成立する `NoCoverage` は、変異を覆うテストがなく検出できなかったことを示す。
 mutator は mutant ごとの被覆テストの実行件数を報告しないため、`Survived` は被覆するテストを実行して失敗しなかった mutant と、選んだテストを runner が実行しなかった mutant の両方を含み、status だけではテストが検出しなかった変更と分析の不成立を分けられない。
 module の読み込みで評価される変異に対し、runner が実行したテストは `coveredBy` に無いことがある。
 範囲外の再判定では、JSON reporter は `coveredBy` を空にする。
@@ -52,12 +55,16 @@ module の読み込みで評価される変異に対し、runner が実行した
 `--since` は diff に触れる mutant だけを実行して報告し、変更したテストが被覆する未変更の mutant を選ばないため、テストの編集で検出しなくなった mutant を見落とす。
 例外として、以前の検出テストがすべて削除または改名された範囲外の mutant は再判定され、report では `Pending` の status と再判定の結果を持つ `statusReason` で示される。
 `--include-test-changes` は、追加、編集、削除したテストが被覆または import する mutant を選択に加え、互換な snapshot がある場合だけ、以前 `Killed` で関数の変わらない mutant が `Survived` か `NoCoverage` になったことを `detectionRegression` として報告する。
+`detectionRegression` は snapshot の今回の結果が `Killed` でなくても過去の検出テストを参照することがあるため、snapshot の commit が一致するだけでは、比較元でその変異が検出された証拠にならない。
 互換な snapshot が無い report の `comparison` は `unavailable` であり、検出が維持された証拠にならない。
 比較の基準は直前に snapshot を書いた実行であり、テストの変更後の source で `--include-test-changes` を付けない `--since` の実行が snapshot を書くと、以前の `Killed` の判定と変更前のテストの fingerprint が置き換わり、低下が `detectionRegression` として報告されない。
+`--since` は、渡した値と HEAD の merge-base を diff の基点にし、merge-base を求められない場合は渡した値そのものを基点にする。
+mutator は snapshot に source の revision を記録せず、diff の基点と snapshot を書いた source を照合しないため、両者が別の commit を指しても `comparison` は `available` になる。
 mutator は、mutant を囲む関数の hash と、被覆テストの fingerprint(テスト file とそれが import する local file)が変わらない mutant の判定を継承し、変更した関数を実行したテストが被覆する mutant を再判定する。
 Node.js の版、manifest と lockfile、`tsconfig.json`、runner の設定、変異の設定のいずれかが変わると snapshot 全体を継承しないため、依存と設定の変更は届く範囲の全 mutant の再判定になる。
 これら以外の入力(環境変数、import を経ずに読む file など)は照合せず、継承を止める option も無いため、その変更が届く mutant の継承した判定は現在の source の分析結果にならない。
 `typecheck` が `auto` の場合は、型検査器を解決できなければ型として成立しない変異をテストで実行し、検出か未検出に数える。
+`typecheck` が `true` でも、mutator の report は `NoCoverage` の変異について型の成立を判定できる情報を含まない。
 変異の型検査は project が `typescript` として解決する compiler で行うため、[typescript-compiler-api](./typescript-compiler-api.md) の alias の下では6系の compiler API が判定し、変異した file の診断だけを比べるので他の file にだけ誤りが出る変異は実行される。
 変異を memory 上で適用するため、テストが子 process で実行する source の変異は観測されない。
 `mutator accept` は記録した mutant を以後の report で `Ignored` に変え、道具が返した未検出の status を report から除く。
@@ -67,8 +74,9 @@ Node.js の版、manifest と lockfile、`tsconfig.json`、runner の設定、�
 
 ### 完了条件
 分析した範囲が、`--since` による変更部分と、影響部分を分析した場合は `--since` なしの実行で再判定した mutant と継承した結果とに分けて記録され、選ばなかった範囲、`Pending` の未判定、道具が選べない影響部分が残っている。
-テストの変更が届く mutant について、比較元の snapshot に対する判定とその根拠が記録され、比較不能と観測不能が検出の低下および維持から分けられている。
-report の生の status が保持され、未検出の件数には被覆の確認が成立した `NoCoverage` と実行を確かめて検出されなかった `Survived` だけが含まれる。
+テストの変更が届く mutant について、比較元の snapshot に対する判定とその根拠が記録され、比較不能、比較元の検出未確認、今回の観測不能が検出の低下および維持から分けられている。
+比較に使った snapshot について、書いた commit が `--since` に渡した commit と一致し、内容 hash が比較の実行の直前に読んだ snapshot と一致した記録がある。
+report の生の status が保持され、未検出の件数には被覆の確認が成立し型として成立することを確かめた `NoCoverage` と、実行を確かめて検出されなかった `Survived` だけが含まれる。
 分類に使う結果が、`typecheck` を `true` にした実行のものである。
 変更したテスト file の未収集、mutant に到達しないテスト、dry run のテスト file 0 件は分析の不成立として報告され、子 process で到達しうる変異の観測不能は未検出と分けて記録されている。
 等価変異と契約内の観測差の判断が分類の記録にあり、`mutator accept` による status の書換えが無い。
@@ -77,8 +85,9 @@ report の生の status が保持され、未検出の件数には被覆の確�
 生成対象、除外、結果の分類と修正後の確認が、[structure/tests/methods](../../structure/tests/methods.md) の「変更と影響範囲」と「テストの有効性」を満たしている。
 
 ### 禁止事項
-観測不能な `NoCoverage` または `Survived` と、被覆テストを実行したことを確かめていない `Survived` を、未検出または検出の低下として扱うこと。
-被覆の確認が成立した `NoCoverage` を未検出から除くこと。
+観測不能な `NoCoverage` または `Survived`、型として成立することを確かめていない `NoCoverage` と、被覆テストを実行したことを確かめていない `Survived` を、未検出または検出の低下として扱うこと。
+被覆の確認が成立し型として成立することを確かめた `NoCoverage` を未検出から除くこと。
+`--since` に渡した commit と別の source から書いた snapshot、または内容 hash を照合していない snapshot との比較を、検出の低下または維持の判定に使うこと。
 `--since` だけの実行で、影響部分と、変更したテストが被覆する mutant の検出の維持を分析済みとすること。
 `detectionRegression` の finding が無いことだけを、検出が維持された証拠とすること。
 mutator が照合しない入力の変更の後に、その変更が届く範囲の継承した判定を現在の分析結果とすること。
@@ -90,13 +99,13 @@ mutator が照合しない入力の変更の後に、その変更が届く範囲
 
 ### 行動
 @mizchi/mutator を devDependency に加え、`vite-plus` が同梱する Vitest を runner とし、`typecheck` を `true`、reporter を `text` と `json` にして実行する。
-問いに応じて変更部分、影響部分、またはその両方を選び、変更部分は `mutator --since <基点>` で、テストの変更を含む diff では `--include-test-changes` を加えて試す。
+問いに応じて変更部分、影響部分、またはその両方を選び、変更部分は HEAD の祖先であることを確かめた比較元の commit の hash を `mutator --since <commit hash>` に渡し、テストの変更を含む diff では `--include-test-changes` を加えて試す。
 影響部分は、build graph が導く影響する project の source を `--include` に渡し、`--since` を付けない別の実行で試す。
 mutator が照合しない入力を変えた後は、届く範囲を `.mutator/` を持たない作業木で `--shared-cache` を付けずに再判定するか、継承した判定を未分析として残す。
 生成対象の選択と被覆テストの選択を別に確認する。
-比較元の snapshot と現在の変異の同一性と判定を照合し、低下と維持をそれぞれ該当する証拠から記録する。
+比較元の snapshot を書いた commit と内容 hash を、`--since` に渡した commit と比較の実行の直前に読む snapshot に照合する。双方で同じ変異であることと、比較元の commit でその変異が検出されたことを確かめ、現在の判定から低下、維持、または未確認を記録する。
 report の status と生の件数を保持し、warning と `statusReason` から分析の不成立と子 process の範囲を先に分ける。
-残る `NoCoverage` の被覆の確認が成立しているかを判定する。
+残る `NoCoverage` について、被覆の確認が成立しているかと、変異の差分だけを隔離した入力で型として成立するかを判定する。
 残る `Survived` は、特定できたテストで変異を再実行して結果を確かめ、テストを特定できないものは実行未確認に残す。
 text の要約から `Pending` の内訳を読む。
 影響する既存証跡を無効化し、影響しない証跡は [process/verification](../../process/verification.md) の同一性が成立する間再利用する。
@@ -109,5 +118,7 @@ report、text の要約、log と終了 status を生の値のまま保持し、
 - [mutator JSON reporter](https://github.com/mizchi/mutator/blob/v0.5.3/packages/cli/src/mte-report.ts) の `statusReason` と範囲外の再判定の記録。
 - [mutator Configuration](https://github.com/mizchi/mutator/blob/v0.5.3/packages/cli/skills/mutator/references/config.md) の `typecheck`、`timeBudget` と品質 gate。
 - [mutator reuse](https://github.com/mizchi/mutator/blob/v0.5.3/packages/cli/src/reuse.ts) の snapshot の互換の条件。
-- [mutator planner](https://github.com/mizchi/mutator/blob/v0.5.3/packages/core/src/plan.ts) と [tally](https://github.com/mizchi/mutator/blob/v0.5.3/packages/cli/src/tally.ts) の読み込み時に評価される変異のテスト選択と被覆の記録。
+- [mutator planner](https://github.com/mizchi/mutator/blob/v0.5.3/packages/core/src/plan.ts) と [tally](https://github.com/mizchi/mutator/blob/v0.5.3/packages/cli/src/tally.ts) の読み込み時に評価される変異のテスト選択、被覆の記録と `NoCoverage` の判定。
+- [mutator run](https://github.com/mizchi/mutator/blob/v0.5.3/packages/cli/src/run.ts) の snapshot の読込、型検査に渡す mutant と `comparison`。
+- [test-impact git](https://github.com/mizchi/mutator/blob/v0.5.3/packages/test-impact/src/git.ts) の `--since` の merge-base と、merge-base を求められない場合の基点。
 - [mutator test impact](https://github.com/mizchi/mutator/blob/v0.5.3/packages/cli/src/test-impact.ts) のファイル、変異の識別、関数の hash による検出の低下の比較。
