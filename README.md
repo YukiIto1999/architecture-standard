@@ -89,6 +89,10 @@ Skill package の配備は、採用する client の設定と外部 source の�
 配備した Skill package は、手順と同梱の reference と script を提供する単位であり、現行の標準本文の所在ではありません。
 標準本文を読む root と Skill package を実行する root の分離は、標準リポジトリの参照方法が定めます。
 
+root の `package.json` が宣言する整数 `skillPackageAbi` は、配布する Skill package 一式と、それを取り込む host との互換の版です。
+host は対応する値を宣言した package だけを採用し、宣言のない package と未知の値の package を採用しません。
+値を上げる条件は [standard-update](./skills/standard-update/SKILL.md) が定め、形式は同 Skill の package 検査が確かめます。
+
 ## 統治の規約
 
 ### 矛盾の解決
@@ -107,7 +111,10 @@ root の構成は skeleton が、各部の内部は各 layout が、概念の規
 この優先順位は、現在の標準をプロジェクトへ適用するための規則であり、標準自体を改訂するときの正しさの証明には使いません。
 標準の保守では、外部知見を現在の標準全体を再評価する観測として扱い、現行の上位原則も含めて根拠、前提、因果関係、適用範囲を比較します。
 改訂は、意味的に影響する規律、下位実現、確認点と運用 Skill まで整合させ、今回の知見と同じ設計判断、概念モデル、因果関係に属さない変更を混ぜません。
-更新の手順と評価は、作業 checkout の [standard-update](./skills/standard-update/SKILL.md) が所有します。
+更新の手順と評価は、作業 checkout にある [standard-update](./skills/standard-update/SKILL.md) の本文が正本として所有します。
+作業 checkout は Skill と同梱 script を実装し編集する対象であり、利用側の作業で呼び出す Skill は、host が選んで検証した不変の package から読みます。
+この repository 自身の Skill と script を書き換える作業と、その変更を隔離した環境で試す検査に限り、作業 checkout の Skill と script を意図して呼び出します。
+標準を改訂する作業では、どちらの場合も編集と検査の対象を作業 checkout の root とします。
 
 ### 正本の単一
 

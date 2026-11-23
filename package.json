@@ -2,6 +2,7 @@
   "name": "architecture-standard",
   "private": true,
   "type": "module",
+  "skillPackageAbi": 1,
   "engines": {
     "node": ">=22"
   },

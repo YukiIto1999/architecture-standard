@@ -31,7 +31,7 @@ else
     exit 1
   }
 fi
-for standard_entry in README.md skills principles concerns structure tools languages process; do
+for standard_entry in README.md package.json skills principles concerns structure tools languages process; do
   if [ ! -e "$STANDARD_ROOT/$standard_entry" ]; then
     printf 'FAIL: 標準 root に %s がない: %s\n' "$standard_entry" "$STANDARD_ROOT" >&2
     exit 2
@@ -92,6 +92,7 @@ make_fixture() {
   mkdir -p "$fixture" || return 1
   cp -a \
     "$STANDARD_ROOT/README.md" \
+    "$STANDARD_ROOT/package.json" \
     "$STANDARD_ROOT/skills" \
     "$STANDARD_ROOT/principles" \
     "$STANDARD_ROOT/concerns" \
@@ -869,6 +870,30 @@ if output=$(run_driver "$package_driver" "$valid_cwd" --standard-root "$fixture"
 else
   record_pass "frontmatter の name と Skill 名の不一致を拒否する"
 fi
+
+fixture=$(make_fixture package-abi)
+printf '{"skillPackageAbi":2}\n' > "$fixture/package.json"
+expect_pass "利用側の対応範囲を決めず 1 以上の整数の skillPackageAbi を受理する" "$fixture" "$package_driver"
+for package_abi_case in absent-key string zero fraction null array malformed missing-file; do
+  case "$package_abi_case" in
+    absent-key) printf '{"name":"architecture-standard"}\n' > "$fixture/package.json" ;;
+    string) printf '{"skillPackageAbi":"1"}\n' > "$fixture/package.json" ;;
+    zero) printf '{"skillPackageAbi":0}\n' > "$fixture/package.json" ;;
+    fraction) printf '{"skillPackageAbi":1.5}\n' > "$fixture/package.json" ;;
+    null) printf '{"skillPackageAbi":null}\n' > "$fixture/package.json" ;;
+    array) printf '[{"skillPackageAbi":1}]\n' > "$fixture/package.json" ;;
+    malformed) printf '{"skillPackageAbi":1\n' > "$fixture/package.json" ;;
+    missing-file) rm -- "$fixture/package.json" ;;
+  esac
+  if output=$(run_verify "$fixture" "$package_driver"); then
+    record_fail "skillPackageAbi の不正な宣言を拒否する: $package_abi_case" "skill-package-check.sh が PASS した"
+  elif ! printf '%s\n' "$output" | rg -qF 'skillPackageAbi'; then
+    record_fail "skillPackageAbi の不正な宣言を拒否する: $package_abi_case" "期待した診断がない: skillPackageAbi
+$output"
+  else
+    record_pass "skillPackageAbi の不正な宣言を拒否する: $package_abi_case"
+  fi
+done
 
 BASH_PATH=$(command -v bash)
 for missing_command in node fd; do

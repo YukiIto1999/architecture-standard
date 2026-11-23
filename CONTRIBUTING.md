@@ -76,7 +76,7 @@ docs: Git の公開済み履歴を書き換える手順の追記
 コミットを作成する前に、staged な差分が一つの目的に閉じていること、および自動検査を通過することを確認します。
 
 検証入口は root の `package.json` の `verify` です。
-標準本文の形式検査と、Skill の frontmatter と script 構文の検査を順に実行します。
+標準本文の形式検査と、Skill の frontmatter、script 構文と root の `skillPackageAbi` の宣言の検査を順に実行します。
 検査器の回帰検査は、[standard-update](./skills/standard-update/SKILL.md) が定める変更条件に該当する場合に別途実行します。
 実行には Node.js、Bash、Git、fd、ripgrep と、各 script が確認する基本 command が必要です。
 
@@ -85,6 +85,7 @@ npm run verify
 ```
 
 Skill を変更した場合は、[standard-update](./skills/standard-update/SKILL.md) が定める package 検査と scoped audit も行います。
+同 Skill が定める条件で `skillPackageAbi` を上げる変更は、値の更新を同じコミットに含めます。
 改訂判断を変える場合は、[保守用の試問](./tests/standard-update/README.md) から影響する事例を使います。
 入力と採点基準を分けて実際の改訂案を比べ、形式検査の合格を判断品質の証拠にしません。
 検査が失敗した状態や、今回の変更に必要な確認を終えていない状態では commit しません。

@@ -147,6 +147,17 @@ tools の区分や採用名を変えた場合は `tools/README.md`、languages �
 いずれも領域一覧と該当 reference を同期し、`scripts/naming-registry-check.mjs` の動的 registry で検査する。
 永続する別の registry file は作らない。
 
+Skill、reference、script を変えた場合は、既存の利用側が環境と呼出し方を変えずにその package を取り込めるかで、root `package.json` の整数 `skillPackageAbi` を上げるかを決める。
+次のいずれかに当たる場合は、値を 1 上げる。
+
+- Skill や同梱 script が要求する能力、外部 command、interpreter、権限を追加または変更した。
+- ある Skill が別の Skill を前提にする依存を追加、削除、または変更した。
+- Skill の削除や改名、package の配置、script の呼出し方を、既存の利用側と両立しない形に変えた。
+
+手順や判断の振る舞いの変更と、要求と呼出し方を保つ script や reference の編集では値を変えない。
+値を下げず、既存の値を別の意味で再利用しない。
+package 検査が確かめるのは宣言の有無と形式だけであり、変更が上の条件に当たるかは差分と影響表から判断する。
+
 ### 7. 検証して閉じる
 
 意味や表現を改めた場合は、最初に使った判定例を改訂後の本文とその参照だけで解き直す。
@@ -173,7 +184,7 @@ Skill、reference、script の変更では、変更の影響から追加検査�
   入口や適用範囲を変えた場合に限り、通常の依頼と近接する非対象で自然発火を別に確かめる。
   本文を渡して得た成果、自然に起動して得た成果、実行できず未評価の能力を区別する。
 - 検証器、その回帰 fixture、または検証器が判定する形式・schema・台帳の契約を変えた場合は、`bash "<skill-package-root>/scripts/verify-test.sh" --standard-root "<standard-root>"` で回帰を確認する。本文や reference だけの差分でも判定契約への影響があれば対象に含める。
-- package の file を変えた場合は、`bash "<skill-package-root>/scripts/skill-package-check.sh" --standard-root "<standard-root>"` で frontmatter、配置と script 構文を確認する。
+- package の file を変えた場合は、`bash "<skill-package-root>/scripts/skill-package-check.sh" --standard-root "<standard-root>"` で frontmatter、配置、script 構文と `skillPackageAbi` の宣言を確認する。
 
 検査の選択理由と既存証跡の再利用を記録し、中断した回帰は完了した case と未実行の範囲を区別する。
 上限の延長や成功済み範囲の再走行で待機を繰り返さず、必要な保証を覆う計画へ戻る。
@@ -213,6 +224,6 @@ subagent が利用できれば変更の経緯を持たない reviewer に依頼�
 - `references/verification-duplication.md` — 検証手段の重複排除に固有の反例と下位割当の点検。
 - `scripts/verify.sh` — 標準本文の機械検査。
 - `scripts/verify-test.sh` — verifier の回帰検査。
-- `scripts/skill-package-check.sh` — 実作業用の frontmatter と script 構文の検査。
+- `scripts/skill-package-check.sh` — 実作業用の frontmatter、script 構文と `skillPackageAbi` の宣言の検査。
 - `scripts/discipline-sections.awk` / `scripts/naming-registry-check.mjs` / `scripts/verbatim-overlap.mjs` / `scripts/heading-citation-check.mjs` — verifier が呼び出す内部実装。個別の公開入口にはしない。
 - `standard-audit` — 標準自体の読み取り専用監査。

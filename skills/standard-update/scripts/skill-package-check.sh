@@ -61,6 +61,25 @@ const present = file => {
   }
 };
 
+function checkSkillPackageAbi() {
+  const manifestPath = "package.json";
+  if (!present(manifestPath) || !fs.lstatSync(manifestPath).isFile()) {
+    reject("package.json がない、または実 file ではないため skillPackageAbi を読めない");
+    return;
+  }
+  const manifestSource = fs.readFileSync(manifestPath, "utf8");
+  let manifest;
+  try {
+    manifest = JSON.parse(manifestSource);
+  } catch {
+    reject("package.json を JSON として読めないため skillPackageAbi を読めない");
+    return;
+  }
+  const abi = manifest?.skillPackageAbi;
+  if (!Number.isSafeInteger(abi) || abi < 1) reject("package.json の skillPackageAbi は 1 以上の整数であること");
+}
+
+checkSkillPackageAbi();
 
 for (const skillName of skillNames) {
   const root = path.join("skills", skillName);
