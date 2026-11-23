@@ -85,6 +85,8 @@ npm run verify
 ```
 
 Skill を変更した場合は、[standard-update](./skills/standard-update/SKILL.md) が定める package 検査と scoped audit も行います。
+改訂判断を変える場合は、[保守用の試問](./tests/standard-update/README.md) から影響する事例を使います。
+入力と採点基準を分けて実際の改訂案を比べ、形式検査の合格を判断品質の証拠にしません。
 検査が失敗した状態や、今回の変更に必要な確認を終えていない状態では commit しません。
 
 ## 履歴の整理とプッシュ

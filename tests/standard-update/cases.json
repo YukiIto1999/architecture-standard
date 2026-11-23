@@ -1,0 +1,31 @@
+{
+  "label": {
+    "revision": "e8d5720e81598265d00b89fbf973c61d9c557b73",
+    "request": "操作ラベルを見直したい。試用した申請画面では「確認」で即時送信し、「申請する」で申請した。資料の主張は、押した後の結果を利用者が見分けられるようにすることだ。例に倣って動詞に統一する案も出ている。この材料から当時の標準の改訂案を作ってほしい。",
+    "sources": {"concerns/experience/user-vocabulary-affordance.md":"1-55", "structure/tests/methods.md":"208", "structure/tests/methods-surfaces.md":"19-27", "principles/documentation/sentence-endings.md":"1-14"}
+  },
+  "history": {
+    "revision": "ad394278764de08b021df039f903b566584af712",
+    "request": "移行のレビューで『旧版の解釈が残れば収縮は未完了』と言われた。保持契約上、過去の請求事実の原本と当時の意味を将来も読めなければならない。他方、予約配送にはまだ旧版がある。この観測を踏まえて標準を改訂するなら、どこに何を書くか。",
+    "sources": {"principles/evolution/consistent-propagation.md":"1-30", "concerns/persistence/read-time-upcasting.md":"1-27", "concerns/messaging/event-contract-versioning.md":"1-23", "process/migration.md":"13-32", "languages/rust/inspection.md":"269"}
+  },
+  "coverage": {
+    "revision": "a1ed6390317e1d11d23ecbf7cc65f0c6b2be44a6",
+    "request": "あるチームから『同じ行を通る高速テストを残せば、遅いテストを一括削除できる。全製品のルールにすべき』と提案された。計測では通った行は同じだった。この提案を標準に取り込むか裁定してほしい。",
+    "sources": {"principles/verification/README.md":"7-13", "principles/verification/behavioral-safety-net.md":"3-20", "structure/tests/methods.md":"173-182"}
+  },
+  "observation": {
+    "revision": "a1ed6390317e1d11d23ecbf7cc65f0c6b2be44a6",
+    "request": "『既存の処理を再現するテストが緑でも、それだけで仕様として採用を決めたことにはならない』。この記事の指摘について、提示した範囲に足りない規律があれば改訂案をください。",
+    "sources": {"principles/requirements/evidence-decision-separation.md":"1-30", "principles/requirements/README.md":"3-11", "principles/verification/behavioral-safety-net.md":"17-20", "process/design.md":"8-15"}
+  },
+  "notice": {
+    "request": "通知画面の確認者から『取消した側は、受け手が通知を取り消せたと誤解していました。送る直前なら取消できる、という本文を読み直してほしい』と連絡が来た。次版の改訂文案をください。",
+    "texts": {"concerns/notifications/dispatch.md":"要求: 依頼者は、転送前に限り送信予約を取り消せる。完了条件: 通知の取消は送信前に行える。禁止: 引渡し後の送信停止を約束すること。", "process/review.md":"依頼者による予約取消を引渡し前に観測し、引渡し後は送信停止を保証しないことを確認する。", "tools/editor.md":"採用: エディタX。採用: エディタY。"}
+  },
+  "deadline": {
+    "revision": "8988727c9b0a020deb9f11cdf10517f577c29855",
+    "request": "検証の応答時間に関する資料には『普段は90秒でフィードバックが欲しい』とある。ある走行は97秒で正常終了した。運用担当は90秒で強制停止する設定と、終わらせて遅さを見直す運用のどちらを標準で求めるのか判断できなかった。この知見を当時の標準に反映する案をください。全製品共通の数値の実験結果はありません。",
+    "sources": {"process/verification.md":"17-33", "structure/tests/methods.md":"63-72", "principles/documentation/decision-records.md":"3-10"}
+  }
+}
